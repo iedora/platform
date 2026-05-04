@@ -5,7 +5,7 @@ import { and, eq, max } from 'drizzle-orm'
 import { z } from 'zod'
 import { requireRestaurantBySlug } from '@/lib/dal'
 import { db } from '@/lib/db'
-import { menu } from '@/lib/db/schema'
+import { menu, restaurant } from '@/lib/db/schema'
 
 const createMenuSchema = z.object({
   name: z.string().trim().min(1).max(80),
@@ -31,6 +31,7 @@ export async function createMenu(slug: string, formData: FormData) {
   })
 
   revalidatePath(`/dashboard/r/${slug}`)
+  revalidatePath(`/r/${slug}`)
   return { ok: true as const }
 }
 
@@ -38,4 +39,13 @@ export async function deleteMenu(slug: string, menuId: string) {
   const { restaurant: r } = await requireRestaurantBySlug(slug)
   await db.delete(menu).where(and(eq(menu.id, menuId), eq(menu.restaurantId, r.id)))
   revalidatePath(`/dashboard/r/${slug}`)
+  revalidatePath(`/r/${slug}`)
+}
+
+export async function setRestaurantPublished(slug: string, published: boolean) {
+  const { restaurant: r } = await requireRestaurantBySlug(slug)
+  await db.update(restaurant).set({ published }).where(eq(restaurant.id, r.id))
+  revalidatePath(`/dashboard/r/${slug}`)
+  revalidatePath(`/r/${slug}`)
+  return { ok: true as const, published }
 }

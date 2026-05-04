@@ -7,6 +7,13 @@ import { requireRestaurantBySlug } from '@/lib/dal'
 import { db } from '@/lib/db'
 import { category, item, menu } from '@/lib/db/schema'
 
+// Every menu mutation invalidates both the admin builder view and the public
+// /r/[slug] page so visitors see fresh data on next request.
+function revalidateMenu(slug: string, menuId: string) {
+  revalidatePath(`/dashboard/r/${slug}/m/${menuId}`)
+  revalidatePath(`/r/${slug}`)
+}
+
 async function authorizeMenu(slug: string, menuId: string) {
   const { restaurant: r } = await requireRestaurantBySlug(slug)
   const rows = await db
@@ -68,7 +75,7 @@ export async function createCategory(slug: string, menuId: string, name: string)
     position: (next ?? -1) + 1,
   })
 
-  revalidatePath(`/dashboard/r/${slug}/m/${menuId}`)
+  revalidateMenu(slug, menuId)
   return { ok: true as const }
 }
 
@@ -86,14 +93,14 @@ export async function updateCategoryName(
     .set({ name: parsed.data.name })
     .where(eq(category.id, categoryId))
 
-  revalidatePath(`/dashboard/r/${slug}/m/${c.menuId}`)
+  revalidateMenu(slug, c.menuId)
   return { ok: true as const, restaurantId: r.id }
 }
 
 export async function deleteCategory(slug: string, categoryId: string) {
   const { category: c } = await authorizeCategory(slug, categoryId)
   await db.delete(category).where(eq(category.id, categoryId))
-  revalidatePath(`/dashboard/r/${slug}/m/${c.menuId}`)
+  revalidateMenu(slug, c.menuId)
 }
 
 export async function reorderCategories(
@@ -118,7 +125,7 @@ export async function reorderCategories(
     }
   })
 
-  revalidatePath(`/dashboard/r/${slug}/m/${menuId}`)
+  revalidateMenu(slug, menuId)
 }
 
 // ─── Items ────────────────────────────────────────────────────────────────────
@@ -153,7 +160,7 @@ export async function createItem(
     position: (next ?? -1) + 1,
   })
 
-  revalidatePath(`/dashboard/r/${slug}/m/${c.menuId}`)
+  revalidateMenu(slug, c.menuId)
   return { ok: true as const }
 }
 
@@ -183,14 +190,20 @@ export async function updateItem(
     .where(eq(item.id, itemId))
 
   // We don't have menuId in this scope; revalidate the whole restaurant subtree.
+  // We don't have menuId in this scope; revalidate the whole restaurant subtree
+  // (admin) plus the public page.
   revalidatePath(`/dashboard/r/${slug}`, 'layout')
+  revalidatePath(`/r/${slug}`)
   return { ok: true as const, categoryId: existing.categoryId }
 }
 
 export async function deleteItem(slug: string, itemId: string) {
   await authorizeItem(slug, itemId)
   await db.delete(item).where(eq(item.id, itemId))
+  // We don't have menuId in this scope; revalidate the whole restaurant subtree
+  // (admin) plus the public page.
   revalidatePath(`/dashboard/r/${slug}`, 'layout')
+  revalidatePath(`/r/${slug}`)
 }
 
 export async function reorderItems(
@@ -215,5 +228,5 @@ export async function reorderItems(
     }
   })
 
-  revalidatePath(`/dashboard/r/${slug}/m/${c.menuId}`)
+  revalidateMenu(slug, c.menuId)
 }

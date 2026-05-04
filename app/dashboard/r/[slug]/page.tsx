@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/card'
 import { CreateMenuDialog } from './create-menu-dialog'
 import { DeleteMenuButton } from './delete-menu-button'
+import { PublishToggle } from './publish-toggle'
 
 export default async function RestaurantPage({
   params,
@@ -44,9 +45,15 @@ export default async function RestaurantPage({
             /r/{r.slug} · {r.published ? 'Published' : 'Draft'}
           </p>
         </div>
-        <Button variant="outline" render={<Link href={`/r/${r.slug}`} target="_blank" rel="noreferrer" />}>
-          View public menu
-        </Button>
+        <div className="flex items-center gap-2">
+          <PublishToggle slug={slug} published={r.published} />
+          <Button
+            variant="outline"
+            render={<Link href={`/r/${r.slug}`} target="_blank" rel="noreferrer" />}
+          >
+            View public menu
+          </Button>
+        </div>
       </div>
 
       <section className="space-y-4">
