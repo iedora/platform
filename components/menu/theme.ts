@@ -1,7 +1,7 @@
-import { TEMPLATE_META } from '@/components/menu/templates'
-import type { RestaurantTheme } from './db/schema'
+import type { RestaurantTheme } from '@/lib/db/schema'
+import { TEMPLATE_META } from './templates'
 
-// LAYOUTS is now derived from the templates registry — single source of truth
+// LAYOUTS is derived from the templates registry — single source of truth
 // for which templates exist lives in components/menu/templates/index.ts.
 export const LAYOUTS = TEMPLATE_META
 

@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { getTranslations } from 'next-intl/server'
 import { requireRestaurantBySlug } from '@/lib/dal'
 import { QrViewer } from './qr-viewer'
 
@@ -9,9 +10,8 @@ export default async function QrPage({
 }) {
   const { slug } = await params
   const { restaurant: r } = await requireRestaurantBySlug(slug)
+  const t = await getTranslations('Qr')
 
-  // BETTER_AUTH_URL doubles as the canonical app origin (dev: localhost, prod:
-  // production domain). The public menu lives at `<origin>/r/<slug>`.
   const origin = process.env.BETTER_AUTH_URL ?? 'http://localhost:3000'
   const publicUrl = `${origin.replace(/\/$/, '')}/r/${r.slug}`
 
@@ -24,10 +24,11 @@ export default async function QrPage({
         >
           ← {r.name}
         </Link>
-        <h1 className="mt-1 text-2xl font-semibold tracking-tight">QR code</h1>
+        <h1 className="mt-1 text-2xl font-semibold tracking-tight">
+          {t('title')}
+        </h1>
         <p className="text-sm text-muted-foreground">
-          Print this on table tents or stickers — scanning opens the menu at{' '}
-          <span className="font-mono">{publicUrl}</span>.
+          {t('subtitle', { url: publicUrl })}
         </p>
       </div>
 

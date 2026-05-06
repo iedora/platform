@@ -19,6 +19,7 @@ import {
 } from '@dnd-kit/sortable'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import type { LanguageCode } from '@/lib/i18n'
 import { createCategory, reorderCategories } from './actions'
 import { SortableCategory } from './sortable-category'
 import type { BuilderCategory } from './types'
@@ -27,11 +28,15 @@ export function MenuBuilder({
   slug,
   menuId,
   restaurantId,
+  defaultLanguage,
+  supportedLanguages,
   initialCategories,
 }: {
   slug: string
   menuId: string
   restaurantId: string
+  defaultLanguage: LanguageCode
+  supportedLanguages: LanguageCode[]
   initialCategories: BuilderCategory[]
 }) {
   const router = useRouter()
@@ -106,6 +111,8 @@ export function MenuBuilder({
                   key={c.id}
                   slug={slug}
                   restaurantId={restaurantId}
+                  defaultLanguage={defaultLanguage}
+                  supportedLanguages={supportedLanguages}
                   category={c}
                 />
               ))

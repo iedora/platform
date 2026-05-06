@@ -6,53 +6,13 @@ import { z } from 'zod'
 import { requireRestaurantBySlug } from '@/lib/dal'
 import { db } from '@/lib/db'
 import { category, item, menu, restaurant } from '@/lib/db/schema'
-
-// Realistic-ish bistro menu used as the seed payload. Editing this is the
-// single place to tune what users see when they click "Sample menu".
-const SAMPLE_MENU: ReadonlyArray<{
-  category: string
-  items: ReadonlyArray<{
-    name: string
-    description: string
-    priceCents: number
-  }>
-}> = [
-  {
-    category: 'Starters',
-    items: [
-      { name: 'Bruschetta', description: 'Tomato, basil, olive oil', priceCents: 650 },
-      { name: 'Calamari', description: 'Lemon mayo, fennel salad', priceCents: 800 },
-      { name: 'Burrata', description: 'Marinated tomatoes, sourdough', priceCents: 950 },
-    ],
-  },
-  {
-    category: 'Mains',
-    items: [
-      {
-        name: 'Spaghetti Carbonara',
-        description: 'Guanciale, pecorino, black pepper',
-        priceCents: 1400,
-      },
-      {
-        name: 'Risotto Funghi',
-        description: 'Porcini, truffle oil',
-        priceCents: 1550,
-      },
-      {
-        name: 'Steak frites',
-        description: 'House cut, peppercorn jus',
-        priceCents: 1900,
-      },
-    ],
-  },
-  {
-    category: 'Desserts',
-    items: [
-      { name: 'Tiramisu', description: 'Espresso, mascarpone', priceCents: 700 },
-      { name: 'Panna cotta', description: 'Berries, vanilla', priceCents: 650 },
-    ],
-  },
-]
+import type { LanguageCode } from '@/lib/i18n'
+import {
+  SAMPLE_MENU,
+  SAMPLE_MENU_NAME,
+  buildI18n,
+  pickDefault,
+} from '@/lib/menu/sample-data'
 
 const createMenuSchema = z.object({
   name: z.string().trim().min(1).max(80),
@@ -92,6 +52,21 @@ export async function deleteMenu(slug: string, menuId: string) {
 export async function seedSampleMenu(slug: string) {
   const { restaurant: r } = await requireRestaurantBySlug(slug)
 
+  // Read the restaurant's language config — sample text lands in the
+  // default language's plain `name`/`description` columns; other supported
+  // languages flow into the jsonb i18n maps so the public switcher works
+  // out of the box.
+  const langRows = await db
+    .select({
+      defaultLanguage: restaurant.defaultLanguage,
+      supportedLanguages: restaurant.supportedLanguages,
+    })
+    .from(restaurant)
+    .where(eq(restaurant.id, r.id))
+    .limit(1)
+  const defaultLanguage = langRows[0]!.defaultLanguage as LanguageCode
+  const supportedLanguages = langRows[0]!.supportedLanguages as LanguageCode[]
+
   // Append after any existing menus so we never reuse a position. The whole
   // seed runs in a transaction so a half-created menu can't leak if anything
   // along the way fails.
@@ -105,7 +80,8 @@ export async function seedSampleMenu(slug: string) {
       .insert(menu)
       .values({
         restaurantId: r.id,
-        name: 'Sample menu',
+        name: pickDefault(SAMPLE_MENU_NAME, defaultLanguage),
+        nameI18n: buildI18n(SAMPLE_MENU_NAME, defaultLanguage, supportedLanguages),
         position: (nextMenuPos ?? -1) + 1,
       })
       .returning({ id: menu.id })
@@ -116,7 +92,8 @@ export async function seedSampleMenu(slug: string) {
         .values({
           menuId: insertedMenu.id,
           restaurantId: r.id,
-          name: c.category,
+          name: pickDefault(c.name, defaultLanguage),
+          nameI18n: buildI18n(c.name, defaultLanguage, supportedLanguages),
           position: catIdx * 10,
         })
         .returning({ id: category.id })
@@ -124,8 +101,14 @@ export async function seedSampleMenu(slug: string) {
       const itemRows = c.items.map((it, itemIdx) => ({
         categoryId: insertedCategory.id,
         restaurantId: r.id,
-        name: it.name,
-        description: it.description,
+        name: pickDefault(it.name, defaultLanguage),
+        nameI18n: buildI18n(it.name, defaultLanguage, supportedLanguages),
+        description: pickDefault(it.description, defaultLanguage),
+        descriptionI18n: buildI18n(
+          it.description,
+          defaultLanguage,
+          supportedLanguages,
+        ),
         priceCents: it.priceCents,
         currency: 'EUR',
         position: itemIdx * 10,

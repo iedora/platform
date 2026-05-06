@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { eq } from 'drizzle-orm'
+import { getTranslations } from 'next-intl/server'
 import { requireActiveOrganization } from '@/lib/dal'
 import { db } from '@/lib/db'
 import { restaurant } from '@/lib/db/schema'
@@ -12,6 +13,7 @@ import {
 
 export default async function DashboardPage() {
   const { organizationId } = await requireActiveOrganization()
+  const t = await getTranslations('Dashboard')
 
   const restaurants = await db
     .select()
@@ -22,23 +24,14 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Restaurants</h1>
-        <p className="text-sm text-muted-foreground">
-          Pick a restaurant to manage its menus.
-        </p>
+        <h1 className="text-2xl font-semibold tracking-tight">{t('title')}</h1>
       </div>
 
       {restaurants.length === 0 ? (
         <Card>
           <CardHeader>
-            <CardTitle>No restaurants yet</CardTitle>
-            <CardDescription>
-              Something went wrong during onboarding. Try{' '}
-              <Link href="/onboarding" className="underline">
-                creating one
-              </Link>
-              .
-            </CardDescription>
+            <CardTitle>{t('noRestaurants')}</CardTitle>
+            <CardDescription>{t('noRestaurantsHint')}</CardDescription>
           </CardHeader>
         </Card>
       ) : (
@@ -49,7 +42,7 @@ export default async function DashboardPage() {
                 <CardHeader>
                   <CardTitle>{r.name}</CardTitle>
                   <CardDescription>
-                    /r/{r.slug} · {r.published ? 'Published' : 'Draft'}
+                    /r/{r.slug} · {r.published ? t('published') : t('draft')}
                   </CardDescription>
                 </CardHeader>
               </Card>

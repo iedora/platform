@@ -1,8 +1,12 @@
+import type { LocalizedText } from '@/lib/i18n'
+
 export type BuilderItem = {
   id: string
   categoryId: string
   name: string
   description: string | null
+  nameI18n: LocalizedText | null
+  descriptionI18n: LocalizedText | null
   priceCents: number
   currency: string
   available: boolean
@@ -13,5 +17,8 @@ export type BuilderItem = {
 export type BuilderCategory = {
   id: string
   name: string
+  description: string | null
+  nameI18n: LocalizedText | null
+  descriptionI18n: LocalizedText | null
   items: BuilderItem[]
 }

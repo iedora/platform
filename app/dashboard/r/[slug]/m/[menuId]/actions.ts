@@ -6,6 +6,8 @@ import { z } from 'zod'
 import { requireRestaurantBySlug } from '@/lib/dal'
 import { db } from '@/lib/db'
 import { category, item, menu } from '@/lib/db/schema'
+import type { LocalizedText } from '@/lib/i18n'
+import { localizedSchema, pruneLocalized } from '@/lib/i18n/server'
 
 // Every menu mutation invalidates both the admin builder view and the public
 // /r/[slug] page so visitors see fresh data on next request.
@@ -97,6 +99,43 @@ export async function updateCategoryName(
   return { ok: true as const, restaurantId: r.id }
 }
 
+const categoryTranslationSchema = z.object({
+  name: z.string().trim().min(1).max(80),
+  description: z.string().trim().max(1000).optional().or(z.literal('')),
+  nameI18n: localizedSchema,
+  descriptionI18n: localizedSchema,
+})
+
+export async function updateCategoryTranslations(
+  slug: string,
+  categoryId: string,
+  fields: {
+    name: string
+    description?: string
+    nameI18n?: LocalizedText
+    descriptionI18n?: LocalizedText
+  },
+) {
+  const parsed = categoryTranslationSchema.safeParse(fields)
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? 'Invalid input' }
+  }
+
+  const { category: c } = await authorizeCategory(slug, categoryId)
+  await db
+    .update(category)
+    .set({
+      name: parsed.data.name,
+      description: parsed.data.description || null,
+      nameI18n: pruneLocalized(parsed.data.nameI18n),
+      descriptionI18n: pruneLocalized(parsed.data.descriptionI18n),
+    })
+    .where(eq(category.id, categoryId))
+
+  revalidateMenu(slug, c.menuId)
+  return { ok: true as const }
+}
+
 export async function deleteCategory(slug: string, categoryId: string) {
   const { category: c } = await authorizeCategory(slug, categoryId)
   await db.delete(category).where(eq(category.id, categoryId))
@@ -128,6 +167,45 @@ export async function reorderCategories(
   revalidateMenu(slug, menuId)
 }
 
+// ─── Menu (rename + translations) ─────────────────────────────────────────────
+
+const menuUpdateSchema = z.object({
+  name: z.string().trim().min(1).max(80),
+  description: z.string().trim().max(1000).optional().or(z.literal('')),
+  nameI18n: localizedSchema,
+  descriptionI18n: localizedSchema,
+})
+
+export async function updateMenu(
+  slug: string,
+  menuId: string,
+  fields: {
+    name: string
+    description?: string
+    nameI18n?: LocalizedText
+    descriptionI18n?: LocalizedText
+  },
+) {
+  const parsed = menuUpdateSchema.safeParse(fields)
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? 'Invalid input' }
+  }
+
+  await authorizeMenu(slug, menuId)
+  await db
+    .update(menu)
+    .set({
+      name: parsed.data.name,
+      description: parsed.data.description || null,
+      nameI18n: pruneLocalized(parsed.data.nameI18n),
+      descriptionI18n: pruneLocalized(parsed.data.descriptionI18n),
+    })
+    .where(eq(menu.id, menuId))
+
+  revalidateMenu(slug, menuId)
+  return { ok: true as const }
+}
+
 // ─── Items ────────────────────────────────────────────────────────────────────
 
 const itemFieldsSchema = z.object({
@@ -135,6 +213,8 @@ const itemFieldsSchema = z.object({
   description: z.string().trim().max(1000).optional().or(z.literal('')),
   priceCents: z.number().int().min(0).max(100_000_00),
   available: z.boolean().optional(),
+  nameI18n: localizedSchema,
+  descriptionI18n: localizedSchema,
 })
 
 export async function createItem(
@@ -172,6 +252,8 @@ export async function updateItem(
     description?: string
     priceCents: number
     available?: boolean
+    nameI18n?: LocalizedText
+    descriptionI18n?: LocalizedText
   },
 ) {
   const parsed = itemFieldsSchema.safeParse(fields)
@@ -186,6 +268,9 @@ export async function updateItem(
       description: parsed.data.description || null,
       priceCents: parsed.data.priceCents,
       available: parsed.data.available ?? true,
+      // Empty maps collapse to null so the column stays compact.
+      nameI18n: pruneLocalized(parsed.data.nameI18n),
+      descriptionI18n: pruneLocalized(parsed.data.descriptionI18n),
     })
     .where(eq(item.id, itemId))
 

@@ -38,6 +38,8 @@ SaaS multi-tenant restaurant menu builder. Each tenant is a Better Auth `organiz
 
 9. **Asset keys are tenant-prefixed and verified twice.** Every uploaded object's S3 key starts with `r/{restaurantId}/`. The `requireRestaurantAccess` DAL guard runs first; `assertKeyBelongsToTarget` then rejects any commit whose key doesn't match the target's restaurant — defense-in-depth against a stale presign being redirected. New asset targets must follow the same `r/{restaurantId}/...` scheme in `lib/storage/targets.ts` and gate item-scoped uploads with an extra ownership check (see `assertItemBelongsToRestaurant`).
 
+10. **Languages live in a registry.** Each supported language is a self-contained module under `lib/i18n/languages/<code>/` exporting `language: Language` from its `index.ts`. `lib/i18n/registry.ts` is the only place that knows the full set; `LANGUAGE_CODES`, `LANGUAGE_META`, and `getLanguage` are derived. The Zod schemas in actions use `z.record(z.string(), …).refine(keys ⊂ LANGUAGE_CODES)` because Zod 4 makes `z.record(z.enum([...]), …)` exhaustive. Translatable text uses the pattern: plain `name`/`description` text columns are the source of truth for the restaurant's `defaultLanguage`; sibling jsonb `*I18n` columns carry overrides for non-default languages. Fallback chain at render time: requested → default → empty. New languages: see `/add-language` skill.
+
 ## File layout
 ```
 app/
@@ -56,6 +58,12 @@ lib/
   dal.ts              # verifySession + tenant-scoped guards
   utils.ts            # shadcn cn() helper
   menu-themes.ts      # ResolvedTheme defaults, FONTS, HEX_PATTERN; LAYOUTS derived from templates registry
+  i18n/
+    types.ts          # LanguageCode, Language, LocalizedText
+    languages/<code>/ # per-language meta + index barrel (en, pt, es, fr)
+    registry.ts       # REGISTRY + LANGUAGE_META + LANGUAGE_CODES + getLanguage
+    format.ts         # localized() / pickLanguage() — fallback chain helpers
+    index.ts          # public barrel
   db/
     index.ts          # drizzle client
     schema.ts         # all tables — single source of truth
@@ -71,6 +79,8 @@ components/
   ui/                 # shadcn primitives
   upload/
     image-upload.tsx  # generic <ImageUpload target=...> reusable across all asset kinds
+  i18n/
+    localized-fields.tsx  # shared tabbed name+description editor used by item/category/identity dialogs
   menu/
     menu-renderer.tsx # consumes template registry; injects theme as CSS vars
     types.ts          # PublicMenuData / RenderProps shared by all templates

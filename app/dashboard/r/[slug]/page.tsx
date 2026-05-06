@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { eq, sql } from 'drizzle-orm'
+import { getTranslations } from 'next-intl/server'
 import { requireRestaurantBySlug } from '@/lib/dal'
 import { db } from '@/lib/db'
 import { category, menu } from '@/lib/db/schema'
@@ -22,6 +23,8 @@ export default async function RestaurantPage({
 }) {
   const { slug } = await params
   const { restaurant: r } = await requireRestaurantBySlug(slug)
+  const t = await getTranslations('Restaurant')
+  const tDash = await getTranslations('Dashboard')
 
   const menus = await db
     .select({
@@ -39,11 +42,11 @@ export default async function RestaurantPage({
       <div className="flex items-end justify-between gap-4">
         <div>
           <Link href="/dashboard" className="text-sm text-muted-foreground hover:underline">
-            ← Restaurants
+            ← {t('back')}
           </Link>
           <h1 className="mt-1 text-2xl font-semibold tracking-tight">{r.name}</h1>
           <p className="text-sm text-muted-foreground">
-            /r/{r.slug} · {r.published ? 'Published' : 'Draft'}
+            /r/{r.slug} · {r.published ? tDash('published') : tDash('draft')}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -53,28 +56,28 @@ export default async function RestaurantPage({
             nativeButton={false}
             render={<Link href={`/dashboard/r/${slug}/theme`} />}
           >
-            Settings
+            {t('settings')}
           </Button>
           <Button
             variant="outline"
             nativeButton={false}
             render={<Link href={`/dashboard/r/${slug}/qr`} />}
           >
-            QR code
+            {t('qrCode')}
           </Button>
           <Button
             variant="outline"
             nativeButton={false}
             render={<Link href={`/r/${r.slug}`} target="_blank" rel="noreferrer" />}
           >
-            View public menu
+            {t('viewPublicMenu')}
           </Button>
         </div>
       </div>
 
       <section className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-medium">Menus</h2>
+          <h2 className="text-lg font-medium">{t('menus')}</h2>
           <div className="flex items-center gap-2">
             <SeedSampleButton slug={slug} />
             <CreateMenuDialog slug={slug} />
@@ -84,8 +87,8 @@ export default async function RestaurantPage({
         {menus.length === 0 ? (
           <Card>
             <CardHeader>
-              <CardTitle>No menus yet</CardTitle>
-              <CardDescription>Create one to start adding categories.</CardDescription>
+              <CardTitle>{t('noMenus')}</CardTitle>
+              <CardDescription>{t('noMenusHint')}</CardDescription>
             </CardHeader>
           </Card>
         ) : (
@@ -97,8 +100,8 @@ export default async function RestaurantPage({
                     <CardHeader>
                       <CardTitle>{m.name}</CardTitle>
                       <CardDescription>
-                        {m.categoryCount} {m.categoryCount === 1 ? 'category' : 'categories'}
-                        {!m.active && ' · disabled'}
+                        {t('categoryCount', { count: m.categoryCount })}
+                        {!m.active && ` · ${t('menuDisabled')}`}
                       </CardDescription>
                     </CardHeader>
                   </Card>

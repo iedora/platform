@@ -33,9 +33,19 @@ function CardHeader({ className, ...props }: React.ComponentProps<"div">) {
   )
 }
 
-function CardTitle({ className, ...props }: React.ComponentProps<"div">) {
+type HeadingLevel = "h1" | "h2" | "h3" | "h4" | "h5" | "h6"
+
+// `as` lets pages opt into semantic heading levels (h1 for full-page forms
+// like signup/login, lower for cards-within-pages). Default stays a plain
+// div for backward compatibility — existing usages keep their visual treatment
+// without forcing every consumer to think about heading hierarchy.
+function CardTitle({
+  className,
+  as: Tag = "div",
+  ...props
+}: React.ComponentProps<"div"> & { as?: "div" | HeadingLevel }) {
   return (
-    <div
+    <Tag
       data-slot="card-title"
       className={cn(
         "font-heading text-base leading-snug font-medium group-data-[size=sm]/card:text-sm",

@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
+import { useTranslations } from 'next-intl'
 import { authClient } from '@/lib/auth-client'
 import { Button } from '@/components/ui/button'
 import {
@@ -18,6 +19,7 @@ import { Label } from '@/components/ui/label'
 
 export function LoginForm() {
   const router = useRouter()
+  const t = useTranslations('Auth')
   const searchParams = useSearchParams()
   const next = searchParams.get('next') ?? '/'
   const [error, setError] = useState<string | null>(null)
@@ -35,7 +37,7 @@ export function LoginForm() {
     const { error } = await authClient.signIn.email({ email, password })
 
     if (error) {
-      setError(error.message ?? 'Invalid email or password')
+      setError(error.message ?? t('invalidCredentials'))
       setPending(false)
       return
     }
@@ -47,13 +49,13 @@ export function LoginForm() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Log in to Meta Menu</CardTitle>
-        <CardDescription>Welcome back.</CardDescription>
+        <CardTitle as="h1">{t('loginTitle')}</CardTitle>
+        <CardDescription>{t('loginSubtitle')}</CardDescription>
       </CardHeader>
       <form onSubmit={onSubmit}>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">{t('email')}</Label>
             <Input
               id="email"
               name="email"
@@ -63,7 +65,7 @@ export function LoginForm() {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
+            <Label htmlFor="password">{t('password')}</Label>
             <Input
               id="password"
               name="password"
@@ -80,12 +82,12 @@ export function LoginForm() {
         </CardContent>
         <CardFooter className="flex flex-col gap-3">
           <Button type="submit" className="w-full" disabled={pending}>
-            {pending ? 'Logging in…' : 'Log in'}
+            {pending ? t('loggingIn') : t('login')}
           </Button>
           <p className="text-sm text-muted-foreground">
-            Don&apos;t have an account?{' '}
+            {t('noAccount')}{' '}
             <Link href="/signup" className="underline underline-offset-4">
-              Sign up
+              {t('signup')}
             </Link>
           </p>
         </CardFooter>

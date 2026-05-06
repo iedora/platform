@@ -1,13 +1,23 @@
 import Link from 'next/link'
-import { and, asc, eq, inArray } from 'drizzle-orm'
+import { eq } from 'drizzle-orm'
+import { getTranslations } from 'next-intl/server'
 import { requireRestaurantBySlug } from '@/lib/dal'
 import { db } from '@/lib/db'
-import { category, item, menu, restaurant, type RestaurantTheme } from '@/lib/db/schema'
-import { resolveTheme } from '@/lib/menu-themes'
+import { restaurant, type RestaurantTheme } from '@/lib/db/schema'
+import { resolveTheme } from '@/components/menu/theme'
+import type { LanguageCode, LocalizedText } from '@/lib/i18n'
+import { loadMenuTree, localizeTree } from '@/lib/menu/load-tree'
 import type { PublicMenu, PublicMenuData } from '@/components/menu/types'
 import { ThemeEditor } from './theme-editor'
 
-async function loadEditorData(restaurantId: string): Promise<PublicMenuData & { rawTheme: RestaurantTheme | null }> {
+type EditorData = PublicMenuData & {
+  rawTheme: RestaurantTheme | null
+  defaultLanguage: LanguageCode
+  supportedLanguages: LanguageCode[]
+  restaurantDescriptionI18n: LocalizedText
+}
+
+async function loadEditorData(restaurantId: string): Promise<EditorData> {
   const rows = await db
     .select({
       id: restaurant.id,
@@ -17,72 +27,22 @@ async function loadEditorData(restaurantId: string): Promise<PublicMenuData & { 
       logoUrl: restaurant.logoUrl,
       bannerUrl: restaurant.bannerUrl,
       theme: restaurant.theme,
+      defaultLanguage: restaurant.defaultLanguage,
+      supportedLanguages: restaurant.supportedLanguages,
+      descriptionI18n: restaurant.descriptionI18n,
     })
     .from(restaurant)
     .where(eq(restaurant.id, restaurantId))
     .limit(1)
 
   const r = rows[0]!
+  const defaultLanguage = r.defaultLanguage as LanguageCode
 
-  const menus = await db
-    .select()
-    .from(menu)
-    .where(and(eq(menu.restaurantId, r.id), eq(menu.active, true)))
-    .orderBy(asc(menu.position))
-
-  const categories =
-    menus.length === 0
-      ? []
-      : await db
-          .select()
-          .from(category)
-          .where(
-            inArray(
-              category.menuId,
-              menus.map((m) => m.id),
-            ),
-          )
-          .orderBy(asc(category.position))
-
-  const items =
-    categories.length === 0
-      ? []
-      : await db
-          .select()
-          .from(item)
-          .where(
-            inArray(
-              item.categoryId,
-              categories.map((c) => c.id),
-            ),
-          )
-          .orderBy(asc(item.position))
-
-  const itemsByCategory = new Map<string, PublicMenu['categories'][number]['items']>()
-  for (const c of categories) itemsByCategory.set(c.id, [])
-  for (const it of items) {
-    itemsByCategory.get(it.categoryId)?.push({
-      id: it.id,
-      name: it.name,
-      description: it.description,
-      priceCents: it.priceCents,
-      currency: it.currency,
-      available: it.available,
-      tags: it.tags ?? [],
-      imageUrl: it.imageUrl,
-    })
-  }
-
-  const categoriesByMenu = new Map<string, PublicMenu['categories']>()
-  for (const m of menus) categoriesByMenu.set(m.id, [])
-  for (const c of categories) {
-    categoriesByMenu.get(c.menuId)?.push({
-      id: c.id,
-      name: c.name,
-      description: c.description,
-      items: itemsByCategory.get(c.id) ?? [],
-    })
-  }
+  // Editor preview shows the default-language strings — the renderer doesn't
+  // know about i18n maps. Localize-to-default reuses the same helper as the
+  // public page so any future field change lives in one place.
+  const tree = await loadMenuTree({ restaurantId: r.id, activeOnly: true })
+  const menus: PublicMenu[] = localizeTree(tree, defaultLanguage, defaultLanguage)
 
   return {
     restaurant: {
@@ -93,13 +53,12 @@ async function loadEditorData(restaurantId: string): Promise<PublicMenuData & { 
       logoUrl: r.logoUrl,
       bannerUrl: r.bannerUrl,
     },
-    menus: menus.map((m) => ({
-      id: m.id,
-      name: m.name,
-      description: m.description,
-      categories: categoriesByMenu.get(m.id) ?? [],
-    })),
+    menus,
     rawTheme: r.theme as RestaurantTheme | null,
+    defaultLanguage,
+    supportedLanguages: r.supportedLanguages as LanguageCode[],
+    restaurantDescriptionI18n:
+      (r.descriptionI18n as LocalizedText | null) ?? {},
   }
 }
 
@@ -112,6 +71,7 @@ export default async function ThemePage({
   const { restaurant: r } = await requireRestaurantBySlug(slug)
   const data = await loadEditorData(r.id)
   const initialTheme = resolveTheme(data.rawTheme)
+  const t = await getTranslations('Settings')
 
   return (
     <div className="space-y-6">
@@ -122,18 +82,22 @@ export default async function ThemePage({
         >
           ← {r.name}
         </Link>
-        <h1 className="mt-1 text-2xl font-semibold tracking-tight">Settings</h1>
-        <p className="text-sm text-muted-foreground">
-          Edit the restaurant identity and visual theme. Changes are live in the
-          preview; save each section to publish to /r/{slug}.
-        </p>
+        <h1 className="mt-1 text-2xl font-semibold tracking-tight">
+          {t('title')}
+        </h1>
+        <p className="text-sm text-muted-foreground">{t('subtitle')}</p>
       </div>
 
       <ThemeEditor
         slug={slug}
         restaurant={data.restaurant}
+        restaurantDescriptionI18n={data.restaurantDescriptionI18n}
         menus={data.menus}
         initialTheme={initialTheme}
+        initialLanguageSettings={{
+          defaultLanguage: data.defaultLanguage,
+          supportedLanguages: data.supportedLanguages,
+        }}
       />
     </div>
   )

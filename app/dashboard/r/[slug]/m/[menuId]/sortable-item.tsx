@@ -7,7 +7,6 @@ import { CSS } from '@dnd-kit/utilities'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
 import {
   Dialog,
   DialogContent,
@@ -17,6 +16,8 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog'
 import { ImageUpload } from '@/components/upload/image-upload'
+import { LocalizedFields } from '@/components/i18n/localized-fields'
+import type { LanguageCode, LocalizedText } from '@/lib/i18n'
 import { deleteItem, updateItem } from './actions'
 import type { BuilderItem } from './types'
 
@@ -30,10 +31,14 @@ function formatPrice(cents: number, currency: string) {
 export function SortableItem({
   slug,
   restaurantId,
+  defaultLanguage,
+  supportedLanguages,
   item,
 }: {
   slug: string
   restaurantId: string
+  defaultLanguage: LanguageCode
+  supportedLanguages: LanguageCode[]
   item: BuilderItem
 }) {
   const router = useRouter()
@@ -44,6 +49,12 @@ export function SortableItem({
   const [open, setOpen] = useState(false)
   const [name, setName] = useState(item.name)
   const [description, setDescription] = useState(item.description ?? '')
+  // Maps of overrides keyed by language. Default language stays in `name`/
+  // `description` above. The LocalizedFields component owns the active-tab UI.
+  const [nameI18n, setNameI18n] = useState<LocalizedText>(() => item.nameI18n ?? {})
+  const [descriptionI18n, setDescriptionI18n] = useState<LocalizedText>(
+    () => item.descriptionI18n ?? {},
+  )
   const [priceText, setPriceText] = useState((item.priceCents / 100).toFixed(2))
   const [available, setAvailable] = useState(item.available)
   // Local mirror for immediate dialog feedback after upload — server already
@@ -66,6 +77,8 @@ export function SortableItem({
         description: description.trim(),
         priceCents,
         available,
+        nameI18n,
+        descriptionI18n,
       })
       if (res && 'error' in res) {
         setError(res.error ?? 'Could not save')
@@ -130,26 +143,19 @@ export function SortableItem({
             <DialogTitle>Edit item</DialogTitle>
           </DialogHeader>
           <form onSubmit={onSave} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor={`name-${item.id}`}>Name</Label>
-              <Input
-                id={`name-${item.id}`}
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-                maxLength={120}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor={`desc-${item.id}`}>Description</Label>
-              <Textarea
-                id={`desc-${item.id}`}
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                rows={3}
-                maxLength={1000}
-              />
-            </div>
+            <LocalizedFields
+              id="item"
+              defaultLanguage={defaultLanguage}
+              supportedLanguages={supportedLanguages}
+              name={name}
+              onNameChange={setName}
+              description={description}
+              onDescriptionChange={setDescription}
+              nameI18n={nameI18n}
+              onNameI18nChange={setNameI18n}
+              descriptionI18n={descriptionI18n}
+              onDescriptionI18nChange={setDescriptionI18n}
+            />
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label htmlFor={`price-${item.id}`}>Price ({item.currency})</Label>

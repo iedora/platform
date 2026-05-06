@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { useTranslations } from 'next-intl'
 import { authClient } from '@/lib/auth-client'
 import { Button } from '@/components/ui/button'
 import {
@@ -18,6 +19,7 @@ import { Label } from '@/components/ui/label'
 
 export function SignupForm() {
   const router = useRouter()
+  const t = useTranslations('Auth')
   const [error, setError] = useState<string | null>(null)
   const [pending, setPending] = useState(false)
 
@@ -38,7 +40,7 @@ export function SignupForm() {
     })
 
     if (error) {
-      setError(error.message ?? 'Could not create account')
+      setError(error.message ?? t('couldNotCreate'))
       setPending(false)
       return
     }
@@ -50,37 +52,35 @@ export function SignupForm() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Create your Meta Menu account</CardTitle>
-        <CardDescription>
-          Start building digital menus for your restaurant.
-        </CardDescription>
+        <CardTitle as="h1">{t('signupTitle')}</CardTitle>
+        <CardDescription>{t('signupSubtitle')}</CardDescription>
       </CardHeader>
       <form onSubmit={onSubmit}>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="name">Name</Label>
+            <Label htmlFor="name">{t('name')}</Label>
             <Input
               id="name"
               name="name"
               type="text"
-              placeholder="Ada Lovelace"
+              placeholder={t('namePlaceholder')}
               required
               autoComplete="name"
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">{t('email')}</Label>
             <Input
               id="email"
               name="email"
               type="email"
-              placeholder="you@example.com"
+              placeholder={t('emailPlaceholder')}
               required
               autoComplete="email"
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
+            <Label htmlFor="password">{t('password')}</Label>
             <Input
               id="password"
               name="password"
@@ -89,7 +89,7 @@ export function SignupForm() {
               minLength={8}
               autoComplete="new-password"
             />
-            <p className="text-xs text-muted-foreground">At least 8 characters.</p>
+            <p className="text-xs text-muted-foreground">{t('passwordHint')}</p>
           </div>
           {error && (
             <p className="text-sm text-destructive" role="alert">
@@ -99,12 +99,12 @@ export function SignupForm() {
         </CardContent>
         <CardFooter className="flex flex-col gap-3">
           <Button type="submit" className="w-full" disabled={pending}>
-            {pending ? 'Creating account…' : 'Sign up'}
+            {pending ? t('creatingAccount') : t('signup')}
           </Button>
           <p className="text-sm text-muted-foreground">
-            Already have an account?{' '}
+            {t('alreadyHaveAccount')}{' '}
             <Link href="/login" className="underline underline-offset-4">
-              Log in
+              {t('login')}
             </Link>
           </p>
         </CardFooter>

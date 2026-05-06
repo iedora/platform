@@ -7,6 +7,8 @@ import {
   Playfair_Display,
   Space_Grotesk,
 } from "next/font/google";
+import { NextIntlClientProvider } from "next-intl";
+import { getLocale } from "next-intl/server";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -37,17 +39,23 @@ export const metadata: Metadata = {
   description: "Build digital restaurant menus with drag-and-drop.",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Locale comes from the cookie set by setUserLocale; falls back to 'en' when
+  // absent. The public menu page overrides `lang` on its inner wrapper for
+  // anonymous visitors who don't carry a locale cookie.
+  const locale = await getLocale();
   return (
     <html
-      lang="en"
+      lang={locale}
       className={`${geistSans.variable} ${geistMono.variable} ${inter.variable} ${playfair.variable} ${lora.variable} ${spaceGrotesk.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <NextIntlClientProvider>{children}</NextIntlClientProvider>
+      </body>
     </html>
   );
 }

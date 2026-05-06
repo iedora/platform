@@ -1,4 +1,4 @@
-import type { ResolvedTheme } from '@/lib/menu-themes'
+import type { ResolvedTheme } from './theme'
 
 export type PublicRestaurant = {
   id: string

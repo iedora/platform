@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation'
 import { auth } from '@/lib/auth'
 import { getEffectiveOrganizationId } from '@/lib/dal'
 import { LogoutButton } from './logout-button'
+import { UserLocaleSwitcher } from './user-locale-switcher'
 
 export default async function DashboardLayout({
   children,
@@ -27,6 +28,7 @@ export default async function DashboardLayout({
             Meta Menu
           </Link>
           <div className="flex items-center gap-4 text-sm">
+            <UserLocaleSwitcher />
             <span className="text-muted-foreground">{session.user.email}</span>
             <LogoutButton />
           </div>

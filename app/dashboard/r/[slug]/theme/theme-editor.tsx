@@ -2,38 +2,55 @@
 
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Separator } from '@/components/ui/separator'
 import { ImageUpload } from '@/components/upload/image-upload'
+import { LocalizedFields } from '@/components/i18n/localized-fields'
 import { MenuRenderer } from '@/components/menu/menu-renderer'
 import type { PublicMenu, PublicRestaurant } from '@/components/menu/types'
+import type { LocalizedText } from '@/lib/i18n'
 import {
   DEFAULT_THEME,
   FONTS,
   HEX_PATTERN,
   LAYOUTS,
   type ResolvedTheme,
-} from '@/lib/menu-themes'
-import { updateIdentity, updateTheme } from './actions'
+} from '@/components/menu/theme'
+import { LANGUAGE_META, type LanguageCode } from '@/lib/i18n'
+import {
+  updateIdentity,
+  updateLanguageSettings,
+  updateTheme,
+} from './actions'
+
+export type LanguageSettings = {
+  defaultLanguage: LanguageCode
+  supportedLanguages: LanguageCode[]
+}
 
 type Identity = Pick<
   PublicRestaurant,
   'name' | 'description' | 'logoUrl' | 'bannerUrl'
->
+> & { descriptionI18n: LocalizedText }
 
 export function ThemeEditor({
   slug,
   restaurant,
+  restaurantDescriptionI18n,
   menus,
   initialTheme,
+  initialLanguageSettings,
 }: {
   slug: string
   restaurant: PublicRestaurant
+  restaurantDescriptionI18n: LocalizedText
   menus: PublicMenu[]
   initialTheme: ResolvedTheme
+  initialLanguageSettings: LanguageSettings
 }) {
   const router = useRouter()
   const initialIdentity: Identity = {
@@ -41,6 +58,7 @@ export function ThemeEditor({
     description: restaurant.description,
     logoUrl: restaurant.logoUrl,
     bannerUrl: restaurant.bannerUrl,
+    descriptionI18n: restaurantDescriptionI18n,
   }
 
   const [identity, setIdentity] = useState<Identity>(initialIdentity)
@@ -54,9 +72,17 @@ export function ThemeEditor({
         <IdentitySection
           slug={slug}
           restaurantId={restaurant.id}
+          defaultLanguage={initialLanguageSettings.defaultLanguage}
+          supportedLanguages={initialLanguageSettings.supportedLanguages}
           initial={initialIdentity}
           value={identity}
           onChange={setIdentity}
+          onSaved={() => router.refresh()}
+        />
+        <Separator />
+        <LanguagesSection
+          slug={slug}
+          initial={initialLanguageSettings}
           onSaved={() => router.refresh()}
         />
         <Separator />
@@ -70,9 +96,7 @@ export function ThemeEditor({
       </div>
 
       <div className="lg:sticky lg:top-6 lg:h-fit">
-        <div className="mb-2 text-xs uppercase tracking-wide text-muted-foreground">
-          Live preview
-        </div>
+        <PreviewLabel />
         <div
           className="overflow-hidden rounded-lg border bg-background"
           data-testid="theme-preview"
@@ -89,47 +113,77 @@ export function ThemeEditor({
   )
 }
 
-function IdentitySection({
+function PreviewLabel() {
+  const t = useTranslations('Settings')
+  return (
+    <div className="mb-2 text-xs uppercase tracking-wide text-muted-foreground">
+      {t('livePreview')}
+    </div>
+  )
+}
+
+function LanguagesSection({
   slug,
-  restaurantId,
   initial,
-  value,
-  onChange,
   onSaved,
 }: {
   slug: string
-  restaurantId: string
-  initial: Identity
-  value: Identity
-  onChange: (next: Identity) => void
+  initial: LanguageSettings
   onSaved: () => void
 }) {
+  const [defaultLang, setDefaultLang] = useState<LanguageCode>(
+    initial.defaultLanguage,
+  )
+  // Tracked as a Set so toggle is O(1) and order in the persisted array
+  // follows the registry order (deterministic across renders).
+  const [supported, setSupported] = useState<Set<LanguageCode>>(
+    () => new Set(initial.supportedLanguages),
+  )
   const [pending, startTransition] = useTransition()
-  const [error, setError] = useState<string | null>(null)
   const [saved, setSaved] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const t = useTranslations('Settings.Languages')
+  const tc = useTranslations('Common')
 
-  // Save button only tracks text fields. Logo/banner are persisted directly
-  // by the ImageUpload component via lib/upload/actions, so they don't
-  // contribute to the dirty state here.
-  const dirty =
-    value.name !== initial.name ||
-    (value.description ?? '') !== (initial.description ?? '')
-
-  const nameValid = value.name.trim().length > 0
-
-  function patch<K extends keyof Identity>(key: K, v: Identity[K]) {
-    onChange({ ...value, [key]: v })
+  function toggle(code: LanguageCode) {
     setSaved(false)
     setError(null)
+    setSupported((prev) => {
+      const next = new Set(prev)
+      if (next.has(code)) {
+        // Default cannot be removed — fallback chain breaks otherwise.
+        if (code === defaultLang) return prev
+        next.delete(code)
+      } else {
+        next.add(code)
+      }
+      return next
+    })
   }
+
+  function selectDefault(code: LanguageCode) {
+    setSaved(false)
+    setError(null)
+    setDefaultLang(code)
+    setSupported((prev) => new Set(prev).add(code))
+  }
+
+  const supportedList = LANGUAGE_META.filter((l) => supported.has(l.code)).map(
+    (l) => l.code,
+  )
+
+  const dirty =
+    defaultLang !== initial.defaultLanguage ||
+    supportedList.length !== initial.supportedLanguages.length ||
+    supportedList.some((c, i) => c !== initial.supportedLanguages[i])
 
   function onSave() {
     setError(null)
     setSaved(false)
     startTransition(async () => {
-      const result = await updateIdentity(slug, {
-        name: value.name,
-        description: value.description ?? '',
+      const result = await updateLanguageSettings(slug, {
+        defaultLanguage: defaultLang,
+        supportedLanguages: supportedList,
       })
       if (!result.ok) {
         setError(result.error)
@@ -149,14 +203,151 @@ function IdentitySection({
       }}
     >
       <div>
-        <h2 className="text-base font-medium">Identity</h2>
-        <p className="text-xs text-muted-foreground">
-          Name, copy, and brand assets shown at the top of the menu.
-        </p>
+        <h2 className="text-base font-medium">{t('title')}</h2>
+        <p className="text-xs text-muted-foreground">{t('subtitle')}</p>
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="identity-name">Restaurant name</Label>
+        <div className="grid grid-cols-2 gap-2">
+          {LANGUAGE_META.map((lang) => {
+            const isSupported = supported.has(lang.code)
+            const isDefault = defaultLang === lang.code
+            return (
+              <div
+                key={lang.code}
+                data-testid={`lang-row-${lang.code}`}
+                className={
+                  'flex items-center justify-between gap-2 rounded-lg border p-3 ' +
+                  (isSupported
+                    ? 'border-primary bg-accent'
+                    : 'border-border')
+                }
+              >
+                <label className="flex cursor-pointer items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={isSupported}
+                    onChange={() => toggle(lang.code)}
+                    disabled={isDefault}
+                    data-testid={`lang-supported-${lang.code}`}
+                    className="h-4 w-4"
+                  />
+                  <span className="font-medium">{lang.name}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {lang.nativeName}
+                  </span>
+                </label>
+                <button
+                  type="button"
+                  onClick={() => selectDefault(lang.code)}
+                  data-testid={`lang-default-${lang.code}`}
+                  className={
+                    'rounded px-2 py-0.5 text-xs ' +
+                    (isDefault
+                      ? 'bg-primary text-primary-foreground'
+                      : 'text-muted-foreground hover:text-foreground')
+                  }
+                >
+                  {isDefault ? t('default') : t('makeDefault')}
+                </button>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+
+      <div className="flex items-center gap-3 pt-1">
+        <Button
+          type="submit"
+          disabled={!dirty || pending}
+          data-testid="languages-save"
+        >
+          {pending ? tc('saving') : t('save')}
+        </Button>
+        {saved && !dirty && (
+          <span className="text-sm text-muted-foreground">{t('saved')}</span>
+        )}
+        {error && <span className="text-sm text-destructive">{error}</span>}
+      </div>
+    </form>
+  )
+}
+
+function IdentitySection({
+  slug,
+  restaurantId,
+  defaultLanguage,
+  supportedLanguages,
+  initial,
+  value,
+  onChange,
+  onSaved,
+}: {
+  slug: string
+  restaurantId: string
+  defaultLanguage: LanguageCode
+  supportedLanguages: LanguageCode[]
+  initial: Identity
+  value: Identity
+  onChange: (next: Identity) => void
+  onSaved: () => void
+}) {
+  const [pending, startTransition] = useTransition()
+  const [error, setError] = useState<string | null>(null)
+  const [saved, setSaved] = useState(false)
+  const t = useTranslations('Settings.Identity')
+  const tc = useTranslations('Common')
+
+  // Save button only tracks text fields. Logo/banner are persisted directly
+  // by the ImageUpload component via lib/upload/actions, so they don't
+  // contribute to the dirty state here.
+  const dirty =
+    value.name !== initial.name ||
+    (value.description ?? '') !== (initial.description ?? '') ||
+    JSON.stringify(value.descriptionI18n) !==
+      JSON.stringify(initial.descriptionI18n)
+
+  const nameValid = value.name.trim().length > 0
+
+  function patch<K extends keyof Identity>(key: K, v: Identity[K]) {
+    onChange({ ...value, [key]: v })
+    setSaved(false)
+    setError(null)
+  }
+
+  function onSave() {
+    setError(null)
+    setSaved(false)
+    startTransition(async () => {
+      const result = await updateIdentity(slug, {
+        name: value.name,
+        description: value.description ?? '',
+        descriptionI18n: value.descriptionI18n,
+      })
+      if (!result.ok) {
+        setError(result.error)
+        return
+      }
+      setSaved(true)
+      onSaved()
+    })
+  }
+
+  return (
+    <form
+      className="space-y-4"
+      onSubmit={(e) => {
+        e.preventDefault()
+        onSave()
+      }}
+    >
+      <div>
+        <h2 className="text-base font-medium">{t('title')}</h2>
+        <p className="text-xs text-muted-foreground">{t('subtitle')}</p>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="identity-name">{t('name')}</Label>
         <Input
           id="identity-name"
           data-testid="identity-name"
@@ -167,25 +358,45 @@ function IdentitySection({
         />
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="identity-description">Description</Label>
-        <Textarea
-          id="identity-description"
-          data-testid="identity-description"
-          value={value.description ?? ''}
-          onChange={(e) => patch('description', e.target.value)}
-          maxLength={500}
-          rows={3}
-          placeholder="A short tagline shown under the name."
+      {supportedLanguages.length > 1 ? (
+        <LocalizedFields
+          id="identity"
+          defaultLanguage={defaultLanguage}
+          supportedLanguages={supportedLanguages}
+          // Restaurant name stays mono-language (proper noun) — only the
+          // description is translatable here.
+          name="" // unused
+          onNameChange={() => {}}
+          nameI18n={{}}
+          onNameI18nChange={() => {}}
+          description={value.description ?? ''}
+          onDescriptionChange={(v) => patch('description', v)}
+          descriptionI18n={value.descriptionI18n}
+          onDescriptionI18nChange={(next) => patch('descriptionI18n', next)}
+          nameLabel={t('description')}
+          descriptionLabel={t('description')}
         />
-      </div>
+      ) : (
+        <div className="space-y-2">
+          <Label htmlFor="identity-description">{t('description')}</Label>
+          <Textarea
+            id="identity-description"
+            data-testid="identity-description"
+            value={value.description ?? ''}
+            onChange={(e) => patch('description', e.target.value)}
+            maxLength={500}
+            rows={3}
+            placeholder={t('descriptionPlaceholder')}
+          />
+        </div>
+      )}
 
       <div className="space-y-2">
-        <Label>Logo</Label>
+        <Label>{t('logo')}</Label>
         <ImageUpload
           target={{ kind: 'restaurant-logo', restaurantId }}
           currentUrl={value.logoUrl}
-          label="Logo"
+          label={t('logo')}
           onChange={(url) => {
             patch('logoUrl', url)
             onSaved()
@@ -194,11 +405,11 @@ function IdentitySection({
       </div>
 
       <div className="space-y-2">
-        <Label>Banner</Label>
+        <Label>{t('banner')}</Label>
         <ImageUpload
           target={{ kind: 'restaurant-banner', restaurantId }}
           currentUrl={value.bannerUrl}
-          label="Banner"
+          label={t('banner')}
           onChange={(url) => {
             patch('bannerUrl', url)
             onSaved()
@@ -212,7 +423,7 @@ function IdentitySection({
           disabled={!dirty || !nameValid || pending}
           data-testid="identity-save"
         >
-          {pending ? 'Saving…' : 'Save identity'}
+          {pending ? tc('saving') : t('save')}
         </Button>
         {saved && !dirty && (
           <span className="text-sm text-muted-foreground">Saved</span>
@@ -239,6 +450,8 @@ function ThemeSection({
   const [pending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
   const [saved, setSaved] = useState(false)
+  const t = useTranslations('Settings.Theme')
+  const tc = useTranslations('Common')
 
   const dirty =
     value.layout !== initial.layout ||
@@ -279,14 +492,12 @@ function ThemeSection({
       }}
     >
       <div>
-        <h2 className="text-base font-medium">Theme</h2>
-        <p className="text-xs text-muted-foreground">
-          Layout, fonts, and brand colors.
-        </p>
+        <h2 className="text-base font-medium">{t('title')}</h2>
+        <p className="text-xs text-muted-foreground">{t('subtitle')}</p>
       </div>
 
       <fieldset className="space-y-2">
-        <legend className="text-sm font-medium">Layout</legend>
+        <legend className="text-sm font-medium">{t('layout')}</legend>
         <div className="grid grid-cols-2 gap-2">
           {LAYOUTS.map((l) => {
             const selected = value.layout === l.id
@@ -315,7 +526,7 @@ function ThemeSection({
       </fieldset>
 
       <div className="space-y-2">
-        <Label htmlFor="theme-font">Font</Label>
+        <Label htmlFor="theme-font">{t('font')}</Label>
         <select
           id="theme-font"
           data-testid="theme-font"
@@ -333,16 +544,16 @@ function ThemeSection({
 
       <ColorField
         id="theme-primary"
-        label="Primary color"
-        hint="Headings and body text"
+        label={t('primary')}
+        hint={t('primaryHint')}
         value={value.primaryColor}
         valid={primaryValid}
         onChange={(v) => patch('primaryColor', v)}
       />
       <ColorField
         id="theme-secondary"
-        label="Secondary color"
-        hint="Descriptions, dividers, captions"
+        label={t('secondary')}
+        hint={t('secondaryHint')}
         value={value.secondaryColor}
         valid={secondaryValid}
         onChange={(v) => patch('secondaryColor', v)}
@@ -350,7 +561,7 @@ function ThemeSection({
 
       <div className="flex items-center gap-3 pt-1">
         <Button type="submit" disabled={!canSave} data-testid="theme-save">
-          {pending ? 'Saving…' : 'Save theme'}
+          {pending ? tc('saving') : t('save')}
         </Button>
         <Button
           type="button"
@@ -362,10 +573,10 @@ function ThemeSection({
           }}
           disabled={pending}
         >
-          Reset to default
+          {t('reset')}
         </Button>
         {saved && !dirty && (
-          <span className="text-sm text-muted-foreground">Saved</span>
+          <span className="text-sm text-muted-foreground">{t('saved')}</span>
         )}
         {error && <span className="text-sm text-destructive">{error}</span>}
       </div>

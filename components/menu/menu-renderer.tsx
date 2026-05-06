@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react'
-import { fontCssVar } from '@/lib/menu-themes'
+import { fontCssVar } from './theme'
 import { getTemplate } from './templates'
 import type { RenderProps } from './types'
 

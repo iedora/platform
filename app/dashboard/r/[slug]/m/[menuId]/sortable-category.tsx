@@ -30,22 +30,28 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
+import type { LanguageCode } from '@/lib/i18n'
 import {
   createItem,
   deleteCategory,
   reorderItems,
   updateCategoryName,
 } from './actions'
+import { CategoryTranslateDialog } from './category-translate-dialog'
 import { SortableItem } from './sortable-item'
 import type { BuilderCategory, BuilderItem } from './types'
 
 export function SortableCategory({
   slug,
   restaurantId,
+  defaultLanguage,
+  supportedLanguages,
   category,
 }: {
   slug: string
   restaurantId: string
+  defaultLanguage: LanguageCode
+  supportedLanguages: LanguageCode[]
   category: BuilderCategory
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
@@ -166,6 +172,20 @@ export function SortableCategory({
             {category.name}
           </button>
         )}
+        {supportedLanguages.length > 1 && (
+          <CategoryTranslateDialog
+            slug={slug}
+            categoryId={category.id}
+            defaultLanguage={defaultLanguage}
+            supportedLanguages={supportedLanguages}
+            initial={{
+              name: category.name,
+              description: category.description,
+              nameI18n: category.nameI18n,
+              descriptionI18n: category.descriptionI18n,
+            }}
+          />
+        )}
         <Dialog open={confirmDelete} onOpenChange={setConfirmDelete}>
           <DialogTrigger
             render={
@@ -223,6 +243,8 @@ export function SortableCategory({
                   key={it.id}
                   slug={slug}
                   restaurantId={restaurantId}
+                  defaultLanguage={defaultLanguage}
+                  supportedLanguages={supportedLanguages}
                   item={it}
                 />
               ))

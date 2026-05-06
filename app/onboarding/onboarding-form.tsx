@@ -1,6 +1,7 @@
 'use client'
 
 import { useActionState, useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -25,6 +26,7 @@ function slugify(value: string) {
 }
 
 export function OnboardingForm() {
+  const t = useTranslations('Onboarding')
   const [state, action, pending] = useActionState<OnboardingFormState, FormData>(
     completeOnboarding,
     undefined,
@@ -36,15 +38,13 @@ export function OnboardingForm() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Create your first restaurant</CardTitle>
-        <CardDescription>
-          You can rename or add more later. The slug is used in your public menu URL.
-        </CardDescription>
+        <CardTitle as="h1">{t('title')}</CardTitle>
+        <CardDescription>{t('subtitle')}</CardDescription>
       </CardHeader>
       <form action={action}>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="restaurantName">Restaurant name</Label>
+            <Label htmlFor="restaurantName">{t('restaurantName')}</Label>
             <Input
               id="restaurantName"
               name="restaurantName"
@@ -57,14 +57,14 @@ export function OnboardingForm() {
                 setName(e.target.value)
                 if (!slugTouched) setSlug(slugify(e.target.value))
               }}
-              placeholder="O Bom Garfo"
+              placeholder={t('restaurantNamePlaceholder')}
             />
             {state?.fieldErrors?.restaurantName && (
               <p className="text-sm text-destructive">{state.fieldErrors.restaurantName}</p>
             )}
           </div>
           <div className="space-y-2">
-            <Label htmlFor="slug">URL slug</Label>
+            <Label htmlFor="slug">{t('slug')}</Label>
             <div className="flex items-center gap-1 rounded-md border px-3 focus-within:ring-1 focus-within:ring-ring">
               <span className="text-sm text-muted-foreground">metamenu.app/r/</span>
               <Input
@@ -94,7 +94,7 @@ export function OnboardingForm() {
         </CardContent>
         <CardFooter>
           <Button type="submit" className="w-full" disabled={pending}>
-            {pending ? 'Creating…' : 'Create restaurant'}
+            {pending ? t('creating') : t('create')}
           </Button>
         </CardFooter>
       </form>

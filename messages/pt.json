@@ -1,0 +1,113 @@
+{
+  "AppHeader": {
+    "logout": "Terminar sessão",
+    "language": "Idioma"
+  },
+  "Auth": {
+    "signupTitle": "Criar a tua conta no Meta Menu",
+    "signupSubtitle": "Começa a construir menus digitais para o teu restaurante.",
+    "loginTitle": "Entrar no Meta Menu",
+    "loginSubtitle": "Bem-vindo de volta.",
+    "name": "Nome",
+    "namePlaceholder": "Ada Lovelace",
+    "email": "Email",
+    "emailPlaceholder": "tu@exemplo.com",
+    "password": "Palavra-passe",
+    "passwordHint": "Pelo menos 8 caracteres.",
+    "signup": "Criar conta",
+    "creatingAccount": "A criar conta…",
+    "login": "Entrar",
+    "loggingIn": "A entrar…",
+    "alreadyHaveAccount": "Já tens conta?",
+    "noAccount": "Ainda não tens conta?",
+    "couldNotCreate": "Não foi possível criar a conta",
+    "invalidCredentials": "Email ou palavra-passe inválidos"
+  },
+  "Onboarding": {
+    "title": "Cria o teu primeiro restaurante",
+    "subtitle": "Podes mudar o nome ou adicionar mais tarde. O slug aparece no URL público do menu.",
+    "restaurantName": "Nome do restaurante",
+    "restaurantNamePlaceholder": "O Bom Garfo",
+    "slug": "URL slug",
+    "create": "Criar restaurante",
+    "creating": "A criar…"
+  },
+  "Dashboard": {
+    "title": "Restaurantes",
+    "newRestaurant": "Novo restaurante",
+    "noRestaurants": "Ainda sem restaurantes",
+    "noRestaurantsHint": "Cria um para começar a montar menus.",
+    "draft": "Rascunho",
+    "published": "Publicado"
+  },
+  "Restaurant": {
+    "back": "Restaurantes",
+    "settings": "Definições",
+    "qrCode": "Código QR",
+    "viewPublicMenu": "Ver menu público",
+    "menus": "Menus",
+    "newMenu": "Novo menu",
+    "sampleMenu": "Menu de exemplo",
+    "noMenus": "Ainda sem menus",
+    "noMenusHint": "Cria um para começar a adicionar categorias.",
+    "categoryCount": "{count, plural, =0 {Sem categorias} =1 {1 categoria} other {# categorias}}",
+    "menuDisabled": "desativado",
+    "publish": "Publicar",
+    "unpublish": "Despublicar",
+    "saving": "A guardar…"
+  },
+  "Settings": {
+    "title": "Definições",
+    "subtitle": "Edita a identidade e o tema do restaurante. As alterações aparecem na pré-visualização; guarda cada secção para publicar.",
+    "livePreview": "Pré-visualização",
+    "Identity": {
+      "title": "Identidade",
+      "subtitle": "Nome, descrição e imagens que aparecem no topo do menu.",
+      "name": "Nome do restaurante",
+      "description": "Descrição",
+      "descriptionPlaceholder": "Uma frase curta abaixo do nome.",
+      "logo": "Logótipo",
+      "banner": "Banner",
+      "save": "Guardar identidade",
+      "saved": "Guardado"
+    },
+    "Languages": {
+      "title": "Idiomas",
+      "subtitle": "Escolhe que idiomas o menu suporta e qual é o predefinido.",
+      "default": "Predefinido",
+      "makeDefault": "Tornar predefinido",
+      "save": "Guardar idiomas",
+      "saved": "Guardado"
+    },
+    "Theme": {
+      "title": "Tema",
+      "subtitle": "Layout, tipografia e cores.",
+      "layout": "Layout",
+      "font": "Tipo de letra",
+      "primary": "Cor primária",
+      "primaryHint": "Títulos e corpo do texto",
+      "secondary": "Cor secundária",
+      "secondaryHint": "Descrições, separadores, legendas",
+      "save": "Guardar tema",
+      "reset": "Repor predefinições",
+      "saved": "Guardado"
+    }
+  },
+  "Qr": {
+    "title": "Código QR",
+    "subtitle": "Imprime para mesas ou autocolantes — ao ler abre o menu em {url}.",
+    "downloadSvg": "Descarregar SVG",
+    "downloadPng": "Descarregar PNG",
+    "print": "Imprimir",
+    "scan": "Ler para ver o menu"
+  },
+  "Common": {
+    "save": "Guardar",
+    "saving": "A guardar…",
+    "cancel": "Cancelar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "translate": "Traduzir",
+    "back": "Voltar"
+  }
+}

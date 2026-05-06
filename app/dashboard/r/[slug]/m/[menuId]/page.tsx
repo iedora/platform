@@ -3,7 +3,8 @@ import { notFound } from 'next/navigation'
 import { and, asc, eq, inArray } from 'drizzle-orm'
 import { requireRestaurantBySlug } from '@/lib/dal'
 import { db } from '@/lib/db'
-import { category, item, menu } from '@/lib/db/schema'
+import { category, item, menu, restaurant } from '@/lib/db/schema'
+import type { LanguageCode } from '@/lib/i18n'
 import { MenuBuilder } from './builder'
 
 export default async function MenuBuilderPage({
@@ -21,6 +22,17 @@ export default async function MenuBuilderPage({
     .limit(1)
   if (menuRows.length === 0) notFound()
   const m = menuRows[0]
+
+  // Pull i18n config for the dialog tabs.
+  const langRows = await db
+    .select({
+      defaultLanguage: restaurant.defaultLanguage,
+      supportedLanguages: restaurant.supportedLanguages,
+    })
+    .from(restaurant)
+    .where(eq(restaurant.id, r.id))
+    .limit(1)
+  const langs = langRows[0]!
 
   const categories = await db
     .select()
@@ -62,14 +74,21 @@ export default async function MenuBuilderPage({
         slug={slug}
         menuId={m.id}
         restaurantId={r.id}
+        defaultLanguage={langs.defaultLanguage as LanguageCode}
+        supportedLanguages={langs.supportedLanguages as LanguageCode[]}
         initialCategories={categories.map((c) => ({
           id: c.id,
           name: c.name,
+          description: c.description,
+          nameI18n: c.nameI18n,
+          descriptionI18n: c.descriptionI18n,
           items: (itemsByCategory[c.id] ?? []).map((it) => ({
             id: it.id,
             categoryId: it.categoryId,
             name: it.name,
             description: it.description,
+            nameI18n: it.nameI18n,
+            descriptionI18n: it.descriptionI18n,
             priceCents: it.priceCents,
             currency: it.currency,
             available: it.available,

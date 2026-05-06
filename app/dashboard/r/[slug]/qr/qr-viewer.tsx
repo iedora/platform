@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import QRCode from 'qrcode'
+import { useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/button'
 
 // Render size in CSS pixels for the on-screen preview. PNG export uses a
@@ -19,6 +20,7 @@ export function QrViewer({
   const [svgMarkup, setSvgMarkup] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const printRef = useRef<HTMLDivElement>(null)
+  const t = useTranslations('Qr')
 
   useEffect(() => {
     let cancelled = false
@@ -90,9 +92,7 @@ export function QrViewer({
         )}
         <div className="text-center">
           <p className="text-base font-semibold">{restaurantName}</p>
-          <p className="text-xs text-muted-foreground">
-            Scan to view the menu
-          </p>
+          <p className="text-xs text-muted-foreground">{t('scan')}</p>
         </div>
       </div>
 
@@ -110,7 +110,7 @@ export function QrViewer({
           disabled={!svgMarkup}
           data-testid="qr-download-svg"
         >
-          Download SVG
+          {t('downloadSvg')}
         </Button>
         <Button
           type="button"
@@ -119,10 +119,10 @@ export function QrViewer({
           disabled={!svgMarkup}
           data-testid="qr-download-png"
         >
-          Download PNG
+          {t('downloadPng')}
         </Button>
         <Button type="button" onClick={printQr} data-testid="qr-print">
-          Print
+          {t('print')}
         </Button>
       </div>
 

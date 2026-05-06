@@ -11,6 +11,7 @@ A self-hosted multi-tenant SaaS for restaurants to build digital menus by drag a
 - **Theme editor** with live preview: pick a template (classic, minimal), Google fonts, primary/secondary colors. Values persist in `restaurant.theme` and apply to `/r/<slug>` via CSS variables.
 - **Identity editor** for name, description, logo, banner — all changes feed the same live preview.
 - **QR code page** per restaurant: SVG/PNG download + print-friendly layout pointing at `/r/<slug>`.
+- **Multi-language menus** — restaurant admin picks default + supported languages; items, categories, menus, and the restaurant description carry per-language overrides. Public page negotiates language via `?lang=` or `Accept-Language` and falls back to default for missing translations. Languages are a registry pattern (`lib/i18n/`), so adding a new one is a single folder + one entry.
 - **Sample menu seed** — one click creates a realistic bistro menu (3 categories, 8 items) so the dashboard isn't empty during onboarding/demos.
 - Publish toggle: drafts return 404 on the public URL, published menus render server-side with metadata for sharing.
 - Tenant isolation enforced in the data access layer — every query filters by `restaurantId` after a membership check; storage keys are tenant-prefixed (`r/{restaurantId}/...`) and verified at commit time.
@@ -91,6 +92,7 @@ lib/
   auth-client.ts      Better Auth React client
   dal.ts              Data access layer (verifySession, requireRestaurantAccess, …)
   menu-themes.ts      Theme defaults + fonts; LAYOUTS derived from templates registry
+  i18n/               Per-language registry (en/pt/es/fr) + format helpers
   db/
     index.ts          Drizzle client (postgres-js)
     schema.ts         single source of truth — auth + domain tables

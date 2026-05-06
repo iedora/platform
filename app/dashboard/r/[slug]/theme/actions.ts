@@ -6,7 +6,10 @@ import { z } from 'zod'
 import { requireRestaurantBySlug } from '@/lib/dal'
 import { db } from '@/lib/db'
 import { restaurant, type RestaurantTheme } from '@/lib/db/schema'
-import { FONTS, HEX_PATTERN, LAYOUTS } from '@/lib/menu-themes'
+import { FONTS, HEX_PATTERN, LAYOUTS } from '@/components/menu/theme'
+import { LANGUAGE_CODES } from '@/lib/i18n'
+import type { LanguageCode } from '@/lib/i18n'
+import { localizedSchema, pruneLocalized } from '@/lib/i18n/server'
 
 const themeSchema = z.object({
   layout: z.enum(LAYOUTS.map((l) => l.id) as [string, ...string[]]),
@@ -28,7 +31,26 @@ const optionalText = z
 const identitySchema = z.object({
   name: z.string().trim().min(1, 'Name is required').max(120),
   description: optionalText,
+  descriptionI18n: localizedSchema,
 })
+
+// Language settings — defaultLanguage MUST be in supportedLanguages so the
+// fallback chain in lib/i18n/format.ts always has something to land on.
+const languageSettingsSchema = z
+  .object({
+    defaultLanguage: z.enum(
+      LANGUAGE_CODES as unknown as [LanguageCode, ...LanguageCode[]],
+    ),
+    supportedLanguages: z
+      .array(
+        z.enum(LANGUAGE_CODES as unknown as [LanguageCode, ...LanguageCode[]]),
+      )
+      .min(1, 'Pick at least one language'),
+  })
+  .refine((d) => d.supportedLanguages.includes(d.defaultLanguage), {
+    message: 'Default language must be in the supported set',
+    path: ['defaultLanguage'],
+  })
 
 type ActionResult = { ok: true } | { ok: false; error: string }
 
@@ -55,6 +77,36 @@ export async function updateTheme(
   return { ok: true }
 }
 
+export async function updateLanguageSettings(
+  slug: string,
+  input: unknown,
+): Promise<ActionResult> {
+  const parsed = languageSettingsSchema.safeParse(input)
+  if (!parsed.success) {
+    return {
+      ok: false,
+      error: parsed.error.issues[0]?.message ?? 'Invalid language settings',
+    }
+  }
+
+  const { restaurant: r } = await requireRestaurantBySlug(slug)
+  // Dedupe + keep declarative order from input. supportedLanguages is a JSON
+  // array (not a Postgres set), so we control the persisted shape here.
+  const supported = Array.from(new Set(parsed.data.supportedLanguages))
+  await db
+    .update(restaurant)
+    .set({
+      defaultLanguage: parsed.data.defaultLanguage,
+      supportedLanguages: supported,
+    })
+    .where(eq(restaurant.id, r.id))
+
+  revalidatePath(`/dashboard/r/${slug}`)
+  revalidatePath(`/dashboard/r/${slug}/theme`)
+  revalidatePath(`/r/${slug}`)
+  return { ok: true }
+}
+
 export async function updateIdentity(
   slug: string,
   input: unknown,
@@ -73,6 +125,7 @@ export async function updateIdentity(
     .set({
       name: parsed.data.name,
       description: parsed.data.description,
+      descriptionI18n: pruneLocalized(parsed.data.descriptionI18n),
     })
     .where(eq(restaurant.id, r.id))
 

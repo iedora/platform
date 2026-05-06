@@ -15,6 +15,20 @@
       "when": 1777903155504,
       "tag": "0001_rich_vanisher",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1778060790900,
+      "tag": "0002_messy_hulk",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1778063691263,
+      "tag": "0003_skinny_doctor_faustus",
+      "breakpoints": true
     }
   ]
 }

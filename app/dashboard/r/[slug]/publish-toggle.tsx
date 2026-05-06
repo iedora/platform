@@ -2,6 +2,7 @@
 
 import { useTransition } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/button'
 import { setRestaurantPublished } from './actions'
 
@@ -14,6 +15,7 @@ export function PublishToggle({
 }) {
   const router = useRouter()
   const [pending, startTransition] = useTransition()
+  const t = useTranslations('Restaurant')
 
   return (
     <Button
@@ -26,11 +28,7 @@ export function PublishToggle({
       }
       disabled={pending}
     >
-      {pending
-        ? 'Saving…'
-        : published
-          ? 'Unpublish'
-          : 'Publish'}
+      {pending ? t('saving') : published ? t('unpublish') : t('publish')}
     </Button>
   )
 }

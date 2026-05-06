@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
+import { useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -19,6 +20,8 @@ export function CreateMenuDialog({ slug }: { slug: string }) {
   const [open, setOpen] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [pending, startTransition] = useTransition()
+  const t = useTranslations('Restaurant')
+  const tc = useTranslations('Common')
 
   function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -36,10 +39,10 @@ export function CreateMenuDialog({ slug }: { slug: string }) {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={<Button>New menu</Button>} />
+      <DialogTrigger render={<Button>{t('newMenu')}</Button>} />
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>New menu</DialogTitle>
+          <DialogTitle>{t('newMenu')}</DialogTitle>
           <DialogDescription>
             Group categories under a name like &quot;Lunch&quot; or &quot;Dinner&quot;.
           </DialogDescription>
@@ -52,7 +55,7 @@ export function CreateMenuDialog({ slug }: { slug: string }) {
           {error && <p className="text-sm text-destructive">{error}</p>}
           <DialogFooter>
             <Button type="submit" disabled={pending}>
-              {pending ? 'Creating…' : 'Create'}
+              {pending ? tc('saving') : tc('save')}
             </Button>
           </DialogFooter>
         </form>
