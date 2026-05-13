@@ -35,7 +35,7 @@ make kamal-bootstrap
 make kamal-deploy
 ```
 
-O `make kamal-bootstrap` corre `infra/scripts/bootstrap.sh`, que faz: `kamal server bootstrap` → `kamal accessory boot postgres redis` → `kamal setup --skip-hooks` → primeira migration explícita. É idempotente, mas só é preciso na primeira vez por servidor.
+O `make kamal-bootstrap` corre `scripts/bootstrap.sh`, que faz: `kamal server bootstrap` → `kamal accessory boot postgres redis` → `kamal setup --skip-hooks` → primeira migration explícita. É idempotente, mas só é preciso na primeira vez por servidor.
 
 ### Bootstrap vs Deploy — porquê dois comandos?
 

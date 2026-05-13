@@ -66,7 +66,7 @@ ssh:  ## SSH para o servidor local
 
 # ── Kamal ─────────────────────────────────────────────────────────────────────
 kamal-bootstrap:  ## Primeira vez num servidor fresh (pre-boot accessories + setup --skip-hooks + 1.ª migration)
-	bash infra/scripts/bootstrap.sh
+	bash scripts/bootstrap.sh
 
 kamal-deploy:    ## Deploy zero-downtime (pre-deploy hook corre migrations)
 	kamal deploy

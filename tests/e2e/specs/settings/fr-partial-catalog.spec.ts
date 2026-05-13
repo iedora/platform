@@ -7,7 +7,7 @@ import {
 } from '../../helpers/auth'
 
 // Critical contract test: French is in the language registry but the catalog
-// (messages/fr.json) is partial. This spec verifies two things:
+// (i18n/messages/fr.json) is partial. This spec verifies two things:
 //
 //   1. Picking FR in the dashboard switcher updates `<html lang>` even when
 //      the catalog is missing or partial — the request config falls back to

@@ -149,7 +149,7 @@ scripts/
 .github/workflows/
   ci.yml                   Typecheck + Lint + E2E (Playwright); Bun for installs, Node for build
 .mcp.json                  shadcn, postgres, bun, next-devtools, playwright MCP servers
-.eslintrc-boundaries.json  enforces no cross-slice imports (slices may only import shared/* or their own siblings via barrels)
+eslint.config.mjs          enforces no cross-slice imports via eslint-plugin-boundaries (slices may only import shared/* or their own siblings via barrels)
 tests/e2e/
   fixtures.ts              auto-fixture: fails fast on any RSC error / 5xx response
   specs/                   organized by module: auth, tenancy, menu-builder, public-menu,

@@ -84,7 +84,7 @@ Open <http://localhost:3000>, sign up, and you'll be taken through onboarding. Y
 The codebase is organised as **vertical slices** under `features/` (one folder
 per business capability) plus **`shared/`** for cross-slice infrastructure.
 Each slice exposes its public API via `index.ts`; cross-slice imports MUST go
-through a sibling slice's barrel (enforced by `.eslintrc-boundaries.json`).
+through a sibling slice's barrel (enforced by `eslint-plugin-boundaries` once the rules are flipped on in `eslint.config.mjs`).
 `AGENTS.md` has the full layout — short form below.
 
 ```
@@ -123,7 +123,7 @@ shared/                    cross-slice infrastructure
 proxy.ts                   Next 16 proxy (was middleware.ts)
 scripts/check-migrations.ts  dev-time guardrail warning on pending migrations
 .github/workflows/ci.yml   Typecheck + Lint + Playwright E2E
-.eslintrc-boundaries.json  enforces no cross-slice imports
+eslint.config.mjs          enforces no cross-slice imports (via eslint-plugin-boundaries)
 tests/e2e/                 fixtures + specs (auth, tenancy, menu-builder, plans, billing, metrics, …)
 drizzle/                   generated migration files
 docker-compose.yml         Postgres + Redis + LocalStack

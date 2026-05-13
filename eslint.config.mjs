@@ -1,4 +1,7 @@
-// TODO: when migration to features/ + shared/ is complete, merge .eslintrc-boundaries.json rules and enable them.
+// TODO: enable feature/shared boundary rules. The migration to features/ + shared/
+// is complete; flip these on in a follow-up by adding eslint-plugin-boundaries to
+// the imports below and registering the elements + rules inline here. Reference
+// config in commit history before .eslintrc-boundaries.json was removed.
 import { defineConfig, globalIgnores } from "eslint/config";
 import nextVitals from "eslint-config-next/core-web-vitals";
 import nextTs from "eslint-config-next/typescript";

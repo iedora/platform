@@ -72,12 +72,12 @@ export default getRequestConfig(async () => {
   // Always load English as the base of truth — every key has an English
   // string. Then layer the locale catalog on top. If the locale catalog
   // doesn't exist (or is incomplete), every missing key reads from English.
-  const base: Messages = (await import(`../messages/${DEFAULT_LOCALE}.json`)).default
+  const base: Messages = (await import(`./messages/${DEFAULT_LOCALE}.json`)).default
   let messages: Messages = base
 
   if (locale !== DEFAULT_LOCALE) {
     try {
-      const partial: Messages = (await import(`../messages/${locale}.json`)).default
+      const partial: Messages = (await import(`./messages/${locale}.json`)).default
       messages = mergeCatalogs(base, partial)
     } catch {
       // No catalog file at all — keep `messages = base`. The picked locale
