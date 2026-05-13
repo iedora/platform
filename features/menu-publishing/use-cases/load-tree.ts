@@ -1,3 +1,4 @@
+import 'server-only'
 import { and, asc, eq, inArray } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { category, item, menu } from '@/lib/db/schema'
@@ -7,7 +8,7 @@ import {
   localized,
   localizedNullable,
 } from '@/features/i18n'
-import type { PublicMenu } from '@/components/menu/types'
+import type { PublicMenu } from '../rsc/types'
 
 // Single source of truth for "fetch a restaurant's menu/category/item tree".
 // Returns RAW data — translations, all menus, no language reduction. Callers

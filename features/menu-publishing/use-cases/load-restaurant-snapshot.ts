@@ -1,11 +1,11 @@
 import 'server-only'
 import { eq } from 'drizzle-orm'
-import { unstable_cache, updateTag } from 'next/cache'
-import { getRestaurantMenusWithCounts, type MenuWithCounts } from '@/lib/dashboard/queries'
+import { unstable_cache } from 'next/cache'
 import { db } from '@/lib/db'
 import { restaurant, type RestaurantTheme } from '@/lib/db/schema'
 import type { LanguageCode, LocalizedText } from '@/features/i18n'
 import { loadMenuTree, type RawMenu } from './load-tree'
+import { restaurantTag } from '../cache'
 
 /**
  * The public menu page is read-heavy and changes only when the admin edits
@@ -43,10 +43,6 @@ export type RestaurantSnapshot = {
   supportedLanguages: LanguageCode[]
   /** Active-only menu tree. The public page never needs disabled menus. */
   tree: RawMenu[]
-}
-
-export function restaurantTag(slug: string): string {
-  return `restaurant:${slug}`
 }
 
 export async function loadRestaurantSnapshot(
@@ -94,74 +90,4 @@ export async function loadRestaurantSnapshot(
     [`restaurant-snapshot:${slug}`],
     { tags: [restaurantTag(slug)], revalidate: false },
   )(slug)
-}
-
-/**
- * Single invalidation entry-point. Mutation actions (menu/category/item
- * upserts, theme save, identity save, language save, upload) call this with
- * the restaurant slug; the next public render rebuilds the snapshot.
- *
- * Uses `updateTag` (read-your-own-writes) over `revalidateTag`: the admin
- * navigates from a save action straight into the public preview or the
- * dashboard view that re-reads the snapshot — we want the fresh value on
- * that very next request, not the eventually-consistent purge model.
- */
-export function revalidateRestaurant(slug: string): void {
-  updateTag(restaurantTag(slug))
-}
-
-// ─── Admin dashboard view ─────────────────────────────────────────────────────
-
-/**
- * Cached menus-with-counts for the admin `/dashboard/r/[slug]` page. Auth and
- * tenant scoping live in `requireRestaurantBySlug` — that DAL call happens
- * per request, OUTSIDE this cache, and is the source of truth for "may this
- * caller see this restaurant".
- *
- * The cache key is the slug; the tag is the same `restaurant:${slug}` the
- * mutations already invalidate, so every menu/category/item/theme save the
- * admin makes shows up on the next render without per-mutation plumbing.
- *
- * Returns `null` when the slug doesn't exist — the page already 404s via the
- * auth guard before reaching here, but the null branch keeps the type honest.
- */
-export type AdminMenusSnapshot = {
-  restaurantId: string
-  menus: MenuWithCounts[]
-}
-
-export async function loadRestaurantAdminMenus(
-  slug: string,
-): Promise<AdminMenusSnapshot | null> {
-  const cached = await unstable_cache(
-    async (s: string): Promise<AdminMenusSnapshot | null> => {
-      const rows = await db
-        .select({ id: restaurant.id })
-        .from(restaurant)
-        .where(eq(restaurant.slug, s))
-        .limit(1)
-      const r = rows[0]
-      if (!r) return null
-
-      const menus = await getRestaurantMenusWithCounts(r.id)
-      return { restaurantId: r.id, menus }
-    },
-    [`restaurant-admin-menus:${slug}`],
-    { tags: [restaurantTag(slug)], revalidate: false },
-  )(slug)
-  if (!cached) return null
-
-  // unstable_cache serializes through JSON, which collapses Date → ISO string.
-  // Re-hydrate any timestamp the caller will pass into date-formatting helpers
-  // — otherwise `m.updatedAt.getTime is not a function` on a cache hit.
-  return {
-    restaurantId: cached.restaurantId,
-    menus: cached.menus.map((m) => ({
-      ...m,
-      updatedAt:
-        m.updatedAt instanceof Date
-          ? m.updatedAt
-          : new Date(m.updatedAt as unknown as string),
-    })),
-  }
 }

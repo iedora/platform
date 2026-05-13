@@ -2,7 +2,7 @@ import type { RestaurantTheme } from '@/lib/db/schema'
 import { TEMPLATE_META } from './templates'
 
 // LAYOUTS is derived from the templates registry — single source of truth
-// for which templates exist lives in components/menu/templates/index.ts.
+// for which templates exist lives in ./templates/index.ts.
 export const LAYOUTS = TEMPLATE_META
 
 export const FONTS = [

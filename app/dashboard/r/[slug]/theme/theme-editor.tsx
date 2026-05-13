@@ -10,8 +10,8 @@ import { Textarea } from '@/shared/ui/textarea'
 import { Separator } from '@/shared/ui/separator'
 import { ImageUpload } from '@/features/upload/ui/image-upload'
 import { LocalizedFields } from '@/features/i18n/ui/localized-fields'
-import { MenuRenderer } from '@/components/menu/menu-renderer'
-import type { PublicMenu, PublicRestaurant } from '@/components/menu/types'
+import { MenuRenderer } from '@/features/menu-publishing/rsc/menu-renderer'
+import type { PublicMenu, PublicRestaurant } from '@/features/menu-publishing/rsc/types'
 import type { LocalizedText } from '@/features/i18n'
 import {
   DEFAULT_THEME,
@@ -19,7 +19,7 @@ import {
   HEX_PATTERN,
   LAYOUTS,
   type ResolvedTheme,
-} from '@/components/menu/theme'
+} from '@/features/menu-publishing/rsc/theme'
 import { LANGUAGE_META, type LanguageCode } from '@/features/i18n'
 import {
   updateIdentity,

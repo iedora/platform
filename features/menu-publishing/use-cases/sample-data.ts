@@ -1,3 +1,4 @@
+import 'server-only'
 import type { LanguageCode, LocalizedText } from '@/features/i18n'
 
 // Sample data for the "Sample menu" button. English is required as the

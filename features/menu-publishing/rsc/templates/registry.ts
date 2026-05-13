@@ -2,7 +2,7 @@ import { template as classic } from './classic'
 import { template as minimal } from './minimal'
 import type { MenuTemplate, TemplateId, TemplateMeta } from './types'
 
-// Adding a template = create components/menu/templates/<id>/, export `template`
+// Adding a template = create features/menu-publishing/rsc/templates/<id>/, export `template`
 // from its index.ts, then add a single import + entry below. Keep this file
 // short on purpose — every template's surface lives in its own folder.
 const REGISTRY: Record<TemplateId, MenuTemplate> = {

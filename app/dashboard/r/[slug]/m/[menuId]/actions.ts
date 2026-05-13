@@ -1,7 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { revalidateRestaurant } from '@/lib/menu/cached'
+import { revalidateRestaurant } from '@/features/menu-publishing'
 import { and, eq, max } from 'drizzle-orm'
 import { z } from 'zod'
 import { requireRestaurantBySlug } from '@/features/auth'

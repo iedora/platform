@@ -1,7 +1,6 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { revalidateRestaurant } from '@/lib/menu/cached'
 import { and, eq, max } from 'drizzle-orm'
 import { z } from 'zod'
 import { requireRestaurantBySlug } from '@/features/auth'
@@ -13,7 +12,8 @@ import {
   SAMPLE_MENU_NAME,
   buildI18n,
   pickDefault,
-} from '@/lib/menu/sample-data'
+  revalidateRestaurant,
+} from '@/features/menu-publishing'
 
 const createMenuSchema = z.object({
   name: z.string().trim().min(1).max(80),

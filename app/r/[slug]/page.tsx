@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import { headers } from 'next/headers'
-import { resolveTheme, type ResolvedTheme } from '@/components/menu/theme'
+import { resolveTheme, type ResolvedTheme } from '@/features/menu-publishing/rsc/theme'
 import {
   LANGUAGE_META,
   type LanguageCode,
@@ -9,10 +9,12 @@ import {
   localizedNullable,
   pickLanguage,
 } from '@/features/i18n'
-import { loadRestaurantSnapshot } from '@/lib/menu/cached'
-import { localizeTree } from '@/lib/menu/load-tree'
-import { MenuRenderer } from '@/components/menu/menu-renderer'
-import type { PublicMenuData } from '@/components/menu/types'
+import {
+  loadRestaurantSnapshot,
+  localizeTree,
+} from '@/features/menu-publishing'
+import { MenuRenderer } from '@/features/menu-publishing/rsc/menu-renderer'
+import type { PublicMenuData } from '@/features/menu-publishing/rsc/types'
 
 type LoadedRestaurant = PublicMenuData & {
   organizationId: string
@@ -155,7 +157,7 @@ export default async function PublicMenuPage({
       {/* Pixel beacon — survives any future edge cache layer in front of the
         page. The CDN may serve the HTML from cache, but the browser still
         loads this image from the origin, so `/api/track/[slug]` runs on
-        every real visit. See lib/menu/cached.ts for the cache story. */}
+        every real visit. See features/menu-publishing/cache.ts. */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={`/api/track/${data.restaurant.slug}?lang=${data.currentLanguage}`}

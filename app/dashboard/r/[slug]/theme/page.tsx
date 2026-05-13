@@ -4,10 +4,10 @@ import { getTranslations } from 'next-intl/server'
 import { requireRestaurantBySlug } from '@/features/auth'
 import { db } from '@/lib/db'
 import { restaurant, type RestaurantTheme } from '@/lib/db/schema'
-import { resolveTheme } from '@/components/menu/theme'
+import { resolveTheme } from '@/features/menu-publishing/rsc/theme'
 import type { LanguageCode, LocalizedText } from '@/features/i18n'
-import { loadMenuTree, localizeTree } from '@/lib/menu/load-tree'
-import type { PublicMenu, PublicMenuData } from '@/components/menu/types'
+import { loadMenuTree, localizeTree } from '@/features/menu-publishing'
+import type { PublicMenu, PublicMenuData } from '@/features/menu-publishing/rsc/types'
 import { ThemeEditor } from './theme-editor'
 
 type EditorData = PublicMenuData & {

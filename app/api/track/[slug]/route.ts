@@ -6,7 +6,7 @@ import {
   pickLanguage,
   type LanguageCode,
 } from '@/features/i18n'
-import { loadRestaurantSnapshot } from '@/lib/menu/cached'
+import { loadRestaurantSnapshot } from '@/features/menu-publishing'
 import { incrementDailyView } from '@/lib/metrics'
 
 /**
