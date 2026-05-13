@@ -2,8 +2,8 @@ import 'server-only'
 import { eq } from 'drizzle-orm'
 import { unstable_cache } from 'next/cache'
 import { listMenusWithCounts, type MenuWithCounts } from '@/features/dashboard-home'
-import { db } from '@/lib/db'
-import { restaurant } from '@/lib/db/schema'
+import { db } from '@/shared/db/client'
+import { restaurant } from '@/shared/db/schema'
 import { restaurantTag } from '../cache'
 
 /**

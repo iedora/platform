@@ -1,7 +1,7 @@
 import 'server-only'
 import { and, asc, eq, inArray } from 'drizzle-orm'
-import { db } from '@/lib/db'
-import { category, item, menu } from '@/lib/db/schema'
+import { db } from '@/shared/db/client'
+import { category, item, menu } from '@/shared/db/schema'
 import {
   type LanguageCode,
   type LocalizedText,

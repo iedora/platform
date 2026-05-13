@@ -1,4 +1,4 @@
-import type { Session } from '@/lib/auth'
+import type { Session } from './adapters/better-auth-instance'
 
 /**
  * AuthGateway — the slice's only dependency on the outside world.

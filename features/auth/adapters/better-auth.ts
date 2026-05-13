@@ -1,9 +1,9 @@
 import 'server-only'
 import { headers } from 'next/headers'
 import { and, eq } from 'drizzle-orm'
-import { auth } from '@/lib/auth'
-import { db } from '@/lib/db'
-import { member, restaurant } from '@/lib/db/schema'
+import { auth } from './better-auth-instance'
+import { db } from '@/shared/db/client'
+import { member, restaurant } from '@/shared/db/schema'
 import type { AuthGateway } from '../ports'
 
 /**

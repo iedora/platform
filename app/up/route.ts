@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm'
-import { db } from '@/lib/db'
+import { db } from '@/shared/db/client'
 
 /**
  * Healthcheck endpoint. Used by kamal-proxy as `proxy.healthcheck.path`.

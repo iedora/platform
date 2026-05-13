@@ -1,7 +1,7 @@
 import 'server-only'
 import { and, asc, eq, inArray, max } from 'drizzle-orm'
-import { db } from '@/lib/db'
-import { category, item, menu, restaurant } from '@/lib/db/schema'
+import { db } from '@/shared/db/client'
+import { category, item, menu, restaurant } from '@/shared/db/schema'
 import type { LocalizedText } from '@/features/i18n'
 import type { MenuReadPort, MenuWritePort } from '../ports'
 

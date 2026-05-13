@@ -1,4 +1,4 @@
-import type { InvoiceStatus } from '@/lib/db/schema'
+import type { InvoiceStatus } from '@/shared/db/schema'
 import type { PlanCode } from '@/features/plans'
 
 /**

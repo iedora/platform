@@ -7,7 +7,7 @@
  *
  * Future plumbing point for Sentry / OpenTelemetry / structured logging.
  *
- * The dynamic `import('@/lib/db')` is intentional: keeping it lazy means the
+ * The dynamic `import('@/shared/db/client')` is intentional: keeping it lazy means the
  * DB module isn't pulled into the build's "collect page data" pass, only the
  * runtime server. See Next.js docs/api-reference/file-conventions/instrumentation.
  */
@@ -15,7 +15,7 @@ export async function register() {
   // Edge runtime has no Node `process` signal API and no postgres-js client.
   if (process.env.NEXT_RUNTIME !== 'nodejs') return
 
-  const { closeDb } = await import('@/lib/db')
+  const { closeDb } = await import('@/shared/db/client')
 
   let shuttingDown = false
   const shutdown = async (signal: string) => {

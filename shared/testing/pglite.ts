@@ -2,7 +2,7 @@ import path from 'node:path'
 import { PGlite } from '@electric-sql/pglite'
 import { drizzle } from 'drizzle-orm/pglite'
 import { migrate } from 'drizzle-orm/pglite/migrator'
-import * as schema from '@/lib/db/schema'
+import * as schema from '@/shared/db/schema'
 
 const MIGRATIONS_FOLDER = path.join(process.cwd(), 'drizzle')
 

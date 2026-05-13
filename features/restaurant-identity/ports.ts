@@ -1,4 +1,4 @@
-import type { RestaurantTheme } from '@/lib/db/schema'
+import type { RestaurantTheme } from '@/shared/db/schema'
 import type { LanguageCode, LocalizedText } from '@/features/i18n'
 
 /**

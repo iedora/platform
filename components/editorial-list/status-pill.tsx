@@ -1,4 +1,4 @@
-import { cn } from '@/lib/utils'
+import { cn } from '@/shared/utils'
 import type { EditorialStatus } from './types'
 
 const POSITIVE = new Set(['active'])

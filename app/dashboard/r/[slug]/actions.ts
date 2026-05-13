@@ -4,8 +4,8 @@ import { revalidatePath } from 'next/cache'
 import { and, eq, max } from 'drizzle-orm'
 import { z } from 'zod'
 import { requireRestaurantBySlug } from '@/features/auth'
-import { db } from '@/lib/db'
-import { category, item, menu, restaurant } from '@/lib/db/schema'
+import { db } from '@/shared/db/client'
+import { category, item, menu, restaurant } from '@/shared/db/schema'
 import type { LanguageCode } from '@/features/i18n'
 import {
   SAMPLE_MENU,

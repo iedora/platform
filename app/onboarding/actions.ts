@@ -5,10 +5,10 @@ import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
-import { auth } from '@/lib/auth'
+import { auth } from '@/features/auth/adapters/better-auth-instance'
 import { getEffectiveOrganizationId } from '@/features/auth'
-import { db } from '@/lib/db'
-import { menu, organization, restaurant, session as sessionTable } from '@/lib/db/schema'
+import { db } from '@/shared/db/client'
+import { menu, organization, restaurant, session as sessionTable } from '@/shared/db/schema'
 import { canAddRestaurant } from '@/features/plans'
 
 const slugRegex = /^[a-z0-9](?:[a-z0-9-]{0,38}[a-z0-9])?$/

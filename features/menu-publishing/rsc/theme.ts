@@ -1,4 +1,4 @@
-import type { RestaurantTheme } from '@/lib/db/schema'
+import type { RestaurantTheme } from '@/shared/db/schema'
 import { TEMPLATE_META } from './templates'
 
 // LAYOUTS is derived from the templates registry — single source of truth

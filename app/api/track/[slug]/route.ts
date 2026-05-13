@@ -1,6 +1,6 @@
 import { cookies } from 'next/headers'
-import { db } from '@/lib/db'
-import { viewSeen } from '@/lib/db/schema'
+import { db } from '@/shared/db/client'
+import { viewSeen } from '@/shared/db/schema'
 import {
   isLanguageCode,
   pickLanguage,

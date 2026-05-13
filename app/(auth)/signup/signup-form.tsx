@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useTranslations } from 'next-intl'
-import { authClient } from '@/lib/auth-client'
+import { authClient } from '@/features/auth/client'
 import { Button } from '@/shared/ui/button'
 import {
   Card,

@@ -1,8 +1,8 @@
 import 'server-only'
 import { and, eq } from 'drizzle-orm'
 import { z } from 'zod'
-import { db } from '@/lib/db'
-import { item } from '@/lib/db/schema'
+import { db } from '@/shared/db/client'
+import { item } from '@/shared/db/schema'
 import type { Storage } from '../types'
 import { bustPaths, readCurrentAssetUrl, writeAssetUrl } from './commit-asset'
 

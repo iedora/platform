@@ -1,7 +1,7 @@
 import 'server-only'
 import { eq } from 'drizzle-orm'
-import { db } from '@/lib/db'
-import { restaurant } from '@/lib/db/schema'
+import { db } from '@/shared/db/client'
+import { restaurant } from '@/shared/db/schema'
 import type { IdentityWritePort } from '../ports'
 
 /**

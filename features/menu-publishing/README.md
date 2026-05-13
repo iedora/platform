@@ -24,7 +24,7 @@ from a mutation — AGENTS.md hard rule #12.
 
 ## Notes
 
-No DB port yet — use-cases call Drizzle (`@/lib/db`) directly. Trade-off: four
+No DB port yet — use-cases call Drizzle (`@/shared/db/client`) directly. Trade-off: four
 files would need rewriting to introduce a port today for marginal benefit. When
 tests land, introduce a `MenuReadPort` and an adapter. View tracking
 (`incrementDailyView`) lives in `@/features/metrics` — the beacon route imports
