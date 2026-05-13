@@ -52,3 +52,12 @@ next-env.d.ts
 # Claude Code — local user settings (skills are shared)
 .claude/settings.local.json
 .claude/
+
+# Infra — artefactos locais não versionados
+infra/**/*.iso
+infra/tofu/**/.terraform/
+infra/tofu/**/.terraform.lock.hcl
+infra/tofu/**/terraform.tfstate
+infra/tofu/**/terraform.tfstate.backup
+infra/tofu/**/terraform.tfvars
+!infra/tofu/**/terraform.tfvars.example

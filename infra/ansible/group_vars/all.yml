@@ -1,0 +1,8 @@
+deploy_user: deploy
+timezone: Europe/Lisbon
+
+# Portas abertas no firewall
+firewall_allowed_ports:
+  - 22    # SSH
+  - 80    # HTTP
+  - 443   # HTTPS

@@ -1,0 +1,117 @@
+---
+- name: Configurar servidor meta-menu
+  hosts: servers
+  become: true
+
+  tasks:
+    - name: Detectar ambiente container
+      stat:
+        path: /.dockerenv
+      register: dockerenv
+
+    # ── Base ──────────────────────────────────────────────────────────────────
+    - name: Actualizar cache apt
+      apt:
+        update_cache: true
+        cache_valid_time: 3600
+
+    - name: Instalar pacotes base
+      apt:
+        name:
+          - curl
+          - git
+          - ufw
+          - ca-certificates
+          - gnupg
+          - unattended-upgrades
+        state: present
+
+    - name: Configurar timezone
+      shell: |
+        ln -sf /usr/share/zoneinfo/{{ timezone }} /etc/localtime
+        echo "{{ timezone }}" > /etc/timezone
+      changed_when: false
+
+    # ── Docker ────────────────────────────────────────────────────────────────
+    - name: Adicionar chave GPG do Docker
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+
+    - name: Adicionar repositório Docker
+      apt_repository:
+        repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+        state: present
+
+    - name: Instalar Docker
+      apt:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-buildx-plugin
+          - docker-compose-plugin
+        state: present
+        update_cache: true
+
+    - name: Iniciar e activar Docker (servidor real)
+      systemd:
+        name: docker
+        enabled: true
+        state: started
+      when: not dockerenv.stat.exists
+
+    - name: Iniciar dockerd directamente (container local)
+      shell: "nohup dockerd > /var/log/dockerd.log 2>&1 &"
+      when: dockerenv.stat.exists
+
+    - name: Adicionar deploy user ao grupo docker
+      user:
+        name: "{{ deploy_user }}"
+        groups: docker
+        append: true
+
+    # ── Firewall ──────────────────────────────────────────────────────────────
+    - name: Permitir portas no UFW
+      ufw:
+        rule: allow
+        port: "{{ item }}"
+        proto: tcp
+      loop: "{{ firewall_allowed_ports }}"
+
+    - name: Activar UFW (servidor real — containers não têm kernel netfilter)
+      ufw:
+        state: enabled
+        policy: deny
+        direction: incoming
+      when: not dockerenv.stat.exists
+
+    # ── Segurança ─────────────────────────────────────────────────────────────
+    - name: Desactivar login root via SSH
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: "^#?PermitRootLogin"
+        line: "PermitRootLogin no"
+        state: present
+      notify: Reiniciar SSH
+
+    - name: Desactivar autenticação por password
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: "^#?PasswordAuthentication"
+        line: "PasswordAuthentication no"
+        state: present
+      notify: Reiniciar SSH
+
+  handlers:
+    - name: Reiniciar SSH (servidor real)
+      systemd:
+        name: ssh
+        state: restarted
+      listen: Reiniciar SSH
+      when: not dockerenv.stat.exists
+
+    - name: Reiniciar SSH (container)
+      shell: "kill -HUP $(cat /var/run/sshd.pid 2>/dev/null || pgrep -f '/usr/sbin/sshd -D' | head -1)"
+      listen: Reiniciar SSH
+      when: dockerenv.stat.exists

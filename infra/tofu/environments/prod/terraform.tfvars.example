@@ -1,0 +1,9 @@
+vm_name     = "meta-menu-server"
+deploy_user = "deploy"
+server_type = "cx22"
+location    = "nbg1"
+timezone    = "Europe/Lisbon"
+
+# Obtém em: https://console.hetzner.cloud → projecto → API Tokens
+# Copia para terraform.tfvars (nunca commitar)
+hcloud_token = "HETZNER_API_TOKEN_AQUI"
