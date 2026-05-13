@@ -53,7 +53,9 @@ infra/
 
 ## Pré-requisitos
 
-Comum a todos os SOs: **Docker**, **OpenTofu**, **Ansible**, **make**, **SSH** (com chave em `~/.ssh/id_ed25519`).
+Comum a todos os SOs: **Docker**, **OpenTofu**, **Ansible**, **make**, **OpenSSH client**.
+
+A chave SSH (`~/.ssh/id_ed25519`) **não precisa de existir antes** — o `make up` gera-a automaticamente na primeira execução via o alvo `ssh-key`. Se já existir, é reutilizada.
 
 ### Linux
 
@@ -99,16 +101,17 @@ Activar **Docker Desktop → Settings → Resources → WSL Integration → togg
 ## Comandos
 
 ```bash
-make up        # provisiona servidor (Tofu apply + Ansible playbook)
+make up        # provisiona servidor (ssh-key + Tofu apply + Ansible playbook)
 make down      # destrói o servidor
 make recreate  # destrói e recria do zero (~30s no local)
-make tofu      # apenas Tofu apply
+make tofu      # apenas Tofu apply (gera SSH key se necessário)
 make ansible   # apenas Ansible playbook
+make ssh-key   # gera ~/.ssh/id_ed25519 se não existir (idempotente)
 make ssh       # SSH para o servidor local (deploy@localhost:2222)
 make help      # lista alvos
 ```
 
-Tudo idempotente — correr `make up` duas vezes seguidas não cria recursos duplicados, o Ansible só reaplica o que mudou.
+Tudo idempotente — correr `make up` duas vezes seguidas não cria recursos duplicados, o Ansible só reaplica o que mudou, e a SSH key existente nunca é sobrescrita. Num clone fresh do repo, **`make up` é o único comando necessário** para ter o servidor a correr.
 
 ## Como funciona o ambiente local
 
