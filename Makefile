@@ -1,13 +1,15 @@
 .PHONY: help ssh-key ansible-deps \
         onprem-bootstrap onprem-setup \
         hetzner-up hetzner-down hetzner-tofu hetzner-ansible hetzner-ssh \
+        cloudflare-up cloudflare-down cloudflare-sync cloudflare-r2-token \
         kamal-bootstrap kamal-deploy kamal-redeploy kamal-rollback kamal-logs kamal-app \
         migrate
 
 # ── Shared ────────────────────────────────────────────────────────────────────
-SSH_KEY     ?= $(HOME)/.ssh/id_ed25519
-ANSIBLE_DIR := infra/ansible
-TOFU_DIR    := infra/tofu/hetzner
+SSH_KEY        ?= $(HOME)/.ssh/id_ed25519
+ANSIBLE_DIR    := infra/ansible
+TOFU_HETZNER   := infra/tofu/hetzner
+TOFU_CF        := infra/tofu/cloudflare
 
 # Env vars instead of ansible.cfg: /mnt/c (WSL) is world-writable and Ansible
 # silently ignores cfg files under those conditions. The inventory plugin
@@ -39,6 +41,12 @@ help:  ## Show this help
 	@echo "  make hetzner-ansible                      - Ansible playbook only"
 	@echo "  make hetzner-down                         - tofu destroy"
 	@echo "  make hetzner-ssh                          - SSH into the VM"
+	@echo
+	@echo "Cloudflare (R2 + Tunnel + DNS — managed by Tofu):"
+	@echo "  make cloudflare-up                        - tofu apply + sync outputs into .envrc"
+	@echo "  make cloudflare-sync                      - re-write .envrc from current Tofu outputs"
+	@echo "  make cloudflare-r2-token                  - prints dashboard steps to create R2 keys"
+	@echo "  make cloudflare-down                      - tofu destroy"
 	@echo
 	@echo "Shared:"
 	@echo "  make ssh-key                              - Generate ~/.ssh/id_ed25519 (idempotent)"
@@ -86,16 +94,29 @@ onprem-setup: ssh-key ansible-deps  ## Full on-prem setup (Docker + UFW + cloudf
 hetzner-up: hetzner-tofu hetzner-ansible  ## Provision Hetzner VM end-to-end
 
 hetzner-tofu: ssh-key  ## Tofu apply (creates the VM)
-	cd $(TOFU_DIR) && tofu init -upgrade && tofu apply -auto-approve
+	cd $(TOFU_HETZNER) && tofu init -upgrade && tofu apply -auto-approve
 
 hetzner-ansible: ssh-key ansible-deps  ## Ansible setup against the Tofu-provisioned VM
 	cd $(ANSIBLE_DIR) && $(ANSIBLE_DYNAMIC_ENV) ansible-playbook --limit hetzner setup.yml
 
 hetzner-down: ssh-key  ## Destroy the Hetzner VM
-	cd $(TOFU_DIR) && tofu destroy -auto-approve
+	cd $(TOFU_HETZNER) && tofu destroy -auto-approve
 
 hetzner-ssh:  ## SSH into the Hetzner VM
-	@cd $(TOFU_DIR) && ssh -i $(SSH_KEY) deploy@$$(tofu output -raw server_host)
+	@cd $(TOFU_HETZNER) && ssh -i $(SSH_KEY) deploy@$$(tofu output -raw server_host)
+
+# ── Cloudflare (R2 + Tunnel + DNS) ────────────────────────────────────────────
+cloudflare-up: cloudflare-sync  ## tofu apply + write outputs to .envrc
+
+cloudflare-down:  ## Destroy R2 bucket + Tunnel + DNS
+	cd $(TOFU_CF) && tofu destroy -auto-approve
+
+cloudflare-sync:  ## (Re-)apply Cloudflare resources and refresh .envrc
+	cd $(TOFU_CF) && tofu init -upgrade && tofu apply -auto-approve
+	bash scripts/cf-sync.sh
+
+cloudflare-r2-token:  ## Print dashboard instructions for creating an R2 API token
+	@bash scripts/cf-r2-token.sh
 
 # ── Kamal ─────────────────────────────────────────────────────────────────────
 kamal-bootstrap:  ## 1st-time on a fresh server (pre-boot accessories + setup --skip-hooks + 1st migration)

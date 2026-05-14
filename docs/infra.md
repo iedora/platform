@@ -14,8 +14,9 @@ The Docker-in-Docker "local" simulation that previous versions of this repo carr
 ```
 ┌──────────────────────────────────────────────────────────────────────┐
 │  Layer 1 — Provisioning                                              │
-│   on-prem  → host already exists (no Tofu)                           │
-│   hetzner  → OpenTofu (hcloud provider) creates the VM               │
+│   hetzner     → OpenTofu (hcloud) — creates the VM                   │
+│   cloudflare  → OpenTofu (cloudflare) — R2 + Tunnel + DNS            │
+│   on-prem     → host already exists (no Tofu)                        │
 ├──────────────────────────────────────────────────────────────────────┤
 │  Layer 2 — Configuration (Ansible)                                   │
 │   single playbook (setup.yml) — base / metal / onprem plays          │
@@ -26,17 +27,26 @@ The Docker-in-Docker "local" simulation that previous versions of this repo carr
 └──────────────────────────────────────────────────────────────────────┘
 ```
 
+The two Tofu envs are **orthogonal**: `cloudflare/` covers Cloudflare-side resources (R2, Tunnel, DNS) and is used for BOTH the on-prem deploy (tunnel ingress) and the Hetzner deploy (CDN/R2 storage); `hetzner/` only matters when the app runs on a Hetzner VM. Run `make cloudflare-up` once regardless of which compute target you're using.
+
 ## Layout
 
 ```
 infra/
   shared/vars.yml             shared by Tofu and Ansible (deploy_user, vm_name, timezone, …)
-  tofu/hetzner/               flat layout — only Tofu env right now
-    main.tf                   hcloud_server + ansible_host + terraform_data (cloud-init wait)
-    variables.tf              with validation blocks
-    versions.tf               required_version + provider pins + state encryption block
-    outputs.tf
-    terraform.tfvars.example  template
+  tofu/
+    hetzner/                  Tofu env — creates the Hetzner VM
+      main.tf                 hcloud_server + ansible_host + terraform_data (cloud-init wait)
+      variables.tf            validation blocks
+      versions.tf             required_version + provider pin + state encryption
+      outputs.tf
+      terraform.tfvars.example
+    cloudflare/               Tofu env — R2 bucket + CORS, Tunnel + DNS
+      main.tf                 cloudflare_r2_bucket(+_cors), zero_trust_tunnel + _config + _token, dns_record
+      variables.tf            account_id, zone_id, public_hostname, bucket settings
+      versions.tf             cloudflare ~> 5.19 + state encryption
+      outputs.tf              bucket_name, s3_endpoint, tunnel_id, tunnel_token (sensitive)
+      terraform.tfvars.example
   ansible/
     inventory.yml             DYNAMIC inventory (cloud.terraform plugin reads tofu state)
     inventory.onprem.yml      STATIC inventory for hosts not under Tofu
@@ -45,6 +55,8 @@ infra/
     requirements.yml          cloud.terraform, community.general, ansible.posix
 scripts/
   bootstrap.sh                first-time Kamal bootstrap (pre-boot accessories + setup --skip-hooks)
+  cf-sync.sh                  reads Cloudflare Tofu outputs, refreshes .envrc
+  cf-r2-token.sh              prints dashboard steps for the R2 S3 API token
   migrate.mjs                 Drizzle migrations under pg_advisory_lock (safe for parallel deploys)
 ```
 
@@ -85,6 +97,48 @@ If `CLOUDFLARED_TUNNEL_TOKEN` is empty the cloudflared play is skipped (`meta: e
 ### Adding another on-prem server
 
 Open `infra/ansible/inventory.onprem.yml`, copy a host block, change `ansible_host`. Each host gets its own Cloudflare Tunnel (one tunnel = one token), but they all share `inventory.onprem.yml`. The playbook is the same.
+
+## Cloudflare side (R2 + Tunnel + DNS)
+
+The Cloudflare-side pieces — R2 bucket, CORS, Tunnel, DNS — are managed by `infra/tofu/cloudflare/`. Run this once before either compute target.
+
+Prereqs:
+- Cloudflare account + a zone you control.
+- API token with `Account · Workers R2 Storage · Edit`, `Account · Cloudflare Tunnel · Edit`, `Zone · DNS · Edit` (scoped to the zone), `Account · Account Settings · Read`. Create at `dash.cloudflare.com → My Profile → API Tokens`.
+- `account_id` and `zone_id` (both 32-char hex).
+
+```bash
+cp infra/tofu/cloudflare/terraform.tfvars.example infra/tofu/cloudflare/terraform.tfvars
+$EDITOR infra/tofu/cloudflare/terraform.tfvars     # fill account_id, zone_id, public_hostname
+
+export TF_VAR_cloudflare_api_token=...
+export TF_VAR_state_passphrase=...                  # re-use the hetzner one if set
+
+make cloudflare-up
+```
+
+`make cloudflare-up` does two things: `tofu apply` and then `scripts/cf-sync.sh` (writes `.envrc` at the repo root with `PUBLIC_HOSTNAME`, `S3_ENDPOINT`, `S3_BUCKET`, `S3_REGION`, `CLOUDFLARED_TUNNEL_TOKEN`). Source it after:
+
+```bash
+source .envrc
+```
+
+For the R2 S3 access keys (needed by the app's upload slice), run `make cloudflare-r2-token` — it prints the one-click dashboard path. The keys can't be reliably created via the provider as of v5.19 (issue #6626).
+
+### Why not also create the R2 token via Tofu?
+
+`cloudflare_api_token` plus the R2 permission group is documented but the resulting `id`/`value` returns HTTP 403 when used as S3 credentials in v5.15+ (`#6626`). A community module exists (`Cyb3r-Jak3/r2-api-token`) that works around it, but that requires `User · API Tokens · Edit` on the Tofu CF API token — a significantly more powerful permission than the rest of what we need. The one-click dashboard step is fine, and `cf-r2-token.sh` keeps it copyable.
+
+### Re-syncing
+
+If you change anything in `infra/tofu/cloudflare/` (a new bucket, a new ingress rule, a different hostname):
+
+```bash
+make cloudflare-up    # tofu apply + cf-sync.sh
+source .envrc         # re-export the updated vars
+```
+
+`cf-sync.sh` preserves the `TF_VAR_state_passphrase` line — only Tofu-derived vars are rewritten.
 
 ## Hetzner (Tofu-provisioned VM)
 

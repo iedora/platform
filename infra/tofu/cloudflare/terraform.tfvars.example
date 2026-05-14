@@ -1,0 +1,25 @@
+# Copy to terraform.tfvars (gitignored) — or, preferred, set everything as
+# TF_VAR_* env vars (direnv / 1Password CLI).
+
+# Cloudflare account ID — top-right of dash.cloudflare.com (32 hex chars).
+account_id = "00000000000000000000000000000000"
+
+# Zone ID for the domain the tunnel will route. dash → domain → API (right column).
+zone_id = "00000000000000000000000000000000"
+
+# The FQDN visitors hit (subdomain of the zone above).
+public_hostname = "menu.example.com"
+
+# R2 bucket name + region hint.
+bucket_name     = "metamenu"
+bucket_location = "WEUR" # EEUR, WEUR, ENAM, WNAM, APAC, OC
+
+# Tunnel name shown in the Zero Trust dashboard.
+tunnel_name = "meta-menu"
+
+# Where cloudflared forwards traffic on the origin. kamal-proxy listens on :80.
+origin_service = "http://localhost:80"
+
+# Secrets — strongly prefer TF_VAR_* env vars over committing to a file.
+# cloudflare_api_token = "..."   # see variables.tf for required permissions
+# state_passphrase     = "..."   # ≥ 16 chars

@@ -55,34 +55,67 @@ Generate the values:
 
 ## On-prem (Cloudflare Tunnel) — end-to-end
 
-LAN box, no public IP, Starlink / NAT / CGNAT — fine. Cloudflare Tunnel dials **outbound** from the box; TLS terminates at the Cloudflare edge.
+LAN box, no public IP, Starlink / NAT / CGNAT — fine. Cloudflare Tunnel dials **outbound** from the box; TLS terminates at the Cloudflare edge. The Cloudflare-side pieces (R2 bucket + CORS, Tunnel, DNS CNAME) are managed declaratively by OpenTofu — no dashboard click-ops.
 
 ```
 Internet → Cloudflare edge (TLS) → cloudflared (outbound) → localhost:80 (kamal-proxy) → app:3000
 ```
 
-### Step 1 — create the Cloudflare Tunnel
+### Step 1 — provision the Cloudflare side (Tofu)
 
-Dashboard → **Zero Trust** → **Networks** → **Tunnels** → **Create a tunnel**:
+Prereqs:
+- A Cloudflare account + a zone you control.
+- An API token with: `Account · Workers R2 Storage · Edit`, `Account · Cloudflare Tunnel · Edit`, `Zone · DNS · Edit` (scoped to the zone), `Account · Account Settings · Read`. Create at `dash.cloudflare.com → My Profile → API Tokens`.
+- `account_id` (32 hex chars, top-right of the dashboard) + `zone_id` (zone overview → API column).
 
-1. Connector = **Cloudflared**.
-2. Name it (e.g. `meta-menu-onprem`).
-3. **Save the token** that appears (`eyJ...`) — don't run the install command Cloudflare suggests; the Ansible playbook handles install.
-4. **Public Hostname**: add the FQDN (e.g. `menu.example.com`):
-   - Service: `HTTP` → `localhost:80`
+```bash
+cp infra/tofu/cloudflare/terraform.tfvars.example infra/tofu/cloudflare/terraform.tfvars
+$EDITOR infra/tofu/cloudflare/terraform.tfvars    # set account_id, zone_id, public_hostname
 
-### Step 2 — bootstrap the on-prem box (first time only)
+export TF_VAR_cloudflare_api_token=...            # the token created above
+export TF_VAR_state_passphrase=...                # ≥ 16 chars (re-use the hetzner one if set)
+
+make cloudflare-up
+```
+
+What just happened:
+- `cloudflare_r2_bucket` — created the R2 bucket
+- `cloudflare_r2_bucket_cors` — CORS rules scoped to `https://<PUBLIC_HOSTNAME>`
+- `cloudflare_zero_trust_tunnel_cloudflared` + `_config` + `_token` — Tunnel created with remotely-managed ingress (`<PUBLIC_HOSTNAME>` → `http://localhost:80`)
+- `cloudflare_dns_record` — CNAME `<PUBLIC_HOSTNAME>` → `<tunnel_id>.cfargotunnel.com`, proxied through Cloudflare
+
+`scripts/cf-sync.sh` ran after apply, writing `.envrc` at the repo root with all the env vars (`PUBLIC_HOSTNAME`, `S3_ENDPOINT`, `S3_BUCKET`, `S3_REGION`, `CLOUDFLARED_TUNNEL_TOKEN`). Source it (or `direnv allow`):
+
+```bash
+source .envrc
+```
+
+### Step 2 — R2 API token (one dashboard click)
+
+Tofu can't reliably produce S3-compatible R2 credentials (provider bug #6626, Jan 2026). Run the helper to get exact dashboard steps:
+
+```bash
+make cloudflare-r2-token
+```
+
+It prints the URL + click-path. Copy the **Access Key ID** + **Secret Access Key** and paste into `.kamal/secrets-common`:
+
+```
+S3_ACCESS_KEY=<from dashboard>
+S3_SECRET_KEY=<from dashboard>
+```
+
+### Step 3 — bootstrap the on-prem box (first time only)
 
 ```bash
 make onprem-bootstrap BOOTSTRAP_USER=pwu
 # prompts: SSH password (for pwu) + sudo password
 ```
 
-### Step 3 — provision Docker + cloudflared
+### Step 4 — provision Docker + cloudflared
 
 ```bash
-export CLOUDFLARED_TUNNEL_TOKEN=eyJ...    # from step 1
-make onprem-setup
+make onprem-setup    # CLOUDFLARED_TUNNEL_TOKEN is in your .envrc — already exported
 ```
 
 Verify:
@@ -90,15 +123,6 @@ Verify:
 ```bash
 ssh deploy@192.168.50.53 systemctl status cloudflared
 # active (running)
-```
-
-### Step 4 — set the Kamal env
-
-```bash
-export PUBLIC_HOSTNAME=menu.example.com                                # FQDN of the tunnel
-export S3_ENDPOINT=https://<ACCOUNT_ID>.r2.cloudflarestorage.com       # R2 (or AWS S3 endpoint)
-export S3_REGION=auto                                                  # R2: auto; AWS: <region>
-export S3_BUCKET=metamenu
 ```
 
 ### Step 5 — first deploy
@@ -109,6 +133,17 @@ make kamal-deploy       # subsequent: build + push + migrate (pre-deploy hook) +
 ```
 
 The app is reachable at `https://<PUBLIC_HOSTNAME>`.
+
+### Re-syncing after Cloudflare changes
+
+If you change `public_hostname`, `bucket_name`, or any Tofu-managed CF resource:
+
+```bash
+make cloudflare-up    # tofu apply + cf-sync.sh refreshes .envrc
+source .envrc         # pick up the new values
+```
+
+`cloudflare-up` preserves the existing `TF_VAR_state_passphrase` line — only the Tofu-derived vars are rewritten.
 
 ## Hetzner — end-to-end
 
