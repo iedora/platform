@@ -187,10 +187,13 @@ tests/e2e/
 - `bun run auth:generate` — sync Better Auth tables into `shared/db/schema.ts` (re-run after changing auth plugins)
 - `docker compose up -d` — start Postgres + Redis + LocalStack (S3)
 - `bunx shadcn@latest add <name>` — add a shadcn component
-- `make up` — provision a server (Tofu + Ansible); `make help` lists every target
-- `make kamal-bootstrap` — first-time-only fresh-server bootstrap (accessories + setup + 1st migration)
-- `make kamal-deploy` — build + push + migrate (pre-deploy hook) + zero-downtime roll
-- `make migrate` — escape hatch: run `scripts/migrate.mjs` against the running image
+- `make onprem-bootstrap BOOTSTRAP_USER=pwu` — one-shot: create deploy user + SSH key on an existing Linux box
+- `make onprem-setup` — full on-prem provision (Docker, UFW, cloudflared via systemd). Needs `CLOUDFLARED_TUNNEL_TOKEN`.
+- `make hetzner-up` — provision a Hetzner Cloud VM end-to-end (Tofu + Ansible). Needs `TF_VAR_hcloud_token` + `TF_VAR_state_passphrase`.
+- `make kamal-bootstrap [DEST=hetzner]` — first-time-only fresh-server bootstrap (accessories + setup --skip-hooks + 1st migration)
+- `make kamal-deploy [DEST=hetzner]` — build + push + migrate (pre-deploy hook) + zero-downtime roll. DEST defaults to `onprem`.
+- `make migrate [DEST=hetzner]` — escape hatch: run `scripts/migrate.mjs` against the running image
+- `make help` — list every target
 
 ## CI
 `.github/workflows/ci.yml` runs three jobs on every push and PR:

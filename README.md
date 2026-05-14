@@ -47,9 +47,9 @@ features/    one folder per slice — auth, menu-builder, menu-publishing, …
 shared/      db client + schema, env, ui primitives, testing fixtures
 tests/       Playwright e2e specs + fixtures (Vitest tests are co-located)
 docs/        architecture, testing, infra, deploy
-infra/       OpenTofu + Ansible — provisioning local & Hetzner servers
+infra/       OpenTofu (hetzner/) + Ansible — provisions on-prem and Hetzner servers
 scripts/     bootstrap.sh, migrate.mjs, check-migrations.ts
-config/      Kamal deploy.yml
+config/      Kamal deploy.yml + per-destination overrides (deploy.onprem.yml, deploy.hetzner.yml)
 ```
 
 ## Where to go next
@@ -71,8 +71,9 @@ config/      Kamal deploy.yml
 | `bun run test:e2e` | Playwright end-to-end suite |
 | `bun run db:generate` | Generate Drizzle migration from `shared/db/schema.ts` |
 | `bun run db:migrate` | Apply pending migrations |
-| `make up` | Provision a server (OpenTofu + Ansible) |
-| `make kamal-deploy` | Build + push + migrate (pre-deploy hook) + roll |
+| `make onprem-bootstrap` / `make onprem-setup` | Provision an existing Linux box (Ansible) |
+| `make hetzner-up` | Provision a Hetzner Cloud VM (OpenTofu + Ansible) |
+| `make kamal-deploy [DEST=hetzner]` | Build + push + migrate (pre-deploy hook) + roll |
 
 `make help` lists every target.
 

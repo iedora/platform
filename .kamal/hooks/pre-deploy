@@ -1,29 +1,32 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Pre-deploy hook: corre Drizzle migrations contra a *nova* imagem antes de
-# qualquer container novo entrar em traffic. Falha aborta o deploy inteiro
-# (a app antiga continua intacta com a schema antiga).
+# Pre-deploy hook: runs Drizzle migrations against the *new* image before
+# any new container takes traffic. A failure aborts the deploy entirely
+# (the old container keeps serving with the old schema).
 #
-# Para o primeiro deploy num servidor novo, NÃO usar este hook — usar
-# `make kamal-bootstrap` que pré-arranca os accessories e corre o setup
-# com --skip-hooks. Ref: basecamp/kamal#526.
+# First-time deploy on a fresh server: do NOT use this hook —
+# `make kamal-bootstrap` pre-boots the accessories and runs setup with
+# --skip-hooks (basecamp/kamal#526).
 
-# Rollback: imagem antiga, schema antiga já está correcta.
+# Rollback: old image, old schema is already correct.
 if [[ "${KAMAL_COMMAND:-}" == "rollback" ]]; then
   echo "[pre-deploy] rollback detected, skipping migrations"
   exit 0
 fi
 
-# Sem KAMAL_VERSION não conseguimos targetar uma imagem específica.
+# Without KAMAL_VERSION we can't target the new image.
 if [[ -z "${KAMAL_VERSION:-}" ]]; then
   echo "[pre-deploy] no KAMAL_VERSION, skipping migrations"
   exit 0
 fi
 
-echo "[pre-deploy] running Drizzle migrations against ${KAMAL_VERSION}"
+echo "[pre-deploy] running Drizzle migrations against ${KAMAL_VERSION} (dest=${KAMAL_DESTINATION:-default})"
 
+# Pass --destination so the right deploy.<dest>.yml + secrets.<dest> resolve
+# (Kamal 2.8+ exports KAMAL_DESTINATION into the hook env).
 kamal app exec \
   --primary \
-  --version "$KAMAL_VERSION" \
+  --version="$KAMAL_VERSION" \
+  ${KAMAL_DESTINATION:+--destination="$KAMAL_DESTINATION"} \
   "node scripts/migrate.mjs"

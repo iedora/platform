@@ -1,27 +1,31 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Bootstrap inicial para um servidor fresh.
-# Idempotent — safe to re-run, mas só é necessário a primeira vez por servidor.
+# First-time Kamal bootstrap for a fresh server. Idempotent — safe to re-run,
+# but only needed once per server.
 #
-# Resolve a ordem do `kamal setup` (pre-deploy hook corre ANTES dos
-# accessories existirem). Ref: basecamp/kamal#526, lib/kamal/cli/main.rb.
+# Works around the kamal setup ordering issue: the pre-deploy hook runs
+# BEFORE accessories exist (basecamp/kamal#526, lib/kamal/cli/main.rb).
+# Solution: pre-boot accessories, then setup --skip-hooks, then migrate.
 
-echo "==> 1/5 Bootstrap Docker no servidor"
-kamal server bootstrap
+DEST="${DEST:-onprem}"
+KAMAL="kamal -d ${DEST}"
 
-echo "==> 2/5 Boot dos accessories (Postgres, Redis) antes do app"
-kamal accessory boot postgres
-kamal accessory boot redis
+echo "==> 1/5 Bootstrap Docker on the server (dest=${DEST})"
+${KAMAL} server bootstrap
 
-echo "==> 3/5 Aguardar accessories ficarem ready"
+echo "==> 2/5 Boot accessories (Postgres, Redis) before the app"
+${KAMAL} accessory boot postgres
+${KAMAL} accessory boot redis
+
+echo "==> 3/5 Wait for accessories to become ready"
 sleep 8
 
-echo "==> 4/5 Kamal setup inicial (skip hooks — accessories já estão up)"
-kamal setup --skip-hooks
+echo "==> 4/5 Kamal setup (skip hooks — accessories are up)"
+${KAMAL} setup --skip-hooks
 
-echo "==> 5/5 Primeira migration explícita"
-kamal app exec --primary "node scripts/migrate.mjs"
+echo "==> 5/5 First explicit migration"
+${KAMAL} app exec --primary "node scripts/migrate.mjs"
 
 echo
-echo "Bootstrap done. Subsequent deploys: \`make kamal-deploy\` (hooks correm automaticamente)."
+echo "Bootstrap done. Subsequent deploys: \`make kamal-deploy DEST=${DEST}\`."

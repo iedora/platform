@@ -1,139 +1,228 @@
 # Deploy — Kamal
 
-> One-line purpose: build da imagem Docker, push para a registry, e roll zero-downtime no servidor. Pre-supõe que o servidor já existe (ver [`infra.md`](infra.md)).
+> One-line purpose: build the Docker image, push to GHCR, and roll the new container with zero downtime onto a server that's already been provisioned by [`infra.md`](infra.md).
 > **Last updated:** 2026.
 
-A app é deployed com [Kamal 2](https://kamal-deploy.org). Funciona da seguinte maneira:
+Kamal 2 ([kamal-deploy.org](https://kamal-deploy.org)) handles the deploy. Two destinations are wired up:
 
-1. **Build local** da imagem Docker (Dockerfile na raíz, `output: standalone` do Next.js)
-2. **Push** para uma registry (GHCR por defeito)
-3. **SSH** para o servidor, **pull** da imagem, e troca do container com zero-downtime
-4. **Reverse proxy** integrado (`kamal-proxy`) gere TLS via Let's Encrypt + healthchecks
+| Destination | Config file | TLS strategy | Provisioned how |
+|---|---|---|---|
+| `onprem` | `config/deploy.onprem.yml` | Cloudflare Tunnel terminates TLS at the edge; kamal-proxy stays HTTP | `make onprem-bootstrap` + `make onprem-setup` |
+| `hetzner` | `config/deploy.hetzner.yml` | kamal-proxy handles Let's Encrypt directly (public IP, ports 80/443 open) | `make hetzner-up` |
 
-O Kamal é independente do que correu antes — só precisa de um servidor com SSH + Docker, exactamente o que `make up` entrega.
-
-## Pré-requisitos
-
-| Plataforma | Instalação |
-| --- | --- |
-| **Linux / WSL** | `sudo apt install -y ruby-full && sudo gem install kamal` |
-| **macOS** | `brew install kamal` |
-
-Adicionalmente: conta com **GHCR access** (qualquer GitHub Personal Access Token com `write:packages`). Para usar `gh auth token` no `.kamal/secrets`, ter o `gh` CLI autenticado.
-
-## Setup inicial (uma vez por servidor)
+Shared values (image, registry, accessory shapes, env, builder cache) live in `config/deploy.yml`. Per-destination files override hosts + TLS + FQDN-dependent env. Daily commands go through the Makefile:
 
 ```bash
-# 1. Provisionar o servidor (Tofu + Ansible)
-make up
-
-# 2. Copiar template de secrets e preencher
-cp .kamal/secrets.example .kamal/secrets
-$EDITOR .kamal/secrets
-
-# 3. Bootstrap do servidor fresh (Docker + accessories + setup + 1.ª migration)
-make kamal-bootstrap
-
-# 4. Deploys seguintes (hooks correm automaticamente)
-make kamal-deploy
+make kamal-deploy                  # default: DEST=onprem
+make kamal-deploy DEST=hetzner
 ```
 
-O `make kamal-bootstrap` corre `scripts/bootstrap.sh`, que faz: `kamal server bootstrap` → `kamal accessory boot postgres redis` → `kamal setup --skip-hooks` → primeira migration explícita. É idempotente, mas só é preciso na primeira vez por servidor.
+## Prerequisites
 
-### Bootstrap vs Deploy — porquê dois comandos?
+| Platform | Install Kamal |
+|---|---|
+| Linux / WSL | `sudo apt install -y ruby-full && sudo gem install kamal` |
+| macOS | `brew install kamal` |
 
-O `kamal setup` corre o `.kamal/hooks/pre-deploy` **antes** de bootar accessories (ver `lib/kamal/cli/main.rb` em [basecamp/kamal](https://github.com/basecamp/kamal)). O nosso hook aplica migrations contra Postgres — mas num servidor fresh o Postgres ainda não existe, logo a connection falha e o setup aborta ([basecamp/kamal#526](https://github.com/basecamp/kamal/issues/526)).
+Also: `gh` CLI logged in (for `KAMAL_REGISTRY_PASSWORD=$(gh auth token)`), Docker running locally for the build.
 
-A volta canónica: pré-arrancar accessories explicitamente, correr `kamal setup --skip-hooks`, migrar manualmente uma vez, e a partir daí `kamal deploy` toma conta — porque os accessories já estão up, o hook funciona normalmente em todos os deploys subsequentes.
+## Secrets layout (destinations split)
 
-## Deploys subsequentes
+Kamal's destination feature splits secrets into three files:
+
+```
+.kamal/
+  secrets-common        # values shared across destinations — most things live here
+  secrets.onprem        # values that only apply to -d onprem
+  secrets.hetzner       # values that only apply to -d hetzner
+  secrets.example       # template you copy to secrets-common (gitignored)
+```
+
+All four (`secrets`, `secrets-common`, `secrets.*`) are gitignored except `secrets.example`.
 
 ```bash
-make kamal-deploy    # build + push + migrate (pre-deploy hook) + roll
+cp .kamal/secrets.example .kamal/secrets-common
+$EDITOR .kamal/secrets-common
 ```
 
-Sequência:
+Generate the values:
+- `BETTER_AUTH_SECRET=$(openssl rand -base64 32)`
+- `POSTGRES_PASSWORD=$(openssl rand -base64 24)`
+- `DATABASE_URL` — substitute the password above into `postgres://postgres:<pwd>@meta-menu-postgres:5432/metamenu`
+- `S3_ENDPOINT` / `S3_ACCESS_KEY` / `S3_SECRET_KEY` — R2 dashboard or AWS IAM
 
-1. **Build + push** da nova imagem para a registry (GHCR).
-2. **`.kamal/hooks/pre-deploy`** corre — lança um container one-shot **com a imagem nova** (`kamal app exec --primary --version $KAMAL_VERSION "node scripts/migrate.mjs"`). O script de migrate adquire um `pg_advisory_lock` (deploys paralelos não migram em duplicado), aplica os SQL files de `drizzle/` que ainda não estão no `__drizzle_migrations` table, e termina. Se falhar, exit não-zero **aborta o deploy** — a app antiga continua a servir com a schema antiga.
-3. **Rolling deploy** zero-downtime: novo container arranca, espera o healthcheck `GET /up` (handler em `app/up/route.ts` — força dynamic, pinga o DB com timeout 2 s, devolve 503 se algo falha), só depois desliga o antigo.
+> **2026 alternative** — replace plain values with `kamal secrets fetch` from 1Password / AWS Secrets Manager / etc. The plain shell-file approach is still supported but the canonical 2026 pattern is fetched secrets. See [kamal-deploy.org/docs/commands/secrets](https://kamal-deploy.org/docs/commands/secrets/) and the Codeminer42 walkthrough on Kamal + 1Password.
 
-Em rollback (`make kamal-rollback`), o hook **skipa migrations** — a imagem antiga corre com a schema antiga, que já está lá.
+## On-prem (Cloudflare Tunnel) — end-to-end
 
-> **Limitação importante** — este pipeline só dá zero-downtime para mudanças **aditivas** (add column nullable, add table, add index `CONCURRENTLY`). Renames e drops exigem o pattern *expand-contract* em múltiplos deploys (add new col → write both → backfill → read new → drop old). Se um deploy tem uma migration destrutiva, há sempre janela onde a app a serve uma versão e a schema é da outra.
+LAN box, no public IP, Starlink / NAT / CGNAT — fine. Cloudflare Tunnel dials **outbound** from the box; TLS terminates at the Cloudflare edge.
+
+```
+Internet → Cloudflare edge (TLS) → cloudflared (outbound) → localhost:80 (kamal-proxy) → app:3000
+```
+
+### Step 1 — create the Cloudflare Tunnel
+
+Dashboard → **Zero Trust** → **Networks** → **Tunnels** → **Create a tunnel**:
+
+1. Connector = **Cloudflared**.
+2. Name it (e.g. `meta-menu-onprem`).
+3. **Save the token** that appears (`eyJ...`) — don't run the install command Cloudflare suggests; the Ansible playbook handles install.
+4. **Public Hostname**: add the FQDN (e.g. `menu.example.com`):
+   - Service: `HTTP` → `localhost:80`
+
+### Step 2 — bootstrap the on-prem box (first time only)
+
+```bash
+make onprem-bootstrap BOOTSTRAP_USER=pwu
+# prompts: SSH password (for pwu) + sudo password
+```
+
+### Step 3 — provision Docker + cloudflared
+
+```bash
+export CLOUDFLARED_TUNNEL_TOKEN=eyJ...    # from step 1
+make onprem-setup
+```
+
+Verify:
+
+```bash
+ssh deploy@192.168.50.53 systemctl status cloudflared
+# active (running)
+```
+
+### Step 4 — set the Kamal env
+
+```bash
+export PUBLIC_HOSTNAME=menu.example.com                                # FQDN of the tunnel
+export S3_ENDPOINT=https://<ACCOUNT_ID>.r2.cloudflarestorage.com       # R2 (or AWS S3 endpoint)
+export S3_REGION=auto                                                  # R2: auto; AWS: <region>
+export S3_BUCKET=metamenu
+```
+
+### Step 5 — first deploy
+
+```bash
+make kamal-bootstrap    # one-shot: pre-boot accessories + setup --skip-hooks + 1st migration
+make kamal-deploy       # subsequent: build + push + migrate (pre-deploy hook) + roll
+```
+
+The app is reachable at `https://<PUBLIC_HOSTNAME>`.
+
+## Hetzner — end-to-end
+
+Public IP, kamal-proxy handles TLS via Let's Encrypt.
+
+### Step 1 — DNS
+
+Point an A record at the VM IP. The VM has UFW allow-rules for 22/80/443 baked in (see `infra/shared/vars.yml`).
+
+### Step 2 — env
+
+```bash
+export HETZNER_HOST=$(cd infra/tofu/hetzner && tofu output -raw server_host)
+export HETZNER_HOSTNAME=menu.example.com
+export S3_ENDPOINT=https://<ACCOUNT_ID>.r2.cloudflarestorage.com
+export S3_REGION=auto
+export S3_BUCKET=metamenu
+```
+
+### Step 3 — first deploy
+
+```bash
+make kamal-bootstrap DEST=hetzner
+make kamal-deploy DEST=hetzner
+```
+
+## Day 2 — subsequent deploys
+
+```bash
+make kamal-deploy [DEST=hetzner]    # build + push + migrate + roll
+```
+
+What happens:
+
+1. **Build + push** of the new image to GHCR (with the registry cache hit if it warms up).
+2. **`.kamal/hooks/pre-deploy`** runs — `kamal app exec --primary --version=$KAMAL_VERSION --destination=$KAMAL_DESTINATION "node scripts/migrate.mjs"`. The migrate script acquires `pg_advisory_lock` (parallel deploys are safe), applies the SQL files in `drizzle/` that aren't yet in `__drizzle_migrations`, and exits. Non-zero exit **aborts the deploy** — the old container keeps serving with the old schema.
+3. **Rolling deploy** — new container boots, waits for `GET /up` (in `app/up/route.ts`; force-dynamic, pings the DB with a 2s timeout, returns 503 on failure), then traffic flips.
+
+On rollback (`make kamal-rollback`), the pre-deploy hook **skips migrations** — old image runs against the old schema, which is still there.
+
+> **Limitation** — this pipeline gives zero downtime only for **additive** schema changes (add nullable column, add table, add index `CONCURRENTLY`). Renames and drops need the expand-contract pattern across multiple deploys (add new col → write both → backfill → read new → drop old).
 
 ### Escape hatch — `make migrate`
 
 ```bash
-make migrate    # kamal app exec --reuse "node scripts/migrate.mjs"
+make migrate [DEST=hetzner]
 ```
 
-Corre migrations **contra a imagem actual** (a que está a servir tráfego). Útil para:
-- Aplicar migrations sem fazer redeploy (ex: hot-fix manual da schema).
-- Re-correr depois de uma falha resolvida fora do pipeline.
+Runs migrations **against the currently-serving image**. Useful for:
+- Applying a migration without redeploying (hot-fix to the schema).
+- Re-running after a pipeline failure resolved out-of-band.
 
-No deploy normal nunca é necessário — o hook trata disso.
+In the normal deploy flow this is never needed — the pre-deploy hook handles it.
 
-## Comandos úteis
+## Useful commands
 
 ```bash
-make kamal-logs       # tail dos logs (-f)
-make kamal-app        # shell no container da app
-make kamal-rollback   # rollback para a versão anterior
-make kamal-redeploy   # re-puxar a imagem actual sem rebuild
+make kamal-logs [DEST=...]       # tail logs (-f)
+make kamal-app [DEST=...]        # shell inside the running app container
+make kamal-rollback [DEST=...]   # rollback
+make kamal-redeploy [DEST=...]   # re-pull current image without rebuild
 ```
 
-Para comandos não cobertos pelo Makefile:
+For commands the Makefile doesn't cover, pass `-d <dest>` explicitly:
 
 ```bash
-kamal app details              # estado dos containers
-kamal app boot                 # arrancar containers parados
-kamal app stop                 # parar containers
-kamal accessory boot postgres  # arrancar Postgres accessory
-kamal accessory logs redis     # logs do Redis
-kamal config                   # imprime config resolvida + secrets (debug)
+kamal -d onprem app details
+kamal -d hetzner accessory boot postgres
+kamal -d onprem config            # prints fully-resolved config (debug)
 ```
 
-## Estrutura
+## Structure
 
 ```
 Dockerfile                   multi-stage build (Bun install, Node build, Node runtime + standalone)
-.dockerignore                node_modules, .next, infra/, tests/ — ficam fora da imagem
-config/deploy.yml            config Kamal (servidor, registry, env, accessories)
+.dockerignore                node_modules, .next, infra/, tests/ — kept out of the image
+config/
+  deploy.yml                 shared base — image, registry, builder cache, env, accessory shapes
+  deploy.onprem.yml          onprem override — hosts, proxy.host, ssl:false, accessory.host
+  deploy.hetzner.yml         hetzner override — hosts (env), ssl:true, FQDN (env)
 .kamal/
-  hooks/pre-deploy           corre `kamal app exec --primary --version $KAMAL_VERSION "node scripts/migrate.mjs"`
-  secrets                    valores reais (gitignored)
-  secrets.example            template versionado
+  hooks/pre-deploy           runs Drizzle migrations against KAMAL_VERSION, passes --destination
+  secrets-common             shared values (gitignored)
+  secrets.onprem             onprem-only overrides (gitignored)
+  secrets.hetzner            hetzner-only overrides (gitignored)
+  secrets.example            committed template
 scripts/
-  bootstrap.sh               primeiro deploy (pre-boot accessories + setup --skip-hooks + 1.ª migration)
-  migrate.mjs                aplica Drizzle migrations com `pg_advisory_lock` (deploys paralelos seguros)
-next.config.ts               `outputFileTracingIncludes` puxa drizzle-orm/postgres/drizzle/scripts/migrate.mjs
-                             para o bundle standalone — sem isso o `kamal app exec` falha (vercel/next.js#88844)
+  bootstrap.sh               first deploy (pre-boot accessories + setup --skip-hooks + 1st migration), respects DEST
+  migrate.mjs                Drizzle migrations under pg_advisory_lock (parallel-safe)
+next.config.ts               outputFileTracingIncludes pulls drizzle-orm/postgres/drizzle/scripts/migrate.mjs
+                             into the standalone bundle — without it, kamal app exec fails (vercel/next.js#88844)
 ```
 
-## Local vs prod
+## Design choices (2026)
 
-Em **local**, o servidor é o container Docker que o `make up` cria — Kamal liga via SSH a `deploy@127.0.0.1:2222`. Útil para testar mudanças no Dockerfile, na config, ou nos accessories sem fazer push para uma máquina real.
-
-Em **prod**, edita `config/deploy.yml`:
-- `servers.web.hosts` → IP do VPS (output de `cd infra/tofu/environments/prod && tofu output server_host`)
-- `ssh.port` → `22`
-- `proxy.ssl: true` + `proxy.host: <dominio.com>`
-- `env.clear.BETTER_AUTH_URL` → `https://<dominio.com>`
-
-## Decisões de design
-
-- **Imagem em multi-stage**: Bun para `install` (rápido, lockfile compatível), Node para `build` (Bun + `next build` é instável — ver AGENTS.md), e Node sobre o `output: 'standalone'` do Next em runtime (≈100MB em vez de 800MB+ com `node_modules` completo).
-- **Postgres e Redis como Kamal accessories** em vez de containers à parte, para que o servidor seja auto-contido. Em prod, substituir Postgres por um serviço gerido (Neon, Supabase) é trocar uma linha no `deploy.yml` + ajustar `DATABASE_URL`.
-- **Secrets via `.kamal/secrets`** (não via Tofu/Ansible). Kamal carrega-os de variáveis de ambiente no momento do deploy — `secrets` é um shell script que define as variáveis.
-- **GHCR como registry**: gratuito para repos GitHub, autenticação com o mesmo token do `gh` CLI. Para evitar dependência da GitHub, podes apontar para qualquer registry Docker compatível.
+- **Destinations** for multi-env. Same canonical pattern Kamal documents — base + per-dest overlay. Forces explicit `-d` (no accidental "wrong env" deploys).
+- **`forward_headers: true`** in the proxy. Required when `ssl: false` so Cloudflare's `X-Forwarded-For` / `X-Forwarded-Proto` reach the app. Without it, the app sees the tunnel's local IP for every request.
+- **`buffering.max_request_body: 10_000_000`** — default is 1 GB which is far too loose. Image uploads cap at ~5 MB client-side; 10 MB header gives headroom.
+- **No `port: "5432:5432"` on Postgres accessory** — Docker writes NAT rules ahead of UFW's filter rules, so a published port is NOT firewall-protected (basecamp/kamal#1790). The app reaches Postgres via the `kamal` Docker network using the container name. If you need host-side `psql` for backups, use loopback only: `port: "127.0.0.1:5432:5432"`.
+- **Registry-backed build cache** (`builder.cache.type: registry`) instead of GHA cache — works equally well for local builds, no GHA dependency.
+- **`--version=$KAMAL_VERSION`** (long form, with equals) in the pre-deploy hook. The env-style `VERSION=...` does not work.
+- **Pre-deploy hook passes `--destination=$KAMAL_DESTINATION`** (Kamal 2.8+ exports it). Without this, secrets resolve from the wrong destination on multi-dest deploys.
+- **`/up` is currently a deep healthcheck** (DB ping with 2s timeout). 2026 best practice is to keep it shallow (200, no deps) and add a separate `/up/deep` for external monitoring — the rationale being that brief DB blips during cutover shouldn't yank healthy app containers. This is an app-side follow-up, not part of the infra changes.
 
 ## Troubleshooting
 
-**`kamal setup` falha com "Cannot connect to Docker"**: o servidor não tem Docker instalado ou o utilizador `deploy` não está no grupo `docker`. Correr `make ansible` (re-aplica o playbook que trata disto).
+**`kamal setup` fails with "Cannot connect to Docker"**: target server doesn't have Docker installed or `deploy` user isn't in the `docker` group. Run `make onprem-setup` (or `make hetzner-ansible`) to re-apply.
 
-**Healthcheck do proxy falha em loop**: a app está a arrancar mais devagar do que o `interval` definido. Aumentar `proxy.healthcheck.interval` no `deploy.yml`, ou apontar `proxy.healthcheck.path` para um endpoint mais leve.
+**Proxy healthcheck flaps in loop**: app is starting slower than the `interval`. Raise `proxy.healthcheck.interval` in `deploy.yml`, or check `kamal app logs` for slow boot.
 
-**"unable to find image" no servidor**: o push para a registry falhou ou as credenciais estão erradas. Verificar `.kamal/secrets` → `KAMAL_REGISTRY_PASSWORD` é válido (ex: `gh auth token`).
+**"unable to find image" on the server**: registry push failed or wrong creds. Check `KAMAL_REGISTRY_PASSWORD` resolves (`gh auth status`).
 
-**Container arranca mas a app dá 500**: faltam env vars. Correr `kamal app exec --reuse env | grep -E 'BETTER|DATABASE|REDIS|S3'` para confirmar.
+**App returns 500 with missing env**: run `kamal -d <dest> app exec --reuse env | grep -E 'BETTER|DATABASE|REDIS|S3'`. ERB in `deploy.yml` reads only your shell env, not `.kamal/secrets-common`. If you `export` shell vars in a `.env` file, source it (or use `direnv`) — Kamal 2 does NOT auto-load `.env`.
+
+**Cloudflare Tunnel shows "degraded"**: connectivity from the server to `*.cloudflare.com` is blocked. Check that UFW outgoing isn't blocking (default policy is allow).
+
+**"missing required env var PUBLIC_HOSTNAME"**: the destination override file uses ERB. Export the variable, or wrap the kamal command in `direnv exec`.

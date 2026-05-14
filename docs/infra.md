@@ -1,282 +1,139 @@
-# Infraestrutura — Self-hosting
+# Infra — provisioning servers
 
-> One-line purpose: provisionar um servidor Ubuntu local ou Hetzner pronto para receber o deploy Kamal. Funciona igual em Linux, macOS e Windows-via-WSL.
+> One-line purpose: get a Linux box (on-prem or Hetzner) into a state where `make kamal-deploy` works against it.
 > **Last updated:** 2026.
 
-> **TL;DR** — `make up` provisiona um servidor Ubuntu local idêntico ao de produção. O mesmo Ansible playbook configura local e prod; o que muda é só o provider do OpenTofu. O deploy da app é feito separadamente com Kamal — ver [`deploy.md`](deploy.md).
+> **TL;DR** — two deployment paths, one Ansible playbook does both:
+> - **on-prem**: an existing Ubuntu box on your LAN, reached via Cloudflare Tunnel (no Tofu, no public IP).
+> - **hetzner**: a Hetzner Cloud VM provisioned by OpenTofu, public IP, kamal-proxy handles TLS.
 
-## Arquitetura
+The Docker-in-Docker "local" simulation that previous versions of this repo carried was removed in 2026 — if you want a real-system rehearsal, point on-prem at any Linux box (your own laptop included).
+
+## Architecture
 
 ```
-┌─────────────────────────────────────────────────────┐
-│  Layer 1 — Provisionamento (OpenTofu)               │
-│  local   → Docker provider (container Ubuntu+SSH)   │
-│  prod    → Hetzner provider (VPS real)              │
-├─────────────────────────────────────────────────────┤
-│  Layer 2 — Configuração (Ansible)                   │
-│  Mesmo playbook nos dois ambientes.                 │
-│  Instala Docker, configura UFW, faz hardening SSH.  │
-├─────────────────────────────────────────────────────┤
-│  Layer 3 — Deploy da app (Kamal) — ver deploy.md    │
-│  Zero-downtime, rollback, secrets encriptados.      │
-└─────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────┐
+│  Layer 1 — Provisioning                                              │
+│   on-prem  → host already exists (no Tofu)                           │
+│   hetzner  → OpenTofu (hcloud provider) creates the VM               │
+├──────────────────────────────────────────────────────────────────────┤
+│  Layer 2 — Configuration (Ansible)                                   │
+│   single playbook (setup.yml) — base / metal / onprem plays          │
+│   FQCN-only, deb822 apt repos, hardened cloudflared systemd unit     │
+├──────────────────────────────────────────────────────────────────────┤
+│  Layer 3 — App deploy (Kamal) — see deploy.md                        │
+│   zero-downtime, rollback, destinations (-d onprem | -d hetzner)     │
+└──────────────────────────────────────────────────────────────────────┘
 ```
 
-O contrato entre layers é simples: o **layer 1** entrega um servidor Ubuntu com SSH acessível; o **layer 2** aceita qualquer servidor Ubuntu com SSH e configura-o. O layer 1 pode trocar (Docker local ↔ Hetzner ↔ bare metal) sem que o layer 2 precise de mudar.
-
-## Estrutura
+## Layout
 
 ```
 infra/
-  shared/
-    vars.yml                  vars partilhadas entre Tofu e Ansible (deploy_user, vm_name, timezone, …)
-  docker/
-    Dockerfile.server         Ubuntu + sshd + utilizador deploy (usado só pelo ambiente local)
-  tofu/
-    environments/
-      local/
-        main.tf               provider Docker, image build, container, upload SSH key, ansible_host
-        variables.tf          ssh_port, memory_gb, ssh_public_key_path, …
-        outputs.tf            server_host, server_port, ssh_command
-        terraform.tfvars      valores locais
-      prod/
-        main.tf               provider Hetzner, server, ssh_key, cloud-init, ansible_host
-        variables.tf          + hcloud_token, server_type, location
-        outputs.tf
-        terraform.tfvars.example   template (criar terraform.tfvars com o token)
+  shared/vars.yml             shared by Tofu and Ansible (deploy_user, vm_name, timezone, …)
+  tofu/hetzner/               flat layout — only Tofu env right now
+    main.tf                   hcloud_server + ansible_host + terraform_data (cloud-init wait)
+    variables.tf              with validation blocks
+    versions.tf               required_version + provider pins + state encryption block
+    outputs.tf
+    terraform.tfvars.example  template
   ansible/
-    ansible.cfg               desliga host_key_checking, activa pipelining
-    inventory.yml             inventory DINÂMICO via cloud.terraform.terraform_provider
-                              (lê o state file de cada ambiente Tofu)
-    requirements.yml          Ansible Galaxy collections (cloud.terraform)
-    setup.yml                 playbook idempotente: base / metal / containers
+    inventory.yml             DYNAMIC inventory (cloud.terraform plugin reads tofu state)
+    inventory.onprem.yml      STATIC inventory for hosts not under Tofu
+    bootstrap.yml             one-shot: create deploy user + SSH key on a fresh on-prem box
+    setup.yml                 main playbook — base / metal / onprem plays
+    requirements.yml          cloud.terraform, community.general, ansible.posix
 scripts/
-  bootstrap.sh                primeiro deploy num servidor fresh (pre-boot accessories + setup + 1.ª migration)
-  migrate.mjs                 corre Drizzle migrations contra o DB de produção
+  bootstrap.sh                first-time Kamal bootstrap (pre-boot accessories + setup --skip-hooks)
+  migrate.mjs                 Drizzle migrations under pg_advisory_lock (safe for parallel deploys)
 ```
 
-> **Nota — inventário dinâmico.** Não há ficheiros `local.ini` / `prod.ini`. O Ansible lê os outputs do Tofu (`ansible_host` resources) directamente do state file via o plugin `cloud.terraform.terraform_provider`. Targets de um ambiente específico:
-> ```bash
-> ansible-playbook --limit local setup.yml
-> ansible-playbook --limit prod  setup.yml
-> ```
-> O `make ansible` aplica o `--limit $(ENV)` automaticamente.
+The dynamic inventory uses `cloud.terraform.terraform_provider` — no `local.ini` / `prod.ini` files. The Hetzner host appears in the `hetzner` group automatically via the `ansible_host` resource in `main.tf`. On-prem hosts live in `inventory.onprem.yml` (`onprem` group, also added to `servers` + `metal`).
 
-## Pré-requisitos
+## On-prem (existing Linux box)
 
-Comum a todos os SOs: **Docker**, **OpenTofu**, **Ansible**, **make**, **OpenSSH client**.
+Prereqs (on your dev machine):
+- `ansible` (`apt install ansible` / `brew install ansible`)
+- `sshpass` (only for the bootstrap step — `apt install sshpass` / `brew install sshpass`)
+- SSH key at `~/.ssh/id_ed25519` (`make ssh-key` generates if absent)
 
-A chave SSH (`~/.ssh/id_ed25519`) **não precisa de existir antes** — o `make up` gera-a automaticamente na primeira execução via o alvo `ssh-key`. Se já existir, é reutilizada.
+Prereqs (on the target box):
+- Ubuntu 24.04 LTS (24.04 minimum; 26.04 works too)
+- An existing sudo-capable user with password login (e.g. `pwu`, `ubuntu`)
+- SSH service running on port 22
 
-## Setup passo-a-passo
+### Bootstrap (first time only — one shot)
 
-### Linux (Debian / Ubuntu)
+Connects as your existing sudo user with password, creates `deploy`, installs your SSH key, grants NOPASSWD sudo. Idempotent.
 
 ```bash
-# 1. Docker
-curl -fsSL https://get.docker.com | sudo sh
-sudo usermod -aG docker $USER
-newgrp docker   # ou faz logout/login para reload do grupo
-
-# 2. OpenTofu
-curl --proto '=https' --tlsv1.2 -fsSL https://get.opentofu.org/install-opentofu.sh -o /tmp/install-opentofu.sh
-chmod +x /tmp/install-opentofu.sh
-sudo /tmp/install-opentofu.sh --install-method deb
-
-# 3. Ansible + make + openssh client
-sudo apt update
-sudo apt install -y ansible make openssh-client
-
-# 4. Clone e arrancar
-git clone https://github.com/eduvhc/meta-menu.git
-cd meta-menu
-make up
+make onprem-bootstrap BOOTSTRAP_USER=pwu
+# (prompts twice: SSH password + sudo password)
 ```
 
-Para outras distros (Arch, Fedora, …), o equivalente via `pacman` / `dnf`. O install script do OpenTofu também suporta `--install-method rpm`.
+### Full setup (Docker + UFW + cloudflared)
 
-### macOS
-
-Recomendado: [OrbStack](https://orbstack.dev/) como runtime Docker — mais leve que Docker Desktop e nativo em Apple Silicon. (Docker Desktop também funciona.)
+Connects as `deploy` over SSH key. Re-runnable — only applies what changed.
 
 ```bash
-# 1. Homebrew (se ainda não tens)
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-
-# 2. Tudo de uma vez
-brew install opentofu ansible make
-brew install --cask orbstack   # ou: brew install --cask docker
-
-# 3. Abrir OrbStack uma vez para inicializar o runtime
-open -a OrbStack
-
-# 4. Clone e arrancar
-git clone https://github.com/eduvhc/meta-menu.git
-cd meta-menu
-make up
+export CLOUDFLARED_TUNNEL_TOKEN=eyJ...    # if you want the tunnel set up
+make onprem-setup
 ```
 
-Apple Silicon (M1/M2/M3): tudo nativo ARM, build do container Ubuntu corre em alguns segundos.
+If `CLOUDFLARED_TUNNEL_TOKEN` is empty the cloudflared play is skipped (`meta: end_host`). You can provision the host first and add the tunnel later by re-running with the env var set.
 
-### Windows
+### Adding another on-prem server
 
-A stack corre **dentro do WSL 2 com Ubuntu**. O Docker Desktop continua no Windows mas o seu daemon é exposto ao WSL pela "WSL Integration".
+Open `infra/ansible/inventory.onprem.yml`, copy a host block, change `ansible_host`. Each host gets its own Cloudflare Tunnel (one tunnel = one token), but they all share `inventory.onprem.yml`. The playbook is the same.
 
-#### Passo 1 — Docker Desktop + Ubuntu WSL (PowerShell admin)
+## Hetzner (Tofu-provisioned VM)
 
-Tudo copiável:
+Prereqs:
+- Tofu CLI (`brew install opentofu` / `curl ... get.opentofu.org/install-opentofu.sh`)
+- Hetzner Cloud project + API token
+- `TF_VAR_hcloud_token` and `TF_VAR_state_passphrase` (≥ 16 chars) exported in env
 
-```powershell
-# Docker Desktop (se ainda não tens)
-winget install --id Docker.DockerDesktop --accept-source-agreements --accept-package-agreements
-
-# Ubuntu no WSL sem prompt interactivo de user
-wsl --install -d Ubuntu --no-launch
-
-# Configurar Ubuntu para arrancar directamente como root
-# (evita o assistente interactivo que pede username + password)
-wsl -d Ubuntu --user root -- bash -c "printf '[user]\ndefault=root\n' > /etc/wsl.conf"
-wsl --terminate Ubuntu
-```
-
-Abrir o Docker Desktop pelo menos uma vez (no Iniciar) para concluir o setup.
-
-#### Passo 2 — Activar a "WSL Integration" no Docker Desktop
-
-> **Importante** — sem este passo o `make up` falha imediatamente. O Docker Desktop corre o daemon Docker dentro da sua própria distro WSL (`docker-desktop`), isolada das outras. Por defeito, a distro Ubuntu **não tem o comando `docker` nem acesso ao daemon**. Activar a integração injecta o CLI na PATH do Ubuntu e abre o canal de comunicação para o daemon. Não há CLI para isto, é mesmo manual.
-
-1. Abrir **Docker Desktop**
-2. **Settings** (engrenagem no topo direito)
-3. **Resources** → **WSL Integration**
-4. Activar o toggle ao lado de **"Ubuntu"**
-5. **Apply & Restart**
-
-Validar em PowerShell:
-
-```powershell
-wsl -d Ubuntu -- docker ps
-```
-
-**Integração ON** — exit code 0 e output começa com a linha de cabeçalho do `docker ps` (mesmo sem containers a correr):
-
-```
-CONTAINER ID   IMAGE   COMMAND   CREATED   STATUS   PORTS   NAMES
-```
-
-**Integração OFF** — o Docker Desktop instala um shim no PATH do WSL que devolve uma mensagem específica em vez de "command not found" do bash:
-
-```
-The command 'docker' could not be found in this WSL 2 distro.
-We recommend to activate the WSL integration in Docker Desktop settings.
-```
-
-Se aparecer este texto, voltar a `Settings → Resources → WSL Integration` e confirmar que o toggle "Ubuntu" está ligado **e** que carregaste em "Apply & Restart".
-
-#### Passo 3 — Tofu / Ansible / make / git (dentro do WSL, já como root)
-
-```powershell
-wsl -d Ubuntu -- bash -c "
-  apt-get update -qq &&
-  apt-get install -y -qq ansible make git curl &&
-  curl --proto '=https' --tlsv1.2 -fsSL https://get.opentofu.org/install-opentofu.sh -o /tmp/install-opentofu.sh &&
-  chmod +x /tmp/install-opentofu.sh &&
-  /tmp/install-opentofu.sh --install-method deb
-"
-```
-
-#### Passo 4 — Clone e arrancar
-
-> Recomendado: clonar o repo num caminho **dentro do filesystem do WSL** (`~/projects/meta-menu`), não em `/mnt/c/…`. O I/O é uma ordem de grandeza mais rápido.
-
-```powershell
-wsl -d Ubuntu -- bash -c "
-  git clone https://github.com/eduvhc/meta-menu.git ~/projects/meta-menu &&
-  cd ~/projects/meta-menu &&
-  make up
-"
-```
-
-A partir daqui podes simplesmente abrir o "Ubuntu" no Iniciar (ou `wsl -d Ubuntu` em qualquer terminal) e entras directamente em `root@<host>:~#`, sem prompts.
-
-## Comandos
+### Provision
 
 ```bash
-make up                  # provisiona servidor (ssh-key + Tofu apply + Ansible playbook)
-make down                # destrói o servidor
-make recreate            # destrói e recria do zero (~30s no local)
-make tofu                # apenas Tofu apply (gera SSH key se necessário)
-make ansible             # apenas Ansible playbook (--limit $(ENV))
-make ansible-deps        # instala collections Ansible (cloud.terraform)
-make ssh-key             # gera ~/.ssh/id_ed25519 se não existir (idempotente)
-make ssh                 # SSH para o servidor local (deploy@localhost:2222)
-make help                # lista todos os alvos (inclui os de Kamal — ver deploy.md)
+export TF_VAR_hcloud_token=...
+export TF_VAR_state_passphrase=...  # store in your password manager — losing it = unrecoverable state
+make hetzner-up
 ```
 
-Tudo idempotente — correr `make up` duas vezes seguidas não cria recursos duplicados, o Ansible só reaplica o que mudou, e a SSH key existente nunca é sobrescrita. Num clone fresh do repo, **`make up` é o único comando necessário** para ter o servidor a correr; depois usar `make kamal-bootstrap` (uma vez) e `make kamal-deploy` para os deploys da app (ver [`deploy.md`](deploy.md)).
+Steps run end-to-end: `tofu init && tofu apply` creates the VM and writes encrypted state (PBKDF2 + AES-GCM), `terraform_data.wait_for_cloud_init` blocks until cloud-init finishes on the box, then Ansible runs `setup.yml` against the host (discovered via `ansible_host` in the dynamic inventory).
 
-## Como funciona o ambiente local
-
-1. **OpenTofu** com o provider `kreuzwerker/docker`:
-   - Builda a imagem `meta-menu-server-base` a partir de `infra/docker/Dockerfile.server`. O Dockerfile cria o utilizador `deploy` (sudo NOPASSWD), instala sshd, e endurece o `sshd_config` (sem root login, sem password auth).
-   - Levanta um container `meta-menu-server` privilegiado (precisa de privilégios para correr `dockerd` por dentro — Docker-in-Docker, exigido pelo Kamal).
-   - Mapeia a porta 22 do container para `localhost:2222` no host, e a porta 80 (kamal-proxy) para `localhost:8080`.
-   - O bloco `upload` do provider injecta `authorized_keys` directamente no container — **zero scripts de bootstrap, tudo declarativo**.
-   - Declara um `ansible_host` (provider `ansible/ansible`) para que o inventário dinâmico do Ansible apanhe o servidor automaticamente.
-
-2. **Ansible** lê esse `ansible_host` via `cloud.terraform.terraform_provider`, liga-se via SSH (`deploy@localhost:2222`) e configura:
-   - Pacotes base (`curl`, `git`, `ufw`, `ca-certificates`, `gnupg`, `unattended-upgrades`)
-   - Docker CE via repositório oficial + plugins (buildx, compose)
-   - Adiciona `deploy` ao grupo `docker`
-   - Regras UFW (allow 22/80/443) — UFW é só **activado** no play `metal`; nos containers as regras ficam carregadas mas não aplicadas (sem kernel netfilter eficaz)
-   - Hardening SSH (sem root login, sem password auth) com reload via fallback `systemctl` → `HUP` no PID
-
-3. O playbook é dividido em três plays: `base` (corre em todos os hosts), `metal` (apenas servidores reais — activa systemd + UFW), e `containers` (apenas servidores em container — `dockerd` em foreground com storage-driver `vfs`).
-
-## Como funciona o ambiente prod (Hetzner)
-
-1. **OpenTofu** com `hetznercloud/hcloud`:
-   - Cria um `hcloud_ssh_key` com a chave pública local
-   - Cria um `hcloud_server` (ex: `cx22` = 2 vCPU / 4GB RAM / ~€4/mês, Nuremberg)
-   - Passa um `cloud-init` user-data que cria o utilizador `deploy` com a SSH key e regras UFW base
-
-2. **Ansible** corre o mesmo `setup.yml` contra o IP do VPS — as tasks sistemas (`systemd`, `ufw`) executam normalmente em servidores reais.
-
-Para usar:
+### Useful commands
 
 ```bash
-cd infra/tofu/environments/prod
-cp terraform.tfvars.example terraform.tfvars
-# editar terraform.tfvars com o token da Hetzner (Console → API Tokens)
-
-# A partir da raíz do repo — o Makefile sabe target prod via ENV
-make up ENV=prod
+make hetzner-tofu       # Tofu apply only
+make hetzner-ansible    # Ansible playbook only
+make hetzner-ssh        # SSH into the VM (uses the tofu output for the IP)
+make hetzner-down       # tofu destroy
 ```
 
-O `ansible_host` declarado no `main.tf` do prod expõe o IP do VPS para o inventário dinâmico; o `make ansible ENV=prod` aplica `--limit prod` automaticamente.
+### Editing config
 
-## Adicionar um novo ambiente / provider
+`infra/tofu/hetzner/variables.tf` validates `server_type` and `location`. `infra/tofu/hetzner/terraform.tfvars.example` shows non-secret defaults. Prefer `TF_VAR_*` env vars over a `terraform.tfvars` file — even with state encryption, tfvars files end up in shell history and editor caches.
 
-A interface é o contrato Tofu output `server_host` + `server_port`. Para adicionar AWS, DigitalOcean, bare metal, basta criar `infra/tofu/environments/<nome>/` com qualquer provider e expor os mesmos outputs. O Ansible nunca precisa de saber a fonte.
+## Design choices
 
-## Decisões de design importantes
-
-- **Dois layers, contrato fino.** OpenTofu provisiona, Ansible configura. Trocar o provider de cima nunca obriga a mexer no de baixo.
-- **Sem scripts proprietários** (shell, PowerShell). Tudo declarativo: Tofu HCL, Ansible YAML, Dockerfile, Makefile. O único "código imperativo" são os comandos `RUN` do Dockerfile, que servem para construir uma imagem reprodutível.
-- **Local mirroreia prod com fidelidade prática.** Mesmo SO (Ubuntu 24.04), mesmo Ansible. As únicas diferenças são as inerentes ao container (sem systemd, sem UFW efectivo) — e essas estão isoladas com `when: not dockerenv.stat.exists`.
-- **State do Tofu fica local** (não há backend remoto). Para colaboração / CI futuro, migrar para S3/HCP.
+- **OpenTofu 1.10+** (`required_version = "~> 1.10"`). State + plan encryption enabled (`enforced = true`) — local state is the default; encrypted-at-rest matters when laptops walk.
+- **`terraform_data`** replaces `null_resource` (built-in since OpenTofu 1.0 / Terraform 1.4; community guides recommend it since 2025).
+- **`cloud-init status --wait`** instead of "SSH accepts a TCP connection" — the proper ready-signal on Hetzner.
+- **FQCN everywhere in Ansible** (`ansible.builtin.apt`, `community.general.ufw`, …). `ansible-lint`'s `fqcn` rule fails on short forms.
+- **`deb822_repository`** replaces the deprecated `apt_key` + `apt_repository` pair. Cleaner: GPG key scoped to one source file, not trusted system-wide.
+- **`cloudflared --token-file`** (cloudflared 2025.4.0+) instead of `--token` or `TUNNEL_TOKEN` env — token never appears in `ps`, env file only carries the path. Service runs as a dedicated `cloudflared` user with a hardened systemd unit (`NoNewPrivileges`, `ProtectSystem=strict`, `CapabilityBoundingSet=`, …).
+- **State stays local** (no remote backend). For team workflows or CI, migrate to S3 or HCP. With ≥1 collaborator, locking matters; OpenTofu 1.10+ supports native S3 state locking via `use_lockfile = true` (no DynamoDB).
 
 ## Troubleshooting
 
-**`make up` falha com "Cannot connect to the Docker daemon" no Windows.** Falta activar a WSL Integration para a distro Ubuntu (ver secção acima).
+**`tofu init` fails after pulling new versions of versions.tf.** Provider versions changed — delete `.terraform/` and re-init. `.terraform.lock.hcl` regenerates on the next init.
 
-**Ansible falha com "Host key verification failed".** O container foi recriado e tem uma host key nova. O playbook já corre `ssh-keyscan` antes da primeira task; se persistir, apaga manualmente: `ssh-keygen -R '[localhost]:2222'`.
+**`cloudflared.service` stuck in `activating (auto-restart)`.** Token wrong, or systemd can't read `/etc/cloudflared/token`. `journalctl -u cloudflared -n 50` shows the cause. Re-run `CLOUDFLARED_TUNNEL_TOKEN=... make onprem-setup` to replace the token.
 
-**Tofu queixa-se de "Required plugins are not installed" depois de mudar de SO.** A pasta `.terraform/` tem providers compilados para o SO original. Apagar e re-init:
+**Ansible fails with "Host key verification failed" on Hetzner.** First boot after re-provision — the host key changed. The inventory already disables host-key checking (`StrictHostKeyChecking=no`). If it still complains, `ssh-keygen -R <ip>` once locally.
 
-```bash
-cd infra/tofu/environments/local
-rm -rf .terraform .terraform.lock.hcl
-tofu init
-```
+**`tofu apply` errors with "encryption configuration missing".** You set `enforced = true` and started without a passphrase. Export `TF_VAR_state_passphrase` (≥ 16 chars) and retry.
 
-**O container está a correr mas o SSH dá "Connection refused".** Esperar 2-3 segundos depois do `tofu apply` — o sshd demora um instante a abrir o socket. Em alternativa, o `make ansible` já espera implicitamente até a primeira conexão funcionar.
+**Migrating from unencrypted state to encrypted state.** Add a `fallback {}` block to the `encryption` block in `versions.tf` for ONE apply (the docs walk through it). Re-apply, then remove the fallback. Don't lose the passphrase between those two applies.

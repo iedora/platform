@@ -1,66 +1,79 @@
-# Kamal 2 — config de deploy
-# https://kamal-deploy.org
+# Kamal 2 — shared base config.
+# Destination-specific values (hosts, FQDN, TLS strategy, accessory hosts)
+# live in config/deploy.<dest>.yml and are merged when you run with -d.
+#
+# Two destinations are configured:
+#   onprem   — LAN box behind a Cloudflare Tunnel (TLS terminates at the edge)
+#   hetzner  — Hetzner Cloud VM, public IP, kamal-proxy does Let's Encrypt
+#
+# Daily use goes through the Makefile (DEST=onprem default):
+#   make kamal-deploy                 # onprem
+#   make kamal-deploy DEST=hetzner    # hetzner
 
 service: meta-menu
 
-# Substitui pelo teu utilizador/imagem na registry
 image: eduvhc/meta-menu
 
-servers:
-  web:
-    hosts:
-      - 127.0.0.1   # placeholder — substitui pelo IP do servidor (output do Tofu)
-    options:
-      add-host: "host.docker.internal:host-gateway"
-
-# Reverse proxy (kamal-proxy) gere TLS + zero-downtime. Para deploy LOCAL contra o
-# container Ubuntu, desliga-se SSL (não há domínio real). Em prod: ssl: true + host: <dominio>.
+# kamal-proxy gates zero-downtime + routing. Destination overrides set
+# `host` (FQDN) and `ssl` (true for hetzner, false for cloudflared).
 proxy:
-  ssl: false
-  host: localhost
   app_port: 3000
+  # When ssl: false, kamal-proxy does NOT forward X-Forwarded-* by default.
+  # Cloudflare Tunnel sets them; we must opt in to preserve client IP/proto.
+  forward_headers: true
   healthcheck:
     path: /up
-    interval: 5
+    interval: 1
+    timeout: 5
+  buffering:
+    requests: true
+    responses: true
+    # Default is 1 GB — way too loose. Image uploads cap is ~5 MB
+    # client-side; 10 MB here gives headroom.
+    max_request_body: 10_000_000
 
-# Registry — Kamal precisa de pushar a imagem para algures acessível ao servidor.
-# GHCR é gratuito e funciona com o GITHUB_TOKEN (read:packages + write:packages).
+# GHCR via the gh-CLI token (gitignored secrets file resolves it).
 registry:
   server: ghcr.io
   username: eduvhc
   password:
     - KAMAL_REGISTRY_PASSWORD
 
-# SSH para o servidor — `deploy` user, porta 2222 quando local, 22 em prod.
 ssh:
   user: deploy
-  port: 2222   # mudar para 22 em prod
+  port: 22
 
 builder:
   arch: amd64
+  cache:
+    type: registry
+    image: ghcr.io/eduvhc/meta-menu-build-cache
+    options: mode=max,compression=zstd
 
-# Variáveis de ambiente — secrets vêm de .kamal/secrets, clear vão para o repo.
+# Env vars — secrets resolved from .kamal/secrets-common + .kamal/secrets.<dest>.
+# BETTER_AUTH_URL is destination-scoped (depends on FQDN) — set in dest file.
 env:
   clear:
     NEXT_TELEMETRY_DISABLED: "1"
-    BETTER_AUTH_URL: http://localhost
-    S3_ENDPOINT: http://localstack:4566   # ajustar em prod (R2/S3)
-    S3_REGION: us-east-1
-    S3_BUCKET: metamenu
+    S3_REGION: <%= ENV.fetch("S3_REGION", "auto") %>
+    S3_BUCKET: <%= ENV.fetch("S3_BUCKET", "metamenu") %>
   secret:
     - BETTER_AUTH_SECRET
     - DATABASE_URL
     - REDIS_URL
+    - S3_ENDPOINT
     - S3_ACCESS_KEY
     - S3_SECRET_KEY
 
-# Serviços que correm no mesmo servidor (Postgres, Redis). Em prod podes
-# substituir Postgres por Neon/Supabase e remover o accessory.
+# Accessories run on the same host as the app (single-server topology).
+# `host` is set per destination so accessories follow the app server.
+# Crucial: NO `port:` key — publishing 5432:5432 binds to 0.0.0.0 and
+# Docker's NAT rules sit BEFORE UFW's filter rules, so the host firewall
+# wouldn't protect Postgres. The app reaches it via the `kamal` Docker
+# network using the container name (meta-menu-postgres).
 accessories:
   postgres:
     image: postgres:18-alpine
-    host: 127.0.0.1
-    port: "5432:5432"
     env:
       clear:
         POSTGRES_USER: postgres
@@ -68,11 +81,9 @@ accessories:
       secret:
         - POSTGRES_PASSWORD
     directories:
-      - data:/var/lib/postgresql   # Postgres 18+: novo layout (não /data)
+      - data:/var/lib/postgresql
 
   redis:
     image: redis:7-alpine
-    host: 127.0.0.1
-    port: "6379:6379"
     directories:
       - data:/data

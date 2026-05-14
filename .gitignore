@@ -67,4 +67,6 @@ infra/tofu/**/terraform.tfvars
 
 # Kamal — secrets reais nunca vão para o repo (só o .example)
 .kamal/secrets
+.kamal/secrets-common
+.kamal/secrets.*
 !.kamal/secrets.example
