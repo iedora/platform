@@ -98,47 +98,63 @@ If `CLOUDFLARED_TUNNEL_TOKEN` is empty the cloudflared play is skipped (`meta: e
 
 Open `infra/ansible/inventory.onprem.yml`, copy a host block, change `ansible_host`. Each host gets its own Cloudflare Tunnel (one tunnel = one token), but they all share `inventory.onprem.yml`. The playbook is the same.
 
-## Cloudflare side (R2 + Tunnel + DNS)
+## Cloudflare side (R2 + Tunnel + DNS — one workspace per env)
 
-The Cloudflare-side pieces — R2 bucket, CORS, Tunnel, DNS — are managed by `infra/tofu/cloudflare/`. Run this once before either compute target.
+`infra/tofu/cloudflare/` manages every Cloudflare-side resource the deploy needs. Multi-env via Tofu workspaces: one workspace = one env (`prod`, `staging`, `customer-X`, …), each with its own state file and its own `envs/<name>.tfvars`.
 
-Prereqs:
+Prereqs (one-time per machine):
 - Cloudflare account + a zone you control.
-- API token with `Account · Workers R2 Storage · Edit`, `Account · Cloudflare Tunnel · Edit`, `Zone · DNS · Edit` (scoped to the zone), `Account · Account Settings · Read`. Create at `dash.cloudflare.com → My Profile → API Tokens`.
+- API token — see `infra/tofu/cloudflare/variables.tf` for the exact permissions (Tofu side + R2 token helper side).
 - `account_id` and `zone_id` (both 32-char hex).
 
 ```bash
-cp infra/tofu/cloudflare/terraform.tfvars.example infra/tofu/cloudflare/terraform.tfvars
-$EDITOR infra/tofu/cloudflare/terraform.tfvars     # fill account_id, zone_id, public_hostname
-
 export TF_VAR_cloudflare_api_token=...
-export TF_VAR_state_passphrase=...                  # re-use the hetzner one if set
-
-make cloudflare-up
+export TF_VAR_state_passphrase=...      # ≥ 16 chars; shared across envs is fine
+export TF_VAR_account_id=...
+export TF_VAR_zone_id=...
 ```
 
-`make cloudflare-up` does two things: `tofu apply` and then `scripts/cf-sync.sh` (writes `.envrc` at the repo root with `PUBLIC_HOSTNAME`, `S3_ENDPOINT`, `S3_BUCKET`, `S3_REGION`, `CLOUDFLARED_TUNNEL_TOKEN`). Source it after:
+### Spin up a new env
 
 ```bash
-source .envrc
+make cf-new-env NAME=prod HOSTNAME=menu.example.com
 ```
 
-For the R2 S3 access keys (needed by the app's upload slice), run `make cloudflare-r2-token` — it prints the one-click dashboard path. The keys can't be reliably created via the provider as of v5.19 (issue #6626).
+Behind the scenes (`scripts/cf-env.sh new`):
+1. Scaffolds `infra/tofu/cloudflare/envs/prod.tfvars` from the inputs.
+2. Creates/selects the Tofu workspace named `prod`.
+3. Runs `tofu apply` for that workspace.
+4. Invokes `scripts/cf-sync.sh` which writes `.envrc.prod` at the repo root with all the Tofu outputs as `export` lines.
 
-### Why not also create the R2 token via Tofu?
+```bash
+source .envrc.prod      # or `.envrc` when NAME=default
+make cf-r2-token        # creates real R2 S3 keys + patches .kamal/secrets.<env>
+```
 
-`cloudflare_api_token` plus the R2 permission group is documented but the resulting `id`/`value` returns HTTP 403 when used as S3 credentials in v5.15+ (`#6626`). A community module exists (`Cyb3r-Jak3/r2-api-token`) that works around it, but that requires `User · API Tokens · Edit` on the Tofu CF API token — a significantly more powerful permission than the rest of what we need. The one-click dashboard step is fine, and `cf-r2-token.sh` keeps it copyable.
+`cf-r2-token.sh` posts to `/user/tokens` with the R2 bucket-item permission groups (discovered at runtime via the permission_groups endpoint so the script doesn't rot), then computes `S3_ACCESS_KEY = token.id` and `S3_SECRET_KEY = sha256(token.value)` — Cloudflare's officially documented derivation.
+
+### Why not Tofu-managed R2 S3 credentials?
+
+The `cloudflare_api_token` Terraform resource creates an *account-management* token, not an R2 S3 token — when used as S3 creds it returns 403 (#6626, closed "not planned"). The Cloudflare API does support it via `/user/tokens` with the right permission groups + the SHA-256 derivation, which is what `cf-r2-token.sh` uses. Provider parity is on Cloudflare's side, not ours.
+
+### Day-2 operations
+
+```bash
+make cf-apply NAME=prod         # re-apply (idempotent — only changed resources roll)
+make cf-list                    # list envs
+make cf-destroy NAME=staging    # destroy CF resources + workspace + .envrc.staging
+```
 
 ### Re-syncing
 
-If you change anything in `infra/tofu/cloudflare/` (a new bucket, a new ingress rule, a different hostname):
+If you change anything in `envs/<name>.tfvars`:
 
 ```bash
-make cloudflare-up    # tofu apply + cf-sync.sh
-source .envrc         # re-export the updated vars
+make cf-apply NAME=prod         # tofu apply + cf-sync.sh
+source .envrc.prod              # re-export the updated values
 ```
 
-`cf-sync.sh` preserves the `TF_VAR_state_passphrase` line — only Tofu-derived vars are rewritten.
+`cf-sync.sh` preserves the `TF_VAR_state_passphrase` line — only the Tofu-derived vars are rewritten.
 
 ## Hetzner (Tofu-provisioned VM)
 

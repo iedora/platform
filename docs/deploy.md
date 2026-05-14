@@ -55,95 +55,95 @@ Generate the values:
 
 ## On-prem (Cloudflare Tunnel) — end-to-end
 
-LAN box, no public IP, Starlink / NAT / CGNAT — fine. Cloudflare Tunnel dials **outbound** from the box; TLS terminates at the Cloudflare edge. The Cloudflare-side pieces (R2 bucket + CORS, Tunnel, DNS CNAME) are managed declaratively by OpenTofu — no dashboard click-ops.
+LAN box, no public IP, Starlink / NAT / CGNAT — fine. Cloudflare Tunnel dials **outbound** from the box; TLS terminates at the Cloudflare edge. The Cloudflare-side pieces (R2 bucket + CORS, Tunnel, DNS CNAME) and the R2 S3 access keys are created declaratively — no dashboard click-ops.
 
 ```
 Internet → Cloudflare edge (TLS) → cloudflared (outbound) → localhost:80 (kamal-proxy) → app:3000
 ```
 
-### Step 1 — provision the Cloudflare side (Tofu)
+### Spin up a new environment (one command)
 
-Prereqs:
-- A Cloudflare account + a zone you control.
-- An API token with: `Account · Workers R2 Storage · Edit`, `Account · Cloudflare Tunnel · Edit`, `Zone · DNS · Edit` (scoped to the zone), `Account · Account Settings · Read`. Create at `dash.cloudflare.com → My Profile → API Tokens`.
-- `account_id` (32 hex chars, top-right of the dashboard) + `zone_id` (zone overview → API column).
+Every env (prod, staging, customer-X) is one Tofu workspace under `infra/tofu/cloudflare/` with a matching `envs/<name>.tfvars`. Adding an env:
 
 ```bash
-cp infra/tofu/cloudflare/terraform.tfvars.example infra/tofu/cloudflare/terraform.tfvars
-$EDITOR infra/tofu/cloudflare/terraform.tfvars    # set account_id, zone_id, public_hostname
+# One-time per machine: API token (see "Required permissions" below) + state passphrase.
+export TF_VAR_cloudflare_api_token=...
+export TF_VAR_state_passphrase=...                # ≥ 16 chars; reuse across envs is fine
+export TF_VAR_account_id=...                      # 32-char hex, top-right of dash
+export TF_VAR_zone_id=...                         # zone overview → API column
 
-export TF_VAR_cloudflare_api_token=...            # the token created above
-export TF_VAR_state_passphrase=...                # ≥ 16 chars (re-use the hetzner one if set)
+# Spin up the env:
+make cf-new-env NAME=prod HOSTNAME=menu.example.com
 
-make cloudflare-up
+# Sources the new .envrc (or .envrc.prod for non-default names):
+source .envrc.prod    # or `source .envrc` when NAME=default
+make cf-r2-token      # creates real R2 S3 keys via API, patches .kamal/secrets.prod
 ```
 
-What just happened:
-- `cloudflare_r2_bucket` — created the R2 bucket
-- `cloudflare_r2_bucket_cors` — CORS rules scoped to `https://<PUBLIC_HOSTNAME>`
-- `cloudflare_zero_trust_tunnel_cloudflared` + `_config` + `_token` — Tunnel created with remotely-managed ingress (`<PUBLIC_HOSTNAME>` → `http://localhost:80`)
-- `cloudflare_dns_record` — CNAME `<PUBLIC_HOSTNAME>` → `<tunnel_id>.cfargotunnel.com`, proxied through Cloudflare
+What `make cf-new-env` did:
+1. Created `infra/tofu/cloudflare/envs/prod.tfvars` from the template (with your `TF_VAR_*` values).
+2. Created/selected the Tofu workspace `prod` and ran `tofu apply` (state isolated per env).
+3. Resources spun up: `cloudflare_r2_bucket` + `_cors`, `cloudflare_zero_trust_tunnel_cloudflared` + `_config` + token, `cloudflare_dns_record` CNAME (proxied) for `menu.example.com → <tunnel>.cfargotunnel.com`.
+4. Wrote `.envrc.prod` with `PUBLIC_HOSTNAME`, `S3_ENDPOINT`, `S3_BUCKET`, `S3_REGION`, `CLOUDFLARED_TUNNEL_TOKEN`, `CF_ENV`.
 
-`scripts/cf-sync.sh` ran after apply, writing `.envrc` at the repo root with all the env vars (`PUBLIC_HOSTNAME`, `S3_ENDPOINT`, `S3_BUCKET`, `S3_REGION`, `CLOUDFLARED_TUNNEL_TOKEN`). Source it (or `direnv allow`):
+And `make cf-r2-token`:
+1. Queried Cloudflare for the current R2 permission-group IDs (so this doesn't rot).
+2. Created a new R2 API token scoped to the bucket only.
+3. Derived `S3_ACCESS_KEY` (= token id) and `S3_SECRET_KEY` (= SHA-256 of token value — officially documented derivation).
+4. Patched `.kamal/secrets.prod` (or `.kamal/secrets-common` for the default/onprem/hetzner names).
+
+### Required CF API token permissions
+
+Single token, both Tofu + R2 key creation:
+- Account · Workers R2 Storage · **Edit**
+- Account · Cloudflare Tunnel · **Edit**
+- Zone · DNS · **Edit** (scoped to the zone)
+- Account · Account Settings · **Read**
+- User · API Tokens · **Edit** (needed by cf-r2-token.sh)
+
+Create at `dash.cloudflare.com → My Profile → API Tokens`. Same token holds enough power to create more tokens — rotate or split (Tofu vs. R2 helper) once your envs stabilise.
+
+### Bootstrap the target host + first deploy
 
 ```bash
-source .envrc
-```
-
-### Step 2 — R2 API token (one dashboard click)
-
-Tofu can't reliably produce S3-compatible R2 credentials (provider bug #6626, Jan 2026). Run the helper to get exact dashboard steps:
-
-```bash
-make cloudflare-r2-token
-```
-
-It prints the URL + click-path. Copy the **Access Key ID** + **Secret Access Key** and paste into `.kamal/secrets-common`:
-
-```
-S3_ACCESS_KEY=<from dashboard>
-S3_SECRET_KEY=<from dashboard>
-```
-
-### Step 3 — bootstrap the on-prem box (first time only)
-
-```bash
+# One-shot deploy user creation (works on any Ubuntu 24.04+ box):
 make onprem-bootstrap BOOTSTRAP_USER=pwu
 # prompts: SSH password (for pwu) + sudo password
+
+# Docker, UFW, cloudflared (token comes from the sourced .envrc):
+make onprem-setup
+
+# First Kamal deploy:
+make kamal-bootstrap [DEST=prod]
+make kamal-deploy    [DEST=prod]
 ```
 
-### Step 4 — provision Docker + cloudflared
+`DEST` defaults to `onprem`. If you used `NAME=prod`, also create a matching Kamal destination file:
 
 ```bash
-make onprem-setup    # CLOUDFLARED_TUNNEL_TOKEN is in your .envrc — already exported
+cp config/deploy.onprem.yml config/deploy.prod.yml
+$EDITOR config/deploy.prod.yml                # adjust servers.web.hosts / accessory hosts
+cp .kamal/secrets.onprem .kamal/secrets.prod  # if not already patched by cf-r2-token
 ```
 
-Verify:
+### Day-2 operations
 
 ```bash
-ssh deploy@192.168.50.53 systemctl status cloudflared
-# active (running)
+make cf-apply NAME=prod        # re-apply (idempotent)
+make cf-list                   # list envs
+make cf-destroy NAME=staging   # destroy an env's CF resources + remove .envrc.staging
 ```
-
-### Step 5 — first deploy
-
-```bash
-make kamal-bootstrap    # one-shot: pre-boot accessories + setup --skip-hooks + 1st migration
-make kamal-deploy       # subsequent: build + push + migrate (pre-deploy hook) + roll
-```
-
-The app is reachable at `https://<PUBLIC_HOSTNAME>`.
 
 ### Re-syncing after Cloudflare changes
 
-If you change `public_hostname`, `bucket_name`, or any Tofu-managed CF resource:
+If you change `public_hostname`, `bucket_name`, or any other Cloudflare-side value:
 
 ```bash
-make cloudflare-up    # tofu apply + cf-sync.sh refreshes .envrc
-source .envrc         # pick up the new values
+make cf-apply NAME=prod        # tofu apply + cf-sync.sh refreshes .envrc.prod
+source .envrc.prod             # pick up the new values
 ```
 
-`cloudflare-up` preserves the existing `TF_VAR_state_passphrase` line — only the Tofu-derived vars are rewritten.
+`cf-sync.sh` preserves the `TF_VAR_state_passphrase` line — only the Tofu-derived vars are rewritten.
 
 ## Hetzner — end-to-end
 

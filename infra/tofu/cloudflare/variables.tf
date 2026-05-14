@@ -1,11 +1,15 @@
 variable "cloudflare_api_token" {
   description = <<-EOT
-    Cloudflare API token with these permissions:
-      - Account · Workers R2 Storage · Edit
-      - Account · Cloudflare Tunnel · Edit
-      - Zone · DNS · Edit  (scoped to the zone in `zone_id`)
-      - Account · Account Settings · Read
-      - User · API Tokens · Edit  (so Tofu can create the R2 access token)
+    Cloudflare API token. Permissions required:
+      Tofu side (this module):
+        - Account · Workers R2 Storage · Edit
+        - Account · Cloudflare Tunnel · Edit
+        - Zone · DNS · Edit (scoped to the zone in `zone_id`)
+        - Account · Account Settings · Read
+      cf-r2-token.sh (creates the S3 access keys):
+        - User · API Tokens · Edit
+    Same token can drive both — convenient, but holds enough power to create
+    new tokens. Rotate or scope down once your environments stabilize.
     Provide via TF_VAR_cloudflare_api_token.
   EOT
   type        = string

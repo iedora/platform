@@ -42,11 +42,13 @@ help:  ## Show this help
 	@echo "  make hetzner-down                         - tofu destroy"
 	@echo "  make hetzner-ssh                          - SSH into the VM"
 	@echo
-	@echo "Cloudflare (R2 + Tunnel + DNS — managed by Tofu):"
-	@echo "  make cloudflare-up                        - tofu apply + sync outputs into .envrc"
-	@echo "  make cloudflare-sync                      - re-write .envrc from current Tofu outputs"
-	@echo "  make cloudflare-r2-token                  - prints dashboard steps to create R2 keys"
-	@echo "  make cloudflare-down                      - tofu destroy"
+	@echo "Cloudflare (R2 + Tunnel + DNS — managed by Tofu, one workspace per env):"
+	@echo "  make cf-new-env NAME=staging HOSTNAME=staging.menu.example.com"
+	@echo "                                            - scaffold tfvars + workspace + apply + sync"
+	@echo "  make cf-apply NAME=staging                - re-apply existing env"
+	@echo "  make cf-destroy NAME=staging              - tofu destroy + remove workspace + .envrc.NAME"
+	@echo "  make cf-list                              - list Tofu workspaces"
+	@echo "  make cf-r2-token                          - print dashboard steps for R2 S3 API keys"
 	@echo
 	@echo "Shared:"
 	@echo "  make ssh-key                              - Generate ~/.ssh/id_ed25519 (idempotent)"
@@ -105,18 +107,39 @@ hetzner-down: ssh-key  ## Destroy the Hetzner VM
 hetzner-ssh:  ## SSH into the Hetzner VM
 	@cd $(TOFU_HETZNER) && ssh -i $(SSH_KEY) deploy@$$(tofu output -raw server_host)
 
-# ── Cloudflare (R2 + Tunnel + DNS) ────────────────────────────────────────────
-cloudflare-up: cloudflare-sync  ## tofu apply + write outputs to .envrc
+# ── Cloudflare (R2 + Tunnel + DNS) — one Tofu workspace per env ──────────────
+cf-new-env:  ## Scaffold + apply a new Cloudflare env. Args: NAME=<env> HOSTNAME=<fqdn>
+	@if [ -z "$(NAME)" ] || [ -z "$(HOSTNAME)" ]; then \
+	  echo "usage: make cf-new-env NAME=<env> HOSTNAME=<fqdn>"; exit 1; \
+	fi
+	bash scripts/cf-env.sh new "$(NAME)" "$(HOSTNAME)"
 
-cloudflare-down:  ## Destroy R2 bucket + Tunnel + DNS
-	cd $(TOFU_CF) && tofu destroy -auto-approve
+cf-apply:  ## Re-apply an existing Cloudflare env. Args: NAME=<env>
+	@if [ -z "$(NAME)" ]; then echo "usage: make cf-apply NAME=<env>"; exit 1; fi
+	bash scripts/cf-env.sh apply "$(NAME)"
 
-cloudflare-sync:  ## (Re-)apply Cloudflare resources and refresh .envrc
-	cd $(TOFU_CF) && tofu init -upgrade && tofu apply -auto-approve
-	bash scripts/cf-sync.sh
+cf-destroy:  ## Destroy a Cloudflare env. Args: NAME=<env>
+	@if [ -z "$(NAME)" ]; then echo "usage: make cf-destroy NAME=<env>"; exit 1; fi
+	bash scripts/cf-env.sh destroy "$(NAME)"
 
-cloudflare-r2-token:  ## Print dashboard instructions for creating an R2 API token
+cf-list:  ## List Tofu workspaces for the cloudflare env
+	@bash scripts/cf-env.sh list
+
+cf-r2-token:  ## Print dashboard instructions for creating an R2 API token
 	@bash scripts/cf-r2-token.sh
+
+# Legacy aliases (default workspace flow) — kept for muscle memory.
+cloudflare-up: cf-default-up  ## Apply the default workspace + sync .envrc
+cloudflare-down: cf-default-down  ## Destroy the default workspace
+
+cf-default-up:
+	@if [ ! -f $(TOFU_CF)/envs/default.tfvars ]; then \
+	  echo "Missing $(TOFU_CF)/envs/default.tfvars — copy from envs/example.tfvars first."; exit 1; \
+	fi
+	bash scripts/cf-env.sh apply default
+
+cf-default-down:
+	bash scripts/cf-env.sh destroy default
 
 # ── Kamal ─────────────────────────────────────────────────────────────────────
 kamal-bootstrap:  ## 1st-time on a fresh server (pre-boot accessories + setup --skip-hooks + 1st migration)
