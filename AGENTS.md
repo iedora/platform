@@ -161,7 +161,16 @@ shared/                    cross-slice infrastructure
 proxy.ts                   Next 16 proxy (was middleware)
 drizzle.config.ts
 docker-compose.yml         postgres + redis + localstack
+infra/
+  .env.example             single source of truth — copy to .env (gitignored), fill in 6 required values
+  deploy.sh                one entry point — load .env, generate missing secrets, tofu apply, host-init if needed, kamal deploy
+  tofu/                    Cloudflare tunnel + DNS + ingress (state encrypted, public_hostname from TF_VAR_)
+  kamal/                   Kamal 2 deploy config — app + 4 accessories (postgres, redis, minio, cloudflared); secrets-common is generated
 scripts/
+  host-init.sh             called by deploy.sh on first run: deploy user + SSH key + sshd hardening
+  kamal-first-deploy.sh    called by deploy.sh on first run: ordering workaround (basecamp/kamal#526)
+  k.sh                     kamal wrapper that loads infra/.env (used by `make logs`/`console`/etc.)
+  migrate.mjs              Drizzle migrations under pg_advisory_lock
   check-migrations.ts      dev-time guardrail; warns when journal has pending migrations
 .github/workflows/
   ci.yml                   Typecheck + Lint + E2E (Playwright); Bun for installs, Node for build
@@ -187,13 +196,10 @@ tests/e2e/
 - `bun run auth:generate` — sync Better Auth tables into `shared/db/schema.ts` (re-run after changing auth plugins)
 - `docker compose up -d` — start Postgres + Redis + LocalStack (S3)
 - `bunx shadcn@latest add <name>` — add a shadcn component
-- `make onprem-up NAME=<env> HOSTNAME=<fqdn>` — Cloudflare Tunnel + DNS for an env (Tofu workspaces)
-- `make onprem-apply NAME=<env>` / `make onprem-destroy NAME=<env>` / `make onprem-list`
-- `make host-bootstrap BOOTSTRAP_USER=pwu` — one-shot: create deploy user + SSH key on a fresh box
-- `make host-setup` — Docker + UFW + cloudflared via systemd. Needs `CLOUDFLARED_TUNNEL_TOKEN` (from .envrc).
-- `make kamal-bootstrap` — first-time-only fresh-server bootstrap (accessories + setup --skip-hooks + 1st migration)
-- `make kamal-deploy` — build + push + migrate (pre-deploy hook) + zero-downtime roll
-- `make migrate` — escape hatch: run `scripts/migrate.mjs` against the running image
+- `cp infra/.env.example infra/.env` — single config file (gitignored). Fill in 6 required values; 4 secrets auto-generate on first run.
+- `make deploy` — single entry point. `infra/deploy.sh` does: load .env, generate missing secrets, `tofu apply`, write Kamal secrets, host-init on first run, `kamal-first-deploy.sh` or `kamal deploy`. Idempotent.
+- `make logs` / `make console` / `make redeploy` / `make rollback` / `make migrate` — wrap `kamal` via `scripts/k.sh` (loads `infra/.env`)
+- `make destroy` — `tofu destroy`: removes Cloudflare tunnel + DNS only (does not touch the box)
 - `make help` — list every target
 
 ## CI

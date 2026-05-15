@@ -1,197 +1,137 @@
-# Deploy — on-prem
+# Deploy — homelab box behind a Cloudflare Tunnel
 
-> One-line purpose: build the Docker image, push to GHCR, and roll the new container with zero downtime onto an on-prem Ubuntu box reached via a Cloudflare Tunnel.
+> One-line purpose: edit one config file, run one command, app live on a homelab box behind a Cloudflare Tunnel.
 > **Last updated:** 2026.
 
-Single deploy target: an on-prem Linux box. Cloudflare provides public ingress (Tunnel + DNS, TLS terminated at the edge), MinIO runs as a Kamal accessory for S3-compatible storage. Three tools work together:
-
-| Tool | Responsibility |
-|---|---|
-| **OpenTofu** | Cloudflare Tunnel + ingress + DNS records (`infra/on-prem/tofu/`) |
-| **Ansible** | Server prep: deploy user, Docker, UFW, cloudflared (`infra/on-prem/ansible/setup.yml`) |
-| **Kamal** | App + accessories: Postgres + Redis + MinIO + the Next.js container |
-
 ```
-Internet → Cloudflare edge (TLS) ─┬─→ cloudflared (outbound) → localhost:80   → kamal-proxy → app:3000
-                                  └─→ cloudflared (outbound) → localhost:9000 → MinIO
-
-DNS:  menu.example.com   → tunnel UUID → http://localhost:80
-      assets.example.com → tunnel UUID → http://localhost:9000
+Internet → Cloudflare edge (TLS) ─→ cloudflared accessory (outbound)
+                                       │   (kamal Docker network)
+                                       ├─→ http://kamal-proxy          → app:3000
+                                       └─→ http://meta-menu-minio:9000 → MinIO
 ```
 
-**LAN access is deliberately not supported.** Hitting `http://$ONPREM_HOST` directly would mean HTTP cookies which Better Auth rejects when `BETTER_AUTH_URL=https://…` (browsers refuse `Secure` cookies over HTTP). On the LAN, use the public tunnel URL — Cloudflare resolves close to you and tunnels back, ~30-80ms overhead. For real local dev, `bun run dev`.
+Single source of truth: **`infra/.env`**. Single entry point: **`make deploy`** (= `bash infra/deploy.sh`).
 
-## Prerequisites
+## Prerequisites (one-time)
 
-| Platform | Install Kamal |
+| | |
 |---|---|
-| Linux / WSL | `sudo apt install -y ruby-full && sudo gem install kamal` |
-| macOS | `brew install kamal` |
+| Mac tools | `brew install opentofu` + `sudo gem install kamal -N` (kamal is a Ruby gem, not a brew formula) |
+| Docker | running locally (OrbStack, Docker Desktop, …) |
+| `gh` CLI | logged in (`gh auth status`) — Kamal uses your GH token to push to GHCR |
+| Cloudflare | account + a zone (domain) you control |
+| Homelab box | Ubuntu 24.04+, sudo user, reachable over SSH |
+| SSH key on box | `ssh-copy-id <user>@<box>` — paste their password once |
 
-Also: `gh` CLI logged in (for `KAMAL_REGISTRY_PASSWORD=$(gh auth token)`), Docker running locally for the build, and an Ubuntu 24.04+ box reachable over SSH.
+## Two configuration files (and only two)
 
-## One-time environment file
-
-`.envrc` at the repo root holds everything the Make targets and Kamal need. It's gitignored. Fill it once, then `source .envrc` (or use `direnv`) in any shell.
+### 1. `infra/.env` — everything
 
 ```bash
-# .envrc
-export TF_VAR_state_passphrase='...'           # ≥ 16 chars, encrypts Tofu state
-export TF_VAR_cloudflare_api_token='...'       # see "Cloudflare API token" below
-export TF_VAR_account_id='...'                 # 32-char hex
-export TF_VAR_zone_id='...'                    # 32-char hex
-
-# Server identity — used by Ansible inventory + Kamal config.
-# Use the box's mDNS hostname (set up by `make host-setup`); on the very
-# first bootstrap before mDNS is up, fall back to the LAN IP.
-export ONPREM_HOST='pwuserver.local'           # or 192.168.x.y for first bootstrap
+cp infra/.env.example infra/.env
+$EDITOR infra/.env
 ```
 
-The `make onprem-up` step below appends the Cloudflare outputs (PUBLIC_HOSTNAME, S3_ENDPOINT, CLOUDFLARED_TUNNEL_TOKEN, etc.) — those refresh on every apply; your TF_VAR_* values are preserved across syncs.
+Required (fill in):
 
-### About `ONPREM_HOST`
+```bash
+CLOUDFLARE_ACCOUNT_ID=<32-char hex>
+CLOUDFLARE_ZONE_ID=<32-char hex>
+CLOUDFLARE_API_TOKEN=<token with Tunnel·Edit + DNS·Edit + Account·Read>
+PUBLIC_HOSTNAME=menu.example.com
+ONPREM_HOST=192.168.50.53
+BOOTSTRAP_USER=pwu
+```
 
-The `setup.yml` Ansible play enables mDNS on the box (`MulticastDNS=yes` in `systemd-resolved`) and opens UFW 5353/udp. After the first `make host-setup` run, the box advertises itself as `<hostname>.local` on the LAN — find the hostname with `hostname` on the box (or read it off any SSH prompt). Switch `.envrc` from the IP to that name and you never need to touch an IP again.
+Auto-generated (leave blank — `make deploy` fills them in and saves back):
 
-**Works from outside the LAN?** mDNS is LAN-only. For "deploy from a coffee shop", add **Tailscale** to the box + your laptop — `ONPREM_HOST=meta-menu.<tailnet>.ts.net` works from anywhere with no port-forward. Not implemented here; add as a follow-up if needed.
+```bash
+STATE_PASSPHRASE=
+BETTER_AUTH_SECRET=
+POSTGRES_PASSWORD=
+MINIO_ROOT_PASSWORD=
+```
 
-### Cloudflare API token
+This file is gitignored. Back it up to a password manager — it holds everything needed to redeploy.
 
-`dash.cloudflare.com → My Profile → API Tokens → Create Custom Token`. Permissions:
+### 2. Cloudflare API token
 
+`dash.cloudflare.com → My Profile → API Tokens → Create Custom Token`:
 - Account · Cloudflare Tunnel · **Edit**
 - Zone · DNS · **Edit** (scoped to your zone)
 - Account · Account Settings · **Read**
 
-That's it. No R2, no API-token-management — minimal surface area.
-
-## Secrets
+## Deploy
 
 ```bash
-cp .kamal/secrets.example .kamal/secrets-common
-$EDITOR .kamal/secrets-common
+make deploy
 ```
 
-Fill in:
-- `BETTER_AUTH_SECRET` — `openssl rand -base64 32`
-- `POSTGRES_PASSWORD` — `openssl rand -hex 32` (URL-safe)
-- `DATABASE_URL` — substitute the password above into `postgres://postgres:<pwd>@meta-menu-postgres:5432/metamenu`
-- `MINIO_ROOT_USER` — any alnum string ≥ 3 chars (e.g. `metamenu`)
-- `MINIO_ROOT_PASSWORD` — `openssl rand -hex 32` (≥ 8 chars required by MinIO)
+What `infra/deploy.sh` does, in order:
 
-`S3_ACCESS_KEY=$MINIO_ROOT_USER` and `S3_SECRET_KEY=$MINIO_ROOT_PASSWORD` in the template wire the SDK creds to the MinIO root automatically.
+1. Loads `infra/.env`.
+2. Generates any blank secrets (`openssl rand …`), saves them back to `.env`.
+3. `tofu apply` — creates Cloudflare tunnel + 2 ingress rules + 2 DNS CNAMEs (idempotent).
+4. Writes `infra/kamal/.kamal/secrets-common` from the env values.
+5. **First run only**: SSHs into the box, creates the `deploy` user with your SSH key, hardens sshd. You'll be prompted **once** for `BOOTSTRAP_USER`'s sudo password.
+6. **First run only**: `kamal server bootstrap` installs Docker on the box, boots accessories, `kamal setup --skip-hooks`, runs first migration.
+7. **Subsequent runs**: `kamal deploy` — build, push, migrate, zero-downtime roll.
 
-## End-to-end deploy
+First deploy takes ~5-10 min (QEMU cross-compile amd64 from Apple Silicon). Subsequent deploys ~1-2 min with the registry cache.
+
+## Day-2 commands
 
 ```bash
-source .envrc
-
-# 1. Cloudflare side (Tunnel + DNS + 2 ingresses).
-make onprem-up NAME=default HOSTNAME=menu.example.com
-source .envrc                                # pick up the new outputs
-
-# 2. Server side (first time only — needs the password of an existing sudo user).
-sudo apt install -y sshpass                  # if not already installed
-make host-bootstrap BOOTSTRAP_USER=pwu       # creates `deploy` user + installs SSH key
-make host-setup                              # Docker + UFW + cloudflared
-
-# 3. First Kamal deploy.
-make kamal-bootstrap                         # boots accessories + 1st migration
-make kamal-deploy                            # rolls the app
+make logs           # tail app logs
+make console        # bash inside the app container
+make redeploy       # re-pull current image, no rebuild
+make rollback       # roll back to previous version
+make migrate        # run migrations against current image
 ```
 
-Visit `https://menu.example.com` — app live. Uploads go to `https://assets.example.com/metamenu/<key>` via the second tunnel ingress.
+All of these go through `scripts/k.sh` which loads `infra/.env`. You never need to `source` anything yourself.
 
-## Day-2 deploys
+## Updating the tunnel
+
+`infra/tofu/main.tf` defines ingress + DNS. Edit it (e.g. add a third ingress rule), then `make deploy` — `tofu apply` runs again and pushes the change. DNS + ingress propagate in seconds.
+
+## Teardown
 
 ```bash
-make kamal-deploy           # build + push + migrate (pre-deploy hook) + roll
+make destroy        # destroys the Cloudflare tunnel + DNS only — does NOT touch the box
 ```
 
-Sequence:
-
-1. **Build + push** new image to GHCR (registry cache warmed).
-2. **`.kamal/hooks/pre-deploy`** runs — `kamal app exec --primary --version=$KAMAL_VERSION "node scripts/migrate.mjs"`. Acquires `pg_advisory_lock`, applies pending Drizzle migrations. Failure aborts the deploy; old container keeps serving with old schema.
-3. **Rolling deploy** — new container boots, waits for `GET /up` to return 200, then traffic flips.
-
-On rollback the hook skips migrations — old image runs against old schema.
-
-> **Migration limitation** — only **additive** changes are zero-downtime (add nullable column, add table, `CREATE INDEX CONCURRENTLY`). Renames/drops need expand-contract across multiple deploys.
-
-### Escape hatch — manual migration
-
-```bash
-make migrate    # kamal app exec --reuse "node scripts/migrate.mjs"
-```
-
-Runs migrations against the currently-serving image. Useful for hot-fixes or re-running after a pipeline failure.
-
-## Day-2 ops
-
-```bash
-make kamal-logs              # tail logs (-f)
-make kamal-app               # shell inside the running app container
-make kamal-rollback          # rollback to previous version
-make kamal-redeploy          # re-pull current image without rebuild
-```
-
-For commands outside the Makefile:
-```bash
-kamal app details
-kamal accessory boot minio
-kamal config                 # prints fully-resolved config (debug)
-```
-
-## Multi-environment
-
-If you ever need a second env (staging, customer-X, …) on a different box:
-
-```bash
-make onprem-up NAME=staging HOSTNAME=staging.menu.example.com
-source .envrc.staging        # not .envrc — staging gets its own file
-# Edit infra/on-prem/kamal/config/deploy.yml's `servers.web.hosts` to point at the new box
-# (or split it back into deploy.yml + deploy.<dest>.yml destinations)
-```
-
-Tofu workspaces handle the Cloudflare side per-env automatically. Kamal-side destinations were collapsed (single target = no destinations file needed); restore them if multi-env Kamal becomes necessary.
+To wipe the box: SSH in as `deploy` and `docker compose down -v` for each Kamal container, or just `sudo rm -rf /var/lib/docker /etc/kamal*`.
 
 ## Structure
 
 ```
-Dockerfile                    multi-stage build (Bun install, Node build, standalone runtime)
-.dockerignore                 keeps node_modules, .next, infra/, tests/ out of the image
-infra/on-prem/                Everything for one on-prem deploy target
-  tofu/                       Cloudflare Tunnel + ingress + DNS (per-env workspace)
-    envs/example.tfvars       template for envs/<name>.tfvars
-  ansible/
-    inventory.yml             static inventory; ansible_host = lookup(env, ONPREM_HOST)
-    group_vars/all.yml        deploy_user, timezone, firewall ports
-    bootstrap.yml             one-shot: create deploy user + install SSH key
-    setup.yml                 Docker + UFW + cloudflared + mDNS
+infra/
+  .env.example                    template — copy to .env (gitignored)
+  deploy.sh                       the one entry point
+  tofu/                           Cloudflare tunnel + DNS + ingress
   kamal/
-    config/deploy.yml         Kamal config (builder.context = ../../.. → repo root)
-    .kamal/hooks/pre-deploy   Drizzle migrations against KAMAL_VERSION pre-cutover
-    .kamal/secrets-common     real values (gitignored)
-    .kamal/secrets.example    committed template
+    config/deploy.yml             app + 4 accessories (postgres, redis, minio, cloudflared)
+    .kamal/hooks/pre-deploy       Drizzle migrations under pg_advisory_lock
+    .kamal/secrets-common         generated by deploy.sh, gitignored
 scripts/
-  bootstrap.sh                first Kamal boot (pre-boot accessories + setup --skip-hooks + 1st migration)
-  onprem-env.sh               multi-env wrapper for the Tofu module (workspaces)
-  onprem-sync.sh              reads Tofu outputs, refreshes .envrc[.<name>]
-  migrate.mjs                 Drizzle migrations under pg_advisory_lock (parallel-safe)
+  host-init.sh                    bootstraps the box (called by deploy.sh on first run)
+  kamal-first-deploy.sh           Kamal first-deploy ordering (called by deploy.sh on first run)
+  k.sh                            kamal wrapper that loads infra/.env (used by `make logs` etc.)
+  migrate.mjs                     Drizzle migrations under pg_advisory_lock
+Dockerfile                        multi-stage build (Bun install, Node build, standalone)
 ```
 
 ## Troubleshooting
 
-**`kamal setup` fails with "Cannot connect to Docker"**: the deploy user isn't in the `docker` group. Re-run `make host-setup`.
+**`make deploy` errors "missing in infra/.env"** — fill in the named field.
 
-**Healthcheck flaps in loop**: app starts slower than `interval`. Raise `proxy.healthcheck.interval` in `infra/on-prem/kamal/config/deploy.yml`.
+**Sudo password keeps being rejected during host-init** — confirm the user can sudo: `ssh <user>@<box> 'sudo -v'`. The user must be in the `sudo` group (default on Ubuntu's first-created user).
 
-**"unable to find image" on the server**: registry push failed. Check `gh auth status` resolves a valid token.
+**`cloudflared` accessory restarts in a loop** — stale `TUNNEL_TOKEN`. Delete `infra/kamal/.kamal/secrets-common` and re-run `make deploy` — it'll regenerate from the fresh tofu output.
 
-**App returns 500 with missing env**: `kamal app exec --reuse env | grep -E 'BETTER|DATABASE|REDIS|S3'`. ERB in `deploy.yml` reads your shell env, not `.kamal/secrets-common` — `source .envrc` before `make kamal-deploy`.
+**502 from the tunnel** — verify ingress in `infra/tofu/main.tf` points at container names (`http://kamal-proxy`, `http://meta-menu-minio:9000`). `docker network inspect kamal` on the box should list all 5 containers.
 
-**Cloudflare Tunnel shows "degraded"**: outbound to `*.cloudflare.com` is blocked. UFW outgoing policy is allow by default; check the network.
+**Healthcheck flaps** — app starts slower than `interval`. Raise `proxy.healthcheck.interval` in `infra/kamal/config/deploy.yml`.
 
-**`cloudflared.service` stuck in `activating (auto-restart)`**: token wrong, or `/etc/cloudflared/token` unreadable. `journalctl -u cloudflared -n 50` — re-run `make host-setup` with `CLOUDFLARED_TUNNEL_TOKEN` set.
-
-**"missing required env var PUBLIC_HOSTNAME"**: you didn't `source .envrc` after `make onprem-up`.
+**"unable to find image" on the server** — registry push failed. `gh auth status` must show a valid token.

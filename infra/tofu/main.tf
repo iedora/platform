@@ -1,15 +1,13 @@
-# Cloudflare-managed:
+# Cloudflare-managed (one homelab box, one tunnel):
 #   - Tunnel + remotely-managed ingress (2 routes: app + assets)
 #   - DNS CNAMEs: <public_hostname> + <assets_hostname>
 #
-# NOT managed here:
-#   - Object storage: MinIO runs as a Kamal accessory on the origin host.
-#     The tunnel routes <assets_hostname> → http://localhost:9000 (MinIO)
-#     so the browser uses the public URL for presigned PUT/GET.
+# Ingress targets are Docker container names on the `kamal` network —
+# cloudflared runs as a Kamal accessory and shares that network with
+# kamal-proxy and the MinIO accessory.
 
 locals {
-  # Default assets hostname is `assets.<rest-of-public-hostname>`. Override via
-  # var.assets_hostname for a different prefix.
+  # Default: assets.<rest-of-public-hostname>. Override via var.assets_hostname.
   derived_assets_hostname = "assets.${join(".", slice(split(".", var.public_hostname), 1, length(split(".", var.public_hostname))))}"
   assets_hostname         = coalesce(var.assets_hostname, local.derived_assets_hostname)
 }
@@ -19,11 +17,11 @@ locals {
 resource "cloudflare_zero_trust_tunnel_cloudflared" "menu" {
   account_id = var.account_id
   name       = var.tunnel_name
-  config_src = "cloudflare" # remotely-managed config (so the ingress block below applies)
+  config_src = "cloudflare" # remotely-managed config → ingress block below applies
 }
 
-# Token used by the cloudflared daemon on the origin. Exposed via a data source
-# (NOT an attribute on the resource — provider >= 5.8.2).
+# Token used by the cloudflared accessory. Surfaced via a data source
+# (provider >= 5.8.2 dropped the attribute on the resource).
 data "cloudflare_zero_trust_tunnel_cloudflared_token" "menu" {
   account_id = var.account_id
   tunnel_id  = cloudflare_zero_trust_tunnel_cloudflared.menu.id
@@ -35,17 +33,17 @@ resource "cloudflare_zero_trust_tunnel_cloudflared_config" "menu" {
 
   config = {
     ingress = [
-      # App — kamal-proxy on :80 routes to the Next.js container.
+      # App — kamal-proxy is the singleton proxy container on the host.
       {
         hostname = var.public_hostname
-        service  = var.origin_service
+        service  = "http://kamal-proxy"
       },
-      # Assets — MinIO accessory on :9000 (browser-reachable for presigned URLs).
+      # Assets — MinIO accessory. Service prefix + accessory name.
       {
         hostname = local.assets_hostname
-        service  = "http://localhost:9000"
+        service  = "http://meta-menu-minio:9000"
       },
-      # Catch-all required by cloudflared — last rule must have no hostname.
+      # Catch-all required by cloudflared.
       {
         service = "http_status:404"
       },
@@ -60,7 +58,7 @@ resource "cloudflare_dns_record" "menu" {
   name    = var.public_hostname
   type    = "CNAME"
   content = "${cloudflare_zero_trust_tunnel_cloudflared.menu.id}.cfargotunnel.com"
-  ttl     = 1 # 1 = auto; required when proxied = true
+  ttl     = 1 # auto (required when proxied)
   proxied = true
 }
 

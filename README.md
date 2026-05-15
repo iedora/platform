@@ -17,7 +17,7 @@ uploads, themes, multi-language overrides, plans, and analytics.
 - **Better Auth** with the `organization` plugin
 - **Vitest** + **PGLite** for unit tests, **Playwright** for end-to-end
 - **Bun** for installs and scripts; **Node** as the production runtime
-- **Kamal 2** for zero-downtime deploys; **OpenTofu + Ansible** to provision
+- **Kamal 2** for zero-downtime deploys (cloudflared runs as an accessory); **OpenTofu** for the Cloudflare tunnel
 
 ## Quick start
 
@@ -47,16 +47,16 @@ features/    one folder per slice — auth, menu-builder, menu-publishing, …
 shared/      db client + schema, env, ui primitives, testing fixtures
 tests/       Playwright e2e specs + fixtures (Vitest tests are co-located)
 docs/        architecture, testing, infra, deploy
-infra/on-prem/   Everything for the on-prem deploy: tofu/ + ansible/ + kamal/
-scripts/         bootstrap.sh, migrate.mjs, onprem-env.sh, onprem-sync.sh, check-migrations.ts
+infra/       tofu/ (Cloudflare tunnel + DNS) + kamal/ (deploy.yml + hooks)
+scripts/     host-init.sh, kamal-first-deploy.sh, sync-env.sh, migrate.mjs, check-migrations.ts
 ```
 
 ## Where to go next
 
 - **[`docs/architecture.md`](docs/architecture.md)** — the slice playbook + how to add a feature
 - **[`docs/testing.md`](docs/testing.md)** — Vitest+PGLite unit tests, Playwright e2e
-- **[`docs/infra.md`](docs/infra.md)** — self-hosting with OpenTofu + Ansible
-- **[`docs/deploy.md`](docs/deploy.md)** — production deploys with Kamal
+- **[`docs/infra.md`](docs/infra.md)** — self-hosting on a homelab box behind a Cloudflare Tunnel
+- **[`docs/deploy.md`](docs/deploy.md)** — production deploys with Kamal 2
 - **[`AGENTS.md`](AGENTS.md)** — hard rules + conventions (also read by AI assistants)
 
 ## Scripts
@@ -70,9 +70,9 @@ scripts/         bootstrap.sh, migrate.mjs, onprem-env.sh, onprem-sync.sh, check
 | `bun run test:e2e` | Playwright end-to-end suite |
 | `bun run db:generate` | Generate Drizzle migration from `shared/db/schema.ts` |
 | `bun run db:migrate` | Apply pending migrations |
-| `make onprem-up NAME=… HOSTNAME=…` | Provision the Cloudflare tunnel + DNS for an env |
-| `make host-bootstrap` / `make host-setup` | Provision the on-prem Linux box (Ansible) |
-| `make kamal-deploy` | Build + push + migrate (pre-deploy hook) + roll |
+| `cp infra/.env.example infra/.env` | (Prereq, one-time) fill in Cloudflare creds + box IP |
+| `ssh-copy-id <user>@<box>` | (Prereq, one-time) install your SSH pubkey on the box |
+| `make deploy` | End-to-end: tofu apply → host-init (if needed) → kamal first/regular deploy |
 
 `make help` lists every target.
 

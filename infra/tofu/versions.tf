@@ -8,9 +8,7 @@ terraform {
     }
   }
 
-  # State and plan encryption (OpenTofu 1.7+). Same pattern as the hetzner env.
-  # Passphrase from TF_VAR_state_passphrase — share the same passphrase across
-  # envs (it's a one-passphrase-per-laptop story) or set a different one here.
+  # State + plan encryption (OpenTofu 1.7+). Passphrase from TF_VAR_state_passphrase.
   encryption {
     key_provider "pbkdf2" "default" {
       passphrase = var.state_passphrase

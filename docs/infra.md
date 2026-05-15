@@ -1,149 +1,102 @@
-# Infra — provisioning servers
+# Infra — provisioning the homelab box
 
-> One-line purpose: get a Linux box (yours, on-prem) into a state where `make kamal-deploy` works against it.
+> One-line purpose: edit one file, run one command, deploy the app to a homelab box behind a Cloudflare Tunnel.
 > **Last updated:** 2026.
 
-> **TL;DR** — single deploy target: an on-prem Ubuntu 24.04+ box behind a Cloudflare Tunnel. OpenTofu manages Cloudflare resources (Tunnel + DNS), Ansible preps the box (Docker + UFW + cloudflared), Kamal handles the app + accessories (Postgres + Redis + MinIO).
+> **TL;DR** — one config file (`infra/.env`), one entry point (`make deploy` → `bash infra/deploy.sh`). The script does Tofu, host bootstrap, and Kamal in order. Idempotent — same command for first-deploy and subsequent deploys.
 
 ## Architecture
 
 ```
-┌──────────────────────────────────────────────────────────────────────┐
-│  Cloudflare side (OpenTofu)                                          │
-│   Tunnel + 2 ingress rules (app + assets) + 2 DNS CNAMEs             │
-│   Per-env Tofu workspace = independent tunnel/DNS per environment    │
-├──────────────────────────────────────────────────────────────────────┤
-│  Server side (Ansible)                                               │
-│   1 playbook (setup.yml) — base / metal / onprem plays               │
-│   FQCN-only, deb822 apt repos, hardened cloudflared systemd unit     │
-├──────────────────────────────────────────────────────────────────────┤
-│  App side (Kamal) — see deploy.md                                    │
-│   Zero-downtime rolling deploy + pre-deploy migrations + MinIO       │
-└──────────────────────────────────────────────────────────────────────┘
+┌────────────────────────────────────────────────────────────────────────┐
+│  Cloudflare (OpenTofu — one tunnel, two ingress rules)                 │
+│   ─ menu.<domain>     → http://kamal-proxy                             │
+│   ─ assets.<domain>   → http://meta-menu-minio:9000                    │
+│  Both target Docker container names on the Kamal network.              │
+├────────────────────────────────────────────────────────────────────────┤
+│  Server (bash, on first run only)                                      │
+│   ─ create `deploy` user + sudoers + SSH key                           │
+│   ─ disable root login + password auth                                 │
+│  Docker is installed by `kamal server bootstrap`.                      │
+├────────────────────────────────────────────────────────────────────────┤
+│  App (Kamal 2)                                                         │
+│   App + proxy + 4 accessories (postgres, redis, minio, cloudflared)    │
+│   on a shared `kamal` Docker network — no host ports published.        │
+└────────────────────────────────────────────────────────────────────────┘
 ```
 
 ## Layout
 
 ```
-infra/on-prem/                Everything for one on-prem deploy target
-  tofu/                       Cloudflare Tunnel + ingress + DNS (state encrypted)
-    main.tf                   tunnel + _config (2 ingresses) + _token + 2 dns_records
-    variables.tf              account_id, zone_id, public_hostname, assets_hostname
-    versions.tf               cloudflare ~> 5.19 + state encryption
-    outputs.tf                public_hostname, assets_hostname, tunnel_id, tunnel_token (sensitive)
-    envs/example.tfvars       template — copy to envs/<name>.tfvars per env
-  ansible/
-    inventory.yml             static inventory (mDNS-resolved hosts)
-    bootstrap.yml             one-shot: create deploy user + install SSH key
-    setup.yml                 main playbook (Docker + UFW + cloudflared + mDNS)
-    group_vars/all.yml        cross-env config (deploy_user, timezone, firewall ports)
-    requirements.yml          community.general, ansible.posix
-  kamal/                      Kamal expects this exact layout under PWD
-    config/deploy.yml         Kamal config (builder.context points to repo root)
-    .kamal/hooks/pre-deploy   runs Drizzle migrations against KAMAL_VERSION
-    .kamal/secrets-common     real values (gitignored)
-    .kamal/secrets.example    committed template
+infra/
+  .env.example              copy to .env, fill in 6 required values
+  deploy.sh                 the one entry point — invoked by `make deploy`
+  tofu/                     Cloudflare tunnel + DNS + ingress (encrypted state)
+  kamal/
+    config/deploy.yml       app + 4 accessories incl cloudflared
+    .kamal/hooks/pre-deploy Drizzle migrations under pg_advisory_lock
 scripts/
-  bootstrap.sh                first Kamal bootstrap (pre-boot accessories + setup --skip-hooks)
-  onprem-env.sh               multi-env wrapper for the Tofu module (workspaces)
-  onprem-sync.sh              reads Tofu outputs, refreshes .envrc / .envrc.<name>
-  migrate.mjs                 Drizzle migrations under pg_advisory_lock (parallel-safe)
+  host-init.sh              deploy user + SSH key + sshd hardening (called by deploy.sh first time)
+  kamal-first-deploy.sh     Kamal first-deploy ordering (called by deploy.sh first time)
+  k.sh                      kamal wrapper used by `make logs/console/...`
+  migrate.mjs               Drizzle migrations
 ```
 
-## Cloudflare side (Tunnel + DNS — one Tofu workspace per env)
+## Prerequisites
 
-`infra/on-prem/tofu/` manages the Cloudflare-side resources: the Zero Trust Tunnel + 2 ingress rules (app + assets) + 2 proxied DNS CNAMEs. Storage stays on-prem (MinIO Kamal accessory) so R2 is out of scope.
+- Cloudflare account + zone you control.
+- API token: Account · Cloudflare Tunnel · Edit, Zone · DNS · Edit (scoped), Account · Account Settings · Read.
+- Linux box (Ubuntu 24.04+) with an existing sudo user.
+- Mac tools: `brew install opentofu` + `sudo gem install kamal -N` (Ruby gem), Docker running, `gh` CLI logged in.
+- SSH key on the box: `ssh-copy-id <user>@<box>` (paste password once).
 
-Multi-env via Tofu workspaces: one workspace = one env (`default`, `prod`, `staging`, …), each with its own state file and `envs/<name>.tfvars`.
-
-Prereqs (one-time per machine):
-- Cloudflare account + a zone you control.
-- API token with: Account · Cloudflare Tunnel · Edit, Zone · DNS · Edit (scoped to the zone), Account · Account Settings · Read.
-- `account_id` and `zone_id` (both 32-char hex).
-
-All four go into `.envrc` at the repo root (gitignored), plus `TF_VAR_state_passphrase` for the Tofu state encryption. `source .envrc` once per shell.
-
-### Spin up an env
+## One command
 
 ```bash
-make onprem-up NAME=default HOSTNAME=menu.example.com
+cp infra/.env.example infra/.env
+$EDITOR infra/.env                # fill in 6 required values
+make deploy                       # everything else, automated
 ```
 
-Behind the scenes (`scripts/onprem-env.sh new`):
-1. Scaffolds `infra/on-prem/tofu/envs/default.tfvars` from the inputs.
-2. Creates/selects the Tofu workspace.
-3. Runs `tofu apply` — tunnel + 2 ingresses + 2 DNS records.
-4. Invokes `scripts/onprem-sync.sh` which appends Tofu outputs to `.envrc[.<name>]` (PUBLIC_HOSTNAME, ASSETS_HOSTNAME, S3_*, CLOUDFLARED_TUNNEL_TOKEN). TF_VAR_* lines you put there manually are preserved.
+`infra/deploy.sh` walks through six steps:
+1. **Load** `infra/.env`.
+2. **Generate** any blank secrets (`STATE_PASSPHRASE`, `BETTER_AUTH_SECRET`, `POSTGRES_PASSWORD`, `MINIO_ROOT_PASSWORD`) and save back to `.env`.
+3. **`tofu apply`** — create or update Cloudflare tunnel + DNS + ingress.
+4. **Write** `infra/kamal/.kamal/secrets-common` from the env.
+5. **Host-init** — only on first run (skipped when `deploy@$ONPREM_HOST` already accepts your key).
+6. **Kamal** — `kamal-first-deploy.sh` on first run (workaround for basecamp/kamal#526), `kamal deploy` on every subsequent run.
+
+Re-running `make deploy` is the reproducibility test — pulls in any config drift, redeploys cleanly.
+
+## Day-2 ops
 
 ```bash
-source .envrc        # for NAME=default; else .envrc.<name>
+make logs            # tail app logs
+make console         # bash inside the app container
+make redeploy
+make rollback
+make migrate
+make destroy         # tofu destroy: removes tunnel + DNS only
 ```
 
-`assets_hostname` defaults to `assets.<rest-of-public-hostname>` (so `menu.example.com` → `assets.example.com`). Override via the `assets_hostname` variable.
+All wrap `kamal` via `scripts/k.sh` which loads `infra/.env` — no manual `source` needed.
 
-### Day-2 ops
+## Why container-name ingress
 
-```bash
-make onprem-apply NAME=<env>     # re-apply
-make onprem-list                 # list Tofu workspaces
-make onprem-destroy NAME=<env>   # tofu destroy + remove workspace + .envrc.<env>
-```
+In Kamal 2, app + proxy + accessories share the `kamal` Docker network and resolve each other by container name. cloudflared runs as an accessory on that same network, so it reaches `kamal-proxy` and `meta-menu-minio` directly — no host port publishing, no UFW rules, no NAT gotchas (basecamp/kamal#1790).
 
-## Server side (Ansible)
+## Why no Ansible
 
-Prereqs:
-- Ansible installed locally (`apt install ansible` / `brew install ansible`)
-- `sshpass` for the bootstrap step (`apt install sshpass`)
-- An SSH key at `~/.ssh/id_ed25519` (`make ssh-key` generates if absent)
-
-Prereqs on the target box:
-- Ubuntu 24.04 LTS or later
-- An existing sudo user with SSH password auth (e.g. `pwu`, `ubuntu`)
-- sshd running on port 22
-
-### First time on a fresh box
-
-```bash
-make host-bootstrap BOOTSTRAP_USER=pwu
-# prompts twice: SSH password + sudo password
-```
-
-Creates `deploy` user, installs your SSH key, grants NOPASSWD sudo. Idempotent.
-
-### Full setup
-
-```bash
-source .envrc                   # carries CLOUDFLARED_TUNNEL_TOKEN
-make host-setup
-```
-
-Installs Docker + apt-pinned deb822 repos, configures UFW, registers `cloudflared.service` as a hardened systemd unit reading the tunnel token from `/etc/cloudflared/token` (0400 root:cloudflared). Re-running is safe — only changed tasks run.
-
-If `CLOUDFLARED_TUNNEL_TOKEN` is empty, the cloudflared play is skipped (`meta: end_host`). You can provision the box first and add the tunnel later by re-running with the env var set.
-
-### Adding another on-prem box
-
-Edit `infra/on-prem/ansible/inventory.yml`, copy a host block, change `ansible_host` (use a different env var lookup, e.g. `{{ lookup('env', 'ONPREM_HOST_STAGING') }}`). Re-run `host-bootstrap` then `host-setup` against the new host. Each host gets its own Cloudflare Tunnel (one Tofu workspace = one tunnel = one token).
-
-### No IP, please — use mDNS
-
-`setup.yml` enables `MulticastDNS=yes` in `systemd-resolved` and opens UFW 5353/udp. After the first setup, the box advertises as `<hostname>.local` on the LAN. Set `ONPREM_HOST=<hostname>.local` in `.envrc` and you never type an IP again. For off-LAN access, add Tailscale (`meta-menu.<tailnet>.ts.net` works anywhere).
-
-## Design choices
-
-- **OpenTofu 1.10+**. State + plan encryption enabled (`enforced = true`). Passphrase from `TF_VAR_state_passphrase`.
-- **`terraform_data`** instead of `null_resource`.
-- **FQCN everywhere in Ansible** (`ansible.builtin.apt`, `community.general.ufw`, …).
-- **`deb822_repository`** instead of deprecated `apt_key` + `apt_repository`.
-- **`cloudflared --token-file`** (≥ 2025.4.0). Token never appears in `ps`. Dedicated `cloudflared` user, hardened systemd unit.
-- **State stays local**. For team workflows / CI, migrate to S3 backend (OpenTofu 1.10 has native S3 state locking).
+Kamal 2 installs Docker on its own via `kamal server bootstrap`; cloudflared runs as a Docker container instead of an apt + systemd service. That removes 200+ lines of Ansible YAML, Galaxy deps, and Python on the controller. Host-init is ~50 lines of bash: deploy user + SSH key + sshd hardening. Run once, never again.
 
 ## Troubleshooting
 
-**`tofu init` complains about provider plugins**: provider versions changed. Delete `.terraform/` and re-init. Lock file regenerates.
+**`make deploy` says "missing in infra/.env"** — fill in the named field, re-run.
 
-**`cloudflared.service` stuck in `activating (auto-restart)`**: token wrong or `/etc/cloudflared/token` unreadable. `journalctl -u cloudflared -n 50` — re-run `host-setup` with a correct `CLOUDFLARED_TUNNEL_TOKEN`.
+**`tofu apply` errors "encryption configuration missing"** — `STATE_PASSPHRASE` in `.env` is blank. Re-run `make deploy` — the script auto-generates it. Already-existing state requires the original passphrase; if lost, `make destroy` + start fresh.
 
-**Ansible fails with "Host key verification failed"**: inventory disables host-key checking already. If it still complains, `ssh-keygen -R <ip>`.
+**`cloudflared` accessory restart loop** — stale `TUNNEL_TOKEN`. Delete `infra/kamal/.kamal/secrets-common` and re-run `make deploy`.
 
-**`tofu apply` errors with "encryption configuration missing"**: export `TF_VAR_state_passphrase` (≥ 16 chars).
+**502 from the tunnel** — `docker network inspect kamal` on the box should show kamal-proxy + 4 accessories + the app. If something's missing, `make logs` for that container.
+
+**Sudo password rejected during host-init** — `BOOTSTRAP_USER` isn't in the `sudo` group, or the password in `.env` is wrong. Test: `ssh <user>@<box> 'sudo -v'`.

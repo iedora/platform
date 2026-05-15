@@ -1,7 +1,0 @@
----
-collections:
-  - name: community.general
-    version: ">=10.0.0"
-  # ansible.posix.authorized_key (moved out of ansible.builtin)
-  - name: ansible.posix
-    version: ">=2.0.0"

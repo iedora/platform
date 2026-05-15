@@ -1,0 +1,127 @@
+# Kamal 2 — single homelab box behind Cloudflare Tunnel.
+#
+# Build + push + run all happen on the homelab box itself:
+#   - `builder.remote: ssh://deploy@$ONPREM_HOST` + `local: false` →
+#     docker buildx runs natively on the box (amd64, no QEMU on the Mac).
+#   - A `registry:3` container at 127.0.0.1:5000 on the box receives the push.
+#     The container is started by infra/deploy.sh outside of Kamal (chicken-and-
+#     egg: Kamal accessory boot does a registry login first, which would fail
+#     before the registry exists).
+#   - The deploy host pulls from the same localhost registry. No external
+#     network, no GHCR token, no Docker Hub rate limits.
+
+service: meta-menu
+
+image: meta-menu
+
+servers:
+  web:
+    hosts:
+      - <%= ENV.fetch("ONPREM_HOST") %>
+
+proxy:
+  ssl: false                              # Cloudflare Tunnel terminates TLS
+  host: <%= ENV.fetch("PUBLIC_HOSTNAME") %>
+  app_port: 3000
+  forward_headers: true                   # cloudflared sets X-Forwarded-*
+  healthcheck:
+    path: /up
+    interval: 1
+    timeout: 5
+  buffering:
+    requests: true
+    responses: true
+    max_request_body: 10_000_000          # image uploads cap ~5 MB client-side
+
+# Local registry on the box. We can't use `localhost:5000` (Kamal would SSH
+# port-forward back to the Mac — wrong direction). We can't use `127.0.0.1`
+# either: the buildx container runs in its own netns where 127.0.0.1 means
+# itself, not the host. So we use the box's LAN IP — buildx reaches it via
+# the normal bridge → host route, and the registry binds to 0.0.0.0:5000
+# (see deploy.sh). Tradeoff: registry is reachable from the LAN.
+# registry:3 doesn't enforce auth; Kamal requires the field — placeholder.
+registry:
+  server: <%= ENV.fetch("ONPREM_HOST") %>:5000
+  username: kamal
+  password:
+    - REGISTRY_PASSWORD
+
+ssh:
+  user: deploy
+  port: 22
+
+# Remote-only builder: SSH to the box and build there natively (amd64).
+# No buildx on the Mac, no QEMU, no source transfer over the WAN.
+builder:
+  arch: amd64
+  remote: ssh://deploy@<%= ENV.fetch("ONPREM_HOST") %>
+  local: false
+  context:    <%= ENV.fetch("KAMAL_BUILD_CONTEXT") %>            # absolute path — set by deploy.sh / k.sh
+  dockerfile: <%= ENV.fetch("KAMAL_BUILD_CONTEXT") %>/Dockerfile # kamal resolves this via File.expand_path against PWD, not against `context` — must be absolute (lib/kamal/commands/builder/base.rb#build_dockerfile)
+
+env:
+  clear:
+    NEXT_TELEMETRY_DISABLED: "1"
+    BETTER_AUTH_URL: <%= "https://#{ENV.fetch('PUBLIC_HOSTNAME')}" %>
+    S3_ENDPOINT: <%= "https://#{ENV.fetch('ASSETS_HOSTNAME')}" %>
+    S3_REGION: us-east-1
+    S3_BUCKET: metamenu
+  secret:
+    - BETTER_AUTH_SECRET
+    - DATABASE_URL
+    - REDIS_URL
+    - S3_ACCESS_KEY
+    - S3_SECRET_KEY
+
+aliases:
+  console: app exec --interactive --reuse bash
+  logs: app logs -f
+  migrate: app exec --reuse "node scripts/migrate.mjs"
+
+# Accessories share the `kamal` Docker network with app + proxy — they reach
+# each other by container name (e.g. meta-menu-postgres:5432). No `port: x:x`
+# keys: Docker's NAT rules sit BEFORE host firewalls, so publishing a port
+# bypasses UFW (basecamp/kamal#1790).
+accessories:
+  postgres:
+    image: postgres:18-alpine
+    host: <%= ENV.fetch("ONPREM_HOST") %>
+    env:
+      clear:
+        POSTGRES_USER: postgres
+        POSTGRES_DB: metamenu
+      secret:
+        - POSTGRES_PASSWORD
+    directories:
+      - data:/var/lib/postgresql
+
+  redis:
+    image: redis:7-alpine
+    host: <%= ENV.fetch("ONPREM_HOST") %>
+    directories:
+      - data:/data
+
+  # S3-compatible storage. MinIO root creds double as S3 keys.
+  # Reachable from cloudflared (same network) at http://meta-menu-minio:9000.
+  minio:
+    image: minio/minio:latest
+    host: <%= ENV.fetch("ONPREM_HOST") %>
+    cmd: server /data --console-address ":9001"
+    env:
+      secret:
+        - MINIO_ROOT_USER
+        - MINIO_ROOT_PASSWORD
+    directories:
+      - data:/data
+
+  # Cloudflare Tunnel — outbound only, terminates TLS at the edge.
+  # Tunnel ingress (set via tofu apply):
+  #   PUBLIC_HOSTNAME  → http://kamal-proxy
+  #   ASSETS_HOSTNAME  → http://meta-menu-minio:9000
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    host: <%= ENV.fetch("ONPREM_HOST") %>
+    cmd: tunnel --no-autoupdate run
+    env:
+      secret:
+        - TUNNEL_TOKEN

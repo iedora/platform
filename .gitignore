@@ -56,20 +56,16 @@ next-env.d.ts
 .claude/settings.local.json
 .claude/
 
-# Infra — artefactos locais não versionados
+# Infra — single source of truth + tofu state, neither in git
+infra/.env
 infra/**/*.iso
 infra/**/.terraform/
 infra/**/terraform.tfstate
 infra/**/terraform.tfstate.backup
 infra/**/terraform.tfstate.d/
 infra/**/terraform.tfvars
-!infra/**/terraform.tfvars.example
-# Per-env tfvars for the workspaces pattern.
-infra/**/envs/*.tfvars
-!infra/**/envs/example.tfvars
 # .terraform.lock.hcl SHOULD be committed — pins provider versions
 
-# Kamal — secrets reais nunca vão para o repo (só o .example)
+# Kamal — generated at deploy time from infra/.env
 infra/**/.kamal/secrets
 infra/**/.kamal/secrets-common
-!infra/**/.kamal/secrets.example

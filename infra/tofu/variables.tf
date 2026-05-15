@@ -1,17 +1,17 @@
 variable "cloudflare_api_token" {
   description = <<-EOT
-    Cloudflare API token. Permissions required:
+    Cloudflare API token. Permissions:
       - Account · Cloudflare Tunnel · Edit
-      - Zone · DNS · Edit (scoped to the zone in `zone_id`)
+      - Zone · DNS · Edit (scoped to var.zone_id)
       - Account · Account Settings · Read
-    Provide via TF_VAR_cloudflare_api_token.
+    Provide via TF_VAR_cloudflare_api_token in .envrc.
   EOT
   type        = string
   sensitive   = true
 }
 
 variable "state_passphrase" {
-  description = "OpenTofu state/plan encryption passphrase. ≥ 16 chars. Provide via TF_VAR_state_passphrase."
+  description = "OpenTofu state/plan encryption passphrase. ≥ 16 chars. TF_VAR_state_passphrase."
   type        = string
   sensitive   = true
 
@@ -22,7 +22,7 @@ variable "state_passphrase" {
 }
 
 variable "account_id" {
-  description = "Cloudflare account ID. Cross-env — set in .envrc as TF_VAR_account_id, NOT in tfvars."
+  description = "Cloudflare account ID. TF_VAR_account_id (32-char hex)."
   type        = string
 
   validation {
@@ -32,7 +32,7 @@ variable "account_id" {
 }
 
 variable "zone_id" {
-  description = "Cloudflare zone ID. Cross-env — set in .envrc as TF_VAR_zone_id, NOT in tfvars."
+  description = "Cloudflare zone ID. TF_VAR_zone_id (32-char hex)."
   type        = string
 
   validation {
@@ -42,13 +42,13 @@ variable "zone_id" {
 }
 
 variable "tunnel_name" {
-  description = "Logical name for the tunnel (shown in dash → Zero Trust → Networks → Tunnels)."
+  description = "Logical name for the tunnel (shown in Cloudflare → Zero Trust → Networks → Tunnels)."
   type        = string
   default     = "meta-menu"
 }
 
 variable "public_hostname" {
-  description = "FQDN visitors hit for the app (e.g. menu.example.com). Subdomain of the zone."
+  description = "FQDN visitors hit for the app (e.g. menu.example.com)."
   type        = string
 
   validation {
@@ -58,13 +58,7 @@ variable "public_hostname" {
 }
 
 variable "assets_hostname" {
-  description = "FQDN for the MinIO bucket (e.g. assets.example.com). If unset, derived as `assets.<rest-of-public-hostname>`."
+  description = "FQDN for the MinIO bucket. If unset, derived as `assets.<rest-of-public-hostname>`."
   type        = string
   default     = null
-}
-
-variable "origin_service" {
-  description = "Local URL the tunnel forwards to on the origin host. kamal-proxy listens on :80."
-  type        = string
-  default     = "http://localhost:80"
 }

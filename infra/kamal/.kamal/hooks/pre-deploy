@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Pre-deploy hook: run Drizzle migrations against the *new* image before any
+# new container takes traffic. A failure aborts the deploy (old container
+# keeps serving with the old schema).
+#
+# First-time deploy on a fresh box: `make deploy` runs `kamal setup --skip-hooks`
+# (accessories don't exist yet when the hook would fire — basecamp/kamal#526),
+# then this hook runs on every subsequent `kamal deploy`.
+
+if [[ "${KAMAL_COMMAND:-}" == "rollback" ]]; then
+  echo "[pre-deploy] rollback detected, skipping migrations"
+  exit 0
+fi
+
+if [[ -z "${KAMAL_VERSION:-}" ]]; then
+  echo "[pre-deploy] no KAMAL_VERSION, skipping migrations"
+  exit 0
+fi
+
+echo "[pre-deploy] running Drizzle migrations against ${KAMAL_VERSION}"
+
+kamal app exec \
+  --primary \
+  --version="$KAMAL_VERSION" \
+  "node scripts/migrate.mjs"
