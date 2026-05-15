@@ -20,11 +20,11 @@ SaaS multi-tenant restaurant menu builder. Each tenant is a Better Auth `organiz
 
 ## Hard rules
 
-1. **Tenant scoping is mandatory.** Every query touching `restaurant`, `menu`, `category`, or `item` MUST filter by `restaurantId` AND verify the caller is a `member` of the parent `organization`. Never trust IDs from the client without rechecking ownership. Centralize this in `features/auth/` — use `requireRestaurantAccess(restaurantId)` before any tenant query.
+1. **Tenant scoping is mandatory.** Every query touching `restaurant`, `menu`, `category`, or `item` MUST filter by `restaurantId` AND verify the caller is a `member` of the parent `organization`. Never trust IDs from the client without rechecking ownership. Centralize this in `src/features/auth/` — use `requireRestaurantAccess(restaurantId)` before any tenant query.
 
-2. **Schema is the source of truth.** `shared/db/schema.ts` is the single canonical schema. Migrations are generated, not handwritten — run `bun run db:generate` then `bun run db:migrate`.
+2. **Schema is the source of truth.** `src/shared/db/schema.ts` is the single canonical schema. Migrations are generated, not handwritten — run `bun run db:generate` then `bun run db:migrate`.
 
-3. **Auth checks belong in the data layer, not in layouts.** Layouts in Next 16 don't re-render on navigation, so an auth check in a layout WILL leak. Use `verifySession()` / `requireRestaurantAccess()` from `features/auth/` close to the data fetch or in the page component itself. The dashboard layout fetches session/plan defensively for chrome (email, Analytics link) but never redirects from there.
+3. **Auth checks belong in the data layer, not in layouts.** Layouts in Next 16 don't re-render on navigation, so an auth check in a layout WILL leak. Use `verifySession()` / `requireRestaurantAccess()` from `src/features/auth/` close to the data fetch or in the page component itself. The dashboard layout fetches session/plan defensively for chrome (email, Analytics link) but never redirects from there.
 
 4. **Use shadcn via MCP** when possible. `bunx shadcn@latest add <component>` works too. Don't hand-write primitives that already exist in shadcn.
 
@@ -34,25 +34,25 @@ SaaS multi-tenant restaurant menu builder. Each tenant is a Better Auth `organiz
 
 7. **Drag-and-drop reordering** uses integer `position` columns (per parent). On reorder, recompute positions for affected rows in a single transaction. Renumber periodically if gaps grow.
 
-8. **Menu templates are open/closed.** Each template lives in its own folder under `features/menu-publishing/rsc/templates/<id>/` and exports a `template: MenuTemplate` from `index.ts`. The renderer (`menu-renderer.tsx`) consumes only the registry — never edit it to support a new template. Adding a template = new folder + 1 import + 1 entry in `templates/registry.ts` + the literal in `RestaurantTheme.layout` (schema). LAYOUTS in `features/menu-publishing/rsc/theme.ts` is derived from the registry; do not maintain it separately.
+8. **Menu templates are open/closed.** Each template lives in its own folder under `src/features/menu-publishing/rsc/templates/<id>/` and exports a `template: MenuTemplate` from `index.ts`. The renderer (`menu-renderer.tsx`) consumes only the registry — never edit it to support a new template. Adding a template = new folder + 1 import + 1 entry in `templates/registry.ts` + the literal in `RestaurantTheme.layout` (schema). LAYOUTS in `src/features/menu-publishing/rsc/theme.ts` is derived from the registry; do not maintain it separately.
 
-9. **Asset keys are tenant-prefixed and verified twice.** Every uploaded object's S3 key starts with `r/{restaurantId}/`. The `requireRestaurantAccess` DAL guard runs first; `assertKeyBelongsToTarget` then rejects any commit whose key doesn't match the target's restaurant — defense-in-depth against a stale presign being redirected. New asset targets must follow the same `r/{restaurantId}/...` scheme in `features/upload/targets.ts` and gate item-scoped uploads with an extra ownership check (see `assertItemBelongsToRestaurant`).
+9. **Asset keys are tenant-prefixed and verified twice.** Every uploaded object's S3 key starts with `r/{restaurantId}/`. The `requireRestaurantAccess` DAL guard runs first; `assertKeyBelongsToTarget` then rejects any commit whose key doesn't match the target's restaurant — defense-in-depth against a stale presign being redirected. New asset targets must follow the same `r/{restaurantId}/...` scheme in `src/features/upload/targets.ts` and gate item-scoped uploads with an extra ownership check (see `assertItemBelongsToRestaurant`).
 
-10. **Languages live in a registry.** Each supported language is a self-contained module under `features/i18n/languages/<code>/` exporting `language: Language` from its `index.ts`. `features/i18n/registry.ts` is the only place that knows the full set; `LANGUAGE_CODES`, `LANGUAGE_META`, and `getLanguage` are derived. The Zod schemas in actions use `z.record(z.string(), …).refine(keys ⊂ LANGUAGE_CODES)` because Zod 4 makes `z.record(z.enum([...]), …)` exhaustive. Translatable text uses the pattern: plain `name`/`description` text columns are the source of truth for the restaurant's `defaultLanguage`; sibling jsonb `*I18n` columns carry overrides for non-default languages. Fallback chain at render time: requested → default → empty. New languages: see `/add-language` skill.
+10. **Languages live in a registry.** Each supported language is a self-contained module under `src/features/i18n/languages/<code>/` exporting `language: Language` from its `index.ts`. `src/features/i18n/registry.ts` is the only place that knows the full set; `LANGUAGE_CODES`, `LANGUAGE_META`, and `getLanguage` are derived. The Zod schemas in actions use `z.record(z.string(), …).refine(keys ⊂ LANGUAGE_CODES)` because Zod 4 makes `z.record(z.enum([...]), …)` exhaustive. Translatable text uses the pattern: plain `name`/`description` text columns are the source of truth for the restaurant's `defaultLanguage`; sibling jsonb `*I18n` columns carry overrides for non-default languages. Fallback chain at render time: requested → default → empty. New languages: see `/add-language` skill.
 
-11. **Plans live in a registry.** Same shape as languages and templates: each plan is a folder under `features/plans/<code>/` exporting `plan: Plan` from `index.ts`; `features/plans/registry.ts` derives `PLAN_CODES`, `PLANS`, `getPlan`. Adding a plan = new folder + new literal in `PlanCode` union + new registry entry. Gates use `canAddRestaurant(orgId)` (returns structured `{ ok, reason, limit }` — never throws) and `planHas(plan, feature)`. The DB column `organization.plan` stores raw text; `getPlan` coerces unknown values back to the default so a renamed plan never crashes a render.
+11. **Plans live in a registry.** Same shape as languages and templates: each plan is a folder under `src/features/plans/<code>/` exporting `plan: Plan` from `index.ts`; `src/features/plans/registry.ts` derives `PLAN_CODES`, `PLANS`, `getPlan`. Adding a plan = new folder + new literal in `PlanCode` union + new registry entry. Gates use `canAddRestaurant(orgId)` (returns structured `{ ok, reason, limit }` — never throws) and `planHas(plan, feature)`. The DB column `organization.plan` stores raw text; `getPlan` coerces unknown values back to the default so a renamed plan never crashes a render.
 
-12. **Public menu is cached, invalidated by tag.** `loadRestaurantSnapshot(slug)` and `loadRestaurantAdminMenus(slug)` (use-cases in `features/menu-publishing/use-cases/`) wrap `unstable_cache` with a per-slug tag `restaurant:${slug}` via `features/menu-publishing/cache.ts`. Every mutation that affects the restaurant's public or admin view MUST call `revalidateRestaurant(slug)` (which uses `updateTag` for read-your-own-writes semantics, not `revalidateTag`). The single chokepoint is enforced — never call `revalidatePath('/r/${slug}')` from a mutation action; the cache tag is what matters. **Date gotcha:** `unstable_cache` JSON-serializes Dates to ISO strings; if a cached function returns a Date the caller will see a string. Hydrate explicitly in the loader (see `loadRestaurantAdminMenus`).
+12. **Public menu is cached, invalidated by tag.** `loadRestaurantSnapshot(slug)` and `loadRestaurantAdminMenus(slug)` (use-cases in `src/features/menu-publishing/use-cases/`) wrap `unstable_cache` with a per-slug tag `restaurant:${slug}` via `src/features/menu-publishing/cache.ts`. Every mutation that affects the restaurant's public or admin view MUST call `revalidateRestaurant(slug)` (which uses `updateTag` for read-your-own-writes semantics, not `revalidateTag`). The single chokepoint is enforced — never call `revalidatePath('/r/${slug}')` from a mutation action; the cache tag is what matters. **Date gotcha:** `unstable_cache` JSON-serializes Dates to ISO strings; if a cached function returns a Date the caller will see a string. Hydrate explicitly in the loader (see `loadRestaurantAdminMenus`).
 
 13. **View tracking is beacon-based, not server-render-coupled.** `/api/track/[slug]` is a pixel-beacon route that lives outside the cached snapshot — it runs on every public visit, even when the page itself is served from cache. Dedup is `(visitor_cookie, restaurant_id, hour_bucket)` via `view_seen.onConflictDoNothing`; only newly-inserted rows trigger `incrementDailyView`. Bot UAs filtered at the route. **Never put the view increment back inline in the page** — that breaks the moment a CDN sits in front.
 
-14. **Slices are vertical and own everything for one capability.** Files inside a slice import via *relative* paths; cross-slice imports MUST go through the sibling slice's `index.ts` (the single barrel) — enforced by `eslint-plugin-boundaries` in `eslint.config.mjs`. `shared/` is for primitives with no domain knowledge (db client, env, ui primitives, testing fixtures). `app/` is delivery — routes import from slices and shouldn't carry business logic. Use-cases take their port as the first argument so the test suite wires fakes against a real PGLite database (see `features/auth/auth.test.ts`); production wires the Drizzle adapter once in the slice's `index.ts` or `actions.ts`.
+14. **Slices are vertical and own everything for one capability.** Files inside a slice import via *relative* paths; cross-slice imports MUST go through the sibling slice's `index.ts` (the single barrel) — enforced by `eslint-plugin-boundaries` in `eslint.config.mjs`. `src/shared/` is for primitives with no domain knowledge (db client, env, ui primitives, testing fixtures). `src/app/` is delivery — routes import from slices and shouldn't carry business logic. Use-cases take their port as the first argument so the test suite wires fakes against a real PGLite database (see `src/features/auth/auth.test.ts`); production wires the Drizzle adapter once in the slice's `index.ts` or `actions.ts`.
 
 ## Pattern: how to add a feature
 
-Reference template: `features/auth/`. Steps:
+Reference template: `src/features/auth/`. Steps:
 
-1. `mkdir features/<slice>/{adapters,use-cases,ui}` — `ui/` only if the slice owns React components.
+1. `mkdir src/features/<slice>/{adapters,use-cases,ui}` — `ui/` only if the slice owns React components.
 2. Define **`ports.ts`** — narrow interfaces describing every effect the slice needs (db reads/writes, external APIs). One method per atomic op; no Drizzle / Next types leak through.
 3. Write the production **`adapters/drizzle.ts`** (or `better-auth.ts`, `s3.ts`, …). Marked `'server-only'`. Implements the port against the real world.
 4. Write **`use-cases/<verb>.ts`** as pure-ish async functions: `(port, input) => result`. No `redirect()` / `headers()` access except via the port — that's what lets Vitest run them against PGLite.
@@ -65,8 +65,8 @@ For asset targets, languages, plans, templates: the registry pattern is already 
 
 ## File layout
 
-The codebase is organised as **vertical slices** under `features/` (one folder
-per business capability) plus **`shared/`** for cross-slice infrastructure.
+The codebase is organised as **vertical slices** under `src/features/` (one folder
+per business capability) plus **`src/shared/`** for cross-slice infrastructure.
 Each slice follows a hexagonal-ish layout: `ports.ts` (interfaces) +
 `adapters/` (Drizzle/Better Auth implementations) + `use-cases/` (pure logic)
 + `actions.ts` (server-action shells) + `ui/` (slice-owned components) +
@@ -195,17 +195,20 @@ tests/e2e/
 - `bun run lint` — ESLint (boundary rules included)
 - `bun run test` / `bun run test:watch` — Vitest unit suite (PGLite, co-located `*.test.ts`)
 - `bun run test:e2e` / `:ui` / `:debug` — Playwright suite (production build + start)
-- `bun run db:generate` — generate Drizzle migration from `shared/db/schema.ts`
+- `bun run db:generate` — generate Drizzle migration from `src/shared/db/schema.ts`
 - `bun run db:migrate` — apply pending migrations
 - `bun run db:push` — push schema directly (dev only, no migration files)
 - `bun run db:studio` — open Drizzle Studio
-- `bun run auth:generate` — sync Better Auth tables into `shared/db/schema.ts` (re-run after changing auth plugins)
+- `bun run auth:generate` — sync Better Auth tables into `src/shared/db/schema.ts` (re-run after changing auth plugins)
 - `docker compose up -d` — start Postgres + Redis + LocalStack (S3)
 - `bunx shadcn@latest add <name>` — add a shadcn component
-- `cp infra/.env.example infra/.env` — infra config (gitignored, NOT loaded by Next.js). Fill in 7 user inputs + 4 hand-generated secrets (`openssl rand -hex 32`). The matching `.env.local` (for Next dev) is separate so Cloudflare/R2 creds never reach Next's `process.env`.
+- `cp infra/.env.example infra/.env` — infra config (gitignored, NOT loaded by Next.js). Fill in 6 user inputs (Cloudflare ×3, PUBLIC_HOSTNAME, ONPREM_HOST, GHCR_USER) + 5 hand-generated secrets (`openssl rand -hex 32` for STATE_PASSPHRASE / BETTER_AUTH_SECRET / POSTGRES_PASSWORD / MINIO_ROOT_PASSWORD / BACKUP_PASSPHRASE). The matching `.env.local` (for Next dev) is separate so Cloudflare/R2 creds never reach Next's `process.env`.
 - **First-time setup** (once, manual): `ssh-copy-id root@$ONPREM_HOST` (Kamal's canonical SSH user — root with key-only login); `gh auth refresh -s write:packages`; then `make deploy`. See `docs/deploy.md` for the homelab key-copy step when root SSH isn't already enabled.
 - `make deploy` — single command, idempotent. Internally: `tofu apply` + `kamal setup` (= server bootstrap + accessory boot all + deploy). ~10s overhead on subsequent runs from the no-op idempotence checks; acceptable for not having to remember a separate first-time command.
 - `make logs` / `make console` / `make redeploy` / `make rollback` / `make migrate` — direct `kamal` calls with infra/.env loaded via `-include`.
+- `make backup` / `make restore` — force a Postgres dump now / restore latest (interactive).
+- `make build-backup` — rebuild the backup accessory image (only needed when bumping the Postgres major).
+- `make rotate` — rotate all Tofu-managed tokens (R2 S3 keys + Cloudflare tunnel). ~30-60s public-traffic blip.
 - `make destroy` — `tofu destroy`: removes Cloudflare tunnel + DNS only (does not touch the box)
 - `make help` — list every target
 
@@ -222,7 +225,7 @@ Branch protection: deliberately NOT enabled — solo, AI-driven project; the CI 
 1. `node_modules/next/dist/docs/` — bundled, version-matched Next.js docs
 2. `node_modules/better-auth/` and the Better Auth README in node_modules — auth APIs
 3. `node_modules/drizzle-orm/` — query builder, types
-4. `features/<slice>/README.md` — every slice has a short doc describing its public API
+4. `src/features/<slice>/README.md` — every slice has a short doc describing its public API
 5. `docs/architecture.md` — the slice playbook (what goes where + how to add a feature)
 6. `docs/testing.md` — the test pyramid (Vitest+PGLite unit; Playwright e2e)
 

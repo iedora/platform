@@ -89,7 +89,7 @@ jobs:
       #     MinIO image with a self-booting entrypoint.
       # LocalStack auto-boots S3 on :4566; the SDK works as long as the
       # client is created with `forcePathStyle: true` (it already is in
-      # `features/upload/adapters/s3.ts`). Local dev still uses the real
+      # `src/features/upload/adapters/s3.ts`). Local dev still uses the real
       # `minio/minio` from docker-compose while its cached tag pulls.
       localstack:
         image: localstack/localstack:4
@@ -142,7 +142,7 @@ jobs:
           # Turbopack's persistent cache lives here in Next 16 — large saving
           # on warm runs. Keying on source files invalidates when code changes.
           path: .next/cache
-          key: ${{ runner.os }}-nextjs-${{ hashFiles('bun.lock') }}-${{ hashFiles('app/**/*.ts', 'app/**/*.tsx', 'components/**/*.ts', 'components/**/*.tsx', 'lib/**/*.ts') }}
+          key: ${{ runner.os }}-nextjs-${{ hashFiles('bun.lock') }}-${{ hashFiles('src/**/*.ts', 'src/**/*.tsx') }}
           restore-keys: |
             ${{ runner.os }}-nextjs-${{ hashFiles('bun.lock') }}-
 

@@ -73,6 +73,8 @@ You need an existing zone (a domain you control, like `example.com`, added to yo
    - **Account · Cloudflare Tunnel · Edit**
    - **Zone · DNS · Edit** (scope to the specific zone)
    - **Account · Account Settings · Read**
+   - **Account · Workers R2 Storage · Edit** (Tofu manages the backups bucket)
+   - **User · API Tokens · Edit** (Tofu creates the R2 S3 sub-token for the backups accessory)
 3. Copy the token — you'll paste it into `infra/.env`.
 
 Also grab your **Account ID** and **Zone ID** from the right sidebar of any Cloudflare dashboard page.
@@ -119,7 +121,7 @@ cd meta-menu
 cp infra/.env.example infra/.env
 ```
 
-`infra/.env` has 7 inputs you fill in and 4 secrets you generate. Use `openssl rand -hex 32` four times and paste into `STATE_PASSPHRASE` / `BETTER_AUTH_SECRET` / `POSTGRES_PASSWORD` / `MINIO_ROOT_PASSWORD`:
+`infra/.env` has 6 inputs you fill in and 5 secrets you generate. Use `openssl rand -hex 32` five times and paste into `STATE_PASSPHRASE` / `BETTER_AUTH_SECRET` / `POSTGRES_PASSWORD` / `MINIO_ROOT_PASSWORD` / `BACKUP_PASSPHRASE`:
 
 ```bash
 # Cloudflare (from step 3)
@@ -141,6 +143,7 @@ STATE_PASSPHRASE=…
 BETTER_AUTH_SECRET=…
 POSTGRES_PASSWORD=…
 MINIO_ROOT_PASSWORD=…
+BACKUP_PASSPHRASE=…    # GPG passphrase for R2 backup dumps — keep in password manager
 
 MINIO_ROOT_USER=metamenu
 ```

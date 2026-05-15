@@ -13,7 +13,7 @@ the outside world), one or more adapters (production + tests), pure-ish
 use-cases that take the port as their first argument, an `actions.ts` shell
 for Next.js Server Actions, slice-owned UI, and a single `index.ts` barrel
 that exposes the public API. `src/shared/` holds primitives with no domain
-knowledge. `app/` is the delivery layer — routes compose use-cases and UI.
+knowledge. `src/app/` is the delivery layer — routes compose use-cases and UI.
 **Next.js is a delivery detail**, not the architecture.
 
 ## Slice anatomy — `src/features/auth/`
@@ -103,7 +103,7 @@ container. The port is the only seam.
 - **Slice-owned UI** lives at `src/features/<slice>/ui/*`. Client components
   declare `'use client'` themselves; Server Components do not need a
   marker.
-- **Route files** in `app/` are composition shells: page → call slice
+- **Route files** in `src/app/` are composition shells: page → call slice
   loaders + render slice UI. The route should be small enough to read in
   one screen; if it isn't, the missing piece is a slice helper.
 
@@ -127,7 +127,7 @@ container. The port is the only seam.
    DB, and exercise the use-cases. See `src/features/auth/auth.test.ts`.
 8. Write a short **`README.md`** at the slice root: public API, port
    summary, one-line rationale.
-9. Compose the slice from `app/` (one route imports the loader + UI, the
+9. Compose the slice from `src/app/` (one route imports the loader + UI, the
    other imports the action). The route file should be a thin shell.
 
 Registry-shaped features (asset targets, languages, plans, templates) have
@@ -152,13 +152,13 @@ new pattern.
 If it knows about menus, restaurants, plans, languages, uploads, or
 analytics, it does NOT belong here. Put it in the slice.
 
-## What goes in `app/`
+## What goes in `src/app/`
 
-- **Routes** — `app/<path>/page.tsx`, `app/<path>/layout.tsx`,
-  `app/api/<route>/route.ts`. These compose slice exports.
-- **Private folders** — `app/_components/<name>/` for page-local UI that
+- **Routes** — `src/app/<path>/page.tsx`, `src/app/<path>/layout.tsx`,
+  `src/app/api/<route>/route.ts`. These compose slice exports.
+- **Private folders** — `src/app/_components/<name>/` for page-local UI that
   only one route uses (Next's `_*` convention keeps them out of the
-  routing table). `app/_components/landing/` is the canonical example.
+  routing table). `src/app/_components/landing/` is the canonical example.
 - **No business logic.** A route file should not contain Drizzle queries,
   Zod schemas, or domain rules. If it does, lift it into the slice.
 
