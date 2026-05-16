@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import { headers } from 'next/headers'
+import Link from 'next/link'
 import { resolveTheme, type ResolvedTheme } from '@/features/menu-publishing/rsc/theme'
 import {
   LANGUAGE_META,
@@ -130,7 +131,7 @@ export default async function PublicMenuPage({
             .map((langMeta) => {
               const isActive = langMeta.code === data.currentLanguage
               return (
-                <a
+                <Link
                   key={langMeta.code}
                   href={`/r/${data.restaurant.slug}?lang=${langMeta.code}`}
                   hrefLang={langMeta.code}
@@ -144,7 +145,7 @@ export default async function PublicMenuPage({
                   }
                 >
                   {langMeta.nativeName}
-                </a>
+                </Link>
               )
             })}
         </nav>

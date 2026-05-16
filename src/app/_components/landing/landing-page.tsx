@@ -409,19 +409,19 @@ function Nav({ c, lang, setLang }: { c: Copy; lang: LangCode; setLang: (l: LangC
   return (
     <nav className="nav" aria-label="Primary">
       <div className="nav-inner">
-        <a className="brand" href="#top" aria-label="Menu home">
+        <Link className="brand" href="#top" aria-label="Menu home">
           <span className="mark" aria-hidden="true">⁋</span>
           <span className="word"><em>Menu</em></span>
-        </a>
+        </Link>
         <ul>
-          <li><a href="#features" onClick={(e) => { e.preventDefault(); smoothScrollTo("features"); }}>{c.nav.features}</a></li>
-          <li><a href="#how" onClick={(e) => { e.preventDefault(); smoothScrollTo("how"); }}>{c.nav.how}</a></li>
-          <li><a href="#pricing" onClick={(e) => { e.preventDefault(); smoothScrollTo("pricing"); }}>{c.nav.pricing}</a></li>
+          <li><Link href="#features" onClick={(e) => { e.preventDefault(); smoothScrollTo("features"); }}>{c.nav.features}</Link></li>
+          <li><Link href="#how" onClick={(e) => { e.preventDefault(); smoothScrollTo("how"); }}>{c.nav.how}</Link></li>
+          <li><Link href="#pricing" onClick={(e) => { e.preventDefault(); smoothScrollTo("pricing"); }}>{c.nav.pricing}</Link></li>
         </ul>
         <div className="nav-right">
           <LangSwitcher lang={lang} setLang={setLang} />
-          <a href="/login" className="nav-link">{c.nav.signin}</a>
-          <a href="/signup" className="nav-cta">{c.nav.cta}</a>
+          <Link href="/login" className="nav-link">{c.nav.signin}</Link>
+          <Link href="/signup" className="nav-cta">{c.nav.cta}</Link>
         </div>
       </div>
       <ScrollProgress />
@@ -545,7 +545,7 @@ function Hero({ c, menu, highlightId }: { c: Copy; menu: DemoMenu; highlightId: 
             <h1>{c.hero.headline.roman}</h1>
             <p className="tagline">{c.hero.headline.tagline}</p>
             <div className="hero-ctas">
-              <a className="btn btn-primary" href="/signup">{c.hero.ctaPrimary}</a>
+              <Link className="btn btn-primary" href="/signup">{c.hero.ctaPrimary}</Link>
             </div>
             <div className="meta-line">
               {c.hero.meta.map((m, i) => (
@@ -638,7 +638,7 @@ function Pricing({ c }: { c: Copy }) {
               {c.pricing.free.feats.map((f, i) => <li key={i}>{f}</li>)}
             </ul>
             <div className="menu-card-foot">
-              <a className="btn btn-ghost" href="/signup">{c.pricing.free.cta}</a>
+              <Link className="btn btn-ghost" href="/signup">{c.pricing.free.cta}</Link>
             </div>
           </article>
 
@@ -655,7 +655,7 @@ function Pricing({ c }: { c: Copy }) {
               {c.pricing.pro.feats.map((f, i) => <li key={i}>{f}</li>)}
             </ul>
             <div className="menu-card-foot">
-              <a className="btn btn-primary" href="/signup">{c.pricing.pro.cta}</a>
+              <Link className="btn btn-primary" href="/signup">{c.pricing.pro.cta}</Link>
             </div>
           </article>
         </div>
@@ -674,8 +674,8 @@ function Closing({ c }: { c: Copy }) {
           <h2>{c.closing.h}</h2>
           <p>{c.closing.p}</p>
           <div className="hero-ctas" style={{ justifyContent: "center" }}>
-            <a className="btn btn-primary" href="/signup">{c.closing.ctaPrimary}</a>
-            <a className="btn btn-ghost" href={`mailto:${CONTACT_EMAIL}`}>{c.closing.ctaGhost}</a>
+            <Link className="btn btn-primary" href="/signup">{c.closing.ctaPrimary}</Link>
+            <Link className="btn btn-ghost" href={`mailto:${CONTACT_EMAIL}`}>{c.closing.ctaGhost}</Link>
           </div>
         </div>
       </section>
@@ -696,8 +696,8 @@ function Closing({ c }: { c: Copy }) {
             )}
           </span>
           <span className="footer-links">
-            {c.footer.links.map((l, i) => <a key={i} href="#">{l}</a>)}
-            <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>
+            {c.footer.links.map((l, i) => <Link key={i} href="#">{l}</Link>)}
+            <Link href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</Link>
           </span>
         </div>
       </footer>
