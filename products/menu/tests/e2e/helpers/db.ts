@@ -1,5 +1,11 @@
 import postgres from 'postgres'
 
+/**
+ * Single Postgres client for menu's test DB. Helpers reuse it; the fixture
+ * `resetMenu()` calls `truncateAll()`. The TEST_DATABASE_URL env var
+ * override mirrors `metamenu_test` from global-setup.
+ */
+
 const TEST_URL =
   process.env.TEST_DATABASE_URL ??
   'postgresql://postgres:postgres@localhost:5432/metamenu_test'
@@ -11,27 +17,37 @@ export function testDb() {
   return _sql
 }
 
-export async function truncateAll() {
+export async function closeTestDb(): Promise<void> {
+  if (_sql) {
+    await _sql.end({ timeout: 5 })
+    _sql = null
+  }
+}
+
+/**
+ * TRUNCATE every menu-owned table between tests. Auth tables (`user`,
+ * `session`, `account`, `verification`, `rateLimit`) live under `menu.*`
+ * as a LOCAL cache of federated identity — flushed too so each test starts
+ * with no stale Better Auth client rows.
+ */
+export async function truncateAll(): Promise<void> {
   const sql = testDb()
-  // Auth tables live in schema `auth` (owned by Genkan); menu domain tables
-  // live in `menu`. CASCADE walks FKs across both schemas.
   await sql`
     TRUNCATE TABLE
       "menu"."view_seen", "menu"."daily_view", "menu"."invoice",
-      "menu"."item", "menu"."category", "menu"."menu", "menu"."restaurant",
-      "auth"."invitation", "auth"."member", "auth"."organization",
-      "auth"."session", "auth"."account", "auth"."verification", "auth"."user"
+      "menu"."item", "menu"."category", "menu"."menu",
+      "menu"."restaurant", "menu"."org_plan",
+      "menu"."session", "menu"."account", "menu"."verification",
+      "menu"."rate_limit", "menu"."rate_limit_event", "menu"."user"
     RESTART IDENTITY CASCADE
   `
 }
 
 /**
- * Inserts an extra restaurant under an existing organization, bypassing the
- * Better Auth org-create flow. Returns the new restaurant id.
- *
- * Tests use `apiCreateAndActivateOrg` for the *first* restaurant in an org;
- * this helper exists for the rare case where a single org needs more than
- * one restaurant (multi-restaurant editorial-list assertions).
+ * Inserts a restaurant under a known (genkan-issued) organizationId.
+ * Tests use this AFTER seeding the org via the testkit; the FK is
+ * Postgres-side absent (organizationId has no DB-level foreign key — see
+ * schema comment) so menu doesn't need genkan reachable to insert.
  */
 export async function seedRestaurant(
   organizationId: string,
@@ -53,10 +69,6 @@ export async function seedRestaurant(
   return { restaurantId: id }
 }
 
-/**
- * Inserts a menu under a restaurant. Used for tests that need a menu without
- * the sample-seed action (which inserts categories and items too).
- */
 export async function seedMenu(
   restaurantId: string,
   name: string,
@@ -78,12 +90,6 @@ export async function seedMenu(
   return { menuId: id }
 }
 
-/**
- * Inserts a category and N items inside a menu. Items get sequential prices
- * and names so test assertions can be deterministic without hardcoding ids.
- *
- * Returns the category id for callers that want to chain further inserts.
- */
 export async function seedCategoryWithItems(
   menuId: string,
   restaurantId: string,

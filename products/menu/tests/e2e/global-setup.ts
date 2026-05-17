@@ -1,5 +1,7 @@
 import { execSync } from 'node:child_process'
 import postgres from 'postgres'
+import { readFileSync, existsSync } from 'node:fs'
+import { resolve } from 'node:path'
 
 const ADMIN_URL = 'postgresql://postgres:postgres@localhost:5432/postgres'
 const TEST_DB = 'metamenu_test'
@@ -20,22 +22,51 @@ async function ensureTestDatabase() {
   }
 }
 
-async function truncateAll() {
+async function truncateMenu() {
   const sql = postgres(TEST_URL, { max: 1 })
   try {
-    // Order matters because of FKs; CASCADE handles it. Auth tables live in
-    // schema `auth` (owned by Genkan); menu domain tables live in `menu`.
+    // `auth.*` is gone in the post-IdaaS world. Everything menu owns lives in
+    // schema `menu`. The Better Auth CLIENT tables (`user`, `session`,
+    // `account`, `verification`, `rateLimit`) are also under `menu.*` —
+    // they're a local cache of federated identity. CASCADE walks the FKs
+    // (restaurant → menu → category → item, user → session, user → account).
     await sql`
       TRUNCATE TABLE
         "menu"."view_seen", "menu"."daily_view", "menu"."invoice",
-        "menu"."item", "menu"."category", "menu"."menu", "menu"."restaurant",
-        "auth"."invitation", "auth"."member", "auth"."organization",
-        "auth"."session", "auth"."account", "auth"."verification", "auth"."user"
+        "menu"."item", "menu"."category", "menu"."menu",
+        "menu"."restaurant", "menu"."org_plan",
+        "menu"."session", "menu"."account", "menu"."verification",
+        "menu"."rate_limit", "menu"."rate_limit_event", "menu"."user"
       RESTART IDENTITY CASCADE
     `
   } finally {
     await sql.end({ timeout: 5 })
   }
+}
+
+function waitForTestkit(): void {
+  const handleFile = resolve(__dirname, '.testkit.json')
+  const deadline = Date.now() + 60_000
+  while (Date.now() < deadline) {
+    if (existsSync(handleFile)) {
+      try {
+        const data = JSON.parse(readFileSync(handleFile, 'utf8')) as {
+          url: string
+        }
+        // Mirror onto env so test workers can read the resolved URL.
+        process.env.E2E_TESTKIT_URL = data.url
+        return
+      } catch {
+        /* file half-written; retry */
+      }
+    }
+    // 20ms spin loop, kept tight because we expect this file in <2s.
+    const start = Date.now()
+    while (Date.now() - start < 20) {
+      /* no-op */
+    }
+  }
+  throw new Error('[e2e] testkit handle file never appeared')
 }
 
 export default async function globalSetup() {
@@ -45,6 +76,7 @@ export default async function globalSetup() {
     stdio: 'inherit',
     env: { ...process.env, DATABASE_URL: TEST_URL },
   })
-  await truncateAll()
-  console.log('[e2e] Test DB ready.')
+  await truncateMenu()
+  waitForTestkit()
+  console.log(`[e2e] Test DB + testkit ready (${process.env.E2E_TESTKIT_URL}).`)
 }
