@@ -373,6 +373,53 @@ where `paths:`-filtered workflows leave required status checks
 "expected" indefinitely on unrelated PRs. Revisit when adding
 collaborators.
 
+## Iterating on a CI failure — the local loop
+
+**Don't iterate on CI.** Most CI failures are not CI-specific —
+the same test command runs the same way on the laptop. A four-
+commit `fix(ci): try again` chain on 2026-05-17 (Playwright
+cookie-injection bug, single-line fix in `signInAs`) was avoidable
+— `bun run test:e2e` reproduced it deterministically in 30 seconds.
+
+The 2026 iteration ladder, fastest first:
+
+1. **Local repro** — for any failing CI step, run the literal
+   command locally first:
+
+   ```
+   cd products/<workspace>
+   docker compose up -d        # only if Postgres / LocalStack needed
+   bun run <script>            # the exact failing command
+   ```
+
+   For flake hunting: `--repeat-each=N --workers=M` surfaces
+   timing races faster than any CI run.
+
+2. **`gh workflow run`** — re-trigger the real hosted runner
+   WITHOUT a new commit. Every workflow has `workflow_dispatch:`
+   wired (commit 4419eb8):
+
+   ```
+   gh workflow run menu.yml --ref <branch>
+   ```
+
+   GitHub's documented constraint: the workflow file must already
+   exist on the default branch. So commits to `main` go through
+   once; subsequent re-triggers don't need new commits.
+
+3. **Draft PR on a feature branch** — for the final integration
+   check before merge. Squash-merge on close kills the `fix: try
+   again` history.
+
+**Don't reach for `nektos/act`** for test-logic failures — it
+can't reproduce the Postgres + LocalStack + auth-testkit stack
+faithfully. It's only useful for YAML / matrix / paths-filter
+shape checks. Most of the time, option 1 is enough.
+
+The recurring trap: a failure looks "CI-specific" because the
+trace formatting is unfamiliar. It almost never is. Run it
+locally first.
+
 ## Cookie-handling pitfalls (auth-testkit specifically)
 
 Save a future-you. We've hit these:
