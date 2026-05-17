@@ -8,6 +8,12 @@ import { fileURLToPath } from 'node:url'
  *
  * Path alias mirrors tsconfig.json so `@/...` imports resolve.
  */
+// Skip env validation in tests — `@/shared/env` is imported transitively
+// by any code that touches the prod DB client; tests wire their own
+// PGLite db, so the singleton's connection string is irrelevant. This
+// must be set BEFORE Vitest evaluates any test file.
+process.env.SKIP_ENV_VALIDATION = '1'
+
 export default defineConfig({
   test: {
     include: ['src/**/*.test.ts'],

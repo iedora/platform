@@ -306,6 +306,28 @@ export const auditLog = pgTable(
     ip: text("ip"),
     userAgent: text("user_agent"),
     occurredAt: timestamp("occurred_at").defaultNow().notNull(),
+    /**
+     * Tamper-evident chain. `rowHash` is sha256(prev_hash · actor_id ·
+     * actor_role · action · target_type · target_id · canonical(payload) ·
+     * ip · user_agent · occurred_at) — see `features/audit/chain.ts`.
+     *
+     * `prevHash` is NULL on the genesis row, otherwise the previous row's
+     * `rowHash`. Together they form a chain that auditors verify end-to-end:
+     * a single byte mutated in any column breaks the chain at that row and
+     * every row after.
+     *
+     * Backfill: rows that pre-date this migration are NULL for `prev_hash`
+     * + `row_hash` until `scripts/backfill-audit-chain.mjs` populates them.
+     * After backfill `rowHash` is effectively NOT NULL — we don't enforce
+     * at the schema layer to keep the deploy + backfill ordering loose
+     * (deploy the migration, run the backfill, then a follow-up migration
+     * can tighten NOT NULL if we ever want to).
+     *
+     * No index — hashes are random, no useful query selectivity. The
+     * verification walk uses the existing `occurred_at` index.
+     */
+    prevHash: text("prev_hash"),
+    rowHash: text("row_hash"),
   },
   (table) => [
     index("audit_log_actor_idx").on(table.actorId),

@@ -20,6 +20,17 @@ export {
 
 export { listKnownTargetTypes } from './adapters/drizzle'
 
+/**
+ * Chain verification — re-exported from `./chain` so callers don't have
+ * to know about the adapter wiring. The /admin/audit page imports
+ * `verifyAuditChain` here and passes the production reader through the
+ * helper below.
+ */
+export { computeRowHash, canonicalStringify } from './chain'
+export type { AuditChainStatus, AuditChainReader, ChainRow } from './chain'
+export { verifyAuditChain } from './chain'
+export { verifyChainStatus } from './verify'
+
 export type {
   AuditEvent,
   AuditAction,

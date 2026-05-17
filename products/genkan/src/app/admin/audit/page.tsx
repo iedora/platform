@@ -5,10 +5,12 @@ import {
   ALL_AUDIT_ACTIONS,
   list,
   listKnownTargetTypes,
+  verifyChainStatus,
   type AuditAction,
 } from '@/features/audit'
 import { Mono, PageHead } from '../_lib/editorial'
 import { AuditFilters } from './filters.client'
+import { ChainStatus } from './chain-status.client'
 import { PayloadViewer } from './payload-viewer.client'
 
 export const metadata = { title: 'Audit · Admin' }
@@ -94,7 +96,7 @@ export default async function AdminAuditPage({
 
   const since = rangeToSince(sp.range)
 
-  const [{ rows, nextCursor }, targetTypes] = await Promise.all([
+  const [{ rows, nextCursor }, targetTypes, chainStatus] = await Promise.all([
     list({
       actorEmail: sp.actor,
       actions: parseActions(sp.action),
@@ -105,6 +107,11 @@ export default async function AdminAuditPage({
       cursor,
     }),
     listKnownTargetTypes(),
+    // Chain verification runs on every page render. Audit page is admin-
+    // only + low-traffic; the verifier completes in well under 100ms for
+    // tables under ~1M rows. If this becomes a bottleneck, move it onto
+    // a background worker and read the last-known status here.
+    verifyChainStatus(),
   ])
 
   // Build the "Next page" link by replaying the current query plus the
@@ -144,6 +151,8 @@ export default async function AdminAuditPage({
         title="What happened, recently."
         note="Append-only trail of every meaningful admin and identity action. Newest first."
       />
+
+      <ChainStatus initial={chainStatus} />
 
       <AuditFilters
         actions={ALL_AUDIT_ACTIONS}
