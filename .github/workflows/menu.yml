@@ -33,6 +33,11 @@ on:
       - 'tsconfig*.json'
       - '.github/workflows/menu.yml'
       - '.github/actions/setup/**'
+  # Re-trigger the real hosted runner without a new commit:
+  #   gh workflow run menu.yml --ref <branch>
+  # Useful for verifying a green local repro against actual CI hardware
+  # without polluting git history with "fix(ci): try again" commits.
+  workflow_dispatch:
 
 concurrency:
   group: menu-${{ github.workflow }}-${{ github.ref }}

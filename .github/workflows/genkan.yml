@@ -33,6 +33,8 @@ on:
       - 'tsconfig*.json'
       - '.github/workflows/genkan.yml'
       - '.github/actions/setup/**'
+  # `gh workflow run genkan.yml --ref <branch>` — manual re-trigger.
+  workflow_dispatch:
 
 concurrency:
   group: genkan-${{ github.workflow }}-${{ github.ref }}

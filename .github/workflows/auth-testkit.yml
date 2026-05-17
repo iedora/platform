@@ -25,6 +25,8 @@ on:
       - 'package.json'
       - '.github/workflows/auth-testkit.yml'
       - '.github/actions/setup/**'
+  # `gh workflow run auth-testkit.yml --ref <branch>` — manual re-trigger.
+  workflow_dispatch:
 
 concurrency:
   group: auth-testkit-${{ github.workflow }}-${{ github.ref }}
