@@ -1,19 +1,20 @@
 import { betterAuth } from 'better-auth'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
-import { organization } from 'better-auth/plugins/organization'
+import { genericOAuth } from 'better-auth/plugins/generic-oauth'
 import type { PgDatabase, PgQueryResultHKT } from 'drizzle-orm/pg-core'
 import { db } from '@/shared/db/client'
 import * as schema from '@/shared/db/schema'
 import { env } from '@/shared/env'
-import { GENKAN_URL } from '@/shared/brand'
 
 // Generic over the driver — accepts both postgres-js (prod) and PGLite (tests).
 type AuthDb = PgDatabase<PgQueryResultHKT, typeof schema>
 
 // Every model Better Auth touches at runtime, given our plugin set:
-//   core (email+password) → user, session, account, verification
-//   organization plugin   → organization, member, invitation
-//   rateLimit.storage='database' → rateLimit
+//   core (sessions)                → user, session, account, verification
+//   generic-oauth client plugin    → reuses user + account (one row per
+//                                     (userId, providerId='genkan'),
+//                                     storing the access/refresh tokens)
+//   rateLimit.storage='database'   → rateLimit
 //
 // Exported so tests can assert completeness against a known-good list — if
 // you enable a Better Auth plugin or storage option that adds a new model,
@@ -24,9 +25,6 @@ export const BA_MODELS = {
   session: schema.session,
   account: schema.account,
   verification: schema.verification,
-  organization: schema.organization,
-  member: schema.member,
-  invitation: schema.invitation,
   rateLimit: schema.rateLimit,
 } as const
 
@@ -35,11 +33,12 @@ export const BA_MODELS = {
  * their own instance pointed at a PGLite db to exercise the real adapter
  * wiring (e.g. catch "model X not found in schema object" before deploy).
  *
- * Genkan (genkan.iedora.com) is the canonical sign-in surface for the
- * iedora ecosystem; menu reads the session cookie Genkan issues. Both
- * apps share BETTER_AUTH_SECRET and the same Postgres `session` table —
- * what makes the session valid here is identical to what makes it valid
- * in Genkan.
+ * Menu is a pure OAuth CLIENT of Genkan (the IdaaS at genkan.iedora.com).
+ * No email/password locally — every sign-in starts with a redirect to
+ * Genkan's `/oauth2/authorize`. Better Auth's `generic-oauth` plugin
+ * handles the standard OIDC dance and persists the resulting access /
+ * refresh tokens in `account` so the identity slice can call Genkan's
+ * organization HTTP API on the user's behalf.
  */
 export function makeAuth(database: AuthDb) {
   return betterAuth({
@@ -52,16 +51,13 @@ export function makeAuth(database: AuthDb) {
       schema: BA_MODELS,
     }),
     // Trust menu's own origin AND Genkan — sign-out requests from menu
-    // POST through to menu's /api/auth, and Genkan needs to be able to
-    // POST cross-origin during the dev-mode sign-in flow.
-    trustedOrigins: [env.BETTER_AUTH_URL, GENKAN_URL],
+    // POST through to menu's /api/auth, and the OAuth callback comes back
+    // from Genkan.
+    trustedOrigins: [env.BETTER_AUTH_URL, env.GENKAN_ISSUER_URL],
+    // No local credentials. Genkan owns sign-in/sign-up.
     emailAndPassword: {
-      enabled: true,
+      enabled: false,
     },
-    // DB-backed rate limit + sessions. We're single-node, so the secondaryStorage
-    // pattern (caching across nodes) is redundancy without a payoff. Postgres
-    // handles the volume — Better Auth's `rateLimit.storage: 'database'` uses
-    // the same Drizzle connection that backs sessions/users/orgs.
     rateLimit: {
       enabled: process.env.DISABLE_AUTH_RATE_LIMIT !== 'true',
       storage: 'database',
@@ -70,30 +66,34 @@ export function makeAuth(database: AuthDb) {
     // upstream of the tunnel. ipv6Subnet: 64 mitigates CVE-2026-45364 (attackers
     // walking a /64 to evade per-IP throttles).
     advanced: {
-      // Share the auth cookie across every iedora.com subdomain so a session
-      // issued by Genkan at genkan.iedora.com is recognised at menu.iedora.com
-      // (and any future product.iedora.com). MUST match Genkan's setting
-      // exactly. Local dev leaves COOKIE_DOMAIN blank so the cookie stays
-      // host-only on localhost.
-      crossSubDomainCookies: env.COOKIE_DOMAIN
-        ? {
-            enabled: true,
-            domain: env.COOKIE_DOMAIN,
-          }
-        : undefined,
       ipAddress: {
         ipAddressHeaders: ['cf-connecting-ip'],
         ipv6Subnet: 64,
       },
     },
     plugins: [
-      // Better Auth 1.6.11 flipped this default to `true` as an
-      // invitation-takeover CVE fix (basecamp/better-auth#9577). We don't
-      // ship email verification yet, so leaving it `true` silently rejects
-      // every invite create/accept with EMAIL_VERIFICATION_REQUIRED_*.
-      // Flip back on AND wire `emailAndPassword.requireEmailVerification`
-      // the day the email-sender integration ships.
-      organization({ requireEmailVerificationOnInvitation: false }),
+      genericOAuth({
+        config: [
+          {
+            providerId: 'genkan',
+            clientId: env.GENKAN_OAUTH_CLIENT_ID,
+            clientSecret: env.GENKAN_OAUTH_CLIENT_SECRET,
+            // Discovery endpoint — generic-oauth fetches the OIDC config
+            // (auth URL, token URL, userinfo URL, JWKS) from here so we
+            // never hardcode those endpoints.
+            discoveryUrl: `${env.GENKAN_ISSUER_URL}/.well-known/openid-configuration`,
+            scopes: [
+              'openid',
+              'profile',
+              'email',
+              'offline_access',
+              'menu',
+              'org:read',
+              'org:admin',
+            ],
+          },
+        ],
+      }),
     ],
   })
 }

@@ -17,6 +17,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@better-auth/oauth-provider": "^1.6.11",
     "@iedora/design-system": "workspace:*",
     "better-auth": "1.6.11",
     "drizzle-orm": "^0.45.2",

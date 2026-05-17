@@ -1,12 +1,8 @@
-// Aplica migrations Drizzle em produção sem precisar de drizzle-kit no runtime.
-// Corre no container produção via:  node scripts/migrate.mjs
+// Applies Drizzle migrations in production without drizzle-kit at runtime.
+// Runs inside the production container via:  node scripts/migrate.mjs
 //
-// Genkan e menu partilham o mesmo Postgres (one DATABASE_URL); cada app
-// migra o seu próprio schema:
-//   - genkan → `auth.*`
-//   - menu   → `menu.*` (e também `CREATE SCHEMA IF NOT EXISTS auth`)
-// A ordem de aplicação não importa porque ambas usam IF NOT EXISTS para
-// o schema `auth`.
+// Genkan owns its own Postgres instance (genkan-postgres) — no shared
+// schema with menu. Tables live in the default `public` schema.
 
 import { drizzle } from 'drizzle-orm/postgres-js'
 import { migrate } from 'drizzle-orm/postgres-js/migrator'
@@ -30,13 +26,10 @@ try {
   await sql`SELECT pg_advisory_lock(${LOCK_KEY})`
 
   console.log('Applying migrations from ./drizzle ...')
-  // Per-product tracker — see drizzle.config.ts. Both apps share the same
-  // database; without separate trackers the migrator silently skips
-  // migrations whose `when` is older than the latest-applied row.
+  // Dedicated database — single migration tracker in the default schema.
   await migrate(db, {
     migrationsFolder: './drizzle',
     migrationsTable: '__drizzle_migrations',
-    migrationsSchema: 'auth',
   })
   console.log('Migrations applied successfully.')
 } catch (err) {

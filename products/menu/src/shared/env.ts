@@ -22,21 +22,23 @@ const serverSchema = z.object({
   DATABASE_URL: z.url(),
 
   // Auth ----------------------------------------------------------------
-  // Better Auth signs sessions with this; must be ≥32 chars of entropy.
-  // MUST match the value in Genkan (genkan.iedora.com) so sessions issued
-  // by Genkan are readable here — both apps share the same secret + DB.
+  // Better Auth signs LOCAL sessions on menu.iedora.com with this. NOT
+  // shared with Genkan — menu is a pure OAuth client of genkan now, so
+  // each app signs its own session cookie on its own host.
   BETTER_AUTH_SECRET: z.string().min(32),
   BETTER_AUTH_URL: z.url(),
 
-  // Domain attribute on the auth session cookie. In production both menu
-  // and Genkan set this to ".iedora.com" so the cookie travels across
-  // every iedora subdomain. Leave blank in local dev (the browser refuses
-  // Domain= on localhost) — the cookie stays host-only.
-  //
-  // The Genkan service URL itself is derived from NODE_ENV in
-  // `@/shared/brand` (works in both server + client components) — it's
-  // a topology fact, not a per-deploy secret.
-  COOKIE_DOMAIN: z.string().optional(),
+  // Genkan OAuth client credentials. Issued by genkan when menu was
+  // registered as an OIDC client. Required in production. The discovery
+  // URL (`${GENKAN_ISSUER_URL}/.well-known/openid-configuration`) is
+  // resolved by Better Auth's `generic-oauth` plugin at request time —
+  // we only configure the issuer + client id/secret.
+  GENKAN_OAUTH_CLIENT_ID: z.string().min(1),
+  GENKAN_OAUTH_CLIENT_SECRET: z.string().min(1),
+  // Issuer base URL. `https://genkan.iedora.com` in prod,
+  // `http://localhost:3001` in dev. The OIDC discovery + organization API
+  // endpoints are derived from this.
+  GENKAN_ISSUER_URL: z.url(),
 
   // Optional knob consumed by lib/auth.ts. Tests set it to disable the
   // in-memory rate limiter so the E2E suite can create users in a loop.

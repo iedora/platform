@@ -14,12 +14,8 @@ const serverSchema = z.object({
   BETTER_AUTH_SECRET: z.string().min(32),
   BETTER_AUTH_URL: z.url(),
 
-  // Production: ".iedora.com". Local dev: leave blank so the cookie stays
-  // host-only (the browser refuses Domain= attributes on localhost).
-  COOKIE_DOMAIN: z.string().optional(),
-
-  // Comma-separated. Every product origin that should be signed-in to this
-  // Genkan instance. Adding a new product = adding its origin here.
+  // Comma-separated. Every product origin that should be allowed to call
+  // Genkan's auth endpoints. Adding a new product = adding its origin here.
   TRUSTED_ORIGINS: z
     .string()
     .min(1)
@@ -29,6 +25,18 @@ const serverSchema = z.object({
   DEFAULT_RETURN_TO: z.url(),
 
   DISABLE_AUTH_RATE_LIMIT: z.enum(['true', 'false']).optional(),
+
+  // OAuth client config for first-party products. Comma-separated tuples
+  // formatted `client_id|client_secret|redirect_uri_1,redirect_uri_2`.
+  // Each entry pre-registers a trusted client (skipConsent=true) so users
+  // signing in from menu don't see a consent screen.
+  //
+  // Example: "menu|s3cr3t|https://menu.iedora.com/api/auth/oauth2/callback/genkan"
+  //
+  // Optional in dev; required in production. The admin UI manages dynamic
+  // (third-party) clients via the database; this env var is only for the
+  // first-party ones we trust by construction.
+  TRUSTED_CLIENTS: z.string().optional(),
 })
 
 type ServerEnv = z.infer<typeof serverSchema>
@@ -43,6 +51,7 @@ function parseEnv(): ServerEnv {
       get(_target, key) {
         if (key === 'NODE_ENV') return 'production'
         if (key === 'TRUSTED_ORIGINS') return [] as unknown
+        if (key === 'TRUSTED_CLIENTS') return undefined
         return ''
       },
     })
