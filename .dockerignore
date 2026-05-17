@@ -2,11 +2,13 @@
 .github
 .next
 node_modules
-.env
-.env.local
-.env.*.local
 .DS_Store
 *.log
+
+# Every env variant — keep the broad glob so `.env.production`,
+# `.env.preview`, etc. never leak. `infra/.env.example` is already
+# covered by the `infra/` rule below.
+.env*
 
 # Infra & docs não vão para a imagem da app
 infra/
@@ -14,6 +16,14 @@ docs/
 tests/
 playwright-report/
 test-results/
+
+# Test sources scattered under src/. Standalone output tracing already
+# strips them at build time, but excluding them keeps the build context
+# smaller and the COPY faster.
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.ts
+**/*.spec.tsx
 
 # IDE / Claude
 .vscode/
