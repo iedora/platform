@@ -32,13 +32,15 @@ concurrency:
   queue: max
 
 # Reusable workflows can only USE permissions the caller grants. Without
-# this block, packages:write in _kamal-deploy.yml is silently denied and
-# the workflow fails at startup. Granting at the workflow level so the
-# called reusable workflow inherits.
+# this block, the perms requested in _kamal-deploy.yml are silently denied
+# and the workflow fails at startup. Grant the union of what the reusable
+# workflow needs — packages:write for GHCR push, id-token:write for the
+# Tailscale WIF token exchange.
 permissions:
   contents: read
   packages: write
   actions: read
+  id-token: write
 
 jobs:
   deploy:
