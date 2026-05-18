@@ -38,13 +38,26 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 24px;
+  gap: 36px;
   padding-top: clamp(16px, 4vw, 48px);
 }
 
+/* The display wordmark has line-height 0.94 and a `g` descender — its
+   own bounding box does NOT include the descender, so the next sibling
+   would otherwise collide with the tail of the "g". The padding-bottom
+   reserves descender room; max-width keeps the wordmark from sprawling
+   to the full container on ultra-wide viewports (which is what makes
+   the hero feel like a hero, not a billboard). */
 .genkan-landing__mark {
   margin: 0;
   display: inline-flex;
+  padding-bottom: 0.22em;
+  font-size: clamp(64px, 12vw, 168px);
+  line-height: 0.94;
+}
+.genkan-landing__mark .ds-wordmark--display {
+  font-size: inherit;
+  line-height: inherit;
 }
 
 .genkan-landing__cta {

@@ -30,42 +30,27 @@ tofu := "bin/with-secrets tofu -chdir=tofu"
 _default:
     @just --list --unsorted
 
-# Pattern (community-canonical for terraform+kamal): two tools, sequenced.
-# Tofu reconciles CF resources; Kamal deploys the app. They meet through
-# `kamal/.kamal/secrets` (which reads `tofu output`).
+# Deploy is CI-driven: triggers the menu-deploy.yml workflow which builds the
+# image on a tailnet-joined GHA runner and rolls Kamal on the homelab. Single
+# mutation surface, auditable in GH run history.
 #
-# `deploy` is one verb that handles both fresh-box and routine cases. A
-# 1-second SSH probe checks whether the kamal-proxy container is already
-# running on the box (singleton Kamal creates first during `kamal setup`):
-#   - Running    → use `kamal deploy` (skips bootstrap + accessory boot,
-#                  ~10s faster).
-#   - Not running → use `kamal setup` (idempotent: docker-install +
-#                  accessory-boot + deploy).
-# Same outcome either way; the user always types `just menu::deploy`.
-
-# Build + push + deploy menu — idempotent first-time and every-time.
-#
-# Steps:
-#   1. bun install --frozen-lockfile  — fail fast if bun.lock is stale
-#                                       (workspace renames break the lock
-#                                       silently; surfaced here, not at build)
-#   2. tofu apply                     — reconcile Cloudflare tunnel/DNS/R2
-#   3. kamal accessory boot all       — ensure cloudflared exists EVEN when
-#                                       step 4 is `kamal deploy` (which
-#                                       skips accessory boot)
-#   4. kamal setup OR deploy          — full setup on first run; deploy after
-#   5. curl /up                       — smoke-test the public endpoint; fail
-#                                       loudly if the tunnel isn't routing
+# Cloudflare resources (tunnel + DNS + R2 buckets) are still applied locally
+# via Tofu — they change rarely, and Tofu state is canonically a local concern.
+# When CF state needs to change: `bin/with-secrets tofu -chdir=tofu apply` from
+# this dir, then `just menu::deploy` to roll the new values.
 deploy:
+    @gh workflow run menu-deploy.yml --ref "$(git rev-parse HEAD)"
+    @echo "→ menu deploy triggered. Watch: gh run watch  (or: gh run list --workflow=menu-deploy.yml --limit 1)"
+
+# Local-only Tofu apply for Cloudflare resources (tunnel, DNS, R2). Writes
+# fresh tunnel + R2 token values into BWS so the CI deploy reads the new
+# values on its next run. Rare — only needed when CF resources change.
+infra:
     #!/usr/bin/env bash
     set -euo pipefail
-    (cd ../../.. && bun install --frozen-lockfile)
     {{tofu}} init -upgrade -input=false >/dev/null
     {{tofu}} apply -auto-approve
-    # Write-through Tofu outputs to BWS so CI can read them without running
-    # Tofu (mirrors products/house/infra/justfile's pattern). Each apply
-    # refreshes these values, keeping BWS in sync if tunnel/R2 tokens rotate.
-    echo "[deploy] writing tofu outputs to BWS …"
+    echo "[infra] writing tofu outputs to BWS …"
     for PAIR in "tunnel_token:INFRA_MENU_TUNNEL_TOKEN" \
                 "assets_endpoint:INFRA_MENU_ASSETS_ENDPOINT" \
                 "assets_bucket_name:INFRA_MENU_ASSETS_BUCKET" \
@@ -82,28 +67,7 @@ deploy:
         bws secret create -o none -- "$KEY" "$VAL" "$BWS_PROJECT_ID" >/dev/null
       fi
     done
-    echo "[deploy] ✓ BWS write-through complete"
-    bin/with-secrets bash -c \
-      'cd kamal && PATH="{{kamal-bin}}$PATH" exec kamal accessory boot all'
-    if ssh -o ConnectTimeout=5 -o BatchMode=yes "root@${ONPREM_HOST}" \
-         'docker ps --quiet --filter name=kamal-proxy' 2>/dev/null | grep -q .; then
-      KAMAL_CMD=deploy
-    else
-      KAMAL_CMD=setup
-    fi
-    KAMAL_CMD="$KAMAL_CMD" bin/with-secrets bash -c \
-      'cd kamal && PATH="{{kamal-bin}}$PATH" exec kamal "$KAMAL_CMD"'
-    # Post-deploy smoke. Retry up to 6 × 5s — Cloudflare needs ~10-30s to
-    # register the cloudflared connection after a cold start.
-    echo "[deploy] smoke-checking https://${PUBLIC_HOSTNAME}/up …"
-    for i in 1 2 3 4 5 6; do
-      CODE=$(curl -s -o /dev/null -w '%{http_code}' "https://${PUBLIC_HOSTNAME}/up" || echo 000)
-      if [ "$CODE" = "200" ]; then echo "[deploy] ✓ /up returned 200"; exit 0; fi
-      echo "[deploy] /up returned ${CODE}; retry $i/6 in 5s"
-      sleep 5
-    done
-    echo "[deploy] ✗ /up never returned 200 after 30s. Check 'just menu::logs' and 'kamal accessory logs cloudflared'." >&2
-    exit 1
+    echo "[infra] ✓ done. Now run 'just menu::deploy' to roll the new values."
 
 # Tear down menu's Cloudflare resources (does NOT touch the box).
 # Stops the local cloudflared accessory first + force-flushes Cloudflare's

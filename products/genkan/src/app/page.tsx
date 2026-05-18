@@ -40,7 +40,7 @@ export default async function GenkanLanding() {
           left={
             <>
               <span>MMXXVI</span>
-              <span>Identity · Entry</span>
+              <span>Genkan · Entry</span>
             </>
           }
           right={

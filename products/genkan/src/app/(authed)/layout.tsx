@@ -72,7 +72,10 @@ export default async function AuthedLayout({
           aria-label="Genkan"
           style={{ textDecoration: 'none' }}
         >
-          <Wordmark variant="inline" className="ds-wordmark--reveal" />
+          {/* Genkan owns its own product name on its own pages — the
+              parent brand (iedora) shows up in `MMXXVI · Genkan · …`
+              on the MetaStrip above, not duplicated as a second wordmark. */}
+          <Wordmark word="genkan" variant="inline" className="ds-wordmark--reveal" />
         </Link>
         {children}
       </main>
