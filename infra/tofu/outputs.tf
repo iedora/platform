@@ -23,16 +23,3 @@ output "ci_tailscale_federated_audience" {
   description = "Audience claim that GitHub's OIDC token must match. Tailscale auto-generates this; passed to the github action as `audience`."
   value       = tailscale_federated_identity.ci.audience
 }
-
-# Legacy outputs (kept during the WIF migration window). Removable after
-# the federated identity is validated end-to-end.
-output "ci_tailscale_oauth_client_id" {
-  description = "Legacy. OAuth client ID — replaced by federated identity. Removable after WIF validation."
-  value       = tailscale_oauth_client.ci.id
-}
-
-output "ci_tailscale_oauth_client_secret" {
-  description = "Legacy. OAuth client secret — replaced by federated identity. Removable after WIF validation."
-  value       = tailscale_oauth_client.ci.key
-  sensitive   = true
-}

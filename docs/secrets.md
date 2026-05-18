@@ -12,7 +12,7 @@
 |---|---|---|
 | **Bitwarden Secrets Manager** (`iedora-deploy` project) | ~16 production secrets — apps, infra bootstrap, Tofu-managed write-throughs | Single source of truth; survives laptop loss |
 | `products/menu/infra/.env` (gitignored, on one laptop) | `BWS_ACCESS_TOKEN` + `BWS_PROJECT_ID` + non-secret IDs (account/zone/hostnames) | The one credential that unlocks the rest — must be on disk to bootstrap |
-| `infra/tofu/terraform.tfstate` (encrypted) | `cloudflare_api_token.backups_r2` + `tailscale_oauth_client.ci` (its `key` attribute) | Cross-product shared infra; write-through to BWS via `just infra::deploy` |
+| `infra/tofu/terraform.tfstate` (encrypted) | `cloudflare_api_token.backups_r2` + `tailscale_federated_identity.ci` (no secret — WIF) | Cross-product shared infra; write-through to BWS via `just infra::deploy` |
 | `products/menu/infra/tofu/terraform.tfstate` (encrypted) | Tunnel token + R2 sub-token (`assets_r2`) for the menu product | Created by Tofu; rotate via `tofu apply -replace=<resource>` |
 | `products/house/infra/tofu/terraform.tfstate` (encrypted) | Narrow `workers_deploy` token (Workers Scripts: Write + DNS: Write + Workers Routes: Write) | Created by Tofu; write-through to BWS as `INFRA_HOUSE_WORKERS_TOKEN`; rotate via `just house::rotate-token` |
 | **GitHub Actions secrets/variables** (Tofu-managed via `integrations/github`) | `BWS_ACCESS_TOKEN`, `KAMAL_SSH_PRIVATE_KEY` (secrets); `BWS_PROJECT_ID`, `ONPREM_HOST`, `MENU_PUBLIC_HOSTNAME`, `GENKAN_PUBLIC_HOSTNAME` (variables) | Drives CI deploys; declared in `infra/tofu/github.tf`, values flow through from BWS |
@@ -111,7 +111,7 @@ These are minted by Tofu in encrypted state, then pushed to BWS by `just infra::
 
 | Key | Source | Rotation |
 |---|---|---|
-| `INFRA_CI_TAILSCALE_OAUTH_CLIENT_ID` + `_SECRET` | `tailscale_oauth_client.ci` (auth_keys scope, tag:ci) | `cd infra/tofu && bin/with-secrets tofu apply -replace=tailscale_oauth_client.ci` → `just infra::deploy` reconciles + write-through |
+| `INFRA_CI_TAILSCALE_FEDERATED_ID` + `_AUDIENCE` | `tailscale_federated_identity.ci` (auth_keys scope, tag:ci, trusts GitHub OIDC for repo:eduvhc/iedora:*) | **No secret to rotate** — Workload Identity Federation (Tailscale GA 2026-02-19). GitHub's per-job OIDC JWT is the auth material. Resource changes via `cd infra/tofu && bin/with-secrets tofu apply -replace=tailscale_federated_identity.ci` if you ever need to alter trust claims. |
 | `INFRA_HOUSE_WORKERS_TOKEN` | `cloudflare_api_token.workers_deploy` (narrow Workers + DNS perms) | `just house::rotate-token` wraps both the `-replace` and the BWS write-through atomically |
 
 ## Expand–Contract for permission / token changes
@@ -300,14 +300,11 @@ Skipping step 1 (revoke before create) makes the bootstrap unrecoverable — you
 
 Cloudflare's first-party flow for bootstrap rotation is **Roll** on the token's overview page (`POST /accounts/.../tokens/{id}/value`): same token ID, same scopes, same IP restrictions, new secret value ([Cloudflare: Roll tokens](https://developers.cloudflare.com/fundamentals/api/how-to/roll-token/)). Tofu state for downstream resources is unaffected — they reference the bootstrap by its provider authentication, not by the secret value. After rolling: `bws secret edit INFRA_CLOUDFLARE_API_TOKEN` → done. For Tofu-managed sub-tokens (`cloudflare_api_token.*` resources), there's no Roll equivalent — use `tofu apply -replace=`.
 
-### Tailscale CI OAuth — atomic replace
+### Tailscale CI auth — Workload Identity Federation (no rotation needed)
 
-```
-cd infra/tofu
-bin/with-secrets tofu apply -replace=tailscale_oauth_client.ci
-```
+The Tailscale `tailscale_federated_identity.ci` resource declares trust for GitHub's OIDC issuer + the iedora repo's subject pattern. Per CI run, GHA mints a short-lived OIDC JWT (`id-token: write` permission), the `tailscale/github-action@v4` exchanges it for a short-lived Tailscale access token. **No stored secret exists to rotate.**
 
-Tofu destroys + creates in one apply. The new client's `key` lands in state, then the write-through pushes it to BWS as `INFRA_CI_TAILSCALE_OAUTH_CLIENT_{ID,SECRET}`. CI runs mid-flight on the old client remain authenticated until they disconnect; only NEW `tailscale up` calls after the swap need the new secret.
+To change the trust scope (e.g. lock to `main` only, or add a new federated repo), edit `infra/tofu/tailscale.tf` and run `just infra::deploy`. Tailscale-side: the bootstrap OAuth client needs the `federated_keys` scope (in addition to `policy_file` + `oauth_keys` + `auth_keys`) to mint federated identities.
 
 ## Detection (more important than rotation)
 
@@ -337,7 +334,7 @@ All live in `products/menu/infra/.env` next to the BWS access token.
 
 The mature 2026 patterns ranked by maturity:
 
-1. **Workload Identity Federation / OIDC** (Tier 3) — preferred when the destination supports it. Currently only GitHub Actions → Cloudflare/AWS/GCP works for us; we don't deploy from Actions.
+1. **Workload Identity Federation / OIDC** (Tier 3) — preferred when the destination supports it. **In use for: GHA → GHCR (built-in `GITHUB_TOKEN`), GHA → Tailscale (`tailscale_federated_identity.ci` as of 2026-05-18).** Eliminates stored long-lived secrets entirely for those paths. Cloudflare API does not yet support OIDC from GHA — see deploy.md.
 2. **Just-in-time / dynamic secrets** (Tier 2) — HashiCorp Vault or AWS IAM-auth-for-RDS. Overkill for one homelab box.
 3. **Long-lived in vault + scheduled rotation** (Tier 1) — what we do. BWS + `just menu::rotate-secret`.
 4. **Hardware-backed roots** (Tier 4) — only for the root credential. `BWS_ACCESS_TOKEN` could move to macOS Keychain if you specifically worry about laptop-file-read attacks.

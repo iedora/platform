@@ -33,19 +33,15 @@ deploy:
     set -euo pipefail
     {{tofu}} init -upgrade -input=false >/dev/null
     {{tofu}} apply -auto-approve
-    # Write-through: push the CI Tailscale federation credentials to BWS so
-    # the GitHub Actions workflow can fetch them via `bws secret list`. The
-    # WIF flow needs federated identity ID + audience; the OAuth-client
-    # variant (kept during migration) writes through too — both legacy
-    # entries can be removed from this loop once WIF is validated.
+    # Write-through: push the CI Tailscale federated identity credentials
+    # to BWS so the GitHub Actions workflow can fetch them via
+    # `bws secret list`. WIF means no client secret — only the federated
+    # identity ID (acts as oauth-client-id) and the Tailscale-auto-generated
+    # audience are needed. GitHub's OIDC JWT is the auth material.
     CI_FED_ID=$(bin/with-secrets {{tofu}} output -raw ci_tailscale_federated_id)
     CI_FED_AUD=$(bin/with-secrets {{tofu}} output -raw ci_tailscale_federated_audience)
-    CI_OAUTH_ID=$(bin/with-secrets {{tofu}} output -raw ci_tailscale_oauth_client_id)
-    CI_OAUTH_SECRET=$(bin/with-secrets {{tofu}} output -raw ci_tailscale_oauth_client_secret)
     for KEY_VAL in "INFRA_CI_TAILSCALE_FEDERATED_ID:$CI_FED_ID" \
-                   "INFRA_CI_TAILSCALE_FEDERATED_AUDIENCE:$CI_FED_AUD" \
-                   "INFRA_CI_TAILSCALE_OAUTH_CLIENT_ID:$CI_OAUTH_ID" \
-                   "INFRA_CI_TAILSCALE_OAUTH_CLIENT_SECRET:$CI_OAUTH_SECRET"; do
+                   "INFRA_CI_TAILSCALE_FEDERATED_AUDIENCE:$CI_FED_AUD"; do
       KEY=${KEY_VAL%%:*}
       VAL=${KEY_VAL#*:}
       SECRET_ID=$(bws secret list "$BWS_PROJECT_ID" -o json \
