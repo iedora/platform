@@ -1,0 +1,58 @@
+# Claude Code — interactive assistant.
+#
+# Responds when you mention `@claude` in an issue or PR comment, in an
+# issue body, or in a PR review comment — and when an issue or PR is
+# assigned to the Claude GitHub app. Claude reads the thread, works in a
+# checkout of the repo, and pushes a branch / opens a PR as needed.
+#
+# Why no `paths:` filter: this is conversation-triggered, not code-
+# triggered — the relevant signal is "a human asked", not "a file
+# changed". The action itself decides whether `@claude` (or an
+# assignment) is present and no-ops otherwise, so an unfiltered `on:`
+# block is correct and cheap.
+#
+# Auth: CLAUDE_CODE_OAUTH_TOKEN (Pro/Max subscription token minted via
+# `claude setup-token`), stored as a repo secret. Not an API key, not a
+# BWS/Tofu-managed credential.
+#
+# Full setup, rotation, the repo-slug gotcha (canonical slug is
+# eduvhc/iedora, not the meta-menu folder name), and the MCP inventory
+# are documented in docs/ai.md. Prereqs, one-time, repo admin:
+#   1. Install the Claude GitHub app: https://github.com/apps/claude
+#   2. gh secret set CLAUDE_CODE_OAUTH_TOKEN --repo eduvhc/iedora
+
+name: Claude
+
+on:
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+  issues:
+    types: [opened, assigned, labeled]
+  pull_request_review:
+    types: [submitted]
+
+# Least privilege: Claude needs to read/write code on a branch, comment
+# back, and exchange the OIDC id-token. `actions: read` lets it inspect
+# its own run logs when asked to debug CI.
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+  id-token: write
+  actions: read
+
+jobs:
+  claude:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          # Full history so Claude can branch, rebase, and inspect blame.
+          fetch-depth: 0
+
+      - uses: anthropics/claude-code-action@24492741e0ccfdef4c1d19da8e11e0f373d07494 # v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
