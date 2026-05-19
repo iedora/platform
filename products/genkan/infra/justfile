@@ -31,7 +31,7 @@ _default:
 # Cloudflare resources (tunnel + DNS) are applied locally via `just genkan::infra`
 # when they need to change — rare.
 deploy:
-    @gh workflow run genkan-deploy.yml --ref "$(git rev-parse HEAD)"
+    @gh workflow run genkan-deploy.yml --ref "$(git rev-parse --abbrev-ref HEAD)"
     @echo "→ genkan deploy triggered. Watch: gh run watch  (or: gh run list --workflow=genkan-deploy.yml --limit 1)"
 
 # Local-only Tofu apply for genkan's Cloudflare resources (tunnel, DNS).

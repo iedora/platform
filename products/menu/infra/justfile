@@ -39,7 +39,7 @@ _default:
 # When CF state needs to change: `bin/with-secrets tofu -chdir=tofu apply` from
 # this dir, then `just menu::deploy` to roll the new values.
 deploy:
-    @gh workflow run menu-deploy.yml --ref "$(git rev-parse HEAD)"
+    @gh workflow run menu-deploy.yml --ref "$(git rev-parse --abbrev-ref HEAD)"
     @echo "→ menu deploy triggered. Watch: gh run watch  (or: gh run list --workflow=menu-deploy.yml --limit 1)"
 
 # Local-only Tofu apply for Cloudflare resources (tunnel, DNS, R2). Writes
