@@ -20,6 +20,7 @@ type selection struct {
 	interactive bool
 	only        string
 	except      string
+	destroy     bool
 }
 
 // parseFlags reads the CLI flags into a typed value. No defaults
@@ -31,6 +32,7 @@ func parseFlags() selection {
 	flag.BoolVar(&sel.interactive, "interactive", false, "alias for -i")
 	flag.StringVar(&sel.only, "only", "", "comma-separated services to start (+ their deps); skips everything else")
 	flag.StringVar(&sel.except, "except", "", "comma-separated services to skip; everything else (+ their deps) starts")
+	flag.BoolVar(&sel.destroy, "destroy", false, "tear down the dev stack: tofu destroy + remove infra-* containers + remove docker network + wipe volumes + wipe bootstrap dir + wipe tfstate + wipe .env.local. Ignores --only/--except (always full teardown).")
 	flag.Parse()
 	return sel
 }

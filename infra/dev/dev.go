@@ -24,6 +24,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -31,16 +32,25 @@ import (
 
 func main() {
 	sel := parseFlags()
-	selected, err := sel.resolve()
-	if err != nil {
-		fail("%v", err)
-	}
 
 	repoRoot := findRepoRoot()
 	devTofuDir := filepath.Join(repoRoot, devTofuDirRel)
 	menuDir := filepath.Join(repoRoot, menuDirRel)
 	envLocalPath := filepath.Join(menuDir, envLocalFileName)
 	envPath := filepath.Join(menuDir, envFileName)
+
+	// --destroy is a separate entry point: no selection resolution, no
+	// .env.local sync, no apply. Always a full teardown (matches the
+	// throwaway nature of the dev stack — no partial-destroy use case).
+	if sel.destroy {
+		destroyDevStack(repoRoot, devTofuDir, envLocalPath)
+		return
+	}
+
+	selected, err := sel.resolve()
+	if err != nil {
+		fail("%v", err)
+	}
 
 	fmt.Printf("%s selection: %s\n", logPrefix, strings.Join(selected, ", "))
 
@@ -119,6 +129,46 @@ func applyDevStack(selected []string, repoRoot, devTofuDir string) {
 	runInWithEnv(devTofuDir,
 		[]string{tfVarZitadelJWT + "=" + string(jwtBytes)},
 		"tofu", pass2...)
+}
+
+// destroyDevStack tears the whole dev stack down — symmetric to
+// applyDevStack. Each step is best-effort (continues on failure),
+// matching the original `just dev-down` shell semantics: the dev
+// stack is throwaway by design, partial-state should never block
+// a clean reset.
+func destroyDevStack(repoRoot, devTofuDir, envLocalPath string) {
+	step(1, "tofu destroy")
+	// zitadel_jwt_profile="" satisfies the provider's Configure() check
+	// without needing a real JWT. If state is already gone the destroy
+	// is a no-op; manual cleanup below catches the rest either way.
+	runQuiet(devTofuDir, "tofu", "destroy", "-auto-approve",
+		"-var", "zitadel_jwt_profile=",
+	)
+
+	step(2, "remove infra-* containers")
+	// Catches orphans tofu didn't track (failed apply that never made
+	// it into state, e.g. an aborted first-pass).
+	removeInfraContainers()
+
+	step(3, "remove docker network + volumes")
+	runQuiet("", "docker", "network", "rm", "iedora")
+	runQuiet("", "docker", "volume", "rm", "postgres-data", "localstack-data", "openobserve-data")
+
+	step(4, "wipe local state + .env.local")
+	for _, p := range []string{
+		filepath.Join(repoRoot, "infra/dev/.zitadel-bootstrap"),
+		filepath.Join(devTofuDir, ".terraform"),
+		filepath.Join(devTofuDir, ".terraform.lock.hcl"),
+		filepath.Join(devTofuDir, "terraform.tfstate"),
+		filepath.Join(devTofuDir, "terraform.tfstate.backup"),
+		envLocalPath,
+	} {
+		if err := os.RemoveAll(p); err != nil {
+			warn("remove %s: %v", p, err)
+		}
+	}
+
+	fmt.Printf("%s dev stack torn down.\n", logPrefix)
 }
 
 // tfEnableVars converts the user selection into the `-var enable_X=…`

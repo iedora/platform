@@ -21,7 +21,7 @@ The orchestrator (`infra/dev/`, Go) does a 4-step Tofu choreography: init → ta
 
 ```bash
 just dev               # bring everything up (~30s cold, ~5s warm)
-just dev-down          # tear down + wipe volumes / state / .env.local
+just dev --destroy     # tear down + wipe volumes / state / .env.local
 ```
 
 That's it for the golden path. Zero env vars to set, no `BWS_ACCESS_TOKEN` needed (BWS only kicks in for prod). The first apply builds the menu + house images from source.
@@ -41,6 +41,7 @@ just dev --except openobserve        # everything else; openobserve stays off
 | `-i`, `--interactive` | per-category multi-select (huh TUI); start everything pre-checked, deselect what you don't want |
 | `--only X,Y` | bring up only X, Y, and their transitive deps |
 | `--except X,Y` | bring up everything except X, Y; their env keys go to `.env.local` as `<please_fill>` for manual override |
+| `--destroy` | tear the whole stack down (see *Tear-down* below). Ignores `--only` / `--except`. |
 
 `--only` and `--except` are mutually exclusive. Both close over the dep graph: `--only menu` boots postgres + localstack + openobserve too, since menu needs them.
 
@@ -67,7 +68,7 @@ Tofu emits two `.env` variants for this — the container variant uses docker-ne
 
 Two files, two roles:
 
-**`products/menu/.env`** — committed, TF-owned. Auto-rewritten every `just dev`. Every key has a real value (the random ones are regenerated on `just dev-down` + `just dev`; safe to commit since they only unlock the operator's own localhost stack).
+**`products/menu/.env`** — committed, TF-owned. Auto-rewritten every `just dev`. Every key has a real value (the random ones are regenerated on `just dev --destroy` + `just dev`; safe to commit since they only unlock the operator's own localhost stack).
 
 **`products/menu/.env.local`** — gitignored, operator-owned. `.env.local` overrides `.env` for `bun run dev`. The orchestrator schema-syncs it:
 
@@ -82,12 +83,12 @@ Before every apply, a warning surfaces shadowing overrides so you notice before 
 ## Tear-down
 
 ```bash
-just dev-down
+just dev --destroy
 ```
 
 Wipes containers, network, volumes, the Zitadel bootstrap dir, the Tofu state, and `products/menu/.env.local`. Everything regenerates on the next `just dev` — fresh PATs, fresh Zitadel DB, fresh OIDC client secret.
 
-`just dev-down` is best-effort (each step prefixed `-` so failures don't cascade) — safe to run from any partial state.
+`just dev --destroy` is best-effort: each step continues on failure (matching the throwaway nature of the dev stack — partial state should never block a reset).
 
 ---
 
@@ -96,7 +97,7 @@ Wipes containers, network, volumes, the Zitadel bootstrap dir, the Tofu state, a
 - **Port 8080 busy.** Zitadel publishes on `:8080`. If something else (another local Zitadel, a Jenkins, anything) holds it, the apply fails. Free the port or stop the conflicting service.
 - **First apply takes ~30s.** Image builds for menu + house run in parallel during pass 1. Warm reboots (volumes preserved) finish in ~5s.
 - **`.env.local` shadowing a TF value.** The pre-apply warning will name the keys. If unintended, delete the line in `.env.local` and re-run.
-- **Stale Zitadel state.** If you change the masterkey or the bootstrap dir gets corrupted, `just dev-down` is the reset hammer.
+- **Stale Zitadel state.** If you change the masterkey or the bootstrap dir gets corrupted, `just dev --destroy` is the reset hammer.
 
 ---
 
@@ -115,4 +116,4 @@ The orchestrator is one Go package at `infra/dev/`, split by concern:
 
 Waits use TCP-dial + HTTP probe (`net.DialTimeout` then `http.Get`) instead of `time.Sleep` polling — typical detect time is ~50ms past the moment Zitadel actually starts answering `/debug/ready`.
 
-State lives at `infra/dev/tofu/terraform.tfstate` (plaintext, gitignored). Throwaway — `just dev-down` wipes it.
+State lives at `infra/dev/tofu/terraform.tfstate` (plaintext, gitignored). Throwaway — `just dev --destroy` wipes it.

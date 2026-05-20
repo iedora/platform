@@ -69,6 +69,35 @@ func runIn(dir, name string, args ...string) {
 	}
 }
 
+// runQuiet runs a command best-effort: streams output but does NOT
+// exit the orchestrator on non-zero. Used by destroyDevStack — each
+// teardown step continues on failure (partial state should never
+// block a reset).
+func runQuiet(dir, name string, args ...string) {
+	cmd := exec.Command(name, args...)
+	cmd.Dir = dir
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	_ = cmd.Run()
+}
+
+// removeInfraContainers force-removes every container with an `infra-`
+// name prefix. Catches the orphans `tofu destroy` doesn't see (e.g.
+// a container created by a failed apply that never landed in state).
+// Best-effort: skips silently if docker isn't reachable.
+func removeInfraContainers() {
+	out, err := exec.Command("docker", "ps", "-aq", "--filter", "name=infra-").Output()
+	if err != nil {
+		return
+	}
+	ids := strings.Fields(strings.TrimSpace(string(out)))
+	if len(ids) == 0 {
+		return
+	}
+	args := append([]string{"rm", "-f"}, ids...)
+	_ = exec.Command("docker", args...).Run()
+}
+
 // runInWithEnv is runIn with extra env vars layered on top of the
 // inherited environment. Used to pass `TF_VAR_zitadel_jwt_profile`
 // (multi-line JSON with quotes) to `tofu apply` without shell-escaping.

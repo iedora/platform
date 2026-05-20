@@ -36,18 +36,9 @@ _default:
 # Pure OpenTofu — `infra/dev/tofu/` calls the shared `infra/modules/services/*`
 # modules with dev inputs (local docker daemon, host-published ports,
 # LocalStack instead of R2). No docker-compose.
-[doc("boot the dev stack via OpenTofu")]
+#
+# Single entry point. `just dev --destroy` tears the stack down (was the
+# old `just dev-down` recipe; folded into the Go orchestrator).
+[doc("boot the dev stack via OpenTofu (--destroy to wipe everything)")]
 dev *ARGS:
     @cd infra/dev && go run . {{ARGS}}
-
-# Tear the dev stack down + wipe its volumes. Use before a clean
-# re-bootstrap when you want fresh PATs / fresh Zitadel DB.
-[doc("wipe the dev stack (containers + network + volumes + PATs + .env.local)")]
-dev-down:
-    -cd infra/dev/tofu && tofu destroy -auto-approve -var zitadel_jwt_profile="" 2>/dev/null
-    -docker ps -aq --filter "name=infra-" | xargs -r docker rm -f
-    -docker network rm iedora 2>/dev/null
-    -docker volume rm postgres-data localstack-data openobserve-data 2>/dev/null
-    rm -rf infra/dev/.zitadel-bootstrap
-    rm -rf infra/dev/tofu/.terraform infra/dev/tofu/.terraform.lock.hcl infra/dev/tofu/terraform.tfstate*
-    rm -f products/menu/.env.local
