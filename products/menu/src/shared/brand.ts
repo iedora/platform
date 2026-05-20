@@ -6,6 +6,8 @@
  * `env.MENU_PUBLIC_URL` from `@/shared/env` instead.
  *
  * To rebrand: change `BRAND_DOMAIN`. Everything else derives from it.
+ * The full estate (iedora.com landing + menu.iedora.com app +
+ * auth.iedora.com IdP + assets.iedora.com CDN) reconciles around it.
  */
 export const BRAND_DOMAIN = 'iedora.com'
 
