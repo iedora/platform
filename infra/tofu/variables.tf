@@ -151,16 +151,26 @@ variable "infra_hcloud_token" {
 
 variable "hetzner_server_type" {
   description = <<-EOT
-    Hetzner SKU for the infra VPS. CAX11 (ARM, 2 vCPU / 4 GB / 40 GB) covers
-    the current workload with headroom. Scale to CAX21 (4/8) for Phase 4
-    multi-tenant ramp — Hetzner resizes in place without destroy/recreate.
+    Hetzner SKU for the infra VPS. CPX22 (AMD EPYC x86_64, 2 vCPU / 4 GB
+    RAM / 80 GB SSD, €7.99/mo) is the default — picked because:
+      - Next.js menu image build chokes on ARM (CAX series) under Turbopack
+        (some transitive deps' native modules don't ship arm64)
+      - Postgres benefits from x86 (better kernel tooling, pg_stat semantics)
+      - 80 GB SSD doubles the headroom for Postgres growth pre-customer
+    Hetzner discontinued the cheaper CX (Intel shared) line in 2025; CPX
+    (AMD EPYC shared) is the new entry tier.
+
+    Scale path (in-place resize within the family):
+      cpx22 (current)  2/4GB/80GB   €7.99
+      cpx32            4/8GB/160GB  €13.99 — Phase 4 multi-tenant ramp
+      ccx13 dedicated  2/8GB/80GB   €16.99 — when noisy-neighbour matters
   EOT
   type        = string
-  default     = "cax11"
+  default     = "cpx22"
 
   validation {
-    condition     = contains(["cax11", "cax21", "cax31", "cax41"], var.hetzner_server_type)
-    error_message = "Use one of the ARM CAX SKUs (cheapest line). Intel/AMD options exist but cost more for the same RAM."
+    condition     = contains(["cpx22", "cpx32", "cpx42", "ccx13", "ccx23"], var.hetzner_server_type)
+    error_message = "Use an x86_64 SKU (cpx* or ccx*). ARM CAX SKUs were tried and rejected — Next.js builds fail."
   }
 }
 

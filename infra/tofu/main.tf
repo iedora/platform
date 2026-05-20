@@ -79,19 +79,19 @@ resource "cloudflare_api_token" "observability_r2" {
   }]
 }
 
-# Tunnel + DNS for obs.iedora.com. Primary route points directly at the
-# OpenObserve container (port 5080 = its HTTP API + UI). We skip
-# kamal-proxy because OpenObserve isn't a deployed app — it's an accessory
-# that owns its own request lifecycle (UI + OTLP receiver). The module's
-# default kamal-proxy primary is overridden via `primary_service`.
-module "observability_tunnel" {
-  source = "../modules/cloudflare-tunnel-app"
-
-  account_id      = var.account_id
-  zone_id         = data.cloudflare_zone.iedora.id
-  tunnel_name     = "iedora-observability"
-  public_hostname = var.observability_hostname
-  primary_service = "http://infra-openobserve:5080"
+# obs.iedora.com — direct DNS to the Hetzner box, grey-cloud (proxied=false).
+# Replaced the CF Tunnel on 2026-05-20 to drop the dedicated cloudflared
+# sidecar (one less always-on container) — OpenObserve UI is HTTP/1.1 only,
+# Caddy handles TLS termination, no need for CF in path. Pre-customer ops
+# tool: DDoS protection isn't a meaningful trade-off.
+resource "cloudflare_dns_record" "obs_iedora" {
+  zone_id = data.cloudflare_zone.iedora.id
+  name    = var.observability_hostname
+  type    = "A"
+  content = hcloud_server.iedora.ipv4_address
+  ttl     = 60
+  proxied = false
+  comment = "Direct to Hetzner — Caddy terminates TLS, no CF on path"
 }
 
 # ── ZITADEL IdP (issue #19) ──────────────────────────────────────────────────

@@ -179,27 +179,6 @@ resource "docker_container" "openobserve" {
   }
 }
 
-resource "docker_container" "openobserve_tunnel" {
-  name    = "infra-openobserve-tunnel"
-  image   = "cloudflare/cloudflared:2026.5.0@sha256:59bab8d3aceec09bf6bdb07d6beca0225ca5cd7ab79436a87ea97978fe1dc4f9"
-  restart = "unless-stopped"
-
-  command = [
-    "tunnel",
-    "--no-autoupdate",
-    "run",
-    "--token", module.observability_tunnel.token,
-  ]
-
-  networks_advanced {
-    name = docker_network.kamal.name
-  }
-
-  log_opts = {
-    max-size = "10m"
-  }
-}
-
 # ── Backups (self-built image) ───────────────────────────────────────────────
 # Pulls from GHCR which requires auth; the provider's registry_auth block
 # below ties to `var.infra_ghcr_token`. The image runs an internal cron
@@ -540,6 +519,13 @@ resource "docker_container" "caddy" {
         # Menu app (Next.js standalone). HTTP/1.1 backend, no gRPC — Caddy
         # auto-handles HTTP/2 on the client side without h2c upstream.
         reverse_proxy http://infra-menu-web:3000
+      }
+
+      ${var.observability_hostname} {
+        # OpenObserve UI + OTLP-HTTP receiver. HTTP/1.1 backend; OTLP/gRPC
+        # is on a different port and not exposed publicly (products talk to
+        # infra-openobserve:5081 via the kamal network only).
+        reverse_proxy http://infra-openobserve:5080
       }
     EOT
   }

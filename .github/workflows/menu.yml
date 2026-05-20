@@ -2,7 +2,7 @@
 #
 # Runs the menu gates (typecheck + lint + Vitest + Trivy/SBOM) on every push +
 # PR. On push to main, after the gates pass, builds the menu image for
-# linux/arm64, pushes it to GHCR (`ghcr.io/eduvhc/menu:latest` + commit SHA),
+# linux/amd64, pushes it to GHCR (`ghcr.io/eduvhc/menu:latest` + commit SHA),
 # then triggers the infra deploy workflow to roll the Tofu-managed container
 # on the Hetzner CAX11 box.
 #
@@ -162,15 +162,6 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
-      # QEMU registers binfmt handlers so buildx can cross-build arm64
-      # binaries on the amd64 GHA runner. Without it, `--platform linux/arm64`
-      # fails with `exec format error` the moment any RUN line fires under
-      # the arm64 target.
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@5306bad0baa6b616b9934712d4b9d8a82c3d6b8c # v3
-        with:
-          platforms: arm64
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4
 
@@ -185,18 +176,16 @@ jobs:
       #   - `:latest` is what Tofu's `data.docker_registry_image.menu` resolves
       #     against; bumping it triggers `pull_triggers` on the next apply.
       #   - `:<sha>` is the immutable handle for rollbacks + attestations.
-      - name: Build and push image (linux/arm64)
+      - name: Build and push image (linux/amd64)
         id: build
         # Build context is the REPO ROOT (Bun workspace) — Dockerfile copies
         # in `package.json`, `bun.lock`, `tsconfig.base.json`, and every
         # workspace under `packages/` + `products/`. See
         # products/menu/infra/Dockerfile for the multi-stage layout.
         #
-        # `--platform linux/arm64`: the target host is a Hetzner CAX11
-        # (Ampere Altra ARM64) in Falkenstein. Building amd64 here would
-        # produce an image Tofu can pull but `docker run` would reject with
-        # `exec format error`. Single-platform on purpose — building both
-        # arches doubles CI time and the amd64 variant has no consumer.
+        # `linux/amd64`: target host is a Hetzner CX22 (Intel x86_64) in
+        # Falkenstein — same arch as the GHA ubuntu-24.04 runner, so no
+        # QEMU emulation, native build speed.
         #
         # GHA cache: `mode=max` caches every intermediate stage (deps +
         # builder + runner), `scope=menu` isolates from any future per-arch
@@ -205,7 +194,7 @@ jobs:
         with:
           context: .
           file: products/menu/infra/Dockerfile
-          platforms: linux/arm64
+          platforms: linux/amd64
           push: true
           provenance: true
           sbom: true

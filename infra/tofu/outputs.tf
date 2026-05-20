@@ -38,12 +38,6 @@ output "observability_r2_secret_access_key" {
   sensitive   = true
 }
 
-output "observability_tunnel_token" {
-  description = "Cloudflared connector token for the obs.iedora.com tunnel."
-  value       = module.observability_tunnel.token
-  sensitive   = true
-}
-
 # ── Hetzner outputs ──────────────────────────────────────────────────────────
 # IPv4 is the source of truth for: the docker provider host, every per-product
 # Kamal `.env` ONPREM_HOST, the zitadel-rebootstrap SSH commands, and the

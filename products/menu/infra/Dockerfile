@@ -26,10 +26,9 @@ COPY package.json bun.lock tsconfig.base.json ./
 # present so `bun install` can resolve `"@iedora/design-system": "workspace:*"`.
 COPY packages packages
 COPY products/menu/package.json products/menu/package.json
-# Empty stubs so the workspace globs still match (no need to ship genkan/
-# house source into menu's image).
-RUN mkdir -p products/genkan products/house
-COPY products/genkan/package.json products/genkan/package.json
+# Empty stub so the `products/*` workspace glob still matches (no need to
+# ship the house product source into menu's image).
+RUN mkdir -p products/house
 COPY products/house/package.json products/house/package.json
 
 # BuildKit cache mount keeps the Bun global cache warm across rebuilds on

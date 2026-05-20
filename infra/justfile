@@ -145,7 +145,7 @@ build-backup:
     echo "Logging into GHCR..."
     printf "%s" "$TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
     echo "Building + pushing ghcr.io/$GHCR_USER/iedora-backup:18..."
-    docker buildx build --platform linux/arm64 \
+    docker buildx build --platform linux/amd64 \
       --tag "ghcr.io/$GHCR_USER/iedora-backup:18" --push backup
 
 # Rotate one BWS secret. Usage: just rotate-secret INFRA_POSTGRES_PASSWORD
