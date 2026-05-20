@@ -199,7 +199,7 @@ jobs:
         # Build context is the REPO ROOT (Bun workspace) — Dockerfile copies
         # in `package.json`, `bun.lock`, `tsconfig.base.json`, and every
         # workspace under `packages/` + `products/`. See
-        # products/menu/infra/Dockerfile for the multi-stage layout.
+        # products/menu/Dockerfile for the multi-stage layout.
         #
         # `linux/amd64`: target host is a Hetzner CX22 (Intel x86_64) in
         # Falkenstein — same arch as the GHA ubuntu-24.04 runner, so no
@@ -211,7 +211,7 @@ jobs:
         uses: docker/build-push-action@1dc73863535b631f98b2378be8619f83b136f4a0 # v6
         with:
           context: .
-          file: products/menu/infra/Dockerfile
+          file: products/menu/Dockerfile
           platforms: linux/amd64
           push: true
           provenance: true

@@ -127,18 +127,16 @@ resource "docker_container" "openobserve" {
   image   = "public.ecr.aws/zinclabs/openobserve:v0.80.3"
   restart = "unless-stopped"
 
+  # ZO_LOCAL_MODE = everything on the VPS disk; mirrors dev/docker-compose.yml.
+  # Span volume at this scale (solo + pre-customer) easily fits in the bind
+  # mount; default lifecycle GCs files past ~30 days. When span volume grows
+  # past disk, re-introduce an R2 cold tier with prefix `o2/` under
+  # `cloudflare_r2_bucket.data` — 5 min of TF.
   env = [
     "ZO_LOCAL_MODE=true",
     "ZO_DATA_DIR=/data",
     "ZO_HTTP_PORT=5080",
     "ZO_GRPC_PORT=5081",
-    "ZO_S3_PROVIDER=aws",
-    "ZO_S3_REGION_NAME=auto",
-    "ZO_S3_BUCKET_NAME=${cloudflare_r2_bucket.observability.name}",
-    "ZO_S3_SERVER_URL=https://${var.account_id}.r2.cloudflarestorage.com",
-    "ZO_S3_FEATURE_FORCE_PATH_STYLE=true",
-    "ZO_S3_ACCESS_KEY=${cloudflare_api_token.observability_r2.id}",
-    "ZO_S3_SECRET_KEY=${sha256(cloudflare_api_token.observability_r2.value)}",
     "ZO_ROOT_USER_EMAIL=${var.infra_openobserve_root_user_email}",
     "ZO_ROOT_USER_PASSWORD=${var.infra_openobserve_root_user_password}",
   ]
@@ -174,15 +172,18 @@ resource "docker_container" "backups" {
     "BACKUP_KEEP_DAYS=14",
     "S3_REGION=auto",
     "S3_ENDPOINT=https://${var.account_id}.r2.cloudflarestorage.com",
-    "S3_BUCKET=${cloudflare_r2_bucket.backups.name}",
+    # Backups land in the shared private `iedora-data` bucket under `pg/`.
+    # Future internal datasets (e.g. parquet shards if OpenObserve ever
+    # outgrows local mode) sibling-prefix under the same bucket.
+    "S3_BUCKET=${cloudflare_r2_bucket.data.name}",
     "S3_PREFIX=pg",
     "POSTGRES_HOST=infra-postgres",
     # Empty → backup.sh uses --all-databases (every iedora product).
     "POSTGRES_DATABASE=",
     "POSTGRES_USER=postgres",
     "POSTGRES_PASSWORD=${var.infra_postgres_password}",
-    "S3_ACCESS_KEY_ID=${cloudflare_api_token.backups_r2.id}",
-    "S3_SECRET_ACCESS_KEY=${sha256(cloudflare_api_token.backups_r2.value)}",
+    "S3_ACCESS_KEY_ID=${cloudflare_api_token.data_r2.id}",
+    "S3_SECRET_ACCESS_KEY=${sha256(cloudflare_api_token.data_r2.value)}",
     "PASSPHRASE=${var.infra_backup_passphrase}",
   ]
 
@@ -424,16 +425,22 @@ resource "docker_container" "menu_web" {
     "ZITADEL_MANAGEMENT_TOKEN=${zitadel_personal_access_token.menu_sa[0].token}",
 
     # ── Object storage ────────────────────────────────────────────────────
-    # R2 assets bucket — Tofu-managed in products/menu/infra/tofu/.
-    "S3_ENDPOINT=${var.infra_menu_assets_endpoint}",
-    "S3_REGION=us-east-1",
-    "S3_BUCKET=${var.infra_menu_assets_bucket}",
-    "S3_ACCESS_KEY=${var.infra_menu_assets_access_key}",
-    "S3_SECRET_KEY=${var.infra_menu_assets_secret_key}",
+    # Shared assets bucket (`cloudflare_r2_bucket.assets` in main.tf).
+    # When a second product needs assets, mint its own scoped token over
+    # the same bucket + namespace under a sibling prefix.
+    "S3_ENDPOINT=https://${var.account_id}.r2.cloudflarestorage.com",
+    "S3_REGION=auto",
+    "S3_BUCKET=${cloudflare_r2_bucket.assets.name}",
+    "S3_ACCESS_KEY=${cloudflare_api_token.assets_r2.id}",
+    "S3_SECRET_KEY=${sha256(cloudflare_api_token.assets_r2.value)}",
+    "S3_PUBLIC_URL=https://${var.assets_hostname}",
 
     # ── Observability ─────────────────────────────────────────────────────
+    # OpenObserve runs in ZO_LOCAL_MODE (see openobserve container above),
+    # so no Basic auth header is required for ingest — anonymous OTLP
+    # accepted on the internal port.
     "OTEL_EXPORTER_OTLP_ENDPOINT=http://infra-openobserve:5080/api/default",
-    "OTEL_EXPORTER_OTLP_HEADERS=${var.infra_openobserve_ingest_header}",
+    "OTEL_EXPORTER_OTLP_HEADERS=Authorization=Basic%20${base64encode("${var.infra_openobserve_root_user_email}:${var.infra_openobserve_root_user_password}")}",
     "HOST_NAME=${hcloud_server.iedora.name}",
   ]
 
@@ -514,12 +521,9 @@ resource "docker_container" "caddy" {
         reverse_proxy http://infra-menu-web:3000
       }
 
-      ${var.observability_hostname} {
-        # OpenObserve UI + OTLP-HTTP receiver. HTTP/1.1 backend; OTLP/gRPC
-        # is on a different port and not exposed publicly (products talk to
-        # infra-openobserve:5081 via the iedora network only).
-        reverse_proxy http://infra-openobserve:5080
-      }
+      # OpenObserve UI is no longer exposed publicly — ZO_LOCAL_MODE keeps
+      # data on the VPS disk, and ad-hoc UI access is via an SSH tunnel:
+      #   ssh -L 5080:localhost:5080 root@<vps>  → http://localhost:5080
     EOT
   }
 

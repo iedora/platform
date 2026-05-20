@@ -19,8 +19,11 @@
 #   3. echo "mod <name> 'products/<name>/infra'" appended to this file
 
 mod infra 'infra'
-mod menu 'products/menu/infra'
 mod house 'products/house/infra'
+# No `mod menu` — menu's deploy (container + R2 + DNS) lives entirely in
+# the shared `infra/tofu/` root since the R2 consolidation. The dev loop
+# lives at `infra/dev/`. Per-product Tofu disappeared with the
+# iedora-data / iedora-assets bucket merge.
 
 # Default: list modules + recipes.
 [private]

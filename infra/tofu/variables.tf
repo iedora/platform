@@ -25,34 +25,42 @@ variable "account_id" {
   }
 }
 
-variable "backups_bucket_name" {
-  description = "Cloudflare R2 bucket name for Postgres dumps. Covers every iedora product's database. Globally unique within your account."
+# ── Shared R2 buckets ────────────────────────────────────────────────────────
+
+variable "zone_name" {
+  description = "Apex domain. Drives the cloudflare_zone lookup + the assets custom-domain hostname."
   type        = string
-  default     = "iedora-backups"
+  default     = "iedora.com"
 }
 
-variable "backups_bucket_location" {
+variable "data_bucket_name" {
+  description = "Private R2 bucket for backups + future internal datasets. Prefix per consumer (e.g. pg/, o2/)."
+  type        = string
+  default     = "iedora-data"
+}
+
+variable "data_bucket_location" {
   description = "R2 location hint (auto = closest, EUR/EEUR = Europe)."
   type        = string
   default     = "EEUR"
 }
 
-variable "observability_bucket_name" {
-  description = "Cloudflare R2 bucket name for OpenObserve long-term storage (parquet shards). Hot data stays on local disk; this is the cold tier."
+variable "assets_bucket_name" {
+  description = "Public R2 bucket for product user-uploaded assets. Each product namespaces under its own prefix."
   type        = string
-  default     = "iedora-observability"
+  default     = "iedora-assets"
 }
 
-variable "observability_bucket_location" {
-  description = "R2 location hint for the observability bucket. Same as backups so co-located with the homelab."
+variable "assets_bucket_location" {
+  description = "R2 location hint. Same as data so they co-locate on the same R2 edge."
   type        = string
   default     = "EEUR"
 }
 
-variable "observability_hostname" {
-  description = "Public FQDN for the OpenObserve UI + OTLP ingest endpoint. Internal-feeling but reachable from any product process via OTLP."
+variable "assets_hostname" {
+  description = "Public FQDN that serves the assets bucket via CF custom domain. Cloudflare provisions the TLS cert + manages the CNAME."
   type        = string
-  default     = "obs.iedora.com"
+  default     = "assets.iedora.com"
 }
 
 variable "zitadel_hostname" {
@@ -258,36 +266,16 @@ variable "infra_zitadel_first_admin_password" {
   sensitive   = true
 }
 
-# ── Menu app secrets (consumed by docker_container.menu_web) ─────────────────
-# These vars wire the menu container's runtime env from BWS through TF_VAR_*.
-
-variable "infra_menu_assets_access_key" {
-  description = "R2 S3-compatible access key for the menu assets bucket. TF_VAR_infra_menu_assets_access_key (from BWS INFRA_MENU_ASSETS_ACCESS_KEY)."
-  type        = string
-  sensitive   = true
-}
-
-variable "infra_menu_assets_secret_key" {
-  description = "R2 S3-compatible secret key for the menu assets bucket. TF_VAR_infra_menu_assets_secret_key (from BWS INFRA_MENU_ASSETS_SECRET_KEY)."
-  type        = string
-  sensitive   = true
-}
-
-variable "infra_menu_assets_endpoint" {
-  description = "Public-facing R2 endpoint for menu assets (e.g. https://assets.iedora.com). TF_VAR_infra_menu_assets_endpoint (from BWS INFRA_MENU_ASSETS_ENDPOINT)."
-  type        = string
-}
-
-variable "infra_menu_assets_bucket" {
-  description = "R2 bucket name (typically just `menu`). TF_VAR_infra_menu_assets_bucket (from BWS INFRA_MENU_ASSETS_BUCKET)."
-  type        = string
-}
-
-variable "infra_openobserve_ingest_header" {
-  description = "OTLP HTTP `Authorization` header value for OpenObserve ingest (`Basic <base64>`). TF_VAR_infra_openobserve_ingest_header (from BWS INFRA_OPENOBSERVE_INGEST_HEADER)."
-  type        = string
-  sensitive   = true
-}
+# ── Menu app runtime env ─────────────────────────────────────────────────────
+# Every runtime env var the menu container needs is produced by TF
+# resources in this root — no BWS round-trip, no infra_menu_* vars:
+#   - Session-cookie key      → random_password.menu_session_secret  (zitadel.tf)
+#   - OIDC client id/secret   → zitadel_application_oidc.menu        (zitadel.tf)
+#   - SA management token     → zitadel_personal_access_token.menu_sa (zitadel.tf)
+#   - S3 / assets credentials → cloudflare_api_token.assets_r2       (main.tf)
+#   - OpenObserve ingest      → local mode (no R2 cold tier, no header needed)
+# The matching dev .env.local (infra/dev/tofu/main.tf) emits the same
+# keys with localhost values — one shape, two backends.
 
 variable "infra_zitadel_sa_key_json" {
   description = <<-EOT
