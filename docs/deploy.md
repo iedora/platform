@@ -71,10 +71,9 @@ To reuse an existing box: `tofu import hcloud_server.iedora <server-id>` so the 
 ```bash
 git clone https://github.com/<you>/iedora.git
 cd iedora
-cp infra/.env.example infra/.env
 ```
 
-All production secrets live in Bitwarden Secrets Manager. `infra/.env` holds only non-secret IDs + the BWS access token:
+`infra/.env` is gitignored and operator-owned — create it yourself with the keys below. All production secrets live in Bitwarden Secrets Manager; this file holds only non-secret IDs + the BWS access token that unlocks the vault. Alternative: skip the file and export these as shell env vars before running `just infra::deploy`.
 
 ```bash
 CLOUDFLARE_ACCOUNT_ID=your-account-id
@@ -240,7 +239,7 @@ Cost: ~30 lines duplicated per root (versions.tf, credentials, `data.cloudflare_
 
 ## Troubleshooting
 
-**`just infra::deploy` errors with `key not found`** — `infra/.env` is missing or a required key isn't filled. Copy `.env.example` and fill it.
+**`just infra::deploy` errors with `key not found`** — `infra/.env` is missing or a required key isn't filled. Create the file (see Step 5) or export the missing keys in your shell.
 
 **Tofu plan fails with "unable to parse docker host"** — the Hetzner box hasn't been provisioned yet; the `kreuzwerker/docker` provider is connecting too early. Pass 1 of the recipe handles this. If you hit it directly: `tofu apply -target=hcloud_server.iedora` first.
 

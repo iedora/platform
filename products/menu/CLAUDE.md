@@ -89,23 +89,20 @@ products/menu/
   drizzle/                           generated SQL migrations
   drizzle.config.ts
   next.config.ts, tsconfig.json      paths: @/* → ./src/*
-  docker-compose.yml                 postgres + localstack (dev only)
-  .env.example
+  Dockerfile                         app build (Bun-install + Node-build + standalone). Same Dockerfile dev (built locally by `just dev`) and prod (built + pushed to GHCR by .github/workflows/menu.yml) consume.
+  .env                               TF-emitted (infra/modules/menu_env, localhost-DNS variant). Committed. Statics + Zod-valid placeholders for the dynamic keys.
+  .env.local                         user-owned, gitignored. Real Zitadel + session values for the host bun-run-dev path; user can also override any key to point at remote services.
   package.json                       workspace deps to @iedora/design-system, identity, observability
   scripts/check-migrations.ts        dev-time guardrail
   tests/e2e/
     fixtures.ts                      auto-fixture: fails fast on RSC errors / 5xx responses
     specs/                           organized by module
     helpers/                         shared signup/org/db utilities
-  infra/                             menu-product-local deploy machinery
-    Dockerfile                       app build (Bun-install + Node-build + standalone)
-    justfile                         R2 assets bucket + DNS recipes
-    .env.example
-    bin/with-secrets                 BWS-env wrapper
-    tofu/                            assets R2 bucket + assets.iedora.com (encrypted state)
 ```
 
-The menu app container itself (`docker_container.menu_web`) is declared in `infra/tofu/containers.tf` at the repo root, not here.
+Dev: `just dev` boots a docker_container.menu (build local from this Dockerfile) on the iedora network — same image shape as prod. For HMR, `just dev --except menu && cd products/menu && bun run dev` (reads `.env` + `.env.local`).
+
+Prod: `docker_container.menu_web` in `infra/tofu/containers.tf` pulls `ghcr.io/eduvhc/menu:<sha>` (CI-pushed) and runs on the Hetzner box.
 
 ## Commands
 

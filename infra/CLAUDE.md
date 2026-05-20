@@ -39,7 +39,7 @@ Containers attach to `docker_network.iedora` (`name = "iedora"`); container-DNS 
 ```
 infra/
   justfile                              deploy / backup / restore / wipe-postgres / build-backup / rotate-secret
-  .env.example                          template (BWS access + CF account + GHCR_USER). VPS IPv4 is read from `tofu output -raw hetzner_ipv4`, not the env file.
+  .env                                  gitignored, operator-owned: BWS_ACCESS_TOKEN, BWS_PROJECT_ID, CLOUDFLARE_ACCOUNT_ID, GHCR_USER, ONPREM_HOST, OPENOBSERVE_BUCKET_NAME. VPS IPv4 is read from `tofu output -raw hetzner_ipv4`, not the env file.
   bin/with-secrets                      BWS wrapper — exports every secret as TF_VAR_*
   tofu/                                 single encrypted root
     versions.tf                         providers: hcloud, cloudflare ~> 5.19, github ~> 6.12,

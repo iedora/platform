@@ -11,11 +11,16 @@ Identity is Zitadel (`auth.iedora.com`, self-hosted). Menu is a thin OIDC client
 
 ```bash
 bun install                            # at the repo root
-cd products/menu
-cp .env.example .env.local             # paste MENU_SESSION_SECRET + Zitadel creds
-docker compose up -d                   # postgres, localstack
-bun run db:migrate
-bun run dev
+just dev                               # OpenTofu boots the full stack
+                                       # (postgres, localstack, zitadel,
+                                       # openobserve, house, menu container)
+```
+
+For Next HMR on the menu app, opt out the container:
+
+```bash
+just dev --except menu
+cd products/menu && bun run dev        # reads .env + .env.local (TF-managed)
 ```
 
 `bun run` lists every script; `just` lists every deploy target.
