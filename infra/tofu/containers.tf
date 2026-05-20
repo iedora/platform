@@ -84,85 +84,39 @@ resource "docker_container" "zitadel_bootstrap_chmod" {
 # survives container recreation. Currently holds the menu and zitadel
 # databases.
 
-resource "docker_container" "postgres" {
-  name    = "infra-postgres"
-  image   = "postgres:18.4-alpine"
-  restart = "unless-stopped"
+module "postgres" {
+  source = "../modules/services/postgres"
 
-  env = [
-    "POSTGRES_USER=postgres",
-    "POSTGRES_PASSWORD=${var.infra_postgres_password}",
-    # Bootstrap DB only — the menu / zitadel databases are created by
-    # ../postgres/init.sql on a TRULY empty data dir.
-    "POSTGRES_DB=postgres",
-  ]
-
-  networks_advanced {
-    name    = docker_network.iedora.name
-    aliases = ["infra-postgres"]
-  }
-
-  volumes {
-    container_path = "/var/lib/postgresql"
-    host_path      = "/root/infra-postgres/data"
-  }
-
-  # On a brand-new homelab, postgres reads /docker-entrypoint-initdb.d/*.sql
-  # on the cluster's first init. Re-runs are no-ops once the data dir is
-  # populated, so it's safe to keep mounted across deploys.
-  upload {
-    file    = "/docker-entrypoint-initdb.d/init.sql"
-    content = file("${path.module}/../postgres/init.sql")
-  }
-
-  log_opts = {
-    max-size = "10m"
-  }
+  network_name      = docker_network.iedora.name
+  postgres_password = var.infra_postgres_password
+  data_path         = "/root/infra-postgres/data"
+  init_sql          = file("${path.module}/../postgres/init.sql")
+  # Container-only — backups + zitadel reach it via the iedora network.
 }
 
 # ── OpenObserve (observability backend) ──────────────────────────────────────
+# Cold tier on R2: parquet shards roll from local disk into the shared
+# `iedora-data` bucket under the `o2/` prefix (backups sibling-prefix
+# under `pg/`). One bucket, one token — `cloudflare_api_token.data_r2`
+# writes both via S3_PREFIX separation.
 
-resource "docker_container" "openobserve" {
-  name    = "infra-openobserve"
-  image   = "public.ecr.aws/zinclabs/openobserve:v0.80.3"
-  restart = "unless-stopped"
+module "openobserve" {
+  source = "../modules/services/openobserve"
 
-  # Cold tier on R2: parquet shards roll from local disk into the shared
-  # `iedora-data` bucket under the `o2/` prefix (backups sibling-prefix
-  # under `pg/`). One bucket, one token — `cloudflare_api_token.data_r2`
-  # writes both via `S3_PREFIX` separation.
-  #
-  # Dev (`infra/dev/docker-compose.yml::services.openobserve`) keeps
-  # ZO_LOCAL_MODE=true — no S3 mock to maintain, span volume tiny.
-  env = [
-    "ZO_DATA_DIR=/data",
-    "ZO_HTTP_PORT=5080",
-    "ZO_GRPC_PORT=5081",
-    "ZO_S3_PROVIDER=aws",
-    "ZO_S3_REGION_NAME=auto",
-    "ZO_S3_BUCKET_NAME=${cloudflare_r2_bucket.data.name}",
-    "ZO_S3_BUCKET_PREFIX=o2",
-    "ZO_S3_SERVER_URL=https://${var.account_id}.r2.cloudflarestorage.com",
-    "ZO_S3_FEATURE_FORCE_PATH_STYLE=true",
-    "ZO_S3_ACCESS_KEY=${cloudflare_api_token.data_r2.id}",
-    "ZO_S3_SECRET_KEY=${sha256(cloudflare_api_token.data_r2.value)}",
-    "ZO_ROOT_USER_EMAIL=${var.infra_openobserve_root_user_email}",
-    "ZO_ROOT_USER_PASSWORD=${var.infra_openobserve_root_user_password}",
-  ]
-
-  networks_advanced {
-    name    = docker_network.iedora.name
-    aliases = ["infra-openobserve"]
+  network_name       = docker_network.iedora.name
+  data_path          = "/root/infra-openobserve/openobserve-data"
+  root_user_email    = var.infra_openobserve_root_user_email
+  root_user_password = var.infra_openobserve_root_user_password
+  s3 = {
+    endpoint      = "https://${var.account_id}.r2.cloudflarestorage.com"
+    region        = "auto"
+    bucket        = cloudflare_r2_bucket.data.name
+    bucket_prefix = "o2"
+    access_key    = cloudflare_api_token.data_r2.id
+    secret_key    = sha256(cloudflare_api_token.data_r2.value)
   }
-
-  volumes {
-    container_path = "/data"
-    host_path      = "/root/infra-openobserve/openobserve-data"
-  }
-
-  log_opts = {
-    max-size = "10m"
-  }
+  # No host port — UI access is via ssh -L tunnel; products talk to
+  # infra-openobserve:5080 on the iedora network.
 }
 
 # ── Backups (self-built image) ───────────────────────────────────────────────
@@ -219,138 +173,46 @@ resource "docker_container" "backups" {
 # (Org=ZITADEL, password=Password1!) — discovered the hard way during
 # Phase 1 stand-up.
 
-resource "docker_container" "zitadel" {
-  name    = "infra-zitadel"
-  image   = "ghcr.io/zitadel/zitadel:v4.15.0"
-  restart = "unless-stopped"
+module "zitadel" {
+  source = "../modules/services/zitadel"
 
-  command = [
-    "start-from-init",
-    "--masterkeyFromEnv",
-    "--tlsMode", "external",
-  ]
+  network_name      = docker_network.iedora.name
+  masterkey         = var.infra_zitadel_masterkey
+  external_domain   = var.zitadel_hostname
+  external_port     = 443
+  external_secure   = true
+  login_v2_base_uri = "https://${var.zitadel_hostname}/ui/v2/login"
+  postgres_host     = "infra-postgres"
+  postgres_password = var.infra_postgres_password
+  admin_email       = "eduardoferdcarvalho@gmail.com"
+  admin_password    = var.infra_zitadel_first_admin_password
+  bootstrap_path    = docker_volume.zitadel_bootstrap.name
 
-  env = [
-    # External-facing config.
-    "ZITADEL_EXTERNALDOMAIN=${var.zitadel_hostname}",
-    "ZITADEL_EXTERNALPORT=443",
-    "ZITADEL_EXTERNALSECURE=true",
-    "ZITADEL_TLS_ENABLED=false",
+  # Prod's TF provider authenticates with the FirstInstance-minted
+  # JSON machine key (Type=1 RSA, JSON Web Profile). The key file at
+  # /zitadel-bootstrap/zitadel-admin-sa.json is pulled by
+  # `just infra::zitadel-fetch-sa-key` → BWS → TF_VAR_infra_zitadel_sa_key_json.
+  machine_username = "zitadel-admin-sa"
+  machine_name     = "Terraform"
+  machine_key_type = "json"
 
-    # Postgres connection — User and Admin both reuse the `postgres`
-    # superuser (matches menu).
-    "ZITADEL_DATABASE_POSTGRES_HOST=infra-postgres",
-    "ZITADEL_DATABASE_POSTGRES_PORT=5432",
-    "ZITADEL_DATABASE_POSTGRES_DATABASE=zitadel",
-    # Retry for up to 5 min on first connect so we tolerate postgres
-    # taking longer to come up than zitadel (Tofu creates them in
-    # parallel; image start order is not guaranteed).
-    "ZITADEL_DATABASE_POSTGRES_AWAITINITIALCONN=5m",
-    "ZITADEL_DATABASE_POSTGRES_USER_USERNAME=postgres",
-    "ZITADEL_DATABASE_POSTGRES_USER_PASSWORD=${var.infra_postgres_password}",
-    "ZITADEL_DATABASE_POSTGRES_USER_SSL_MODE=disable",
-    "ZITADEL_DATABASE_POSTGRES_ADMIN_USERNAME=postgres",
-    "ZITADEL_DATABASE_POSTGRES_ADMIN_PASSWORD=${var.infra_postgres_password}",
-    "ZITADEL_DATABASE_POSTGRES_ADMIN_SSL_MODE=disable",
-    "ZITADEL_DATABASE_POSTGRES_ADMIN_EXISTINGDATABASE=postgres",
-
-    # FirstInstance bootstrap (setup viper namespace).
-    "ZITADEL_FIRSTINSTANCE_ORG_NAME=iedora",
-    "ZITADEL_FIRSTINSTANCE_ORG_HUMAN_USERNAME=zitadel-admin",
-    "ZITADEL_FIRSTINSTANCE_ORG_HUMAN_FIRSTNAME=iedora",
-    "ZITADEL_FIRSTINSTANCE_ORG_HUMAN_LASTNAME=Admin",
-    "ZITADEL_FIRSTINSTANCE_ORG_HUMAN_EMAIL_ADDRESS=eduardoferdcarvalho@gmail.com",
-    "ZITADEL_FIRSTINSTANCE_ORG_HUMAN_EMAIL_VERIFIED=true",
-    "ZITADEL_FIRSTINSTANCE_ORG_HUMAN_PASSWORD=${var.infra_zitadel_first_admin_password}",
-    # PasswordChangeRequired=true would force a change on first login,
-    # which the v2 login UI handles natively. Leaving the steps.yaml
-    # default (true) is fine.
-
-    # Login-client service user — bootstraps with a 75-year PAT written
-    # to the shared volume. zitadel-login reads it via
-    # ZITADEL_SERVICE_USER_TOKEN_FILE.
-    "ZITADEL_FIRSTINSTANCE_ORG_LOGINCLIENT_MACHINE_USERNAME=login-client",
-    "ZITADEL_FIRSTINSTANCE_ORG_LOGINCLIENT_MACHINE_NAME=Login Client",
-    "ZITADEL_FIRSTINSTANCE_ORG_LOGINCLIENT_PAT_EXPIRATIONDATE=2099-01-01T00:00:00Z",
-    "ZITADEL_FIRSTINSTANCE_LOGINCLIENTPATPATH=/zitadel-bootstrap/login-client.pat",
-
-    # Terraform machine user — IAM_OWNER service account whose JSON key
-    # the `zitadel/zitadel` Tofu provider authenticates with. The key is
-    # written to the shared bootstrap volume on first init; bin/with-secrets
-    # fetches it once and uploads to BWS, after which it flows declaratively
-    # via TF_VAR_infra_zitadel_sa_key_json → provider.jwt_profile_json.
-    # FirstInstance grants IAM_OWNER automatically (cmd/setup/steps.yaml).
-    # Type=1 == JSON key (vs Type=2 == public-key-only, no use to us).
-    "ZITADEL_FIRSTINSTANCE_ORG_MACHINE_MACHINE_USERNAME=zitadel-admin-sa",
-    "ZITADEL_FIRSTINSTANCE_ORG_MACHINE_MACHINE_NAME=Terraform",
-    "ZITADEL_FIRSTINSTANCE_ORG_MACHINE_MACHINEKEY_TYPE=1",
-    "ZITADEL_FIRSTINSTANCE_ORG_MACHINE_MACHINEKEY_EXPIRATIONDATE=2099-01-01T00:00:00Z",
-    "ZITADEL_FIRSTINSTANCE_MACHINEKEYPATH=/zitadel-bootstrap/zitadel-admin-sa.json",
-
-    # Login V2 BaseURI — the main binary's redirects MUST point here, the
-    # path-routed tunnel rule will land them on zitadel-login.
-    "ZITADEL_DEFAULTINSTANCE_FEATURES_LOGINV2_REQUIRED=true",
-    "ZITADEL_DEFAULTINSTANCE_FEATURES_LOGINV2_BASEURI=https://${var.zitadel_hostname}/ui/v2/login",
-
-    # Masterkey — encrypts every internal secret (signing keys, OAuth
-    # client secrets, action target keys). Loss == ciphertext is dead.
-    "ZITADEL_MASTERKEY=${var.infra_zitadel_masterkey}",
-  ]
-
-  networks_advanced {
-    name    = docker_network.iedora.name
-    aliases = ["infra-zitadel"]
-  }
-
-  volumes {
-    container_path = "/zitadel-bootstrap"
-    volume_name    = docker_volume.zitadel_bootstrap.name
-  }
-
-  log_opts = {
-    max-size = "10m"
-  }
-
-  # The bootstrap volume must be chmodded before FirstInstance tries to
-  # write the login-client PAT — see docker_container.zitadel_bootstrap_chmod.
   depends_on = [
-    docker_container.postgres,
+    module.postgres,
     docker_container.zitadel_bootstrap_chmod,
   ]
 }
 
 # Login UI v2 — Next.js companion to the main binary. Path /ui/v2/* on the
-# tunnel routes here; everything else stays on the binary. Reads the PAT
-# from the shared bootstrap volume.
+# tunnel routes here; everything else stays on the binary.
 
-resource "docker_container" "zitadel_login" {
-  name    = "infra-zitadel-login"
-  image   = "ghcr.io/zitadel/zitadel-login:v4.15.0"
-  restart = "unless-stopped"
+module "zitadel_login" {
+  source = "../modules/services/zitadel-login"
 
-  env = [
-    "ZITADEL_API_URL=http://infra-zitadel:8080",
-    "NEXT_PUBLIC_BASE_PATH=/ui/v2/login",
-    "ZITADEL_SERVICE_USER_TOKEN_FILE=/zitadel-bootstrap/login-client.pat",
-    "ZITADEL_TLS_ENABLED=false",
-    "EMAIL_VERIFICATION=false",
-  ]
+  network_name   = docker_network.iedora.name
+  api_url        = "http://infra-zitadel:8080"
+  bootstrap_path = docker_volume.zitadel_bootstrap.name
 
-  networks_advanced {
-    name    = docker_network.iedora.name
-    aliases = ["infra-zitadel-login"]
-  }
-
-  volumes {
-    container_path = "/zitadel-bootstrap"
-    volume_name    = docker_volume.zitadel_bootstrap.name
-  }
-
-  log_opts = {
-    max-size = "10m"
-  }
-
-  depends_on = [docker_container.zitadel]
+  depends_on = [module.zitadel]
 }
 
 # ── Caddy (TLS termination for auth.iedora.com) ──────────────────────────────
@@ -463,7 +325,7 @@ resource "docker_container" "menu_web" {
   }
 
   depends_on = [
-    docker_container.postgres,
+    module.postgres,
   ]
 }
 
@@ -541,7 +403,7 @@ resource "docker_container" "caddy" {
   }
 
   depends_on = [
-    docker_container.zitadel,
-    docker_container.zitadel_login,
+    module.zitadel,
+    module.zitadel_login,
   ]
 }

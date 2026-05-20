@@ -79,8 +79,31 @@ variable "admin_email" {
   default = "dev@iedora.local"
 }
 
+variable "machine_username" {
+  description = "FirstInstance machine user. Dev: `menu-sa` (used both for TF provider auth + menu's runtime management calls). Prod: `zitadel-admin-sa` (TF-provider only; menu_sa is minted separately via the zitadel provider once the admin SA is in BWS)."
+  type        = string
+  default     = "menu-sa"
+}
+
+variable "machine_name" {
+  description = "Display name for the machine user."
+  type        = string
+  default     = "Menu"
+}
+
+variable "machine_key_type" {
+  description = "How FirstInstance mints the machine credential. `pat` writes a Personal Access Token (single string). `json` writes an RSA JWT profile JSON (signed assertion). The zitadel TF provider auths with either."
+  type        = string
+  default     = "pat"
+
+  validation {
+    condition     = contains(["pat", "json"], var.machine_key_type)
+    error_message = "machine_key_type must be `pat` or `json`."
+  }
+}
+
 variable "bootstrap_path" {
-  description = "Where the FirstInstance-minted PATs land. Bind path (`/...`) for dev so the host can read them; named docker volume otherwise."
+  description = "Where the FirstInstance-minted credential lands. Bind path (`/...`) for dev so the host can read it; named docker volume otherwise."
   type        = string
 }
 
@@ -101,7 +124,7 @@ resource "docker_container" "this" {
     "--tlsMode", var.external_secure ? "external" : "disabled",
   ]
 
-  env = [
+  env = concat([
     "ZITADEL_EXTERNALDOMAIN=${var.external_domain}",
     "ZITADEL_EXTERNALPORT=${var.external_port}",
     "ZITADEL_EXTERNALSECURE=${var.external_secure}",
@@ -133,18 +156,24 @@ resource "docker_container" "this" {
     "ZITADEL_FIRSTINSTANCE_LOGINCLIENTPATPATH=/zitadel-bootstrap/login-client.pat",
 
     # Machine user — FirstInstance grants IAM_OWNER automatically.
-    # Same name in dev (`menu-sa`) and prod (`zitadel-admin-sa` in
-    # legacy state; rename via prod's input if you want full parity).
-    "ZITADEL_FIRSTINSTANCE_ORG_MACHINE_MACHINE_USERNAME=menu-sa",
-    "ZITADEL_FIRSTINSTANCE_ORG_MACHINE_MACHINE_NAME=Menu",
-    "ZITADEL_FIRSTINSTANCE_ORG_MACHINE_PAT_EXPIRATIONDATE=2099-01-01T00:00:00Z",
-    "ZITADEL_FIRSTINSTANCE_PATPATH=/zitadel-bootstrap/menu-sa.pat",
+    "ZITADEL_FIRSTINSTANCE_ORG_MACHINE_MACHINE_USERNAME=${var.machine_username}",
+    "ZITADEL_FIRSTINSTANCE_ORG_MACHINE_MACHINE_NAME=${var.machine_name}",
 
     "ZITADEL_DEFAULTINSTANCE_FEATURES_LOGINV2_REQUIRED=true",
     "ZITADEL_DEFAULTINSTANCE_FEATURES_LOGINV2_BASEURI=${var.login_v2_base_uri}",
 
     "ZITADEL_MASTERKEY=${var.masterkey}",
-  ]
+    ],
+    var.machine_key_type == "pat" ? [
+      "ZITADEL_FIRSTINSTANCE_ORG_MACHINE_PAT_EXPIRATIONDATE=2099-01-01T00:00:00Z",
+      "ZITADEL_FIRSTINSTANCE_PATPATH=/zitadel-bootstrap/${var.machine_username}.pat",
+      ] : [
+      # JSON machine key — Type=1 RSA, JSON Web Profile format. Read by
+      # the zitadel TF provider via `jwt_profile_json`.
+      "ZITADEL_FIRSTINSTANCE_ORG_MACHINE_MACHINEKEY_TYPE=1",
+      "ZITADEL_FIRSTINSTANCE_ORG_MACHINE_MACHINEKEY_EXPIRATIONDATE=2099-01-01T00:00:00Z",
+      "ZITADEL_FIRSTINSTANCE_MACHINEKEYPATH=/zitadel-bootstrap/${var.machine_username}.json",
+  ])
 
   networks_advanced {
     name    = var.network_name
