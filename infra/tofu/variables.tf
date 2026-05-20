@@ -117,8 +117,8 @@ variable "bws_project_id" {
   type        = string
 }
 
-variable "kamal_ssh_private_key" {
-  description = "Private key (multi-line PEM) for root@<ONPREM_HOST>. TF_VAR_kamal_ssh_private_key (set by bin/with-secrets from INFRA_KAMAL_SSH_PRIVATE_KEY)."
+variable "infra_ssh_private_key" {
+  description = "Private key (multi-line PEM) for root@<ONPREM_HOST>. TF_VAR_infra_ssh_private_key (set by bin/with-secrets from INFRA_SSH_PRIVATE_KEY)."
   type        = string
   sensitive   = true
 }

@@ -12,10 +12,10 @@
 # Single source of truth: the operator's laptop has it in ssh-agent; CI
 # loads it from BWS into a tempfile per job. Deriving the public key via
 # `tls_public_key` avoids storing it in a second BWS secret. (The variable
-# name `kamal_ssh_private_key` is a tombstone — see variables.tf.)
+# name `infra_ssh_private_key` is a tombstone — see variables.tf.)
 
 data "tls_public_key" "operator" {
-  private_key_openssh = var.kamal_ssh_private_key
+  private_key_openssh = var.infra_ssh_private_key
 }
 
 resource "hcloud_ssh_key" "operator" {
@@ -142,7 +142,7 @@ resource "null_resource" "docker_ready" {
     type        = "ssh"
     host        = hcloud_server.iedora.ipv4_address
     user        = "root"
-    private_key = var.kamal_ssh_private_key
+    private_key = var.infra_ssh_private_key
     timeout     = "5m"
   }
 

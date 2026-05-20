@@ -115,7 +115,7 @@ locals {
   # Tofu vars by the local recipe. Stays out of state in plaintext.
   github_secrets = {
     BWS_ACCESS_TOKEN            = var.bws_access_token
-    INFRA_KAMAL_SSH_PRIVATE_KEY = var.kamal_ssh_private_key
+    INFRA_SSH_PRIVATE_KEY = var.infra_ssh_private_key
   }
 }
 
@@ -297,14 +297,14 @@ Done overnight, NOT applied (nothing touches `tofu apply` / `gh secret set` / th
 
 **Files added/modified:**
 - `infra/tofu/versions.tf` — added `integrations/github ~> 6.12` provider
-- `infra/tofu/variables.tf` — added `github_owner`, `github_repo`, `github_token`, `bws_access_token`, `bws_project_id`, `kamal_ssh_private_key`, `ci_onprem_host`, `menu_public_hostname`, `genkan_public_hostname` (with sensible defaults)
+- `infra/tofu/variables.tf` — added `github_owner`, `github_repo`, `github_token`, `bws_access_token`, `bws_project_id`, `infra_ssh_private_key`, `ci_onprem_host`, `menu_public_hostname`, `genkan_public_hostname` (with sensible defaults)
 - `infra/tofu/github.tf` — **NEW** — `for_each` over `local.github_variables` + `local.github_secrets` maps
 - `infra/bin/with-secrets` — exports the new `TF_VAR_*` aliases from BWS
 
 **One-time bootstrap you'll need to do:**
 1. Create a GitHub fine-grained PAT at `https://github.com/settings/personal-access-tokens?type=beta`. Scope: this repo only. Permissions: Actions (R/W), Secrets (R/W), Variables (R/W), Contents (R).
 2. Add to BWS as `INFRA_GITHUB_API_TOKEN`.
-3. Add your `ci_ed25519` private key (currently at `~/.ssh/ci_ed25519`) to BWS as `INFRA_KAMAL_SSH_PRIVATE_KEY` so Tofu can push it as the GH secret. `bws secret create INFRA_KAMAL_SSH_PRIVATE_KEY "$(cat ~/.ssh/ci_ed25519)" "$BWS_PROJECT_ID" -o none`.
+3. Add your `ci_ed25519` private key (currently at `~/.ssh/ci_ed25519`) to BWS as `INFRA_SSH_PRIVATE_KEY` so Tofu can push it as the GH secret. `bws secret create INFRA_SSH_PRIVATE_KEY "$(cat ~/.ssh/ci_ed25519)" "$BWS_PROJECT_ID" -o none`.
 4. (Recommended in 2026) Migrate to a GitHub App later instead of the PAT — the App auth path is more future-proof per `integrations/terraform-provider-github` #2103. Out of scope for tonight.
 
 **After bootstrap, applying:**

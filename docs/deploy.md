@@ -62,7 +62,7 @@ ls ~/.ssh/id_ed25519.pub 2>/dev/null || ssh-keygen -t ed25519 -N "" -f ~/.ssh/id
 
 Tofu reads `~/.ssh/id_ed25519.pub`, registers it as `hcloud_ssh_key.operator`, and seeds it into `/root/.ssh/authorized_keys` on the freshly minted CPX22. After the first deploy, `ssh root@<hetzner-ipv4>` works.
 
-To reuse an existing box: skip `hcloud_server.iedora` from the apply and set `INFRA_ONPREM_HOST` in BWS to that IP.
+To reuse an existing box: skip `hcloud_server.iedora` from the apply and set `INFRA_HOST_IP` in BWS to that IP.
 
 > **Why root?** SSH-key-only root login is the canonical Docker-over-SSH path — `kreuzwerker/docker` shells out to system SSH, which honors `~/.ssh/config`. The non-root path requires NOPASSWD-sudo (same root blast radius without the simplicity).
 
@@ -91,7 +91,7 @@ source infra/.env
 for KEY in INFRA_CLOUDFLARE_API_TOKEN INFRA_STATE_PASSPHRASE \
            INFRA_HCLOUD_TOKEN INFRA_GITHUB_API_TOKEN \
            INFRA_POSTGRES_PASSWORD INFRA_BACKUP_PASSPHRASE INFRA_GHCR_TOKEN \
-           INFRA_KAMAL_SSH_PRIVATE_KEY \
+           INFRA_SSH_PRIVATE_KEY \
            INFRA_ZITADEL_MASTERKEY INFRA_ZITADEL_FIRST_ADMIN_PASSWORD \
            INFRA_OPENOBSERVE_ROOT_USER_PASSWORD \
            MENU_AUTH_SECRET; do
@@ -105,7 +105,7 @@ Generate random values with `openssl rand -hex 32`, except:
 - `INFRA_HCLOUD_TOKEN` — Hetzner console → Security → API tokens (R/W).
 - `INFRA_GHCR_TOKEN` — classic PAT with `write:packages` (see "Why classic" below).
 - `INFRA_GITHUB_API_TOKEN` — fine-grained PAT scoped to the repo.
-- `INFRA_KAMAL_SSH_PRIVATE_KEY` — contents of `~/.ssh/id_ed25519`. Name is a tombstone (Kamal-era); load-bearing across BWS / GH variables / rotation playbook. Don't rename.
+- `INFRA_SSH_PRIVATE_KEY` — contents of `~/.ssh/id_ed25519`. Name is a tombstone (Kamal-era); load-bearing across BWS / GH variables / rotation playbook. Don't rename.
 - `INFRA_ZITADEL_MASTERKEY` — must be exactly 32 chars: `openssl rand -base64 24 | head -c 32`.
 
 > **Why classic for GHCR.** Every other PAT is fine-grained; `INFRA_GHCR_TOKEN` stays classic because fine-grained + personal account + GHCR is GitHub's worst-supported combination — the Packages permission only reliably surfaces for org-scoped tokens with org-owned packages. Revisit if iedora moves into a GH org.
@@ -166,7 +166,7 @@ git push main
                   └─► curl https://menu.iedora.com/up   (smoke)
 ```
 
-CI builds + pushes; Tofu pulls from GHCR on the box. The only SSH path in CI is the `kreuzwerker/docker` provider talking to the Hetzner daemon — uses `INFRA_KAMAL_SSH_PRIVATE_KEY` from GH Secrets.
+CI builds + pushes; Tofu pulls from GHCR on the box. The only SSH path in CI is the `kreuzwerker/docker` provider talking to the Hetzner daemon — uses `INFRA_SSH_PRIVATE_KEY` from GH Secrets.
 
 ### Tofu-managed GH config
 
@@ -175,13 +175,13 @@ Every GH Actions secret + variable is Tofu-managed via `infra/tofu/github.tf` (`
 | GH Secret | BWS source | Notes |
 |---|---|---|
 | `BWS_ACCESS_TOKEN` | `BWS_ACCESS_TOKEN` (passed as `TF_VAR_bws_access_token`) | Runner uses it to authenticate to BWS for every other secret |
-| `INFRA_KAMAL_SSH_PRIVATE_KEY` | `INFRA_KAMAL_SSH_PRIVATE_KEY` | Runner writes to `~/.ssh/id_ed25519`; reaches the Hetzner box. Name is a tombstone — see secrets.md |
+| `INFRA_SSH_PRIVATE_KEY` | `INFRA_SSH_PRIVATE_KEY` | Runner writes to `~/.ssh/id_ed25519`; reaches the Hetzner box. Name is a tombstone — see secrets.md |
 | `CLAUDE_CODE_OAUTH_TOKEN` | `INFRA_CLAUDE_CODE_OAUTH_TOKEN` | Powers `.github/workflows/claude.yml` |
 
 | GH Variable | Notes |
 |---|---|
 | `BWS_PROJECT_ID` | Same as local `.env` |
-| `ONPREM_HOST` | Hetzner public IPv4; write-through to BWS as `INFRA_ONPREM_HOST` |
+| `ONPREM_HOST` | Hetzner public IPv4; write-through to BWS as `INFRA_HOST_IP` |
 | `MENU_PUBLIC_HOSTNAME` | `menu.iedora.com` |
 | `CLOUDFLARE_ACCOUNT_ID` | Same as local `.env` |
 | `GHCR_USER` | `eduvhc` (falls back to `github.repository_owner`) |

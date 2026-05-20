@@ -35,7 +35,7 @@ _default:
 # Steady state (every subsequent call): exactly one `tofu apply`.
 #
 # Write-through to BWS after apply:
-#   - INFRA_ONPREM_HOST = hetzner_ipv4 — used by ad-hoc ssh + secret-rotation tooling
+#   - INFRA_HOST_IP = hetzner_ipv4 — used by ad-hoc ssh + secret-rotation tooling
 deploy:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -80,7 +80,7 @@ deploy:
 
     # Write-through outputs to BWS.
     HETZNER_IPV4=$({{tofu}} output -raw hetzner_ipv4)
-    for KEY_VAL in "INFRA_ONPREM_HOST:$HETZNER_IPV4"; do
+    for KEY_VAL in "INFRA_HOST_IP:$HETZNER_IPV4"; do
       KEY=${KEY_VAL%%:*}
       VAL=${KEY_VAL#*:}
       SECRET_ID=$(bws secret list "$BWS_PROJECT_ID" -o json \

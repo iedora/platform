@@ -93,7 +93,7 @@ provider "hcloud" {
 # Docker — talks to the Hetzner box's Docker daemon over SSH. The IP comes
 # from `hcloud_server.iedora.ipv4_address` (output of the hcloud provider),
 # so the docker provider is implicitly downstream of the Hetzner one. Same
-# SSH key `INFRA_KAMAL_SSH_PRIVATE_KEY` (name kept as a tombstone from the
+# SSH key `INFRA_SSH_PRIVATE_KEY` (name kept as a tombstone from the
 # Kamal era; registered as `hcloud_ssh_key.operator` so cloud-init drops it
 # into root's authorized_keys).
 #

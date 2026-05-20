@@ -11,11 +11,11 @@ Where every credential lives, how to rotate it, what breaks when it's gone.
 | `infra/tofu/terraform.tfstate` (encrypted) | Tofu-minted credentials (R2 sub-tokens, GH config write-throughs) | Cross-product shared infra |
 | `products/menu/infra/tofu/terraform.tfstate` (encrypted) | R2 assets bucket token | Menu's product-local resources |
 | `products/house/infra/tofu/terraform.tfstate` (encrypted) | Narrow `workers_deploy` token | House's product-local resources |
-| **GitHub Actions secrets/variables** (Tofu-managed) | `BWS_ACCESS_TOKEN`, `INFRA_KAMAL_SSH_PRIVATE_KEY`, `CLAUDE_CODE_OAUTH_TOKEN` (secrets); `BWS_PROJECT_ID`, `ONPREM_HOST`, `MENU_PUBLIC_HOSTNAME`, `CLOUDFLARE_ACCOUNT_ID`, `GHCR_USER` (variables) | Drives `infra-deploy` workflow + Claude Code Action; declared in `infra/tofu/github.tf`, values flow from BWS |
+| **GitHub Actions secrets/variables** (Tofu-managed) | `BWS_ACCESS_TOKEN`, `INFRA_SSH_PRIVATE_KEY`, `CLAUDE_CODE_OAUTH_TOKEN` (secrets); `BWS_PROJECT_ID`, `ONPREM_HOST`, `MENU_PUBLIC_HOSTNAME`, `CLOUDFLARE_ACCOUNT_ID`, `GHCR_USER` (variables) | Drives `infra-deploy` workflow + Claude Code Action; declared in `infra/tofu/github.tf`, values flow from BWS |
 
 `BWS_ACCESS_TOKEN` is the keys-to-the-kingdom: it unlocks every other secret.
 
-> **Tombstone name.** `INFRA_KAMAL_SSH_PRIVATE_KEY` is kept verbatim across BWS, GH Actions, and the `kreuzwerker/docker` provider — load-bearing across rotation playbooks. Don't rename.
+> **Tombstone name.** `INFRA_SSH_PRIVATE_KEY` is kept verbatim across BWS, GH Actions, and the `kreuzwerker/docker` provider — load-bearing across rotation playbooks. Don't rename.
 
 ## Token tiers — bootstrap vs workload
 
@@ -65,7 +65,7 @@ Cloudflare credentials follow a two-tier pattern, deliberately:
 | `INFRA_GITHUB_API_TOKEN` | Fine-grained PAT (Actions/Secrets/Variables R+W) | Attacker can push GH Actions secrets, modify workflows | github.com regenerate (preserves identity) → BWS edit → `just infra::deploy` |
 | `INFRA_GHCR_TOKEN` | Classic PAT (`write:packages`) for CI's `docker push` AND Tofu's pull on the box | Attacker can push malicious images to `ghcr.io/eduvhc/menu` | GH UI regenerate → BWS edit → next deploy picks up |
 | `INFRA_STATE_PASSPHRASE` | Tofu state encryption (PBKDF2 + AES-GCM, 600k iterations) | Old encrypted state in git becomes decryptable | **`fallback` block rotation** — see below |
-| `INFRA_KAMAL_SSH_PRIVATE_KEY` | Private SSH key Tofu uses to reach the Hetzner Docker daemon. Tofu pushes it to GH as `INFRA_KAMAL_SSH_PRIVATE_KEY`. Name is a tombstone | SSH as root to the VPS | Generate new keypair → `ssh-copy-id root@$(infra-output hetzner_ipv4)` → BWS edit → `just infra::deploy` → remove old pubkey from `/root/.ssh/authorized_keys` |
+| `INFRA_SSH_PRIVATE_KEY` | Private SSH key Tofu uses to reach the Hetzner Docker daemon. Tofu pushes it to GH as `INFRA_SSH_PRIVATE_KEY`. Name is a tombstone | SSH as root to the VPS | Generate new keypair → `ssh-copy-id root@$(infra-output hetzner_ipv4)` → BWS edit → `just infra::deploy` → remove old pubkey from `/root/.ssh/authorized_keys` |
 | `BWS_ACCESS_TOKEN` (in `infra/.env`, NOT in BWS) | Unlocks BWS itself | Read every other secret | **Blue/green** — see below |
 
 ### App secrets
@@ -145,7 +145,7 @@ No code changes — `bin/with-secrets` reads it at runtime.
 | `INFRA_HCLOUD_TOKEN` | Annually | Manual |
 | `INFRA_GITHUB_API_TOKEN` (fine-grained) | 90 days | github.com expiry emails 7 days before |
 | `INFRA_GHCR_TOKEN` (classic) | 1 year | GitHub emails 1 week before |
-| `INFRA_KAMAL_SSH_PRIVATE_KEY` | Annually (CIS for ed25519) | Manual; Q1 calendar event |
+| `INFRA_SSH_PRIVATE_KEY` | Annually (CIS for ed25519) | Manual; Q1 calendar event |
 | `INFRA_STATE_PASSPHRASE` | Decades (NIST: "up to several years"); rotate on incident | Manual |
 | `INFRA_POSTGRES_PASSWORD` | 90 days (PCI-DSS 8.3.9) | Manual |
 | `INFRA_BACKUP_PASSPHRASE` | Annually — archive `_OLD` forever | Manual |
@@ -236,7 +236,7 @@ Configuration data (no security benefit to hiding):
 
 These live in `infra/.env`.
 
-`ONPREM_HOST` (Hetzner public IPv4) is write-through to BWS as `INFRA_ONPREM_HOST` by `just infra::deploy` — survives a box reprovision.
+`ONPREM_HOST` (Hetzner public IPv4) is write-through to BWS as `INFRA_HOST_IP` by `just infra::deploy` — survives a box reprovision.
 
 ## When designing rotation for a new credential
 

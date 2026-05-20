@@ -17,15 +17,15 @@
 #   4. Pass 2: full `tofu apply -auto-approve`.
 #   5. Pass 3: if INFRA_ZITADEL_SA_KEY_JSON isn't in BWS yet, fetch from
 #      the bootstrap volume → BWS → re-apply.
-#   6. Write-through INFRA_ONPREM_HOST = hetzner_ipv4 to BWS.
+#   6. Write-through INFRA_HOST_IP = hetzner_ipv4 to BWS.
 #
 # Auth in CI:
 #   - BWS_ACCESS_TOKEN (GH secret) — `bin/with-secrets` reads every other
 #     credential out of BWS via this.
-#   - INFRA_KAMAL_SSH_PRIVATE_KEY (GH secret) — written to ~/.ssh/id_ed25519
+#   - INFRA_SSH_PRIVATE_KEY (GH secret) — written to ~/.ssh/id_ed25519
 #     so the kreuzwerker/docker provider can SSH to the Hetzner box.
 #   - ONPREM_HOST is a runtime IP (the Hetzner box's public IPv4). We use
-#     the BWS-stored value `INFRA_ONPREM_HOST` rather than hardcoding —
+#     the BWS-stored value `INFRA_HOST_IP` rather than hardcoding —
 #     `just infra::deploy` itself writes that secret through, so it's
 #     declarative + survives a box reprovision.
 
@@ -125,7 +125,7 @@ jobs:
       - name: Fetch ONPREM_HOST from BWS
         # The Hetzner box's public IPv4. Source of truth is the Tofu output
         # `hetzner_ipv4`; `just infra::deploy` write-throughs that into
-        # INFRA_ONPREM_HOST after every apply. Reading from BWS keeps us
+        # INFRA_HOST_IP after every apply. Reading from BWS keeps us
         # declarative — if the box gets reprovisioned at a different IP,
         # the next `tofu apply` writes the new value through and we pick
         # it up on subsequent runs.
@@ -133,9 +133,9 @@ jobs:
         run: |
           set -euo pipefail
           HOST=$(bws secret list "$BWS_PROJECT_ID" -o json \
-            | jq -r '.[] | select(.key=="INFRA_ONPREM_HOST") | .value')
+            | jq -r '.[] | select(.key=="INFRA_HOST_IP") | .value')
           if [ -z "$HOST" ] || [ "$HOST" = "null" ]; then
-            echo "INFRA_ONPREM_HOST missing in BWS." >&2
+            echo "INFRA_HOST_IP missing in BWS." >&2
             echo "Run 'just infra::deploy' from a laptop once to provision Hetzner + populate it." >&2
             exit 1
           fi
@@ -145,10 +145,10 @@ jobs:
       - name: Configure SSH for root@onprem
         # The kreuzwerker/docker Tofu provider talks to the Hetzner Docker
         # daemon over SSH — same key the operator uses from the laptop.
-        # `INFRA_KAMAL_SSH_PRIVATE_KEY` is a tombstone name kept for
+        # `INFRA_SSH_PRIVATE_KEY` is a tombstone name kept for
         # parity with BWS; see docs/secrets.md.
         env:
-          SSH_KEY: ${{ secrets.INFRA_KAMAL_SSH_PRIVATE_KEY }}
+          SSH_KEY: ${{ secrets.INFRA_SSH_PRIVATE_KEY }}
           HOST: ${{ steps.host.outputs.host }}
         run: |
           set -euo pipefail
@@ -175,7 +175,7 @@ jobs:
         #   tofu apply (pass 1 — targeted hcloud — skipped if box exists)
         #   tofu apply (pass 2 — full)
         #   zitadel SA-key fetch + re-apply (pass 3 — skipped on steady state)
-        #   BWS write-through of INFRA_ONPREM_HOST
+        #   BWS write-through of INFRA_HOST_IP
         # `TF_VAR_state_passphrase` and every other TF_VAR_* alias is
         # exported by `bin/with-secrets` from the BWS env block.
         working-directory: infra

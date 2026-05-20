@@ -35,7 +35,7 @@ locals {
   # plaintext beyond the apply.
   github_secrets = {
     BWS_ACCESS_TOKEN            = var.bws_access_token
-    INFRA_KAMAL_SSH_PRIVATE_KEY = var.kamal_ssh_private_key
+    INFRA_SSH_PRIVATE_KEY = var.infra_ssh_private_key
     CLAUDE_CODE_OAUTH_TOKEN     = var.claude_code_oauth_token
   }
 }

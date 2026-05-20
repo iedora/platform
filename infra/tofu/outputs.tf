@@ -40,7 +40,7 @@ output "observability_r2_secret_access_key" {
 # IPv4 is the source of truth for: the docker provider host, the
 # zitadel-rebootstrap SSH commands, and the A records pointed at the box.
 # Outputting it here means `just infra::deploy` can write through to BWS as
-# INFRA_ONPREM_HOST so ad-hoc tooling can resolve it without a Tofu state read.
+# INFRA_HOST_IP so ad-hoc tooling can resolve it without a Tofu state read.
 
 output "hetzner_ipv4" {
   description = "Public IPv4 of the Hetzner CAX11 box. A records + SSH targets resolve here."
