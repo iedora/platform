@@ -1,19 +1,26 @@
-// Dev orchestrator. Same shape as prod: shared infra (postgres,
-// localstack, zitadel, openobserve) sits at infra/dev/, products
-// (menu) consume it.
+// Dev container orchestrator. Pure compose-generator + TF seed + env
+// file emitter — does NOT launch any host app (next dev, astro dev,
+// etc.). A menu-team dev shouldn't have to install Bun/Astro just to
+// have this script able to run house, and vice versa. Each product
+// owns its own `bun run dev` and runs it from its product dir AFTER
+// `just dev`.
 //
-// Default: bring up everything — `bun run dev` / `just dev`.
+// Same shape as prod: shared infra (postgres, localstack, zitadel,
+// openobserve) sits at `infra/dev/`. Products (`menu`, `house`) are
+// listed in the service graph as consumer presets — picking one
+// expands to the union of infra it depends on.
+//
+// Default: bring up everything — `just dev`.
 //
 // Subset selection (deps auto-resolved):
-//   bun run dev -i                  interactive TUI per category
-//   bun run dev --only menu         menu + everything menu needs
-//   bun run dev --only zitadel      compose's zitadel + postgres (skips next dev)
-//   bun run dev --except openobserve  everything except observability
+//   just dev -i                  interactive TUI per category
+//   just dev --only menu         everything menu needs (postgres + zitadel + ...)
+//   just dev --only zitadel      zitadel + postgres only
+//   just dev --except openobserve  everything else, deps preserved unless blocked
 //
-// When the user opts out of a service the menu depends on, dev.go does
-// NOT write the dynamic .env.local — the user is responsible for
-// hand-providing those keys (or pointing them at an alternate IdP /
-// db / S3).
+// When the user opts out of zitadel, dev.go does NOT write
+// `products/menu/.env.local` — they're responsible for hand-providing
+// those keys (or pointing them at an alternate IdP).
 //
 // Stdlib only except for `github.com/charmbracelet/huh` (one Charm dep
 // for the grouped multi-select TUI). go.mod committed.
@@ -29,7 +36,6 @@ import (
 	"runtime"
 	"sort"
 	"strings"
-	"syscall"
 	"time"
 
 	"github.com/charmbracelet/huh"
@@ -52,12 +58,21 @@ type service struct {
 }
 
 // Ordered for deterministic UI rendering.
+//
+// Products are presets — selecting one expands to the infra services
+// it depends on. They have no compose entries of their own (the host
+// app is launched by the product's own `bun run dev`, separately).
 var allServices = []service{
 	{name: "postgres", composeName: []string{"postgres"}, cat: catInfra},
 	{name: "localstack", composeName: []string{"localstack"}, cat: catInfra},
 	{name: "zitadel", composeName: []string{"zitadel", "zitadel-login"}, deps: []string{"postgres"}, cat: catInfra},
 	{name: "openobserve", composeName: []string{"openobserve"}, deps: []string{"localstack"}, cat: catInfra},
 	{name: "menu", deps: []string{"postgres", "localstack", "zitadel", "openobserve"}, cat: catProducts},
+	// House is a static Astro site — no docker dependencies. Listed so
+	// the TUI shows it in the products group; selecting it alone is a
+	// no-op orchestration-wise (the dev still runs `cd products/house
+	// && bun run dev` from their own terminal).
+	{name: "house", deps: []string{}, cat: catProducts},
 }
 
 func serviceByName(n string) (service, bool) {
@@ -166,11 +181,16 @@ func main() {
 	devTofuDir := filepath.Join(repoRoot, "infra/dev/tofu")
 	menuDir := filepath.Join(repoRoot, "products/menu")
 
-	fmt.Printf("[dev] running: %s\n", strings.Join(selected, ", "))
+	fmt.Printf("[dev] selection: %s\n", strings.Join(selected, ", "))
 
-	step(1, "docker compose up -d --wait")
-	composeArgs := append([]string{"compose", "up", "-d", "--wait"}, composeServiceNames(selected)...)
-	runIn(devInfraDir, "docker", composeArgs...)
+	composeServices := composeServiceNames(selected)
+	if len(composeServices) > 0 {
+		step(1, "docker compose up -d --wait")
+		args := append([]string{"compose", "up", "-d", "--wait"}, composeServices...)
+		runIn(devInfraDir, "docker", args...)
+	} else {
+		fmt.Println("[dev] no docker services in this selection — skipping compose")
+	}
 
 	// Zitadel-bound steps. Skip when the user opted out — they're
 	// responsible for providing the dynamic Zitadel keys in
@@ -195,22 +215,29 @@ func main() {
 		writeEnvFile(filepath.Join(menuDir, ".env.local"),
 			captureIn(devTofuDir, "tofu", "output", "-raw", "env_dynamic_file"),
 			true, 0o600)
-	} else {
-		warn("zitadel opted out — leaving .env.local untouched. Make sure ZITADEL_OAUTH_CLIENT_ID/SECRET/MANAGEMENT_TOKEN point at a real IdP, or auth flows will 500.")
+	} else if contains(selected, "menu") {
+		warn("zitadel opted out — products/menu/.env.local is NOT updated. Make sure ZITADEL_OAUTH_CLIENT_ID/SECRET/MANAGEMENT_TOKEN point at a real IdP, or auth flows will 500.")
 	}
 
-	// Menu host-run steps. Skip when menu is opted out (infra-only mode).
+	printNextSteps(selected)
+}
+
+// printNextSteps tells the user how to launch the host apps for the
+// products they selected. The orchestrator never runs them directly —
+// each product owns its own `bun run dev` and the dev launches it
+// from a separate terminal.
+func printNextSteps(selected []string) {
+	fmt.Println()
+	fmt.Println("[dev] infra is up. Next:")
 	if contains(selected, "menu") {
-		step(5, "drizzle migrate + next dev")
-		runIn(menuDir, "bun", "run", "db:migrate")
-		if err := os.Chdir(menuDir); err != nil {
-			fail("chdir %s: %v", menuDir, err)
-		}
-		execv("bun", "--bun", "next", "dev")
-		return
+		fmt.Println("  cd products/menu  && bun run dev   # Next.js on :3000")
 	}
-
-	fmt.Println("[dev] menu opted out — infra is up, exiting (the compose stack stays running in background)")
+	if contains(selected, "house") {
+		fmt.Println("  cd products/house && bun run dev   # Astro on :3002")
+	}
+	if !contains(selected, "menu") && !contains(selected, "house") {
+		fmt.Println("  (no product selected — compose stack stays running for ad-hoc work)")
+	}
 }
 
 // ── Selection: flags + interactive ──────────────────────────────────────────
@@ -318,7 +345,7 @@ func findRepoRoot() string {
 }
 
 func step(n int, msg string) {
-	fmt.Printf("[dev] %d/5  %s\n", n, msg)
+	fmt.Printf("[dev] %d/4  %s\n", n, msg)
 }
 
 func warn(msg string) {
@@ -344,19 +371,6 @@ func captureIn(dir, name string, args ...string) string {
 		fail("%s %v: %v", name, args, err)
 	}
 	return strings.TrimSpace(string(out))
-}
-
-// execv replaces the current process with the target so signals
-// (Ctrl-C) flow naturally — same as `exec` at the end of a bash
-// script.
-func execv(name string, args ...string) {
-	path, err := exec.LookPath(name)
-	if err != nil {
-		fail("look up %s: %v", name, err)
-	}
-	if err := syscall.Exec(path, append([]string{name}, args...), os.Environ()); err != nil {
-		fail("exec %s: %v", name, err)
-	}
 }
 
 func waitForFile(path string, timeout time.Duration) error {
