@@ -26,12 +26,11 @@ What we are NOT trying to do:
 
 | Resource | Location | Notes |
 |---|---|---|
-| Hetzner CAX11 VPS + firewall + SSH key | `infra/tofu/hetzner.tf` | `hcloud` provider; one box, ARM64 |
+| Hetzner CPX22 VPS + firewall + SSH key | `infra/tofu/hetzner.tf` | `hcloud` provider; one box, x86_64 |
 | Cloudflare R2 buckets, scoped tokens, CORS | `products/menu/infra/tofu/`, `infra/tofu/` | Per-product roots + shared backups bucket |
-| Cloudflare DNS for menu + auth (grey-cloud A records) | `infra/tofu/main.tf` | Direct to Hetzner IPv4; Caddy on-box terminates TLS |
-| Cloudflare Tunnel + DNS for obs.iedora.com | `infra/tofu/main.tf` (`module.observability_tunnel`) | The only remaining tunnel — OpenObserve doesn't sit behind Caddy |
+| Cloudflare DNS for menu + auth + obs (grey-cloud A records) | `infra/tofu/main.tf` | Direct to Hetzner IPv4; Caddy on-box terminates TLS for all three hostnames (no CF Tunnel left in the estate) |
 | Cloudflare workload token (wrangler) | `products/house/infra/tofu/` | Narrow scope; minted by Tofu, consumed by wrangler |
-| Every Docker container on the box | `infra/tofu/containers.tf` | `kreuzwerker/docker` provider over SSH: postgres, backups, openobserve, openobserve-tunnel, zitadel, zitadel-login, caddy, **menu_web** |
+| Every Docker container on the box | `infra/tofu/containers.tf` | `kreuzwerker/docker` provider over SSH: postgres, backups, openobserve, zitadel, zitadel-login, caddy, **menu_web** |
 | GitHub Actions secrets + variables | `infra/tofu/github.tf` | `integrations/github` provider; `for_each` over a locals map |
 | Zitadel orgs + projects | `infra/tofu/zitadel.tf` | `zitadel/zitadel` provider; lands after the SA-key bootstrap |
 | Docker images | `products/*/infra/Dockerfile` | Declarative Dockerfiles |
@@ -145,7 +144,11 @@ resource "github_actions_secret" "secrets" {
 - Bootstrapping the `github` provider needs a GH PAT (chicken-and-egg, same shape as the Tailscale bootstrap). Lives in BWS as `INFRA_GITHUB_API_TOKEN` with scopes: `repo`, `actions:write`. Fine-grained PAT scoped to one repo is best.
 - If the laptop loses Tofu state, the secrets in state are gone (the `plaintext_value` is in state but only at apply-time; Tofu never reads them back). Mitigated by BWS being the canonical source — `tofu apply` re-pushes from BWS values.
 
-### Tier 2 · Per-product Tofu module for tunnel + DNS
+### Tier 2 · Per-product Tofu module for tunnel + DNS — SUPERSEDED
+
+> Moot after 2026-05-20: every product hostname is now a direct A record to the Hetzner IPv4 with Caddy terminating TLS. The `cloudflare-tunnel-app` module was deleted (no consumers); see `infra/tofu/main.tf` cutover comments. The original rationale below is kept as history.
+
+
 
 **What:** Extract the ~50-line "tunnel + ingress + DNS" pattern duplicated across `products/menu/infra/tofu/menu.tf` and `products/genkan/infra/tofu/genkan.tf` into a `infra/modules/cloudflare-tunnel-app/` module. Each product's root collapses to a `module "tunnel" { source = "..."; ... }` call.
 

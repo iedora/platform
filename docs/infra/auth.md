@@ -1,35 +1,28 @@
 # Auth — the iedora identity layer
 
 > One-line purpose: how identity is deployed, configured, and rotated
-> across iedora. Tracks the issue [#19][issue-19] migration from the
-> hand-rolled Better-Auth IdP (`genkan`) to ZITADEL.
-> **Last updated:** 2026-05-19.
+> across iedora. The Zitadel cutover (issue #20) is done — Zitadel is
+> the sole IdP, menu is a thin OIDC client.
 
 ## Shape
 
-Identity in iedora is a **single OIDC issuer** that every product
-federates to. Today (mid-migration) two issuers coexist; the target
-state is one.
-
-| | Issuer | Status | Owns |
-|---|---|---|---|
-| **Today** | `genkan.iedora.com` | Live, single IdP for menu | user / org / membership / OAuth-client / audit tables in the `genkan` Postgres DB |
-| **Today** | `auth.iedora.com` | Live, containers up but no OIDC clients yet (#19 Phase 1 landed 2026-05-19) | nothing user-facing yet — the bootstrap admin and a single empty org |
-| **Target** | `auth.iedora.com` | Sole IdP after #19 Phase 5 | every user, org, membership, OAuth client, audit event |
-
-Phases ahead — see [issue #19][issue-19] for the full plan. Phase
-status memo at `~/.claude/.../memory/project_zitadel_replaces_genkan.md`.
+Identity in iedora is a **single OIDC issuer** (`auth.iedora.com`) that
+every product federates to. Menu owns no user/session tables locally;
+it holds a single JWE session cookie minted by `openid-client` + `jose`
+after the auth-code/PKCE dance, and calls Zitadel's management API via
+a TF-minted IAM_OWNER PAT for memberships + org provisioning. The
+former `genkan` IdP has been deleted.
 
 ## Components
 
 ```
                   ┌────────────────────────────────────────┐
-                  │ Cloudflare edge (TLS)                  │
-                  │  auth.iedora.com → tunnel              │
+                  │ Cloudflare DNS (grey-cloud A record)   │
+                  │  auth.iedora.com → Hetzner IPv4        │
                   └────────────────┬───────────────────────┘
                                    │
               ┌────────────────────┴────────────────────┐
-              │ infra-zitadel-tunnel (cloudflared)      │
+              │ infra-caddy (TLS via Let's Encrypt)     │
               │  /ui/v2/* ─┐                            │
               │  everything else ─┐                     │
               └─────────┬─────────┼─────────────────────┘
@@ -52,8 +45,10 @@ Two containers, not one. The Go binary serves the API + Console + OIDC
 endpoints; a separate Next.js container (`zitadel-login`) serves the v2
 login UI (Zitadel's chosen architecture in v4 — the v1 login that used
 to live in the Go binary is deprecated and only stays as a fallback for
-the Console). Both run on the single homelab box; ZITADEL is ~80 MB RAM
-idle, the login app ~50 MB.
+the Console). Both run on the single Hetzner CPX22; ZITADEL is ~80 MB RAM
+idle, the login app ~50 MB. Caddy uses h2c upstream to the Go binary
+(required for gRPC — that's why this hostname doesn't sit behind a
+Cloudflare proxy).
 
 ### `infra-zitadel` container
 
@@ -65,13 +60,13 @@ Declared as `docker_container.zitadel` in `infra/tofu/containers.tf`. Key bits:
   `start-from-init` runs migrations + seeds the default instance on
   first boot, then serves traffic. Idempotent: re-running is a no-op
   because the projection state shows the init steps already happened.
-  `--tlsMode external` because Cloudflare terminates TLS at the
-  tunnel edge; the kamal network sees plain HTTP. We still set
+  `--tlsMode external` because Caddy terminates TLS on the box; the
+  internal Docker network sees plain HTTP/h2c. We still set
   `ZITADEL_EXTERNALSECURE=true` so generated URLs use `https://`.
 - **Database** — talks to the shared `infra-postgres` (database
   `zitadel`, pre-created by `infra/postgres/init.sql` on first
   cluster init). Both the User and Admin Postgres connections reuse
-  the `postgres` superuser — same convention menu and genkan follow.
+  the `postgres` superuser — same convention menu follows.
 - **First instance seed** — `ZITADEL_DEFAULTINSTANCE_ORG_*` envs
   create the `iedora` org, the `zitadel-admin` human user, and the
   `login-client` machine user with a 75-year PAT on the very first
@@ -79,8 +74,8 @@ Declared as `docker_container.zitadel` in `infra/tofu/containers.tf`. Key bits:
   (a shared named volume — see below); `zitadel-login` reads from
   the same path.
 - **LoginV2 BaseURI** — `ZITADEL_DEFAULTINSTANCE_FEATURES_LOGINV2_BASEURI=https://auth.iedora.com/ui/v2/login`
-  so the main binary's authRequest redirects target the path-routed
-  tunnel rule instead of trying to serve `/ui/v2/*` itself (which
+  so the main binary's authRequest redirects target the Caddy
+  path-routing rule instead of trying to serve `/ui/v2/*` itself (which
   returns `{"code":5,"message":"Not Found"}` — that's what `/ui/v2/*`
   on the Go binary looks like).
 
@@ -90,7 +85,7 @@ Declared as `docker_container.zitadel` in `infra/tofu/containers.tf`. Key bits:
   pinned to the same major as the main binary — the Login app and
   the main binary share the same gRPC contracts and are released
   together).
-- **Listens on `:3000`** — the tunnel routes only `/ui/v2/*` here;
+- **Listens on `:3000`** — Caddy routes only `/ui/v2/*` here;
   everything else stays on `infra-zitadel`.
 - **Auth back to the main binary** — `ZITADEL_SERVICE_USER_TOKEN_FILE
   =/zitadel-bootstrap/login-client.pat`. The PAT belongs to the
@@ -105,39 +100,38 @@ Declared as `docker_container.zitadel` in `infra/tofu/containers.tf`. Key bits:
   it on every request. Loss of the volume = loss of the login app's
   ability to authenticate; recovery is the wipe-and-reinit path.
 
-### `infra-zitadel-tunnel` container
+### `auth.iedora.com` routing
 
-A second `cloudflare/cloudflared` sidecar (the first one serves
-`obs.iedora.com`). Separate tunnel resource — different blast radius,
-independent rotation. Connector token flows straight from
-`module.zitadel_tunnel.token` (Tofu output) into the container's
-`command = ["tunnel", "--no-autoupdate", "run", "--token", ...]` —
-no intermediate secrets file, no ERB hop.
+No CF Tunnel — the hostname resolves directly to the Hetzner IPv4 via
+a grey-cloud `cloudflare_dns_record.auth_iedora` (see `infra/tofu/main.tf`).
+The Caddyfile inlined in `docker_container.caddy` does the path-routing:
 
-### `auth.iedora.com` tunnel
-
-`module.zitadel_tunnel` in `infra/tofu/main.tf` — same shared
-`cloudflare-tunnel-app` module the observability tunnel uses, with
-a path-routing override:
-
-```hcl
-primary_service = "http://infra-zitadel:8080"     # everything else
-path_routes = [
-  { path = "/ui/v2/.*", service = "http://infra-zitadel-login:3000" },
-]
+```caddy
+auth.iedora.com {
+  handle_path /ui/v2/* {
+    reverse_proxy infra-zitadel-login:3000
+  }
+  reverse_proxy infra-zitadel:8080 {
+    transport http {
+      versions h2c
+    }
+  }
+}
 ```
 
-The `path_routes` slot was added to the module specifically for
-this — cloudflared's ingress is first-match, so path-prefix rules
-MUST come before the catch-all primary or every request goes to the
-Go binary first. Tunnel name: `iedora-zitadel`.
+The h2c upstream is required for the Zitadel TF provider's gRPC calls
+to land — that's the entire reason this hostname doesn't sit behind a
+Cloudflare proxy (CF Free blocks gRPC at the edge). Order matters:
+`handle_path` MUST come before the catch-all `reverse_proxy` so the
+login UI catches `/ui/v2/*` before the Go binary returns
+`{"code":5,"message":"Not Found"}`.
 
 ### `zitadel` database
 
-Sibling to `menu` and `genkan` in `infra/postgres/init.sql`. Daily
-`pg_dumpall` covers it automatically (the `infra-backups` container
-dumps every database on the cluster). After Phase 5, the `genkan`
-database gets dropped.
+Sibling to `menu` in `infra/postgres/init.sql`. Daily `pg_dumpall`
+covers it automatically (the `infra-backups` container dumps every
+database on the cluster). The former `genkan` database has been
+dropped.
 
 ### `zitadel-bootstrap` named volume
 
@@ -175,12 +169,13 @@ Reused (no new BWS entries needed):
 - `INFRA_POSTGRES_PASSWORD` — the `infra-postgres` superuser; serves
   Zitadel's User and Admin DB connections.
 
-Tofu-managed write-throughs (will exist after Phase 1.5):
+Tofu-managed write-throughs:
 
 - `INFRA_ZITADEL_SA_KEY_JSON` — JSON service-account key for the
   Terraform provider. **Cannot be created by Tofu** (chicken-and-egg
-  — the provider needs it to authenticate). One-time manual mint
-  after the first deploy; see Bootstrap below.
+  — the provider needs it to authenticate). FirstInstance writes it
+  to the `zitadel-bootstrap` named volume; `just zitadel-fetch-sa-key`
+  lifts it into BWS. One-time per Zitadel re-bootstrap.
 
 Full rotation guidance: [`docs/secrets.md`](../secrets.md) §
 App secrets.
@@ -206,9 +201,10 @@ After the infra code changes from #19 Phase 1 land:
 2. **Deploy** — `just infra::deploy` runs one `tofu apply` that does
    everything in order via `depends_on` and the docker provider's
    create/start semantics:
-   - Cloudflare resources land (R2 buckets, both tunnels, DNS records).
+   - Cloudflare resources land (R2 buckets, grey-cloud A records for
+     auth/menu/obs).
    - `docker_network.kamal` + `docker_volume.zitadel_bootstrap` come up
-     (the volume's `local-exec` provisioner chmods it 777 so non-root
+     (the volume's chmod init container fixes perms so non-root
      container users can write).
    - `docker_container.postgres` boots; init.sql is auto-uploaded and
      runs the `CREATE DATABASE` statements on a brand-new cluster.
@@ -219,10 +215,10 @@ After the infra code changes from #19 Phase 1 land:
      written to `/zitadel-bootstrap/login-client.pat`.
    - `docker_container.zitadel_login` boots; reads the PAT from the
      shared volume and starts serving `/ui/v2/login/*` on `:3000`.
-   - `docker_container.zitadel_tunnel` boots; cloudflared dials out to
-     Cloudflare with the token from `module.zitadel_tunnel.token`.
-     `auth.iedora.com` resolves end-to-end with the path-routing rules
-     from `module.zitadel_tunnel.path_routes`.
+   - `docker_container.caddy` boots; auto-provisions a Let's Encrypt
+     cert for `auth.iedora.com` and starts path-routing per the
+     Caddyfile (`/ui/v2/*` → login app, everything else → main binary
+     over h2c).
 
 3. **Mint the service-account key for Terraform** — one-shot, manual,
    in the Zitadel UI:
@@ -256,29 +252,30 @@ in zitadel logs (FirstInstance crashed mid-way leaving the unique
 constraint behind). Recovery:
 
 ```sh
-# 1. Stop the two containers that touch the volume.
-ssh root@$ONPREM_HOST 'docker stop infra-zitadel-login infra-zitadel'
+HOST=$(tofu -chdir=infra/tofu output -raw hetzner_ipv4)
 
-# 2. Drop + recreate the zitadel database (menu + genkan untouched).
-ssh root@$ONPREM_HOST 'docker exec infra-postgres psql -U postgres \
+# 1. Stop the two containers that touch the volume.
+ssh root@$HOST 'docker stop infra-zitadel-login infra-zitadel'
+
+# 2. Drop + recreate the zitadel database (menu untouched).
+ssh root@$HOST 'docker exec infra-postgres psql -U postgres \
   -c "DROP DATABASE zitadel;" -c "CREATE DATABASE zitadel;"'
 
 # 3. Re-chmod the bootstrap volume (in case it was newly created)
 #    AND ensure no stale PAT file lingers.
-ssh root@$ONPREM_HOST 'docker run --rm -v zitadel-bootstrap:/x busybox \
+ssh root@$HOST 'docker run --rm -v zitadel-bootstrap:/x busybox \
   sh -c "rm -f /x/login-client.pat && chmod 777 /x"'
 
 # 4. Start zitadel — FirstInstance reruns and writes a fresh PAT.
-ssh root@$ONPREM_HOST 'docker start infra-zitadel'
+ssh root@$HOST 'docker start infra-zitadel'
 
 # 5. Wait for the PAT to land, then start the login app.
-until ssh root@$ONPREM_HOST 'docker run --rm -v zitadel-bootstrap:/x busybox test -s /x/login-client.pat'; do sleep 3; done
-ssh root@$ONPREM_HOST 'docker start infra-zitadel-login'
+until ssh root@$HOST 'docker run --rm -v zitadel-bootstrap:/x busybox test -s /x/login-client.pat'; do sleep 3; done
+ssh root@$HOST 'docker start infra-zitadel-login'
 ```
 
-There's no usable data to preserve until at least one product
-federates through Zitadel (Phase 3+), so this is cheap during the
-migration window.
+Menu sessions are invalidated by a fresh Zitadel instance (new issuer
+keys), but that's just a forced re-login — no data loss in menu's DB.
 
 **Common gotcha** — Zitadel splits its config across two viper
 namespaces. The Console UI defaults (`ZITADEL_DEFAULTINSTANCE_*`)
@@ -298,31 +295,33 @@ just infra::logs zitadel
 
 # Drop into the Zitadel container — debug only; image has no shell,
 # so use `docker exec` against the binary directly if you need a one-shot.
-ssh root@$ONPREM_HOST 'docker exec infra-zitadel /zitadel --help'
+ssh root@$(tofu -chdir=infra/tofu output -raw hetzner_ipv4) 'docker exec infra-zitadel /zitadel --help'
 
 # psql into the zitadel database.
 just infra::console        # then: \c zitadel
 
 # Reboot zitadel (e.g. to pick up a rotated INFRA_POSTGRES_PASSWORD).
-ssh root@$ONPREM_HOST 'docker restart infra-zitadel infra-zitadel-login'
+ssh root@$(tofu -chdir=infra/tofu output -raw hetzner_ipv4) 'docker restart infra-zitadel infra-zitadel-login'
 
 # Rotate the operator login password (NOT the masterkey).
 # → log in to auth.iedora.com → Profile → Password
 ```
 
-Zitadel + its tunnel reboot independently of the menu app — `docker
-restart` works without disturbing other containers on the `kamal`
-Docker network. No app redeploy is needed because no product currently
-federates to Zitadel — that lands in Phase 3.
+Zitadel reboots independently of the menu app — `docker restart`
+works without disturbing other containers on the `kamal` Docker network
+(name kept as tombstone; see `infra/CLAUDE.md`). The menu app
+re-establishes OIDC sessions on the next request.
 
-## OIDC client integration (forward-looking)
+## OIDC client integration
 
-Once Phase 1.5 declares `zitadel_application_oidc.<product>` in Tofu,
-each product gets a client_id + client_secret as Tofu outputs. The
-write-through pattern from `infra/CLAUDE.md` hard rule #2 applies:
-Tofu mints the credentials, the `just infra::deploy` recipe pushes
-them to BWS, the product reads them from BWS via its own
-`bin/with-secrets`.
+`infra/tofu/zitadel.tf` declares `zitadel_application_oidc.menu` plus
+the `zitadel_machine_user.menu_sa` + `zitadel_personal_access_token.menu_sa`
+pair that menu's management adapter uses. Producer (Zitadel TF
+resources) and consumer (`docker_container.menu_web` env) share the
+same TF state, so the OIDC `client_id`/`client_secret`, the session
+secret (`random_password.menu_session_secret`), and the management PAT
+all flow as direct resource references — no BWS round-trip, no
+write-through.
 
 For non-OIDC services (OpenObserve OSS in particular), an
 `oauth2-proxy` accessory will sit between the tunnel and the
@@ -331,12 +330,14 @@ Phase 2 of #19.
 
 ## See also
 
-- **[issue #19][issue-19]** — full migration plan, every phase's
-  acceptance criteria, the resource shapes verified against
+- **[issue #19][issue-19]** — original Zitadel migration plan
+  (closed); the resource shapes were verified against
   `zitadel/zitadel@2.12.7`.
+- **[issue #20][issue-20]** — menu cutover off Better Auth onto
+  native Zitadel OIDC (closed).
 - **[issue #13][issue-13]** — Cloudflare Access redirect-loop bug
-  whose root cause was "OpenObserve OSS doesn't speak OIDC"; Phase 2
-  of #19 closes it properly via oauth2-proxy.
+  whose root cause was "OpenObserve OSS doesn't speak OIDC"; pending
+  proper close via `oauth2-proxy`.
 - **[`docs/secrets.md`](../secrets.md)** — every BWS key, rotation
   cadence, zero-downtime patterns. The two new Zitadel secrets are
   listed there.
@@ -352,4 +353,5 @@ Phase 2 of #19.
   per-product Zitadel HTTP adapter will live after Phase 4.
 
 [issue-19]: https://github.com/eduvhc/iedora/issues/19
+[issue-20]: https://github.com/eduvhc/iedora/issues/20
 [issue-13]: https://github.com/eduvhc/iedora/issues/13

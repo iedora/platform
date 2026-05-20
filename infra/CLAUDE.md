@@ -39,7 +39,7 @@ Container names are deliberately `infra-*` for everything that serves both produ
 ```
 infra/
   justfile                              deploy / backup / restore / wipe-postgres / build-backup / rotate-secret
-  .env.example                          template (BWS access + CF account + GHCR_USER + ONPREM_HOST)
+  .env.example                          template (BWS access + CF account + GHCR_USER). VPS IPv4 is read from `tofu output -raw hetzner_ipv4`, not the env file.
   bin/with-secrets                      BWS wrapper — exports every secret as TF_VAR_*
   tofu/                                 single encrypted root
     versions.tf                         providers: hcloud, cloudflare ~> 5.19, github ~> 6.12,

@@ -113,7 +113,7 @@ Menu's `infra/` owns a Dockerfile (built by CI into the GHCR image) plus a tiny 
 
 `just` is a Rust task runner — `brew install just` (or `cargo install just`).
 
-Menu image builds happen in CI (`.github/workflows/menu.yml`) on every push to main: buildx for `linux/arm64`, pushed to `ghcr.io/$GHCR_USER/menu:<sha>`. CI then dispatches `infra-deploy.yml`, which re-runs `tofu apply`; Tofu's `pull_triggers` on `docker_image.menu` pulls the new digest and recreates `docker_container.menu_web` in-place.
+Menu image builds happen in CI (`.github/workflows/menu.yml`) on every push to main: buildx for `linux/amd64` (CPX22 is x86_64), pushed to `ghcr.io/$GHCR_USER/menu:<sha>`. CI then dispatches `infra-deploy.yml` with `--field image_sha=<sha>`, which re-runs `tofu apply`; the SHA flows in as `TF_VAR_menu_image_sha`, forcing `docker_image.menu` to replace and recreating `docker_container.menu_web` in-place. Rollback = same dispatch with an older SHA.
 
 ## CI
 
@@ -143,7 +143,7 @@ One workflow per workspace. Each is self-contained: own `paths:` trigger, own en
 
 **Branch protection: deliberately off** — solo, AI-driven; CI itself is the signal.
 
-**Dependency updates: Renovate** at `renovate.json`. Auto-merges minor/patch + security advisories after green CI. Major bumps and the auth-stack pins (Next, React, Better Auth, `oven/bun`) are held for manual review.
+**Dependency updates: Renovate** at `renovate.json`. Auto-merges minor/patch + security advisories after green CI. Major bumps and the auth-stack pins (Next, React, `openid-client`, `jose`, Zitadel image, `oven/bun`) are held for manual review.
 
 ## Where to look when unsure
 

@@ -49,8 +49,7 @@ terraform {
     }
     # Mints the menu session cookie's encryption key directly in TF state,
     # avoiding a BWS round-trip for secrets that have no external consumer.
-    # Replaces the old MENU_AUTH_SECRET BWS key — rotate via
-    # `tofu apply -replace=random_password.menu_session_secret`.
+    # Rotate via `tofu apply -replace=random_password.menu_session_secret`.
     random = {
       source  = "hashicorp/random"
       version = "~> 3.6"

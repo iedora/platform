@@ -2,7 +2,7 @@
 
 Living document — every threat we evaluated, status, and where the mitigation lives. Update on resolution, on new CVE, or when a new class of attack appears.
 
-> Identity-specific threats (MFA, OAuth flow hardening, JWKS rotation, etc.) lived in the deleted `genkan` IdP. They migrate to Zitadel — Zitadel inherits these mitigations by design. Re-evaluate against Zitadel during the menu cutover (issue #20).
+> Identity-specific threats (MFA, OAuth flow hardening, JWKS rotation, etc.) lived in the deleted `genkan` IdP. They now live at Zitadel — Zitadel inherits these mitigations by design. Menu federates via `openid-client` + `jose` and re-verifies JWS signatures against Zitadel's JWKS on every session decode.
 
 ## Threat register
 
@@ -12,11 +12,11 @@ Ranked by severity for the iedora stack.
 |---|---|---|---|---|
 | 2 | Webhook SSRF — admin registers a URL pointing at internals | high | resolved | `packages/iedora-identity/src/ssrf.ts` — DNS + CIDR allowlist v4/v6, protocol guard, dev-only escape hatch (`IEDORA_WEBHOOKS_ALLOW_PRIVATE=1` + `NODE_ENV!=production`) |
 | 3 | Webhook replay | medium | resolved | Stripe-style `x-iedora-signature: t=<ms>,v1=<hex>` over `${ts}.${body}`; receiver enforces 5 min skew + idempotency dedup on envelope.id |
-| 6 | [CVE-2026-45364](https://www.cvedetails.com/product/177298/Better-auth-Better-Auth.html) — Better Auth IPv6 rate-limit bypass | mitigated | done | `advanced.ipAddress.ipv6Subnet: 64` in menu's `better-auth-instance.ts` |
-| 7 | [GHSA-wxw3-q3m9-c3jr](https://github.com/advisories) — Better Auth OAuth state mismatch w/o PKCE | mitigated | done | `pkce: true` on menu's `generic-oauth` client |
+| 6 | [CVE-2026-45364](https://www.cvedetails.com/product/177298/Better-auth-Better-Auth.html) — Better Auth IPv6 rate-limit bypass | n/a | retired | Better Auth removed from menu under issue #20; replaced by Zitadel OIDC. Mitigation history kept for audit trail |
+| 7 | [GHSA-wxw3-q3m9-c3jr](https://github.com/advisories) — Better Auth OAuth state mismatch w/o PKCE | n/a | retired | Better Auth removed from menu. The current OIDC flow uses `openid-client` which mandates PKCE by default |
 | 19 | Multi-tenant IDOR (org-scoped data leakage) | medium | contained | menu's `requireRestaurantAccess` checks `member` rows. Audit any path reading org data outside this guard |
 | 20 | Role escalation via mass-assignment | mitigated | done | `user.role` is `additionalFields: { role: { input: false } }` — not writable via public signup |
-| 22 | CSRF on state-changing endpoints | mitigated | done | Better Auth Origin/Referer + SameSite + Next 16 server actions |
+| 22 | CSRF on state-changing endpoints | mitigated | done | Origin/Referer check in menu's auth adapter + SameSite=Lax on the JWE session cookie + Next 16 server actions |
 | 25 | Sensitive-data logging | mitigated | done | `logger.level = 'error'` in production |
 | 27 | Webhook secret encryption at rest | low | deferred | plaintext in DB. Acceptable while DB + app share a trust boundary; revisit on first external customer or once Zitadel-driven webhooks land |
 | 31 | Zitadel masterkey leak | high | mitigated | `INFRA_ZITADEL_MASTERKEY` in BWS, 32 chars, never rotated casually. Documented re-key flow only |
@@ -49,24 +49,22 @@ secret_scanning_push_protection: enabled
 dependabot_security_updates:     disabled  ← Renovate owns this lane
 ```
 
-## Quick-win verifies (after every Better Auth upgrade)
+## Quick-win verifies (after every Zitadel / `openid-client` / `jose` upgrade)
 
 ```bash
-# 1. Sign-in returns identical 401 for known vs unknown email
-curl -X POST https://menu.iedora.com/api/auth/sign-in/email \
-  -H content-type:application/json \
-  -d '{"email":"<known>","password":"wrong"}'
-# expect: 401 + "Invalid email or password"
+# 1. /api/auth/login redirects to Zitadel with PKCE params
+curl -si "https://menu.iedora.com/api/auth/login" | grep -i 'location'
+# expect: Location: https://auth.iedora.com/oauth/v2/authorize?...&code_challenge=...&code_challenge_method=S256
 
 # 2. Session cookie: Secure + __Secure- prefix + no Domain
 curl -si https://menu.iedora.com/api/auth/session | grep -i 'set-cookie'
-# expect: __Secure-better-auth.session_token=... ; Secure; HttpOnly; SameSite=Lax; Path=/
+# expect: __Secure-menu_session=... ; Secure; HttpOnly; SameSite=Lax; Path=/
 ```
 
 ## Long-term gaps
 
-- **MFA** for menu admin users. Resolved once Zitadel is the IdP (ships TOTP + WebAuthn + Passkeys).
-- **Suspicious-activity events**: brute-force / unusual-location detection. Wait for Zitadel cutover so this lives at the IdP layer.
+- **MFA enforcement policy** for menu admin users. Zitadel ships TOTP + WebAuthn + Passkeys; enable the org-level policy once the first paying customer asks for it.
+- **Suspicious-activity events**: brute-force / unusual-location detection. Zitadel emits these as audit events; not yet routed to OpenObserve.
 - **SOC2-ready audit retention**: append-only ship to R2 monthly with cryptographically chained entries.
 
 ## References
@@ -76,4 +74,5 @@ curl -si https://menu.iedora.com/api/auth/session | grep -i 'set-cookie'
 - [OWASP Session Management Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html)
 - [Svix Webhook Security](https://docs.svix.com/security)
 - [Zitadel security model](https://zitadel.com/docs/concepts/architecture/secrets)
-- [Better Auth security advisories](https://www.cvedetails.com/product/177298/Better-auth-Better-Auth.html)
+- [openid-client security advisories](https://github.com/panva/openid-client/security/advisories)
+- [jose security advisories](https://github.com/panva/jose/security/advisories)

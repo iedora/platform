@@ -33,7 +33,7 @@ src/features/<slice>/
 ├── ports.ts                      narrow interfaces describing every external effect
 ├── adapters/
 │   ├── drizzle.ts                production adapter against Drizzle + Postgres
-│   └── …                         alternative adapters (better-auth, s3, …)
+│   └── …                         alternative adapters (zitadel-oidc, s3, …)
 ├── use-cases/<verb>.ts           pure-ish (port, input) -> result
 ├── actions.ts                    'use server' shells: auth guard → use-case → revalidate
 ├── ui/                           slice-owned React components (optional)
@@ -46,7 +46,7 @@ Reference: `products/menu/src/features/auth/` — ports, two adapters, several u
 
 Path: `products/menu/src/features/`.
 
-- **`auth/`** — session + tenant-scoping guards (Better Auth). `verifySession`, `requireRestaurantAccess`, `requireRestaurantBySlug`, `requireActiveOrganization`.
+- **`auth/`** — session + tenant-scoping guards (Zitadel OIDC via `openid-client` + JWE cookie via `jose`). `verifySession`, `requireRestaurantAccess`, `requireRestaurantBySlug`, `requireActiveOrganization`.
 - **`billing/`** — invoice ledger (read-only today).
 - **`dashboard-home/`** — restaurants-with-counts aggregate query.
 - **`i18n/`** — per-language registry (en, pt, es, fr) + format helpers + `LocalizedFields` editor UI.
@@ -55,7 +55,7 @@ Path: `products/menu/src/features/`.
 - **`menu-publishing/`** — public-side render path. `loadRestaurantSnapshot` / `loadRestaurantAdminMenus` cache wrappers (per-slug tag), template registry, renderer, sample-data seed.
 - **`metrics/`** — daily-view counters + analytics range helpers. Writes are driven by the beacon endpoint, not this slice.
 - **`plans/`** — plan registry (free, casa). Same shape as i18n + templates.
-- **`rate-limit/`** — Better Auth's rate-limit store backed by Redis (testcontainers in dev/CI).
+- **`rate-limit/`** — token-bucket rate limiter backed by Redis (testcontainers in dev/CI). Guards `/api/auth/*` and other unauth'd endpoints.
 - **`restaurant-identity/`** — restaurant CRUD + theme/identity settings.
 - **`upload/`** — S3-compatible uploads. Presign + commit + clear, with the `r/{restaurantId}/...` key-prefix invariant verified twice. LocalStack in dev/CI; real R2 in production.
 
@@ -108,7 +108,7 @@ One-line OTel wiring per product. Wraps `@vercel/otel` — resource attrs + samp
 
 ## The contract
 
-- **`ports.ts`** — narrow interfaces describing the slice's effects on the outside world. One method per atomic operation. No Drizzle / Next / Better Auth types leak through (`Session` is the exception — Better Auth's own type re-exported via the adapter).
+- **`ports.ts`** — narrow interfaces describing the slice's effects on the outside world. One method per atomic operation. No Drizzle / Next / OIDC-library types leak through; the slice's `Session` shape is defined in `auth/ports.ts` and is plain TS, not an upstream re-export.
 - **`adapters/`** — implementations. Production adapters marked `'server-only'`. Tests build their own adapter against PGLite.
 - **`use-cases/<verb>.ts`** — `async function verb(port: Port, input): Promise<Result>`. Pure-ish. The only Next API allowed inline is `redirect()` / `notFound()` — tests mock those.
 - **`index.ts`** — binds the production adapter, wraps page-level loaders in `React.cache()`, re-exports the types callers need. Does NOT export the adapter.

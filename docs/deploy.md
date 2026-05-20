@@ -62,7 +62,7 @@ ls ~/.ssh/id_ed25519.pub 2>/dev/null || ssh-keygen -t ed25519 -N "" -f ~/.ssh/id
 
 Tofu reads `~/.ssh/id_ed25519.pub`, registers it as `hcloud_ssh_key.operator`, and seeds it into `/root/.ssh/authorized_keys` on the freshly minted CPX22. After the first deploy, `ssh root@<hetzner-ipv4>` works.
 
-To reuse an existing box: skip `hcloud_server.iedora` from the apply and set `INFRA_HOST_IP` in BWS to that IP.
+To reuse an existing box: `tofu import hcloud_server.iedora <server-id>` so the state captures the existing IPv4 as `hetzner_ipv4`. Tooling reads from that output directly — there is no BWS write-through.
 
 > **Why root?** SSH-key-only root login is the canonical Docker-over-SSH path — `kreuzwerker/docker` shells out to system SSH, which honors `~/.ssh/config`. The non-root path requires NOPASSWD-sudo (same root blast radius without the simplicity).
 
@@ -104,7 +104,7 @@ Generate random values with `openssl rand -hex 32`, except:
 - `INFRA_HCLOUD_TOKEN` — Hetzner console → Security → API tokens (R/W).
 - `INFRA_GHCR_TOKEN` — classic PAT with `write:packages` (see "Why classic" below).
 - `INFRA_GITHUB_API_TOKEN` — fine-grained PAT scoped to the repo.
-- `INFRA_SSH_PRIVATE_KEY` — contents of `~/.ssh/id_ed25519`. Name is a tombstone (Kamal-era); load-bearing across BWS / GH variables / rotation playbook. Don't rename.
+- `INFRA_SSH_PRIVATE_KEY` — contents of `~/.ssh/id_ed25519`. Load-bearing across BWS / GH secrets / `kreuzwerker/docker` provider / rotation playbook. Don't rename.
 - `INFRA_ZITADEL_MASTERKEY` — must be exactly 32 chars: `openssl rand -base64 24 | head -c 32`.
 
 > **Why classic for GHCR.** Every other PAT is fine-grained; `INFRA_GHCR_TOKEN` stays classic because fine-grained + personal account + GHCR is GitHub's worst-supported combination — the Packages permission only reliably surfaces for org-scoped tokens with org-owned packages. Revisit if iedora moves into a GH org.
@@ -120,10 +120,10 @@ just infra::deploy
 A 3-pass dance, automated:
 
 1. **Provision the VPS only.** The `kreuzwerker/docker` provider needs a concrete `host` IP at plan time. Skipped if the box exists.
-2. **Full apply.** Cloudflare R2 buckets + DNS + GitHub Actions config + every `docker_container` (`infra-postgres`, `infra-backups`, `infra-openobserve`, `infra-zitadel`, `infra-zitadel-login`, `infra-caddy`, `menu_web`). Tofu pulls each image via `data.docker_registry_image + docker_image + pull_triggers`.
+2. **Full apply.** Cloudflare R2 buckets + DNS + GitHub Actions config + every `docker_container` (`infra-postgres`, `infra-backups`, `infra-openobserve`, `infra-zitadel`, `infra-zitadel-login`, `infra-caddy`, `menu_web`). The menu image is SHA-pinned via `TF_VAR_menu_image_sha` (defaults to `latest` for first bootstrap; CI passes `${{ github.sha }}` thereafter). A new SHA changes `docker_image.menu`'s `name`, forcing replacement of the image AND the container that references it.
 3. **Zitadel SA-key bootstrap (FIRST run only).** Zitadel's FirstInstance step mints a service-account JSON key inside the `zitadel-bootstrap` volume; `just zitadel-fetch-sa-key` lifts it into BWS; a second apply lands `zitadel.tf` (org + project). Subsequent runs: no-op.
 
-First time: 5–10 min. Subsequent applies: 30s–2 min (only containers with changed image digest or config redeploy; `menu_web` redeploys on every new GHCR push).
+First time: 5–10 min. Subsequent applies: 30s–2 min (only containers with changed image digest or config redeploy; `menu_web` redeploys on every new SHA passed via `image_sha`).
 
 Verify: `https://menu.iedora.com/up` → `{"ok":true,"db":"ok"}`.
 
@@ -146,7 +146,7 @@ All wrappers around `tofu` or direct `ssh`. The justfile loads `infra/.env` and 
 
 **No `migrate` recipe.** Migrations run on container start via the menu container's `cmd`. Drizzle's migrator takes a `pg_advisory_lock` so multiple replicas don't race.
 
-**Rolling back to a previous image.** `INFRA_MENU_IMAGE_TAG=<sha> just infra::deploy`. Image SHAs are tagged by commit on every push to main. Brief downtime (~5–10s while Tofu recreates the container).
+**Rolling back to a previous image.** `gh workflow run infra-deploy.yml --field image_sha=<older-sha>`. Image SHAs are tagged by commit on every push to main; the workflow input flows in as `TF_VAR_menu_image_sha`. Brief downtime (~5–10s while Tofu recreates the container).
 
 ---
 
@@ -157,11 +157,11 @@ Once the manual flow works end-to-end, every push to main rolls a new menu image
 ```
 git push main
    └─► .github/workflows/menu.yml         (typecheck, lint, unit, security)
-        └─► build + push image            (linux/arm64-or-amd64 → ghcr.io/eduvhc/menu:<sha>)
-             └─► .github/workflows/infra-deploy.yml   (workflow_run on success)
-                  ├─► tofu init
+        └─► build + push image            (linux/amd64 → ghcr.io/eduvhc/menu:<sha>)
+             └─► gh workflow run infra-deploy.yml --field image_sha=${{ github.sha }}
+                  ├─► tofu init                            (decrypts state via INFRA_STATE_PASSPHRASE)
                   ├─► tofu apply -auto-approve
-                  │   └─► docker_image.menu pull_triggers fires → docker_container.menu_web recreates
+                  │   └─► docker_image.menu name changes → force-replace → docker_container.menu_web recreates
                   └─► curl https://menu.iedora.com/up   (smoke)
 ```
 
@@ -174,16 +174,16 @@ Every GH Actions secret + variable is Tofu-managed via `infra/tofu/github.tf` (`
 | GH Secret | BWS source | Notes |
 |---|---|---|
 | `BWS_ACCESS_TOKEN` | `BWS_ACCESS_TOKEN` (passed as `TF_VAR_bws_access_token`) | Runner uses it to authenticate to BWS for every other secret |
-| `INFRA_SSH_PRIVATE_KEY` | `INFRA_SSH_PRIVATE_KEY` | Runner writes to `~/.ssh/id_ed25519`; reaches the Hetzner box. Name is a tombstone — see secrets.md |
+| `INFRA_SSH_PRIVATE_KEY` | `INFRA_SSH_PRIVATE_KEY` | Runner writes to `~/.ssh/id_ed25519`; reaches the Hetzner box |
 | `CLAUDE_CODE_OAUTH_TOKEN` | `INFRA_CLAUDE_CODE_OAUTH_TOKEN` | Powers `.github/workflows/claude.yml` |
 
 | GH Variable | Notes |
 |---|---|
 | `BWS_PROJECT_ID` | Same as local `.env` |
-| `ONPREM_HOST` | Hetzner public IPv4; write-through to BWS as `INFRA_HOST_IP` |
 | `MENU_PUBLIC_HOSTNAME` | `menu.iedora.com` |
 | `CLOUDFLARE_ACCOUNT_ID` | Same as local `.env` |
-| `GHCR_USER` | `eduvhc` (falls back to `github.repository_owner`) |
+
+The VPS IPv4 is NOT a GH variable. CI reads it directly inside the runner with `tofu output -raw hetzner_ipv4` after `tofu init` decrypts the state. The `GHCR_USER` falls back to `github.repository_owner` and isn't materialized either.
 
 **House workload token is auto-populated.** `just house::deploy` mints the narrow Workers token via Tofu and write-throughs to BWS as `INFRA_HOUSE_WORKERS_TOKEN`. Rotate via `just house::rotate-token` (never bare `tofu apply -replace=...`, or BWS goes stale).
 
@@ -254,7 +254,7 @@ Cost: ~30 lines duplicated per root (versions.tf, credentials, `data.cloudflare_
 
 **`unable to find image` on the server** — GHCR pull failed. `INFRA_GHCR_TOKEN` in BWS is wrong; regenerate.
 
-**`Environment validation failed` on container start** — `SKIP_ENV_VALIDATION=1` is set during `next build` so Zod's `MENU_SESSION_SECRET` / `ZITADEL_*` checks don't fire on placeholder values. Runtime env (from `docker_container.menu_web` in TF) must populate every key in `src/shared/env.ts`. Check `just infra::logs menu_web` for the offending name.
+**`Environment validation failed` on container start** — `SKIP_ENV_VALIDATION=1` is set during `next build` so Zod's `MENU_SESSION_SECRET` / `ZITADEL_*` checks don't fire on placeholder values. Runtime env on `docker_container.menu_web` is populated directly from TF resources in the same root (`random_password.menu_session_secret`, `zitadel_application_oidc.menu`, `zitadel_personal_access_token.menu_sa`). If `local.zitadel_bootstrapped` is false (no SA key in BWS yet), the menu container is gated to `count = 0`. Check `just infra::logs menu_web` for the offending name.
 
 **`tofu destroy` prints `Warning: Resource Destruction Considerations` for `cloudflare_r2_bucket_cors`** — harmless. Cloudflare doesn't expose a separate delete endpoint; the subresource goes when its parent does. Tofu only removes it from local state.
 

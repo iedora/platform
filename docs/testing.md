@@ -168,7 +168,7 @@ Don't reach for `nektos/act` for test-logic failures — it can't reproduce the 
 - **Server Components in jsdom.** They need a Next request scope; jsdom can't supply one. Test via Playwright.
 - **Drizzle queries with mocked Drizzle.** The point of PGLite is that you don't have to.
 - **Server actions directly.** Orchestration shells (auth guard → use-case → revalidate). The use-case is the unit-tested seam; the action's behaviour is covered end-to-end by Playwright.
-- **Better Auth plugin internals.** They have their own test suites in `node_modules/`. We test what WE wrote on top.
+- **`openid-client` / `jose` internals.** They have their own conformance + test suites in `node_modules/`. We test what WE wrote on top — the auth slice's port + use-cases.
 - **UI styling.** Visual review is a human step.
 - **Internal slice plumbing.** Test through the public API of the slice.
 

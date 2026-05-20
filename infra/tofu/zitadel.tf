@@ -174,10 +174,7 @@ resource "zitadel_personal_access_token" "menu_sa" {
 
 # ── Menu session-cookie encryption key ───────────────────────────────────────
 # 32-byte symmetric key for the menu app's session JWE (jose, alg=dir,
-# enc=A256GCM). Replaces the old BWS-stored MENU_AUTH_SECRET.
-#
-# Pros over BWS: single source of truth, no manual rotation, no third-party
-# round-trip. The key is sensitive in state (state is encrypted at rest via
+# enc=A256GCM). The key is sensitive in state (state is encrypted at rest via
 # the pbkdf2/AES-GCM block in versions.tf).
 #
 # Rotation: `tofu apply -replace=random_password.menu_session_secret`. All

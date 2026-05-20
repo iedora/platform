@@ -72,23 +72,21 @@ OSS we run on customer data. Trust based on community maintenance + audit histor
 
 | | |
 |---|---|
-| **What we use** | Self-hosted IdP at `auth.iedora.com`. Owns user / org / OAuth-client tables in the `zitadel` Postgres database. Menu cutover queued (issue #20) |
+| **What we use** | Self-hosted IdP at `auth.iedora.com`. Owns user / org / OAuth-client tables in the `zitadel` Postgres database. Menu federates via OIDC (`openid-client` + `jose`) — cutover landed under issue #20 |
 | **License** | Apache 2.0 |
 | **Maintainer** | ZITADEL (Swiss company, commercial backing) |
 | **Known CVEs** | None tracked at time of review |
 | **Monitoring** | GitHub Advisory Database + ZITADEL security advisories |
 | **Replacement** | Keycloak, Authentik. Replacement requires re-pointing OIDC clients in every consumer — multi-day project |
 
-### Better Auth
+### Better Auth (removed)
 
 | | |
 |---|---|
-| **What we use** | Menu's local session layer (user/session/account). Slated for removal once Zitadel cutover lands (issue #20) |
+| **What we used** | Menu's local session layer (user/session/account). Removed under issue #20 — replaced by `openid-client` v6 + `jose` v6 OIDC client + JWE session cookie talking directly to Zitadel |
 | **License** | MIT |
-| **Maintainer** | Bekacru / WorkOS (active contributions) |
-| **Known CVEs** | [CVE-2026-45364](https://www.cvedetails.com/product/177298/Better-auth-Better-Auth.html) (IPv6 rate-limit bypass — mitigated), [GHSA-wxw3-q3m9-c3jr](https://github.com/advisories) (OAuth state mismatch w/o PKCE — mitigated). See `docs/security-audit.md` |
-| **Monitoring** | GitHub Advisory Database + manual release-note review on every minor bump |
-| **Replacement** | Once Zitadel becomes the IdP, drop Better Auth entirely and use plain OIDC session cookies |
+| **Maintainer** | Bekacru / WorkOS |
+| **Status** | No longer in the dependency graph. Kept in this register for one review cycle so any incident-response runbook referencing it still resolves to a source |
 
 ### Drizzle ORM
 

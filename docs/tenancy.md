@@ -14,7 +14,7 @@ identity.user ──(member, role)──> identity.organization
 
 **One organization → N restaurants.** A user can belong to multiple organizations. A restaurant references exactly one organization by UUID; menu's DB has no FK — the reference is logical, since identity data and menu data live in separate databases.
 
-> **Identity provider in flux.** Today menu uses Better Auth's `organization` plugin locally for org membership; Zitadel (`auth.iedora.com`) is the deployed IdP but menu hasn't cut over yet (issue #20). The shape of org/membership stays the same after cutover; only the source-of-truth backend changes.
+> **Identity provider.** Zitadel (`auth.iedora.com`) is the IdP; org + membership rows are projected from Zitadel into menu's DB on each login (issue #20). The `organization` table in menu's schema is the local read-model; Zitadel is the write-side source of truth.
 
 **Default onboarding** (`menu/src/app/onboarding/actions.ts`):
 

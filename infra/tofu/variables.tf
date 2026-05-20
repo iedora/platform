@@ -265,15 +265,6 @@ variable "infra_zitadel_first_admin_password" {
 
 # ── Menu app secrets (consumed by docker_container.menu_web) ─────────────────
 # These vars wire the menu container's runtime env from BWS through TF_VAR_*.
-#
-# The auth/OIDC secrets that used to live here (MENU_AUTH_SECRET,
-# MENU_OAUTH_CLIENT_ID, MENU_OAUTH_CLIENT_SECRET) are gone as of issue #20.
-# Replacements live entirely inside TF state:
-#   - Session-cookie key      → random_password.menu_session_secret (zitadel.tf)
-#   - OIDC client id/secret   → zitadel_application_oidc.menu (zitadel.tf)
-#   - SA token for management → zitadel_personal_access_token.menu_sa (zitadel.tf)
-# No BWS round-trip — producer (zitadel_*) and consumer (menu_web env) are in
-# the same Tofu root, so the values flow output → env directly.
 
 variable "infra_menu_assets_access_key" {
   description = "R2 S3-compatible access key for the menu assets bucket. TF_VAR_infra_menu_assets_access_key (from BWS INFRA_MENU_ASSETS_ACCESS_KEY)."

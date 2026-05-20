@@ -40,7 +40,7 @@ Don't whole-DB-restore over a live database. Restore into scratch, surgically co
 docker run -d --name scratch-pg -e POSTGRES_PASSWORD=x -p 5433:5432 postgres:18-alpine
 
 # 2. Pull + decrypt the latest dump:
-ssh root@$ONPREM_HOST 'docker exec -it infra-backups bash'
+ssh root@$(tofu -chdir=infra/tofu output -raw hetzner_ipv4) 'docker exec -it infra-backups bash'
 # Inside: aws --endpoint-url=$S3_ENDPOINT s3 cp s3://$S3_BUCKET/pg/<latest>.sql.gpg /tmp/
 # Decrypt: gpg --batch --passphrase=$PASSPHRASE --decrypt /tmp/<latest>.sql.gpg > /tmp/dump
 

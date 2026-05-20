@@ -261,4 +261,4 @@ No PR to `@iedora/observability` for routine additions — only wrapper plumbing
 - **Logs.** `@opentelemetry/sdk-logs` is still 0.x. Container logs via `just infra::logs <svc>` until 1.0.
 - **Browser RUM.** OpenObserve has a RUM SDK; not wired yet.
 - **OpenObserve UI SSO via Zitadel.** Currently uses root creds. Plan: `oauth2-proxy` accessory in front of Caddy → OpenObserve.
-- **Better Auth telemetry.** Stays OFF.
+- **Upstream IdP telemetry.** Zitadel ships its own traces — we ingest them via the same OTLP collector but treat them as a separate service in OpenObserve (filter by `service.name = zitadel`).
