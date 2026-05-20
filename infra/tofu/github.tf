@@ -21,8 +21,13 @@
 # (e.g. for a fork pointing at a different deployment).
 locals {
   github_variables = {
-    BWS_PROJECT_ID       = var.bws_project_id
-    MENU_PUBLIC_HOSTNAME = var.menu_public_hostname
+    BWS_PROJECT_ID        = var.bws_project_id
+    MENU_PUBLIC_HOSTNAME  = var.menu_public_hostname
+    # Bootstrap input for `bin/with-secrets` (it reads CLOUDFLARE_ACCOUNT_ID
+    # from env, not from BWS — it's the pointer that selects which CF
+    # account owns the rest of the secrets). Local dev gets it from
+    # `infra/.env`; CI gets it from this GHA variable.
+    CLOUDFLARE_ACCOUNT_ID = var.account_id
   }
 
   # Sensitive secrets. Sourced from BWS-fed Tofu vars at apply time;
