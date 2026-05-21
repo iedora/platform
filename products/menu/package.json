@@ -14,9 +14,11 @@
     "db:studio": "bun --bun drizzle-kit studio",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:e2e": "playwright test",
-    "test:e2e:ui": "playwright test --ui",
-    "test:e2e:debug": "PWDEBUG=1 playwright test"
+    "test:e2e": "bun --env-file=.env.test playwright test",
+    "test:e2e:ui": "bun --env-file=.env.test playwright test --ui",
+    "test:e2e:debug": "PWDEBUG=1 bun --env-file=.env.test playwright test",
+    "build:test": "bun --env-file=.env.test next build",
+    "db:migrate:test": "bun --env-file=.env.test --bun drizzle-kit migrate"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1049.0",
