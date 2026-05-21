@@ -14,10 +14,12 @@
 # from CI, no Tailscale.
 #
 # E2E (Playwright) runs against a production build of menu + a Bun-based
-# Zitadel mock (`tests/e2e/_bootstrap.ts`) + a Postgres service + LocalStack
-# for S3. Specs are organized per slice (`src/features/<slice>/e2e/`) plus
-# cross-slice journeys (`tests/e2e/journeys/`) — see menu CLAUDE.md rule 15.
-# Shard matrix is wired but set to 1 today; bump when spec volume justifies.
+# Zitadel mock (`tests/e2e/_bootstrap.ts`) + a Postgres service + adobe/s3mock
+# for S3 (LocalStack-latest now requires a licence — adobe/s3mock is the
+# open-source replacement). Specs are organised per slice
+# (`src/features/<slice>/e2e/`) plus cross-slice journeys
+# (`tests/e2e/journeys/`) — see menu CLAUDE.md rule 15. Shard matrix is
+# wired but set to 1 today; bump when spec volume justifies.
 #
 # Self-contained on purpose: one file is the entire menu CI surface.
 
@@ -171,18 +173,17 @@ jobs:
           --health-interval 5s
           --health-timeout 3s
           --health-retries 10
-      localstack:
-        image: localstack/localstack:latest
+      # adobe/s3mock — open-source S3 mock, ~50MB, auto-creates buckets via
+      # `initialBuckets`. Replaces LocalStack because `localstack/localstack:
+      # latest` started requiring LOCALSTACK_AUTH_TOKEN for any startup (their
+      # Pro shift in 2024-2026). S3Mock covers the slice of S3 we exercise
+      # (PutObject / HeadObject / DeleteObject / presigned URLs).
+      s3mock:
+        image: adobe/s3mock:latest
         env:
-          SERVICES: s3
-          DEFAULT_REGION: us-east-1
+          initialBuckets: menu-test
         ports:
-          - 4566:4566
-        options: >-
-          --health-cmd "curl -fsS http://localhost:4566/_localstack/health || exit 1"
-          --health-interval 5s
-          --health-timeout 3s
-          --health-retries 10
+          - 9090:9090
     defaults:
       run:
         working-directory: products/menu
@@ -190,11 +191,15 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
       - uses: ./.github/actions/setup
 
-      - name: Create LocalStack bucket
+      - name: Wait for S3Mock
         run: |
-          curl -fsSL -X PUT \
-            -H 'Authorization: AWS4-HMAC-SHA256 Credential=test/20260101/us-east-1/s3/aws4_request' \
-            http://localhost:4566/menu-test || true
+          for i in $(seq 1 30); do
+            if curl -fsS http://localhost:9090/ >/dev/null 2>&1; then
+              echo "S3Mock ready"; exit 0
+            fi
+            sleep 1
+          done
+          echo "S3Mock did not become ready in 30s" >&2; exit 1
 
       - name: Apply DB migrations
         env:
@@ -214,7 +219,7 @@ jobs:
           ZITADEL_OAUTH_CLIENT_SECRET: menu-secret
           ZITADEL_MANAGEMENT_TOKEN: test-pat
           ZITADEL_ACTION_SIGNING_KEY: test-signing-key
-          S3_ENDPOINT: http://localhost:4566
+          S3_ENDPOINT: http://localhost:9090
           S3_REGION: us-east-1
           S3_ACCESS_KEY: test
           S3_SECRET_KEY: test
