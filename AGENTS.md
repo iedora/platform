@@ -50,9 +50,8 @@ Reference: `products/menu/src/features/auth/`.
 5. **`index.ts`** — `React.cache()`-memoized page loaders; re-export public types. Don't export the adapter.
 6. **`actions.ts`** with `'use server'` for mutations: auth guard → `runUseCase(productionAdapter, input)` → `revalidateRestaurant(slug)`. Server actions never live in `index.ts` — Next's directive doesn't traverse barrels.
 7. Co-located **`<slice>.test.ts`** — `makeTestDb()` from `@/shared/testing/pglite`, real Drizzle queries, fakes only at the port boundary.
-8. **`testing/`** — slice's public test surface (server-only): `profile.ts` (permission profile derived from `scopes.ts`), `seeds.ts` (domain seeds against the real DB), `routes.ts` (URL constants), barrel `index.ts`. Importable only from sibling `e2e/` and the cross-slice `tests/e2e/journeys/`.
-9. **`e2e/<capability>.spec.ts`** — Playwright specs scoped to this slice. Consume the slice's own `testing/`; cross-slice imports use the other slice's `testing/` (sanctioned subpath).
-10. Short **`README.md`** at the slice root.
+8. **`testing/`** + **`e2e/`** — slice's public test surface + Playwright specs (menu only today; convention is portable). See [products/menu/CLAUDE.md](products/menu/CLAUDE.md) rule 15 for the contract and [docs/testing.md](docs/testing.md) for the spec template.
+9. Short **`README.md`** at the slice root.
 
 For asset targets, languages, plans, templates: use the matching skill (`add-asset-target`, `add-language`, `add-template`).
 

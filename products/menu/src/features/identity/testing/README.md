@@ -1,22 +1,20 @@
 # identity/testing — slice E2E surface
 
-Surfaces the Zitadel-side fixtures: org allocation and user→org binding.
-The shim (`tests/e2e/_bootstrap.ts`) holds the registry in memory; this
-slice owns the API to mutate it.
+Zitadel-side fixtures: org allocation + user→org binding against the
+shim (`tests/e2e/_bootstrap.ts` holds the registry in memory).
 
-## Exports
+Exports:
 
 - `seedOrg({ id?, name? })` — allocate a fresh org id.
 - `bindUserToOrg(userId, org)` — register the mapping with the shim so
   `getEffectiveOrganizationId(userId)` resolves to `org.organizationId`.
-- `resetShim()` — clear all mappings (use sparingly; per-test cleanup is
-  usually enough via the `resetMenu` fixture).
+- `resetShim()` — clear all mappings (rarely needed; the `resetMenu`
+  auto-fixture handles per-test cleanup).
 - `orgMemberProfile` — bare authenticated profile.
 - `identityRoutes` — `/onboarding`, `/onboarding/add-restaurant`.
 
-## Multi-tenant pattern
-
-For specs that need two separate tenants:
+Canonical multi-tenant setup (used by
+`tests/e2e/journeys/tenant-isolation.spec.ts`):
 
 ```ts
 const orgA = seedOrg({ id: 'orgA', name: 'A' })
