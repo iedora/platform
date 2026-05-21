@@ -40,7 +40,11 @@ test.describe('@smoke qr-codes admin', () => {
     await page.goto(qrCodesRoutes.admin)
     await page.locator('#qr-code').fill('sticker_sushi_10')
     await page.locator('#qr-label').fill('Sushi Table 10')
-    await page.locator('#qr-restaurant').selectOption({ value: sushi.restaurantId })
+    // #qr-restaurant is a Combobox button (Manual § VI.4) — open the
+    // popover, then click the option. Options are id'd by their value
+    // (see packages/design-system/src/components/combobox.tsx).
+    await page.locator('#qr-restaurant').click()
+    await page.locator(`#ds-combobox-opt-${sushi.restaurantId}`).click()
     await page.locator('button:has-text("Create QR Code")').click()
 
     const row = page.locator('tr:has-text("sticker_sushi_10")')
