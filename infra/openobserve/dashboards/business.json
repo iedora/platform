@@ -177,7 +177,7 @@
         },
         {
           "id": "p_views_30d",
-          "type": "line",
+          "type": "bar",
           "title": "Views per day (30d)",
           "description": "Daily public-menu views across the whole estate. Trend > absolute number.",
           "queryType": "sql",
