@@ -13,9 +13,11 @@
 # CI's job is reduced to: build + push + dispatch the infra deploy. No SSH
 # from CI, no Tailscale.
 #
-# E2E (Playwright) is intentionally omitted: the auth-coupled specs were
-# never rewritten after the Zitadel cutover (issue #20) and now need a
-# Zitadel stub at test boot. Will be rebuilt once the testkit shim lands.
+# E2E (Playwright) runs against a production build of menu + a Bun-based
+# Zitadel mock (`tests/e2e/_bootstrap.ts`) + a Postgres service + LocalStack
+# for S3. Specs are organized per slice (`src/features/<slice>/e2e/`) plus
+# cross-slice journeys (`tests/e2e/journeys/`) — see menu CLAUDE.md rule 15.
+# Shard matrix is wired but set to 1 today; bump when spec volume justifies.
 #
 # Self-contained on purpose: one file is the entire menu CI surface.
 
@@ -142,9 +144,105 @@ jobs:
           path: menu-sbom.spdx.json
           retention-days: 90
 
+  e2e:
+    name: E2E (Playwright)
+    needs: [typecheck, lint, unit]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    # Matrix is parked at a single shard today. When the suite grows past
+    # ~10 minutes locally, bump to `[1/2, 2/2]` (or 4) and Playwright will
+    # split specs across runners. The infra (per-worker DB fork) is already
+    # in place — see src/shared/testing/e2e-db.ts and the
+    # `MENU_TEST_ISOLATE_WORKERS` env switch.
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: ['1/1']
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_PASSWORD: Password1!
+          POSTGRES_DB: menu_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+      localstack:
+        image: localstack/localstack:latest
+        env:
+          SERVICES: s3
+          DEFAULT_REGION: us-east-1
+        ports:
+          - 4566:4566
+        options: >-
+          --health-cmd "curl -fsS http://localhost:4566/_localstack/health || exit 1"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    defaults:
+      run:
+        working-directory: products/menu
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: ./.github/actions/setup
+
+      - name: Create LocalStack bucket
+        run: |
+          curl -fsSL -X PUT \
+            -H 'Authorization: AWS4-HMAC-SHA256 Credential=test/20260101/us-east-1/s3/aws4_request' \
+            http://localhost:4566/menu-test || true
+
+      - name: Apply DB migrations
+        env:
+          DATABASE_URL: postgresql://postgres:Password1!@localhost:5432/menu_test
+        run: bun run db:migrate
+
+      - name: Install Playwright browsers
+        run: bunx playwright install --with-deps chromium
+
+      - name: Build menu
+        env:
+          DATABASE_URL: postgresql://postgres:Password1!@localhost:5432/menu_test
+          MENU_PUBLIC_URL: http://localhost:3000
+          MENU_SESSION_SECRET: test-secret-do-not-use-in-prod-test-secret-do-not-use-in-prod
+          ZITADEL_ISSUER_URL: http://127.0.0.1:4444
+          ZITADEL_OAUTH_CLIENT_ID: menu
+          ZITADEL_OAUTH_CLIENT_SECRET: menu-secret
+          ZITADEL_MANAGEMENT_TOKEN: test-pat
+          ZITADEL_ACTION_SIGNING_KEY: test-signing-key
+          S3_ENDPOINT: http://localhost:4566
+          S3_REGION: us-east-1
+          S3_ACCESS_KEY: test
+          S3_SECRET_KEY: test
+          S3_BUCKET: menu-test
+          NODE_ENV: production
+        # `next build` runs under Node (it's a Node-shebanged binary) even
+        # when invoked via `bun run`. The unstable combo flagged by
+        # oven-sh/bun#23944 is `bun build` (the Bun bundler) on next,
+        # not script-running through bun — so this is safe.
+        run: bun run build
+
+      - name: Run Playwright
+        env:
+          CI: 'true'
+          DATABASE_URL: postgresql://postgres:Password1!@localhost:5432/menu_test
+        run: bun run test:e2e -- --grep-invert "@flaky" --shard=${{ matrix.shard }}
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: playwright-report-${{ strategy.job-index }}
+          path: products/menu/playwright-report
+          retention-days: 14
+
   build:
     name: Build + push image
-    needs: [typecheck, lint, unit, security]
+    needs: [typecheck, lint, unit, security, e2e]
     # Only on push to main — PRs run the gates only. workflow_dispatch on main
     # still triggers a build for the "re-roll latest" flow.
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'

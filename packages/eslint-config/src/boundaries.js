@@ -5,7 +5,13 @@ import boundariesPlugin from 'eslint-plugin-boundaries'
  * convention (AGENTS.md slice rule): files inside a slice import via
  * relative paths; cross-slice imports go through the target slice's
  * `index.ts` barrel or one of the sanctioned subpath entries:
- *   actions  client  server  ui/**  rsc/**
+ *   actions  client  server  ui/**  rsc/**  testing  testing/**
+ *
+ * `testing/**` is the slice's public test surface (profile, seeds,
+ * routes). It is allowed across slices so journeys and other slices'
+ * specs can compose them — BUT production code must not pull it in.
+ * That extra guard lives in each product's local config via
+ * `no-restricted-imports` (see products/menu/eslint.config.mjs).
  *
  * The caller passes the workspace-specific `elements` array (so each
  * product can add infra elements like `next-infra` / `instrumentation`
@@ -38,7 +44,7 @@ export function boundaries({ elements }) {
                   },
                 },
                 message:
-                  "Cross-slice imports must use the target slice's barrel (index.ts) or a sanctioned entry (actions, client, server, ui/**, rsc/**). Hit: ${dependency.source}",
+                  "Cross-slice imports must use the target slice's barrel (index.ts) or a sanctioned entry (actions, client, server, ui/**, rsc/**, testing/**). Hit: ${dependency.source}",
               },
               {
                 from: { type: 'slice' },
@@ -55,6 +61,8 @@ export function boundaries({ elements }) {
                       '@/features/*/server',
                       '@/features/*/ui/**',
                       '@/features/*/rsc/**',
+                      '@/features/*/testing',
+                      '@/features/*/testing/**',
                     ],
                   },
                 },

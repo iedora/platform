@@ -4,7 +4,7 @@ Menu-specific hard rules, file layout, and commands. Root `AGENTS.md` covers cro
 
 Menu is a SaaS multi-tenant restaurant menu builder (menu.iedora.com). Each tenant is an organization that owns one or more `restaurant` rows. Admins build menus via drag-and-drop; the public menu renders from the same data.
 
-> **Identity.** Zitadel (`auth.iedora.com`) is the iedora IdP. Menu is a thin OIDC client — `openid-client` v6 drives the auth-code/PKCE dance, `jose` seals the session into a single encrypted cookie. There is no local user/session table. `src/features/auth/` owns the cookie + the DAL guards; `src/features/identity/` calls Zitadel's management API (memberships, org provisioning) via a TF-minted IAM_OWNER PAT.
+> **Identity.** Zitadel (`auth.iedora.com`) is the iedora IdP. Menu is a thin OIDC client — `openid-client` v6 drives the auth-code/PKCE dance, `jose` seals an opaque pointer into the `menu_session_v2` cookie. The cookie carries only `{sid, sub, exp}`; the authoritative state is a server-side `menu.session` row owned by `src/features/sessions/` — roles, permissions, `permissionsVersion`, revocation. `src/features/auth/` owns the cookie + the DAL guards; `src/features/identity/` calls Zitadel's management API (memberships, org provisioning) via a TF-minted IAM_OWNER PAT. Zitadel Actions v2 webhooks rewrite the session row's permissions live on grant change — see `src/features/auth/README.md` for the revocation model.
 
 ## Hard rules
 
@@ -36,7 +36,13 @@ Paths starting with `src/...` are menu-relative.
 
 13. **View tracking is beacon-based.** `/api/track/[slug]` is a pixel-beacon route outside the cached snapshot — runs every public visit even when the page is served from cache. Dedup is `(visitor_cookie, restaurant_id, hour_bucket)` via `view_seen.onConflictDoNothing`; only new rows trigger `incrementDailyView`. Bot UAs filtered at the route. Never put the view increment back inline in the page. `incrementDailyView` is the single chokepoint that emits BOTH the `daily_view` row AND the `iedora.restaurant_views_total` OTel counter (counter fires BEFORE the DB upsert so a DB outage doesn't lose the metric).
 
-14. **Slices are vertical and own everything for one capability.** Files inside a slice import via relative paths; cross-slice imports go through the sibling's `index.ts` (enforced by `eslint-plugin-boundaries`). Five sanctioned exceptions for cross-slice subpath imports: `actions` (`'use server'` doesn't traverse barrels), `client` (browser-only API), `server` (server-only entry), `ui/**` (kept off the barrel), `rsc/**` (server-only render layer). Everything else is slice-private. `src/shared/` is for primitives with no domain knowledge. `src/app/` is delivery — routes compose slice exports. Use-cases take their port as the first argument so tests wire fakes against a real PGLite database.
+14. **Slices are vertical and own everything for one capability.** Files inside a slice import via relative paths; cross-slice imports go through the sibling's `index.ts` (enforced by `eslint-plugin-boundaries`). **Six** sanctioned exceptions for cross-slice subpath imports: `actions` (`'use server'` doesn't traverse barrels), `client` (browser-only API), `server` (server-only entry), `ui/**` (kept off the barrel), `rsc/**` (server-only render layer), **`testing` / `testing/**`** (slice's public test surface — see rule 15). Everything else is slice-private. `src/shared/` is for primitives with no domain knowledge. `src/app/` is delivery — routes compose slice exports. Use-cases take their port as the first argument so tests wire fakes against a real PGLite database.
+
+15. **Tests co-locate with the slice they exercise.** Every slice owns two test surfaces, sat as siblings to `adapters/use-cases/ui/`:
+    - **`testing/`** — slice's public test surface (`'server-only'`): `profile.ts` (permission profile derived from `./scopes` — never hardcoded), `seeds.ts` (idempotent domain seeders against the real DB, return generated IDs), `routes.ts` (URL constants the slice owns), `index.ts` barrel. Importable only from sibling `e2e/` and the cross-slice `tests/e2e/journeys/`. Production code (adapters / use-cases / ui / actions / rsc) MUST NOT import `testing/*`.
+    - **`e2e/<capability>.spec.ts`** — Playwright specs scoped to this slice. Consume the slice's own `testing/`; when a spec needs another slice's surface it imports `@/features/<other>/testing` (sanctioned subpath, rule 14). Tag titles with `@smoke` / `@critical` for selective execution.
+    - **`tests/e2e/journeys/<flow>.spec.ts`** is the ONLY home for cross-slice user journeys. Journeys compose multiple slices' `testing/` surfaces. Slice-local cross-cutting belongs in `e2e/` of the dominant slice, not in journeys.
+    - **`tests/e2e/helpers/`** is **zero-domain**: connection lifecycle, LocalStack helpers, beacon helpers. Nothing in there knows table names or routes. Anything with domain knowledge moves to the owning slice's `testing/`.
 
 ## File layout
 
@@ -64,7 +70,8 @@ products/menu/
       up/                              health-check route
       showcase/                        public marketing surface
       page.tsx, layout.tsx, globals.css
-    features/
+    features/                        every slice: {adapters,use-cases,ui,actions.ts,ports.ts,index.ts,
+                                                    <slice>.test.ts, testing/, e2e/, README.md}
       auth/                          OIDC client + session cookie + DAL guards (Zitadel native)
       billing/                       invoice ledger
       dashboard-home/                restaurants-with-counts aggregate
@@ -74,8 +81,10 @@ products/menu/
       menu-publishing/               public menu cache + renderer + template registry
       metrics/                       daily-view + analytics range helpers
       plans/                         plan registry (free, casa)
+      qr-codes/                      physical-sticker registry (cross-tenant, iedora-admin only)
       rate-limit/                    Postgres-backed sliding-window limiter
       restaurant-identity/           restaurant CRUD + theme/identity
+      sessions/                      menu.session store (authoritative roles/permissions)
       upload/                        S3-compatible uploads + presign/commit/clear (LocalStack in CI)
     shared/
       db/{client.ts,schema.ts}       drizzle client + canonical schema
@@ -95,9 +104,14 @@ products/menu/
   package.json                       workspace deps to @iedora/design-system, identity, observability
   scripts/check-migrations.ts        dev-time guardrail
   tests/e2e/
+    _bootstrap.ts                    Zitadel mock (OIDC discovery + mgmt API subset)
     fixtures.ts                      auto-fixture: fails fast on RSC errors / 5xx responses
-    specs/                           organized by module
-    helpers/                         shared signup/org/db utilities
+    global-setup.ts                  builds menu_test_template DB (migrations applied)
+    global-teardown.ts               drops per-worker DBs
+    helpers/                         zero-domain: db.ts (connection + worker fork + truncate),
+                                     storage.ts (LocalStack PUT/HEAD), beacon.ts (/api/track)
+    journeys/                        cross-slice user journeys (tenant-isolation, onboarding,
+                                     menu-build-and-publish, qr-to-public-view, plan-upgrade, …)
 ```
 
 Dev: `just dev` boots a docker_container.menu (build local from this Dockerfile) on the iedora network — same image shape as prod. For HMR, `just dev --except menu && cd products/menu && bun run dev` (reads `.env` + `.env.local`).

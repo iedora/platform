@@ -19,7 +19,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - **Menu** (menu.iedora.com — `products/menu/`) — SaaS multi-tenant restaurant menu builder. Each tenant is an organization that owns one or more `restaurant` rows. Admins build menus via drag-and-drop; the public menu renders from the same data.
 - **House** (iedora.com — `products/house/`) — umbrella brand landing page. Astro static output, deployed to Cloudflare Workers Static Assets. No DB, no auth.
 
-**Identity is Zitadel.** Self-hosted at `auth.iedora.com` (single VPS, Tofu-managed). Menu is a thin OIDC client — no local user/session tables. The session is a single JWE cookie minted by `openid-client` + `jose` after the auth-code/PKCE dance. The identity slice calls Zitadel's management API for memberships + org provisioning via a TF-minted IAM_OWNER PAT. See `products/menu/src/features/auth/` and `products/menu/src/features/identity/`.
+**Identity is Zitadel.** Self-hosted at `auth.iedora.com` (single VPS, Tofu-managed). Menu is a thin OIDC client. The `menu_session_v2` cookie is a JWE carrying only `{sid, sub, exp}`; the authoritative state is a server-side `menu.session` row (roles, permissions, permissionsVersion) so Zitadel Actions v2 webhooks can rewrite scopes live without waiting for cookie TTL. See `products/menu/src/features/auth/README.md` for the revocation model. The identity slice calls Zitadel's management API for memberships + org provisioning via a TF-minted IAM_OWNER PAT. See `products/menu/src/features/auth/` and `products/menu/src/features/identity/`.
 
 ## Stack
 
@@ -36,7 +36,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 Each product's CLAUDE.md is auto-loaded under its subtree.
 
-- **[products/menu/CLAUDE.md](products/menu/CLAUDE.md)** — 14 rules: tenant scoping, schema source-of-truth, auth in DAL (not layouts), `proxy.ts` (not middleware), money in cents, dnd-kit position columns, registry pattern for templates/languages/plans, public-menu cache by tag, beacon view tracking, vertical slice boundaries.
+- **[products/menu/CLAUDE.md](products/menu/CLAUDE.md)** — 15 rules: tenant scoping, schema source-of-truth, auth in DAL (not layouts), `proxy.ts` (not middleware), money in cents, dnd-kit position columns, registry pattern for templates/languages/plans, public-menu cache by tag, beacon view tracking, vertical slice boundaries, **co-located E2E + testing surface per slice**.
 - **[products/house/CLAUDE.md](products/house/CLAUDE.md)** — none.
 
 ## Adding a feature (the slice pattern)
@@ -50,7 +50,9 @@ Reference: `products/menu/src/features/auth/`.
 5. **`index.ts`** — `React.cache()`-memoized page loaders; re-export public types. Don't export the adapter.
 6. **`actions.ts`** with `'use server'` for mutations: auth guard → `runUseCase(productionAdapter, input)` → `revalidateRestaurant(slug)`. Server actions never live in `index.ts` — Next's directive doesn't traverse barrels.
 7. Co-located **`<slice>.test.ts`** — `makeTestDb()` from `@/shared/testing/pglite`, real Drizzle queries, fakes only at the port boundary.
-8. Short **`README.md`** at the slice root.
+8. **`testing/`** — slice's public test surface (server-only): `profile.ts` (permission profile derived from `scopes.ts`), `seeds.ts` (domain seeds against the real DB), `routes.ts` (URL constants), barrel `index.ts`. Importable only from sibling `e2e/` and the cross-slice `tests/e2e/journeys/`.
+9. **`e2e/<capability>.spec.ts`** — Playwright specs scoped to this slice. Consume the slice's own `testing/`; cross-slice imports use the other slice's `testing/` (sanctioned subpath).
+10. Short **`README.md`** at the slice root.
 
 For asset targets, languages, plans, templates: use the matching skill (`add-asset-target`, `add-language`, `add-template`).
 

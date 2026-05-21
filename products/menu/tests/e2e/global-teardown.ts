@@ -1,6 +1,5 @@
-import { closeTestDb } from './helpers/db'
+import { closeTestDb } from '@/shared/testing/e2e-db'
 
 export default async function globalTeardown() {
-  console.log('[e2e global-teardown] Tearing down resources...')
   await closeTestDb()
 }

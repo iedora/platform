@@ -5,7 +5,8 @@ How we test slices (Vitest + PGLite) and full user journeys (Playwright).
 ## The pyramid
 
 - **Unit (Vitest + PGLite, co-located).** Per use-case; runs in Node; hits a real Postgres-compatible database. ~100 ms per test once WASM is warm. Lives next to the code: `src/features/<slice>/<slice>.test.ts`.
-- **End-to-end (Playwright).** Browser-driven journeys through the real Next.js menu server. Specs in `products/menu/tests/e2e/specs/<module>/`.
+- **Slice E2E (Playwright, co-located).** Browser-driven specs scoped to one capability of one slice. Lives at `src/features/<slice>/e2e/<capability>.spec.ts`.
+- **Cross-slice journeys (Playwright).** User flows that span multiple slices. Lives at `products/menu/tests/e2e/journeys/<flow>.spec.ts`.
 
 No "mock all the things and assert call shapes" tier in between. PGLite tests already exercise real Drizzle queries against real Postgres semantics — the layer that would live there would just duplicate them with worse ergonomics.
 
@@ -14,7 +15,8 @@ No "mock all the things and assert call shapes" tier in between. PGLite tests al
 | Location | Runner | Tier | Notes |
 |---|---|---|---|
 | `products/menu/src/**/*.test.ts` | Vitest | unit | PGLite via `src/shared/testing/pglite.ts`; some tests boot real Redis via testcontainers (rate-limit) |
-| `products/menu/tests/e2e/specs/` | Playwright | e2e | Postgres 18 + LocalStack as service containers |
+| `products/menu/src/features/*/e2e/` | Playwright | slice e2e | Postgres 18 + LocalStack as service containers; one slice per folder |
+| `products/menu/tests/e2e/journeys/` | Playwright | cross-slice journeys | Same runtime — only files that span ≥2 slices live here |
 | `packages/iedora-identity/src/__tests__/*.test.ts` | Vitest | unit | No DB. Pure crypto + parsing |
 | `packages/iedora-observability/src/__tests__/*.test.ts` | Vitest | unit | No-op-in-tests contract, tenant attribute pins |
 | `packages/design-system/src/test/` | Vitest + jsdom | unit | Component primitives via Testing Library |
@@ -92,28 +94,113 @@ await expect(requireRestaurantAccess(gw, 'r1')).resolves.toMatchObject({
 })
 ```
 
-## E2E patterns
+## E2E architecture — vertical slice, strict
 
-Specs under `products/menu/tests/e2e/specs/<module>/<name>.spec.ts` — current modules: `auth`, `dashboard`, `landing`, `menu-builder`, `onboarding`, `public-menu`, `settings`, `tenancy`. Roughly 50 specs.
+Two homes for specs, and only two:
 
-**`tests/e2e/fixtures.ts` is mandatory.** Import `{ test, expect }` from that file, not `@playwright/test`. The fixture listens for uncaught client errors or 5xx responses and fails immediately with the real error — without it, a server crash shows up ~10s later as a "locator not found" timeout.
+```
+products/menu/
+  src/features/<slice>/
+    e2e/                          slice-local specs (one capability per file)
+    testing/                      slice's public test surface (server-only)
+      profile.ts                  permission profile derived from ../scopes
+      seeds.ts                    domain seeds returning generated IDs
+      routes.ts                   URL constants this slice owns
+      index.ts                    barrel
+      README.md
+  tests/e2e/
+    _bootstrap.ts                 Zitadel mock (OIDC discovery + mgmt subset)
+    fixtures.ts                   pageErrors + resetMenu + signedInPage + signIn
+    global-setup.ts               truncate the test DB
+    global-teardown.ts            close DB pool
+    helpers/server-only-stub.ts   tsconfig path target — leave alone
+    journeys/                     cross-slice user journeys
+```
 
-`tests/e2e/helpers/` has shared signup / org / DB utilities.
+`tests/e2e/helpers/` is **zero-domain** (just the `server-only` stub today; future LocalStack/beacon helpers live under `src/shared/testing/`).
+
+### The `testing/` contract (rule 15)
+
+Every slice exposes:
+
+```ts
+// profile.ts — declare intent, never hard-code scope strings
+export const fooProfile: PermissionProfile = {
+  roles: [IEDORA_ADMIN_ROLE],
+  permissions: ALL_SCOPES,        // derived from ../scopes.ts
+}
+// seeds.ts — idempotent, return the generated IDs
+export async function seedFoo(input: FooInput): Promise<SeededFoo> { ... }
+// routes.ts — single source of truth for this slice's URLs
+export const fooRoutes = { home: '/dashboard/foo' } as const
+// index.ts
+import 'server-only'
+export * from './profile'; export * from './seeds'; export * from './routes'
+```
+
+Only `*/e2e/*.spec.ts` and `tests/e2e/journeys/*.spec.ts` may import `testing/`. The ESLint config (`no-restricted-imports`) blocks production paths.
+
+### Slice spec template
+
+```ts
+// src/features/menu-builder/e2e/reorder.spec.ts
+import { test, expect } from '../../../../tests/e2e/fixtures'
+import { menuBuilderProfile, menuBuilderRoutes, seedMenu, seedCategory } from '../testing'
+import { seedOrg, bindUserToOrg } from '@/features/identity/testing'
+import { seedRestaurant } from '@/features/restaurant-identity/testing'
+
+test.describe('@smoke menu-builder reorder', () => {
+  test('drag a category up renumbers positions', async ({ signIn }) => {
+    const org = seedOrg({ id: 'org-reorder' })
+    const { page, user } = await signIn({
+      email: 'b@iedora.test', name: 'B',
+      profile: menuBuilderProfile, organizationId: org.organizationId,
+    })
+    await bindUserToOrg(user.userId, org)
+    const r = await seedRestaurant({ organizationId: org.organizationId, name: 'X', slug: 'x' })
+    const m = await seedMenu(r.restaurantId)
+    await seedCategory(m.menuId, r.restaurantId, { name: 'A', position: 0 })
+    await seedCategory(m.menuId, r.restaurantId, { name: 'B', position: 1 })
+
+    await page.goto(menuBuilderRoutes.builder(r.slug, m.menuId))
+    // ... drag/drop assertions ...
+  })
+})
+```
+
+### Multi-tenant pattern
+
+Use `bindUserToOrg(userId, org)` from `@/features/identity/testing` to register the mapping with the Zitadel mock. Two users + two orgs is the canonical tenant-isolation setup — see `tests/e2e/journeys/tenant-isolation.spec.ts`.
+
+### Tags
+
+Convention in `test.describe` titles:
+
+| Tag | Meaning | When CI runs it |
+|---|---|---|
+| `@critical` | tenancy, auth, billing | always |
+| `@smoke` | happy path for a slice | always |
+| `@journey` | cross-slice flow | always |
+| `@flaky` | quarantined | excluded from PR runs |
+| `@slow` | >10s typical | nightly only |
+
+Select with `bun run test:e2e -- --grep "@critical"` or `--grep-invert "@flaky"`.
 
 ### Running
 
 ```bash
 cd products/menu
-bun run test:e2e          # builds + starts production server, then runs
-bun run test:e2e:ui       # Playwright UI mode
-bun run test:e2e:debug    # PWDEBUG=1
+bun run test:e2e            # builds + starts production server, then runs
+bun run test:e2e:ui         # Playwright UI mode
+bun run test:e2e:debug      # PWDEBUG=1
 ```
 
-`playwright.config.ts` skips its own build when `CI=true`, so CI controls the build separately (Node, not Bun — Bun + `next build` is unstable).
+`playwright.config.ts` skips its own build when `CI=true`. `testMatch` is two globs:
+`src/features/*/e2e/**/*.spec.ts` + `tests/e2e/journeys/**/*.spec.ts`.
 
-### Database
+### Database isolation
 
-`tests/e2e/global-setup.ts` resets the test DB before each run. `DATABASE_URL` points at `menu_test`; CI creates the DB explicitly.
+`tests/e2e/global-setup.ts` truncates the schema. Today the suite runs `workers: 1` against a single `menu_test` DB. The per-worker fork infrastructure is wired (`src/shared/testing/e2e-db.ts::workerDatabaseUrl`) and engaged by `MENU_TEST_ISOLATE_WORKERS=1` once spec volume justifies sharding.
 
 ## CI integration
 
@@ -134,7 +221,7 @@ One workflow per workspace. Each `paths:`-filtered.
 - **Typecheck** — `bun run typecheck`. ~2 min.
 - **Lint** — `bun run lint`. ~2 min.
 - **Unit (Vitest)** — `bun run test`. Docker available so testcontainers can boot Redis. ~3 min.
-- **E2E (Playwright)** — `needs: [typecheck, lint, unit]`. Postgres 18 + LocalStack as service containers. Build under Node (`node --run build`); Playwright + everything else uses Bun. Caches `.next/cache` and `~/.cache/ms-playwright`. ~15–20 min.
+- **E2E (Playwright)** — `needs: [typecheck, lint, unit]`. Postgres 18 + LocalStack as service containers. Shard matrix is parked at `1/1` today — bump to `[1/2, 2/2]` (or 4) when the suite grows past ~10 min. The infra (per-worker DB fork) is already in place.
 
 The composite action `.github/actions/setup` installs Bun + runs `bun install --frozen-lockfile`. Every job that needs deps is one line: `uses: ./.github/actions/setup`.
 
