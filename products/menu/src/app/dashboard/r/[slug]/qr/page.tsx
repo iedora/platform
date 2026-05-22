@@ -1,14 +1,9 @@
-import Link from 'next/link'
 import { headers } from 'next/headers'
 import { getTranslations } from 'next-intl/server'
-import {
-  Breadcrumb,
-  BreadcrumbHere,
-  BreadcrumbLink,
-} from '@iedora/design-system'
 import { requireRestaurantBySlug } from '@/features/auth'
 import { listQrCodesForRestaurant } from '@/features/qr-codes'
 import { RestaurantQrShelf } from '@/features/restaurant-identity/ui/restaurant-qr-shelf'
+import { DashboardPage } from '@/shared/ui/dashboard-page'
 
 export default async function QrPage({
   params,
@@ -39,25 +34,19 @@ export default async function QrPage({
   }))
 
   return (
-    <div className="space-y-10">
-      <Breadcrumb data-test-id="qr-breadcrumbs">
-        <BreadcrumbLink asChild data-test-id="qr-breadcrumbs-back">
-          <Link href="/dashboard">{t('back')}</Link>
-        </BreadcrumbLink>
-        <BreadcrumbLink asChild data-test-id="qr-breadcrumbs-restaurant">
-          <Link href={`/dashboard/r/${slug}`}>{r.name}</Link>
-        </BreadcrumbLink>
-        <BreadcrumbHere data-test-id="qr-breadcrumbs-current">
-          {t('qrCode')}
-        </BreadcrumbHere>
-      </Breadcrumb>
-
+    <DashboardPage
+      title={t('qrCode')}
+      data-test-id="restaurant-qr"
+      crumbs={[
+        { label: r.name, href: `/dashboard/r/${slug}`, testId: 'restaurant' },
+      ]}
+    >
       <RestaurantQrShelf
         brandedUrl={brandedUrl}
         restaurantName={r.name}
         stickers={stickers}
         publicOrigin={publicOrigin}
       />
-    </div>
+    </DashboardPage>
   )
 }

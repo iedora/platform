@@ -3,6 +3,7 @@ import { getLocale, getTranslations } from 'next-intl/server'
 import { requireActiveOrganization } from '@/features/auth'
 import { getInvoiceYears, getInvoicesForYear } from '@/features/billing'
 import { PLANS, getOrganizationPlan } from '@/features/plans'
+import { DashboardPage } from '@/shared/ui/dashboard-page'
 import { UpgradeButton } from './upgrade-button'
 
 function formatMoney(amountCents: number, currency: string, locale: string) {
@@ -36,7 +37,6 @@ export default async function BillingPage({
   const { organizationId } = await requireActiveOrganization()
   const sp = await searchParams
   const t = await getTranslations('Billing')
-  const tR = await getTranslations('Restaurant')
   const locale = await getLocale()
 
   const [current, years] = await Promise.all([
@@ -57,16 +57,8 @@ export default async function BillingPage({
   const invoices = await getInvoicesForYear(organizationId, selectedYear)
 
   return (
-    <div className="space-y-8">
-      <h1 className="flex flex-wrap items-baseline gap-2 text-sm font-normal text-muted-foreground">
-        <Link href="/dashboard" className="hover:underline">
-          {tR('back')}
-        </Link>
-        <span aria-hidden="true">/</span>
-        <span className="font-semibold">{t('title')}</span>
-      </h1>
-
-      <section className="space-y-3" data-testid="plan-section">
+    <DashboardPage title={t('title')} data-test-id="billing">
+      <section className="space-y-3" data-test-id="billing-plan-section">
         <div>
           <h2 className="text-base font-medium">{t('currentPlanTitle')}</h2>
           <p className="text-sm text-muted-foreground">{t('currentPlanSubtitle')}</p>
@@ -86,7 +78,7 @@ export default async function BillingPage({
             return (
               <div
                 key={plan.code}
-                data-testid={`plan-card-${plan.code}`}
+                data-test-id={`billing-plan-card-${plan.code}`}
                 className={
                   'flex flex-col gap-4 border p-5 ' +
                   (isCurrent
@@ -125,7 +117,7 @@ export default async function BillingPage({
         </div>
       </section>
 
-      <section className="space-y-3" data-testid="invoices-section">
+      <section className="space-y-3" data-test-id="billing-invoices-section">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <h2 className="text-base font-medium">{t('invoicesTitle')}</h2>
@@ -142,7 +134,7 @@ export default async function BillingPage({
                   href={`/dashboard/billing?year=${year}`}
                   role="tab"
                   aria-selected={isSelected}
-                  data-testid={`year-${year}`}
+                  data-test-id={`billing-year-${year}`}
                   className={
                     'border px-2.5 py-1 text-[12.5px] no-underline transition-colors ' +
                     (isSelected
@@ -159,7 +151,7 @@ export default async function BillingPage({
 
         {invoices.length === 0 ? (
           <div
-            data-testid="invoices-empty"
+            data-test-id="billing-invoices-empty"
             className="border border-dashed border-border px-5 py-8 text-center text-sm text-muted-foreground"
           >
             {t('invoicesEmpty', { year: selectedYear })}
@@ -168,7 +160,7 @@ export default async function BillingPage({
           <div className="overflow-x-auto">
             <table
               className="w-full border-collapse text-sm"
-              data-testid="invoices-table"
+              data-test-id="billing-invoices-table"
             >
               <thead>
                 <tr className="border-b border-border text-left text-[12px] uppercase tracking-wide text-muted-foreground">
@@ -183,7 +175,7 @@ export default async function BillingPage({
                 {invoices.map((inv) => (
                   <tr
                     key={inv.id}
-                    data-testid="invoice-row"
+                    data-test-id={`billing-invoice-row-${inv.id}`}
                     className="border-b border-border last:border-b-0"
                   >
                     <td className="py-3 pr-4">
@@ -218,6 +210,6 @@ export default async function BillingPage({
           </div>
         )}
       </section>
-    </div>
+    </DashboardPage>
   )
 }

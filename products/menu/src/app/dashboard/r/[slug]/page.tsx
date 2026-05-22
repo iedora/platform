@@ -1,8 +1,8 @@
-import Link from 'next/link'
 import { getLocale, getTranslations } from 'next-intl/server'
 import { requireRestaurantBySlug } from '@/features/auth'
 import { loadRestaurantAdminMenus } from '@/features/menu-publishing'
 import { Button, Card, CardDesc, CardTitle } from '@iedora/design-system'
+import { DashboardPage } from '@/shared/ui/dashboard-page'
 import {
   EditorialList,
   formatEditedAt,
@@ -48,34 +48,32 @@ export default async function RestaurantPage({
     ),
   }))
 
-  return (
-    <div className="space-y-8">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="flex items-baseline gap-2 text-sm font-normal text-muted-foreground">
-          <Link href="/dashboard" className="hover:underline">
-            {t('back')}
-          </Link>
-          <span aria-hidden="true">/</span>
-          <span className="font-semibold">{r.name}</span>
-        </h1>
-        <div className="flex flex-wrap items-center gap-2">
-          <Button as="a" href={`/dashboard/r/${slug}/theme`}>
-            {t('settings')}
-          </Button>
-          <Button as="a" href={`/dashboard/r/${slug}/qr`}>
-            {t('qrCode')}
-          </Button>
-          <Button
-            as="a"
-            href={`/r/${r.slug}`}
-            target="_blank"
-            rel="noreferrer"
-          >
-            {t('viewPublicMenu')}
-          </Button>
-        </div>
-      </div>
+  const actions = (
+    <>
+      <Button as="a" href={`/dashboard/r/${slug}/theme`} data-test-id="restaurant-action-settings">
+        {t('settings')}
+      </Button>
+      <Button as="a" href={`/dashboard/r/${slug}/qr`} data-test-id="restaurant-action-qr">
+        {t('qrCode')}
+      </Button>
+      <Button
+        as="a"
+        href={`/r/${r.slug}`}
+        target="_blank"
+        rel="noreferrer"
+        data-test-id="restaurant-action-view"
+      >
+        {t('viewPublicMenu')}
+      </Button>
+    </>
+  )
 
+  return (
+    <DashboardPage
+      title={r.name}
+      data-test-id="restaurant"
+      actions={actions}
+    >
       <EditorialList
         testId="menu-list"
         header={
@@ -95,7 +93,6 @@ export default async function RestaurantPage({
           </Card>
         }
       />
-
-    </div>
+    </DashboardPage>
   )
 }

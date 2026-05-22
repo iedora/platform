@@ -1,4 +1,3 @@
-import Link from 'next/link'
 import { eq } from 'drizzle-orm'
 import { getTranslations } from 'next-intl/server'
 import { requireRestaurantBySlug } from '@/features/auth'
@@ -9,6 +8,7 @@ import type { LanguageCode, LocalizedText } from '@/features/i18n'
 import { loadMenuTree, localizeTree } from '@/features/menu-publishing'
 import type { PublicMenu, PublicMenuData } from '@/features/menu-publishing/rsc/types'
 import { ThemeEditor } from '@/features/restaurant-identity/ui/theme-editor'
+import { DashboardPage } from '@/shared/ui/dashboard-page'
 
 type EditorData = PublicMenuData & {
   rawTheme: RestaurantTheme | null
@@ -74,22 +74,13 @@ export default async function ThemePage({
   const t = await getTranslations('Restaurant')
 
   return (
-    <div className="space-y-6">
-      <h1 className="flex flex-wrap items-baseline gap-2 text-sm font-normal text-muted-foreground">
-        <Link href="/dashboard" className="hover:underline">
-          {t('back')}
-        </Link>
-        <span aria-hidden="true">/</span>
-        <Link
-          href={`/dashboard/r/${slug}`}
-          className="hover:underline"
-        >
-          {r.name}
-        </Link>
-        <span aria-hidden="true">/</span>
-        <span className="font-semibold">{t('settings')}</span>
-      </h1>
-
+    <DashboardPage
+      title={t('settings')}
+      data-test-id="restaurant-theme"
+      crumbs={[
+        { label: r.name, href: `/dashboard/r/${slug}`, testId: 'restaurant' },
+      ]}
+    >
       <ThemeEditor
         slug={slug}
         restaurant={data.restaurant}
@@ -101,6 +92,6 @@ export default async function ThemePage({
           supportedLanguages: data.supportedLanguages,
         }}
       />
-    </div>
+    </DashboardPage>
   )
 }

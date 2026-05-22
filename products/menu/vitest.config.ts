@@ -3,8 +3,12 @@ import { fileURLToPath } from 'node:url'
 
 export default defineConfig({
   test: {
-    // Unit tests live next to the code they test (co-located).
-    include: ['src/features/**/*.test.ts', 'src/shared/**/*.test.ts'],
+    // Unit tests live next to the code they test (co-located). `.test.tsx`
+    // covers shared UI components rendered via `react-dom/server`.
+    include: [
+      'src/features/**/*.test.{ts,tsx}',
+      'src/shared/**/*.test.{ts,tsx}',
+    ],
     // Playwright owns e2e — keep them out of Vitest.
     exclude: ['node_modules', 'tests/e2e/**', '.next', 'dist'],
     environment: 'node',

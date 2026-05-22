@@ -1,8 +1,8 @@
-import Link from 'next/link'
 import { getSession, requireIedoraAdmin } from '@/features/auth'
 import { loadAdminPayload } from '@/features/sessions'
 import { SessionsAdmin } from '@/features/sessions/ui/sessions-admin'
 import { toSessionAdminRow } from '@/features/sessions/ui/to-row'
+import { DashboardPage } from '@/shared/ui/dashboard-page'
 
 /**
  * Cross-tenant session triage. iedora-admin only — the gate hides the
@@ -34,20 +34,12 @@ export default async function SessionsAdminPage() {
   )
 
   return (
-    <div className="space-y-6">
-      <h1 className="flex flex-wrap items-baseline gap-2 text-sm font-normal text-muted-foreground">
-        <Link href="/dashboard" className="hover:underline">
-          Back
-        </Link>
-        <span aria-hidden="true">/</span>
-        <span className="font-semibold">Sessions (admin)</span>
-      </h1>
-
+    <DashboardPage title="Sessions (admin)" data-test-id="sessions-admin">
       <SessionsAdmin
         rows={rows}
         stats={payload.stats}
         snapshotAt={payload.snapshotAt.toISOString()}
       />
-    </div>
+    </DashboardPage>
   )
 }

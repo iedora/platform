@@ -9,6 +9,7 @@ import {
 } from '@/features/metrics'
 import { getOrganizationPlan, planHas } from '@/features/plans'
 import { KpiCard, ScansCard, ScansChart } from '@/features/dashboard-home/ui/analytics-cards'
+import { DashboardPage } from '@/shared/ui/dashboard-page'
 
 const DEFAULT_RANGE: AnalyticsRange = '30d'
 
@@ -27,7 +28,6 @@ export default async function AnalyticsPage({
   const sp = await searchParams
   const t = await getTranslations('Analytics')
   const tDash = await getTranslations('Dashboard')
-  const tR = await getTranslations('Restaurant')
   const locale = await getLocale()
 
   const range: AnalyticsRange =
@@ -41,41 +41,38 @@ export default async function AnalyticsPage({
     0,
   )
 
-  return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="flex flex-wrap items-baseline gap-2 text-sm font-normal text-muted-foreground">
-          <Link href="/dashboard" className="hover:underline">
-            {tR('back')}
+  const rangeTabs = (
+    <div className="flex items-center gap-1" role="tablist">
+      {(['today', '7d', '30d'] as const).map((r) => {
+        const isSelected = r === range
+        return (
+          <Link
+            key={r}
+            href={`/dashboard/analytics?range=${r}`}
+            role="tab"
+            aria-selected={isSelected}
+            data-test-id={`analytics-range-${r}`}
+            className={
+              'border px-2.5 py-1 text-[12.5px] no-underline transition-colors ' +
+              (isSelected
+                ? 'border-[var(--ink)] bg-[var(--ink)] text-[var(--paper)]'
+                : 'border-[var(--ink-40)] text-[var(--ink)] hover:bg-[var(--ink)] hover:text-[var(--paper)]')
+            }
+          >
+            {tDash(`analytics.range.${r}`)}
           </Link>
-          <span aria-hidden="true">/</span>
-          <span className="font-semibold">{t('title')}</span>
-        </h1>
-        <div className="flex items-center gap-1" role="tablist">
-          {(['today', '7d', '30d'] as const).map((r) => {
-            const isSelected = r === range
-            return (
-              <Link
-                key={r}
-                href={`/dashboard/analytics?range=${r}`}
-                role="tab"
-                aria-selected={isSelected}
-                data-testid={`range-${r}`}
-                className={
-                  'border px-2.5 py-1 text-[12.5px] no-underline transition-colors ' +
-                  (isSelected
-                    ? 'border-foreground bg-foreground text-background'
-                    : 'border-border text-foreground hover:bg-foreground hover:text-background')
-                }
-              >
-                {tDash(`analytics.range.${r}`)}
-              </Link>
-            )
-          })}
-        </div>
-      </div>
+        )
+      })}
+    </div>
+  )
 
-      <section className="space-y-4" data-testid="analytics-block">
+  return (
+    <DashboardPage
+      title={t('title')}
+      data-test-id="analytics"
+      actions={rangeTabs}
+    >
+      <section className="space-y-4" data-test-id="analytics-block">
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           <ScansCard
             range={range}
@@ -140,6 +137,6 @@ export default async function AnalyticsPage({
           locale={locale}
         />
       </section>
-    </div>
+    </DashboardPage>
   )
 }

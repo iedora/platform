@@ -5,6 +5,7 @@ import { listRestaurantsWithCounts } from '@/features/dashboard-home'
 import { getOrganizationMonthlyViews } from '@/features/metrics'
 import { canAddRestaurant, getOrganizationPlan } from '@/features/plans'
 import { Card, CardDesc, CardTitle } from '@iedora/design-system'
+import { DashboardPage as PageShell } from '@/shared/ui/dashboard-page'
 import {
   EditorialList,
   formatEditedAt,
@@ -54,79 +55,76 @@ export default async function DashboardPage() {
     ],
   }))
 
-  return (
-    <div className="space-y-8">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
-        <div className="min-w-0 flex-1">
-          <span className="block font-serif text-[13px] italic text-muted-foreground">
-            {t('eyebrow')}
-          </span>
-          <h1 className="mt-1 font-serif text-[26px] italic font-medium leading-tight tracking-tight sm:text-[32px]">
-            {t('title')}
-          </h1>
-          <p className="mt-2 max-w-3xl text-sm text-muted-foreground">
-            {t('subtitle')}
-            <br />
+  const description = (
+    <>
+      {t('subtitle')}
+      <br />
+      <span
+        data-test-id="dashboard-views-meter"
+        data-near-limit={viewsNearLimit ? 'true' : 'false'}
+      >
+        {isUnlimitedViews
+          ? t('viewsUnlimited', { count: numberFmt.format(viewCount) })
+          : t('viewsCount', {
+              count: numberFmt.format(viewCount),
+              limit: numberFmt.format(viewLimit),
+            })}{' '}
+        {t('viewsThisMonth')}
+        {!isUnlimitedViews && (
+          <span
+            data-test-id="dashboard-views-progress"
+            aria-hidden="true"
+            className="relative ml-2 inline-block h-1 w-20 overflow-hidden bg-[var(--ink-14)] align-middle sm:w-32"
+          >
             <span
-              data-testid="views-meter"
-              data-near-limit={viewsNearLimit ? 'true' : 'false'}
-            >
-              {isUnlimitedViews
-                ? t('viewsUnlimited', { count: numberFmt.format(viewCount) })
-                : t('viewsCount', {
-                    count: numberFmt.format(viewCount),
-                    limit: numberFmt.format(viewLimit),
-                  })}{' '}
-              {t('viewsThisMonth')}
-              {!isUnlimitedViews && (
-                <span
-                  data-testid="views-progress"
-                  aria-hidden="true"
-                  className="relative ml-2 inline-block h-1 w-20 overflow-hidden bg-border align-middle sm:w-32"
-                >
-                  <span
-                    className="absolute inset-y-0 left-0 bg-brand transition-[width]"
-                    style={{
-                      width: `${Math.min(100, (viewCount / viewLimit) * 100)}%`,
-                    }}
-                  />
-                </span>
-              )}
-            </span>
-            {viewsNearLimit && (
-              <>
-                {' '}
-                <Link
-                  href="/dashboard/billing"
-                  data-testid="views-upgrade-nudge"
-                  className="font-medium text-foreground underline-offset-4 hover:underline"
-                >
-                  {t('viewsNudge')}
-                </Link>
-              </>
-            )}
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          {gate.ok ? (
-            <Link
-              href="/onboarding"
-              className="inline-flex items-center border border-foreground bg-foreground px-3.5 py-2 text-[13px] font-medium text-background no-underline transition-colors hover:bg-background hover:text-foreground"
-            >
-              {t('newRestaurant')}
-            </Link>
-          ) : (
-            <Link
-              href="/dashboard/billing"
-              data-testid="upgrade-cta"
-              className="inline-flex items-center border border-foreground px-3.5 py-2 text-[13px] font-medium text-foreground no-underline transition-colors hover:bg-foreground hover:text-background"
-            >
-              {tBilling('upgradeCta')}
-            </Link>
-          )}
-        </div>
-      </div>
+              className="absolute inset-y-0 left-0 bg-[var(--cinnabar)] transition-[width]"
+              style={{ width: `${Math.min(100, (viewCount / viewLimit) * 100)}%` }}
+            />
+          </span>
+        )}
+      </span>
+      {viewsNearLimit && (
+        <>
+          {' '}
+          <Link
+            href="/dashboard/billing"
+            data-test-id="dashboard-views-upgrade-nudge"
+            className="font-medium text-[var(--ink)] underline-offset-4 hover:underline"
+          >
+            {t('viewsNudge')}
+          </Link>
+        </>
+      )}
+    </>
+  )
 
+  const actions = gate.ok ? (
+    <Link
+      href="/onboarding"
+      data-test-id="dashboard-new-restaurant"
+      className="inline-flex items-center border border-[var(--ink)] bg-[var(--ink)] px-3.5 py-2 text-[13px] font-medium text-[var(--paper)] no-underline transition-colors hover:bg-[var(--paper)] hover:text-[var(--ink)]"
+    >
+      {t('newRestaurant')}
+    </Link>
+  ) : (
+    <Link
+      href="/dashboard/billing"
+      data-test-id="dashboard-upgrade-cta"
+      className="inline-flex items-center border border-[var(--ink)] px-3.5 py-2 text-[13px] font-medium text-[var(--ink)] no-underline transition-colors hover:bg-[var(--ink)] hover:text-[var(--paper)]"
+    >
+      {tBilling('upgradeCta')}
+    </Link>
+  )
+
+  return (
+    <PageShell
+      root
+      data-test-id="dashboard-home"
+      title={t('title')}
+      eyebrow={t('eyebrow')}
+      description={description}
+      actions={actions}
+    >
       <EditorialList
         testId="restaurant-list"
         rows={rows}
@@ -137,6 +135,6 @@ export default async function DashboardPage() {
           </Card>
         }
       />
-    </div>
+    </PageShell>
   )
 }

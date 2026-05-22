@@ -1,17 +1,12 @@
 import { headers } from 'next/headers'
-import Link from 'next/link'
 import { asc } from 'drizzle-orm'
-import {
-  Breadcrumb,
-  BreadcrumbHere,
-  BreadcrumbLink,
-} from '@iedora/design-system'
 import { requireScope, SCOPES } from '@/features/auth'
 import { listQrCodesForAdmin } from '@/features/qr-codes'
 import { computeQrStats } from '@/features/qr-codes/stats'
 import { QrCodesAdmin } from '@/features/qr-codes/ui/qr-codes-admin'
 import { db } from '@/shared/db/client'
 import { restaurant } from '@/shared/db/schema'
+import { DashboardPage } from '@/shared/ui/dashboard-page'
 
 /**
  * Cross-tenant admin surface for binding QR codes to restaurants.
@@ -50,19 +45,7 @@ export default async function QrCodesAdminPage() {
   const snapshotAt = new Date().toISOString()
 
   return (
-    <div className="space-y-10">
-      <Breadcrumb
-        aria-label="Breadcrumb"
-        data-test-id="qr-codes-admin-breadcrumbs"
-      >
-        <BreadcrumbLink asChild data-test-id="qr-codes-admin-breadcrumbs-back">
-          <Link href="/dashboard">Back</Link>
-        </BreadcrumbLink>
-        <BreadcrumbHere data-test-id="qr-codes-admin-breadcrumbs-current">
-          QR codes (admin)
-        </BreadcrumbHere>
-      </Breadcrumb>
-
+    <DashboardPage title="QR codes (admin)" data-test-id="qr-codes-admin">
       <QrCodesAdmin
         rows={rows}
         restaurants={restaurants}
@@ -70,6 +53,6 @@ export default async function QrCodesAdminPage() {
         stats={stats}
         snapshotAt={snapshotAt}
       />
-    </div>
+    </DashboardPage>
   )
 }
