@@ -1,0 +1,220 @@
+# Stage 4 (Deploy) — reusable workflow that ships one product's artifact
+# to its runtime. Called via workflow_call from per-product workflows
+# (menu.yml, house.yml). Generic over product name: the inner
+# `task deploy:<product>` dispatches through the productRuntime
+# interface, so adding a 4th product = (1) new struct in
+# `infra/cmd/iedora/products.go`, (2) new caller workflow that invokes
+# THIS workflow with `inputs.product=<name>`.
+#
+# Inputs:
+#   product    Required. Matches a name in `products.go` registry.
+#              ("menu" → dockerOnHetzner; "house" → cloudflareWorker.)
+#   image_sha  Optional. For Docker products, pins the container image.
+#              Ignored for products whose runtime doesn't read it.
+
+name: Deploy
+
+on:
+  workflow_call:
+    inputs:
+      product:
+        description: 'Product name (matches `infra/cmd/iedora/products.go` registry: menu | house | …).'
+        type: string
+        required: true
+      image_sha:
+        description: 'Image tag for Docker-runtime products. Defaults to "latest" for first-bootstrap.'
+        type: string
+        required: false
+        default: latest
+    secrets:
+      BWS_ACCESS_TOKEN:
+        required: true
+      INFRA_SSH_PRIVATE_KEY:
+        required: true
+
+# Per-product concurrency: house + menu can deploy in parallel, but two
+# menu deploys serialise (the second waits — never cancel mid-flight,
+# `docker stop` on a half-replaced container is the worst-of-both-worlds
+# state).
+concurrency:
+  group: deploy-${{ inputs.product }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: deploy ${{ inputs.product }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    # Per-product tfstate commit-back needs write access — same pattern
+    # as infra-deploy.yml. Skipped at runtime for Docker-runtime products
+    # whose state lives in the central tfstate (committed by infra-deploy).
+    permissions:
+      contents: write
+
+    env:
+      BWS_ACCESS_TOKEN: ${{ secrets.BWS_ACCESS_TOKEN }}
+      BWS_PROJECT_ID: ${{ vars.BWS_PROJECT_ID }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+      # Forwarded to the dockerOnHetzner runtime — it reads MENU_IMAGE_SHA
+      # (or whatever each product's imageSHAEnv is) at deploy time.
+      MENU_IMAGE_SHA: ${{ inputs.image_sha }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: Setup Node (for cloudflareWorker products that build with Astro)
+        # Astro 5 requires Node ≥ 22.12. Cheap when unused — no-op a few
+        # seconds on the runner. The cloudflareWorker runtime shells
+        # `bun run build`; bun's own runtime is in the setup composite below.
+        if: inputs.product == 'house'
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
+        with:
+          node-version: '24'
+
+      - name: Setup workspace (Bun + install)
+        # Composite at .github/actions/setup — installs Bun and resolves
+        # every workspace via `bun install --frozen-lockfile`. Only needed
+        # for products whose runtime does a host-side build; menu's
+        # dockerOnHetzner runtime pulls a pre-built image and doesn't
+        # need this.
+        if: inputs.product == 'house'
+        uses: ./.github/actions/setup
+
+      - name: Install go-task
+        # The Taskfile is the operator-facing entry point; CI invokes the
+        # same recipes (`task deploy:menu` etc.) the operator does.
+        uses: arduino/setup-task@b91d5d2c96a56797b48ac1e0e89220bf64044611 # v2
+        with:
+          version: 3.x
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install bws CLI
+        env:
+          BWS_VERSION: '2.0.0'
+        run: |
+          set -euo pipefail
+          curl -fsSL -o /tmp/bws.zip \
+            "https://github.com/bitwarden/sdk-sm/releases/download/bws-v${BWS_VERSION}/bws-x86_64-unknown-linux-gnu-${BWS_VERSION}.zip"
+          unzip -q /tmp/bws.zip -d /tmp/bws
+          sudo install -m 0755 /tmp/bws/bws /usr/local/bin/bws
+
+      - name: Install Go
+        # Needed for `go run` inside bin/iedora + bin/with-secrets +
+        # bin/zitadel-apply. Aligns with `infra/go.mod` (go 1.26.2).
+        uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v6
+        with:
+          go-version-file: infra/go.mod
+          cache: true
+          cache-dependency-path: infra/go.sum
+
+      - name: Install OpenTofu
+        # House uses tofu (per-product Cloudflare Workers root). Menu
+        # doesn't, but installing in both branches keeps the workflow
+        # generic — `task deploy:<product>` decides what to invoke.
+        uses: opentofu/setup-opentofu@847eaa4afeb791b06daa46e8eafa8b1b68d7cfb4 # v2.0.1
+        with:
+          tofu_version: '1.12.0'
+          tofu_wrapper: false
+
+      - name: Configure SSH (required by dockerOnHetzner runtime)
+        # The dockerOnHetzner runtime SSHs to the box for `docker pull`,
+        # the migrate one-shot, and the stop+rm+run sequence. Skipped
+        # for products whose runtime doesn't shell SSH (CF Workers,
+        # future Vercel, etc.) — `task deploy:house` never touches this.
+        env:
+          SSH_KEY: ${{ secrets.INFRA_SSH_PRIVATE_KEY }}
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          # Read the box's public IPv4 from Tofu output. `task deploy:<product>`
+          # repeats this internally (the runtime resolves it lazily), but
+          # we need it here to pre-populate known_hosts so the first SSH
+          # doesn't fail on a host-key prompt.
+          HOST=$(infra/bin/with-secrets --stage iac -- \
+            tofu -chdir=infra/tofu output -raw hetzner_ipv4 2>/dev/null || true)
+          if [ -n "$HOST" ]; then
+            echo "::add-mask::$HOST"
+            ssh-keyscan -H "$HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
+            chmod 600 ~/.ssh/known_hosts
+            eval "$(ssh-agent -s)"
+            ssh-add ~/.ssh/id_ed25519
+            echo "SSH_AUTH_SOCK=$SSH_AUTH_SOCK" >> "$GITHUB_ENV"
+            echo "SSH_AGENT_PID=$SSH_AGENT_PID" >> "$GITHUB_ENV"
+          fi
+
+      - name: task deploy:${{ inputs.product }}
+        run: task deploy:${{ inputs.product }}
+
+      - name: Smoke check
+        # Per-product post-deploy probe. Menu is the only product today
+        # with a hosted endpoint we can reach over the public internet;
+        # house is static and trivially returns 200 once Tofu apply
+        # completes. Skipped silently for unknown products.
+        if: inputs.product == 'menu'
+        env:
+          URL: https://menu.iedora.com/up
+        run: |
+          set -euo pipefail
+          for i in 1 2 3 4 5 6; do
+            CODE=$(curl -s -o /dev/null -w '%{http_code}' "$URL" || echo 000)
+            if [ "$CODE" = "200" ]; then
+              echo "[deploy] OK /up returned 200"
+              exit 0
+            fi
+            echo "[deploy] /up returned $CODE; retry $i/6 in 5s"
+            sleep 5
+          done
+          echo "[deploy] FAIL /up never returned 200 after 30s" >&2
+          exit 1
+
+      - name: Commit per-product tfstate back to main
+        # Products with per-product Tofu (e.g. house — CF Workers) have
+        # their own encrypted tfstate under products/<name>/infra/tofu/.
+        # Same rationale as infra-deploy.yml: CI applies that don't
+        # commit state back leave git out of sync. No-op when there's
+        # no diff (steady-state warm deploys) or no per-product tfstate
+        # (Docker-runtime products like menu).
+        if: success()
+        env:
+          PRODUCT: ${{ inputs.product }}
+        run: |
+          set -euo pipefail
+          TFSTATE="products/${PRODUCT}/infra/tofu/terraform.tfstate"
+          if [ ! -f "$TFSTATE" ]; then
+            echo "[deploy] no per-product tfstate at $TFSTATE — skipping commit-back"
+            exit 0
+          fi
+          if git diff --quiet -- "$TFSTATE"; then
+            echo "[deploy] no state changes for ${PRODUCT} — nothing to commit"
+            exit 0
+          fi
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "$TFSTATE"
+          MSG=$(mktemp)
+          {
+            echo "chore(${PRODUCT}): tfstate updated by CI (${GITHUB_WORKFLOW} #${GITHUB_RUN_NUMBER})"
+            echo ""
+            echo "Run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+            echo "Triggered by: ${GITHUB_EVENT_NAME}"
+            echo "Image SHA: ${{ inputs.image_sha }}"
+          } > "$MSG"
+          git commit -F "$MSG"
+          rm -f "$MSG"
+          for i in 1 2; do
+            git pull --rebase origin main || true
+            if git push origin HEAD:main; then
+              echo "[deploy] state committed + pushed"
+              exit 0
+            fi
+            echo "[deploy] push attempt $i failed, retrying..."
+          done
+          echo "[deploy] FAIL: couldn't push state after 2 attempts" >&2
+          exit 1

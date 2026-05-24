@@ -327,19 +327,18 @@ jobs:
           subject-digest: ${{ steps.build.outputs.digest }}
           push-to-registry: true
 
-      # ── Trigger infra deploy ──────────────────────────────────────────────
-      # Fires `infra-deploy.yml` (workflow_dispatch) passing this commit's
-      # SHA as `image_sha`. The infra workflow sets
-      # `TF_VAR_menu_image_sha=<sha>` in its job env, so the next `tofu apply`
-      # pins `docker_image.menu` at THIS exact tag — fully deterministic.
-      #
-      # Rollback path (no BWS round-trip):
-      #   gh workflow run infra-deploy.yml --field image_sha=<older-sha>
-      - name: Trigger infra deploy
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          set -euo pipefail
-          gh workflow run infra-deploy.yml \
-            --ref main \
-            --field image_sha=${{ github.sha }}
+  # ── Stage 4: deploy the freshly-built image ─────────────────────────────
+  # Invokes the reusable deploy.yml workflow with product=menu + this
+  # commit's SHA. The dockerOnHetzner runtime (products.go) reads
+  # MENU_IMAGE_SHA from env to pin the image — no more TF_VAR + tofu
+  # apply round-trip. Rollback path: `gh workflow run deploy.yml
+  # --field product=menu --field image_sha=<older-sha>`.
+  deploy:
+    needs: build
+    uses: ./.github/workflows/deploy.yml
+    with:
+      product: menu
+      image_sha: ${{ github.sha }}
+    secrets:
+      BWS_ACCESS_TOKEN: ${{ secrets.BWS_ACCESS_TOKEN }}
+      INFRA_SSH_PRIVATE_KEY: ${{ secrets.INFRA_SSH_PRIVATE_KEY }}

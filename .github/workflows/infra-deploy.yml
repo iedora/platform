@@ -1,96 +1,78 @@
-# Infra deploy — one `tofu apply` for the whole iedora estate.
+# Stage 2 (IaC) — `task infra:up` against `infra/tofu/`.
+#
+# What this workflow OWNS:
+#   - Hetzner VPS, firewall, SSH key
+#   - Cloudflare R2 buckets, DNS records, API tokens
+#   - GitHub Actions config (via the github provider)
+#   - Docker network + named volumes on the box
+#   - Shared service containers (postgres, zitadel, zitadel-login, caddy,
+#     openobserve, backups). Containers come up with their boot config
+#     intact; their *application state* is owned by app-state.yml.
+#
+# What this workflow does NOT own:
+#   - Zitadel app config (org, project, OIDC app, action targets…) — that's
+#     `app-state.yml` (Stage 3), which runs after this one via workflow_run.
+#   - Menu container — that's `deploy.yml` invoked by `menu.yml` (Stage 4).
+#   - House CF Workers script — `house.yml` calls `deploy.yml` directly.
 #
 # Triggers:
-#   - workflow_dispatch: manual operator button (the canonical "roll the
-#     infra" lever — used after editing any `.tf` and pushing to main).
-#   - workflow_run: when Menu CI completes on main with `success`. Menu CI
-#     builds the image; this workflow re-runs `tofu apply` so the
-#     `docker_container.menu_web` resource re-pulls the newest image tag
-#     and recreates the container.
 #
-# What `just infra::deploy` does (from infra/justfile):
-#   1. tofu init -upgrade -input=false
-#   2. Pass 1: target hcloud_* resources only IF the Hetzner box doesn't
-#      exist yet (`hetzner_ipv4` output unset).
-#   3. ssh-keyscan into ~/.ssh/known_hosts (idempotent — CI's own
-#      pre-step also does this; running again is a no-op).
-#   4. Pass 2: full `tofu apply -auto-approve`.
-#   5. Pass 3: if INFRA_ZITADEL_SA_KEY_JSON isn't in BWS yet, fetch from
-#      the bootstrap volume → BWS → re-apply.
-#   6. Write-through INFRA_HOST_IP = hetzner_ipv4 to BWS.
-#
-# Auth in CI:
-#   - BWS_ACCESS_TOKEN (GH secret) — `bin/with-secrets` reads every other
-#     credential out of BWS via this.
-#   - INFRA_SSH_PRIVATE_KEY (GH secret) — written to ~/.ssh/id_ed25519
-#     so the kreuzwerker/docker provider can SSH to the Hetzner box.
-#   - ONPREM_HOST is a runtime IP (the Hetzner box's public IPv4). We use
-#     the BWS-stored value `INFRA_HOST_IP` rather than hardcoding —
-#     `just infra::deploy` itself writes that secret through, so it's
-#     declarative + survives a box reprovision.
+#   workflow_dispatch       manual button — the canonical "roll the infra"
+#                           lever after editing any `.tf` file.
+#   push (paths-filtered)   any change to the iac surface — Tofu source,
+#                           orchestrator, with-secrets wrapper.
 
 name: Infra deploy
 
 on:
-  workflow_dispatch:
-    inputs:
-      image_sha:
-        description: 'Menu image tag to deploy (commit SHA or "latest"). Pinned via TF_VAR_menu_image_sha so docker_container.menu_web pulls THIS exact digest. Override for rollback: `gh workflow run infra-deploy.yml --field image_sha=<older-sha>`.'
-        type: string
-        required: false
-        default: latest
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+    paths:
+      - 'infra/tofu/**'
+      - 'infra/modules/**'
+      - 'infra/postgres/**'
+      - 'infra/cmd/iedora/**'
+      - 'infra/cmd/with-secrets/**'
+      - 'infra/internal/**'
+      - 'infra/bin/iedora'
+      - 'infra/bin/with-secrets'
+      - 'infra/go.mod'
+      - 'infra/go.sum'
+      - 'Taskfile.yml'
+      - '.github/workflows/infra-deploy.yml'
 
-# Tofu apply must NEVER be cancelled mid-flight — partial applies can leave
-# the state file half-written (resources marked `tainted` or worse, the
-# remote state half-updated). Queue subsequent runs instead.
+# Never cancel mid-apply — partial applies leave the encrypted tfstate
+# half-written. Queue subsequent runs instead.
 concurrency:
   group: infra-deploy
   cancel-in-progress: false
 
-# Least-privilege default (OpenSSF Scorecard Token-Permissions). `id-token:
-# write` reserved for future Sigstore attestations on the Tofu plan output.
-# `contents: write` on the job (not the workflow) — needed so the post-
-# apply step can push the encrypted state file back to main; without it,
-# every CI apply silently drifts from git and the next run starts stale.
 permissions:
   contents: read
 
 jobs:
-  deploy:
-    name: tofu apply
+  apply:
+    name: task infra:up
     runs-on: ubuntu-24.04
     timeout-minutes: 25
 
     permissions:
-      contents: write  # commit the encrypted tfstate back after apply
-      id-token: write  # reserved for future Sigstore plan attestations
+      contents: write   # commit encrypted tfstate back after apply
+      id-token: write   # reserved for future Sigstore plan attestations
 
     env:
       BWS_ACCESS_TOKEN: ${{ secrets.BWS_ACCESS_TOKEN }}
       BWS_PROJECT_ID: ${{ vars.BWS_PROJECT_ID }}
-      # `bin/with-secrets` reads CLOUDFLARE_ACCOUNT_ID directly (not via
-      # BWS) — it's the bootstrap input that points at which CF account
-      # owns the rest. Stored as a GH Actions variable for visibility.
       CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
-      # Pin the menu image to the exact SHA the caller passed. Menu CI fires
-      # `gh workflow run infra-deploy.yml --field image_sha=${{ github.sha }}`
-      # after every successful build, so steady state is per-commit pinned.
-      # Manual rollback: `gh workflow run infra-deploy.yml --field image_sha=<old-sha>`.
-      TF_VAR_menu_image_sha: ${{ inputs.image_sha }}
 
     steps:
-      - name: Checkout @ main
+      - name: Checkout @ ${{ github.sha }}
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
-          # Run against the dispatched ref (typically `main`). The .tf files
-          # are read from this commit; `inputs.image_sha` is what gets pinned
-          # in the docker_image resource (may be a DIFFERENT commit — the one
-          # whose CI just built the image).
           ref: ${{ github.sha }}
 
       - name: Install bws CLI
-        # Pinned to bws v2.0.0 (Feb 2025, statically-linked MUSL). Same
-        # snippet used by menu.yml + house-deploy.yml.
         env:
           BWS_VERSION: '2.0.0'
         run: |
@@ -100,50 +82,49 @@ jobs:
           unzip -q /tmp/bws.zip -d /tmp/bws
           sudo install -m 0755 /tmp/bws/bws /usr/local/bin/bws
 
-      - name: Install just
-        uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3 # v4
+      - name: Install go-task
+        uses: arduino/setup-task@b91d5d2c96a56797b48ac1e0e89220bf64044611 # v2
         with:
-          just-version: '1.36.0'
+          version: 3.x
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install Go
+        uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v6
+        with:
+          go-version-file: infra/go.mod
+          cache: true
+          cache-dependency-path: infra/go.sum
 
       - name: Install OpenTofu
+        # Pin to the laptop's current major.minor (1.12.x). Bumping
+        # without aligning the laptop first can corrupt the encrypted
+        # state file (schema diffs between versions).
         uses: opentofu/setup-opentofu@847eaa4afeb791b06daa46e8eafa8b1b68d7cfb4 # v2.0.1
         with:
-          # Pin to the laptop's current major.minor (1.12.x). Don't bump
-          # without aligning the laptop first — state-file schema diffs
-          # between Tofu versions can corrupt the encrypted state.
           tofu_version: '1.12.0'
-          # Default `true` would wrap the `tofu` binary in a Node.js shim
-          # to capture stdout/stderr/exitcode as step outputs. Our usage
-          # is via `just` → `bin/with-secrets` → `tofu`, so the wrapper
-          # never sees the call anyway, and disabling it sidesteps the
-          # known issue where the wrapper truncates very long plan output.
           tofu_wrapper: false
 
-      - name: Read Hetzner IP from Tofu output
-        # Source of truth for the box's public IPv4 is the Tofu output
-        # `hetzner_ipv4`. Tofu state lives encrypted in git (see infra/CLAUDE.md
-        # rule #5), so a fresh `tofu init` + `tofu output` resolves the value
-        # without round-tripping through BWS. `bin/with-secrets` provides
-        # TF_VAR_state_passphrase so init can decrypt the state.
+      - name: Read Hetzner IP (existing-box detection)
+        # Source of truth is the encrypted tfstate in git. Run a Tofu
+        # init + output now (before SSH config) so we can pre-populate
+        # known_hosts. Empty output is fine — first apply for a fresh
+        # repo provisions the VPS and writes the output.
         id: host
-        working-directory: infra
         run: |
           set -euo pipefail
-          bin/with-secrets tofu -chdir=tofu init -upgrade -input=false >/dev/null
-          HOST=$(bin/with-secrets tofu -chdir=tofu output -raw hetzner_ipv4)
-          if [ -z "$HOST" ]; then
-            echo "tofu output hetzner_ipv4 was empty — server not yet provisioned." >&2
-            echo "Run 'just infra::deploy' from a laptop once to provision the VPS." >&2
-            exit 1
+          infra/bin/with-secrets --stage iac -- \
+            tofu -chdir=infra/tofu init -upgrade -input=false >/dev/null
+          HOST=$(infra/bin/with-secrets --stage iac -- \
+            tofu -chdir=infra/tofu output -raw hetzner_ipv4 2>/dev/null || echo "")
+          if [ -n "$HOST" ]; then
+            echo "::add-mask::$HOST"
+            echo "host=$HOST" >> "$GITHUB_OUTPUT"
           fi
-          echo "::add-mask::$HOST"
-          echo "host=$HOST" >> "$GITHUB_OUTPUT"
 
-      - name: Configure SSH for root@onprem
-        # The kreuzwerker/docker Tofu provider talks to the Hetzner Docker
-        # daemon over SSH — same key the operator uses from the laptop.
-        # `INFRA_SSH_PRIVATE_KEY` is a tombstone name kept for
-        # parity with BWS; see docs/secrets.md.
+      - name: Configure SSH (kreuzwerker/docker provider needs it)
+        # The kreuzwerker/docker Tofu provider connects to the Hetzner
+        # box over SSH to manage containers. Same key the operator uses
+        # from their laptop.
         env:
           SSH_KEY: ${{ secrets.INFRA_SSH_PRIVATE_KEY }}
           HOST: ${{ steps.host.outputs.host }}
@@ -153,43 +134,27 @@ jobs:
           chmod 700 ~/.ssh
           printf '%s\n' "$SSH_KEY" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
-          # Pre-populate known_hosts so the docker provider's system SSH
-          # doesn't fail with "host key verification failed". The justfile
-          # also does this (idempotent) — this one runs first so the early
-          # `tofu output` calls don't hit a stale-key SSH.
-          ssh-keyscan -H "$HOST" >> ~/.ssh/known_hosts 2>/dev/null
-          chmod 600 ~/.ssh/known_hosts
+          if [ -n "$HOST" ]; then
+            ssh-keyscan -H "$HOST" >> ~/.ssh/known_hosts 2>/dev/null
+            chmod 600 ~/.ssh/known_hosts
+          fi
           eval "$(ssh-agent -s)"
           ssh-add ~/.ssh/id_ed25519
           echo "SSH_AUTH_SOCK=$SSH_AUTH_SOCK" >> "$GITHUB_ENV"
           echo "SSH_AGENT_PID=$SSH_AGENT_PID" >> "$GITHUB_ENV"
 
-      - name: just infra::deploy
-        # `working-directory: infra` so `just` finds the justfile and so
-        # `bin/with-secrets` resolves relative paths correctly. The recipe
-        # itself runs:
-        #   tofu init -upgrade -input=false
-        #   tofu apply (pass 1 — targeted hcloud — skipped if box exists)
-        #   tofu apply (pass 2 — full)
-        #   zitadel SA-key fetch + re-apply (pass 3 — skipped on steady state)
-        #   BWS write-through of INFRA_HOST_IP
-        # `TF_VAR_state_passphrase` and every other TF_VAR_* alias is
-        # exported by `bin/with-secrets` from the BWS env block.
-        #
-        # `TF_CLI_ARGS_apply` (OpenTofu 1.12+) propagates `-json-into=FILE`
-        # to every `tofu apply` in the dance — last apply wins on overwrite
-        # (steady state is Pass 2; Pass 1/3 only run on first bootstrap).
-        # Uploaded as an artifact below.
-        working-directory: infra
+      - name: task infra:up
+        # Runs `iedora iac apply` via the Taskfile shim. Internally:
+        # Pass 1 (targeted hcloud apply) → Pass 2 (full apply). No more
+        # Zitadel TF provider, no placeholder dance, no DNS-override
+        # proxy — those went away when Zitadel app state moved to
+        # bin/zitadel-apply (handled by app-state.yml after this).
         env:
+          # Captures the full apply log for post-mortem inspection.
           TF_CLI_ARGS_apply: "-json-into=${{ runner.temp }}/tf-apply.json"
-        run: just deploy
+        run: task infra:up
 
       - name: Upload tofu apply JSON
-        # Captures the apply log in machine-readable form for later
-        # parsing (post-mortem on a failed deploy, drift reports, etc).
-        # Always uploaded — even on apply failure, the partial log is
-        # the most useful artifact for debugging.
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
@@ -198,68 +163,33 @@ jobs:
           if-no-files-found: ignore
           retention-days: 30
 
-      - name: Smoke check menu.iedora.com/up
-        # After apply, the public hostname should be back to 200 within a
-        # few seconds — give it 30s (6 × 5s) before failing the workflow.
-        env:
-          URL: https://menu.iedora.com/up
-        run: |
-          set -euo pipefail
-          echo "[infra-deploy] smoke-checking $URL"
-          for i in 1 2 3 4 5 6; do
-            CODE=$(curl -s -o /dev/null -w '%{http_code}' "$URL" || echo 000)
-            if [ "$CODE" = "200" ]; then
-              echo "[infra-deploy] OK /up returned 200"
-              break
-            fi
-            echo "[infra-deploy] /up returned $CODE; retry $i/6 in 5s"
-            sleep 5
-            if [ "$i" = "6" ]; then
-              echo "[infra-deploy] FAIL /up never returned 200 after 30s" >&2
-              exit 1
-            fi
-          done
-
-      - name: Commit state back to main
-        # The encrypted Tofu state IS the source of truth for what exists
-        # on Hetzner + CF. CI applies that don't commit state back leave
-        # git out of sync — the NEXT run starts from stale state and
-        # cascades into "resource already exists" conflicts (this exact
-        # foot-gun blew up run 26176678238). Idempotent: skips when
-        # apply was a no-op (no state diff).
+      - name: Commit encrypted state back to main
+        # The encrypted Tofu state IS the source of truth for what
+        # exists on Hetzner + CF. Skipping the commit-back leaves git
+        # out of sync — the NEXT run starts from stale state and
+        # cascades into "resource already exists" conflicts.
+        # Idempotent: skips when apply was a no-op (no state diff).
         if: success()
-        working-directory: infra
         run: |
           set -euo pipefail
-          if git diff --quiet -- tofu/terraform.tfstate; then
+          if git diff --quiet -- infra/tofu/terraform.tfstate; then
             echo "[infra-deploy] no state changes — nothing to commit"
             exit 0
           fi
-          # The actions/checkout token has `contents: write` per the job
-          # permissions above, sufficient for a regular push to main.
-          # No branch protection on main (per project policy — solo +
-          # AI-driven dev, CI is the gate).
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add tofu/terraform.tfstate
-          # Multi-line commit message via -F to avoid embedding raw
-          # newlines inside the YAML `run: |` block (un-indented
-          # newlines inside the script body terminate the literal block
-          # scalar and cause parse errors that look like
-          # "workflow does not have workflow_dispatch trigger").
+          git add infra/tofu/terraform.tfstate
           MSG=$(mktemp)
           {
             echo "chore(infra): tfstate updated by CI (${GITHUB_WORKFLOW} #${GITHUB_RUN_NUMBER})"
             echo ""
             echo "Run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
             echo "Triggered by: ${GITHUB_EVENT_NAME}"
-            echo "Image SHA: ${TF_VAR_menu_image_sha:-latest}"
           } > "$MSG"
           git commit -F "$MSG"
           rm -f "$MSG"
-          # Retry the push once on contention — if a human pushed between
-          # our checkout and now, rebase and try again. Beyond one retry
-          # we fail loudly so the operator notices the race.
+          # One retry on contention — if a human pushed between checkout
+          # and now, rebase and try again. Beyond one retry, fail loudly.
           for i in 1 2; do
             git pull --rebase origin "${GITHUB_REF_NAME}" || true
             if git push origin "HEAD:${GITHUB_REF_NAME}"; then

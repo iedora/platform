@@ -1,0 +1,112 @@
+# Stage 3 (AppState) — runs every Stage-3 configurator against the live
+# infra. Today: `bin/zitadel-apply` reconciles the Zitadel IdP. Future
+# configurators (OpenObserve dashboards, per-app DB migrators) join the
+# registry at `infra/cmd/iedora/configurators.go` and run on every
+# `app:apply` invocation — no workflow edit needed.
+#
+# Triggers:
+#
+#   workflow_dispatch                manual button (also called by infra-deploy
+#                                    on its successful run)
+#   push (paths-filtered)            push to main touching the reconciler code
+#                                    OR a configurator's source tree — re-reconcile
+#                                    so a schema change in the binary lands without
+#                                    waiting for the next infra deploy.
+
+name: App state (Stage 3)
+
+on:
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+    paths:
+      - 'infra/cmd/zitadel-apply/**'
+      - 'infra/cmd/iedora/configurators.go'
+      - 'infra/bin/zitadel-apply'
+      - '.github/workflows/app-state.yml'
+  workflow_run:
+    workflows: ['Infra deploy']
+    types: [completed]
+    branches: [main]
+
+concurrency:
+  group: app-state
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  apply:
+    name: task app:apply
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    # When fired by workflow_run, only proceed if the upstream Infra deploy
+    # succeeded. Skips the cascade when an infra failure left state
+    # half-applied — operator fixes infra first.
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
+
+    env:
+      BWS_ACCESS_TOKEN: ${{ secrets.BWS_ACCESS_TOKEN }}
+      BWS_PROJECT_ID: ${{ vars.BWS_PROJECT_ID }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: Install go-task
+        uses: arduino/setup-task@b91d5d2c96a56797b48ac1e0e89220bf64044611 # v2
+        with:
+          version: 3.x
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install bws CLI
+        env:
+          BWS_VERSION: '2.0.0'
+        run: |
+          set -euo pipefail
+          curl -fsSL -o /tmp/bws.zip \
+            "https://github.com/bitwarden/sdk-sm/releases/download/bws-v${BWS_VERSION}/bws-x86_64-unknown-linux-gnu-${BWS_VERSION}.zip"
+          unzip -q /tmp/bws.zip -d /tmp/bws
+          sudo install -m 0755 /tmp/bws/bws /usr/local/bin/bws
+
+      - name: Install Go
+        uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v6
+        with:
+          go-version-file: infra/go.mod
+          cache: true
+          cache-dependency-path: infra/go.sum
+
+      - name: Install OpenTofu
+        # Needed for `bin/with-secrets --stage app` to read `hetzner_ipv4`
+        # via `tofu output` (the app stage's pre-step in iedora app
+        # apply fetches the IP for the SA-key SSH).
+        uses: opentofu/setup-opentofu@847eaa4afeb791b06daa46e8eafa8b1b68d7cfb4 # v2.0.1
+        with:
+          tofu_version: '1.12.0'
+          tofu_wrapper: false
+
+      - name: Configure SSH (SA-key fetch needs SSH on cold runs)
+        env:
+          SSH_KEY: ${{ secrets.INFRA_SSH_PRIVATE_KEY }}
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          HOST=$(infra/bin/with-secrets --stage iac -- \
+            tofu -chdir=infra/tofu output -raw hetzner_ipv4 2>/dev/null || true)
+          if [ -n "$HOST" ]; then
+            echo "::add-mask::$HOST"
+            ssh-keyscan -H "$HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
+            chmod 600 ~/.ssh/known_hosts
+            eval "$(ssh-agent -s)"
+            ssh-add ~/.ssh/id_ed25519
+            echo "SSH_AUTH_SOCK=$SSH_AUTH_SOCK" >> "$GITHUB_ENV"
+            echo "SSH_AGENT_PID=$SSH_AGENT_PID" >> "$GITHUB_ENV"
+          fi
+
+      - name: task app:apply
+        run: task app:apply
