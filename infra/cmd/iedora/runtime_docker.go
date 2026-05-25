@@ -266,9 +266,16 @@ func (d *dockerOnHetzner) deployHotSwap(ctx context.Context, ssh sshExecutor, ho
 	//    connect chain is ~150ms on the box; Caddy resolves on each
 	//    request so a request that lands mid-chain sees ECONNREFUSED.
 	//    Live traffic served by old container while this runs.
+	//
+	//    First-deploy / cold-deploy: there's no `<containerName>` to
+	//    disconnect (the old container doesn't exist). The first
+	//    `docker network disconnect` is wrapped with `|| true` so the
+	//    error doesn't abort the chain. The second disconnect (of the
+	//    new container) and the connect with the live alias are
+	//    load-bearing and stay strict.
 	fmt.Fprintf(stderr, "→ alias swap %s → %s\n", d.containerName, nextName)
 	swap := fmt.Sprintf(
-		"docker network disconnect %s %s && "+
+		"(docker network disconnect %s %s 2>/dev/null || true) && "+
 			"docker network disconnect %s %s && "+
 			"docker network connect --alias %s --alias %s %s %s",
 		d.networkName, d.containerName,

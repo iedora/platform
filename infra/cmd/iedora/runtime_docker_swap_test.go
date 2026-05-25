@@ -40,7 +40,7 @@ func TestDeployHotSwap(t *testing.T) {
 			wantSeq: []string{
 				"'docker' 'run' '-d' '--name' 'infra-menu-web-next'",
 				"docker exec infra-menu-web-next node -e",
-				"docker network disconnect iedora infra-menu-web && docker network disconnect iedora infra-menu-web-next && docker network connect --alias infra-menu-web --alias infra-menu-web-next iedora infra-menu-web-next",
+				"(docker network disconnect iedora infra-menu-web 2>/dev/null || true) && docker network disconnect iedora infra-menu-web-next && docker network connect --alias infra-menu-web --alias infra-menu-web-next iedora infra-menu-web-next",
 				"docker stop infra-menu-web 2>/dev/null",
 				"docker rename infra-menu-web-next infra-menu-web",
 			},
@@ -87,12 +87,16 @@ func TestDeployHotSwap(t *testing.T) {
 			name: "alias swap fails — rollback, no rename",
 			script: []scriptedResp{
 				{match: "node -e", stdout: `{"ok":true}`},
-				{match: "network disconnect iedora infra-menu-web ", err: errors.New("no such network")},
+				// The second disconnect (of `-next`) is the load-bearing one
+				// after the cold-deploy tolerance change. Fail it to trigger
+				// the swap-error path. The first disconnect of the old
+				// container is now `|| true`-wrapped so it can't fail.
+				{match: "network disconnect iedora infra-menu-web-next", err: errors.New("no such network")},
 			},
 			wantSeq: []string{
 				"'docker' 'run' '-d' '--name' 'infra-menu-web-next'",
 				"docker exec infra-menu-web-next node -e",
-				"docker network disconnect iedora infra-menu-web &&",
+				"(docker network disconnect iedora infra-menu-web 2>/dev/null || true) &&",
 				// Rollback runs after the swap fails.
 				"docker stop infra-menu-web-next 2>/dev/null; docker rm infra-menu-web-next 2>/dev/null",
 			},
