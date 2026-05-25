@@ -1,7 +1,7 @@
 # Stage 3 (AppState) — runs every Stage-3 configurator against the live
 # infra. Today: `bin/zitadel-apply` reconciles the Zitadel IdP. Future
 # configurators (OpenObserve dashboards, per-app DB migrators) join the
-# registry at `infra/cmd/iedora/configurators.go` and run on every
+# registry at `deploy/iedora/configurators.go` and run on every
 # `app:apply` invocation — no workflow edit needed.
 #
 # Triggers:
@@ -20,9 +20,9 @@ on:
   push:
     branches: [main]
     paths:
-      - 'infra/cmd/zitadel-apply/**'
-      - 'infra/cmd/iedora/configurators.go'
-      - 'infra/bin/zitadel-apply'
+      - 'app-state/zitadel/**'
+      - 'deploy/iedora/configurators.go'
+      - 'bin/zitadel-apply'
       - '.github/workflows/app-state.yml'
   workflow_run:
     workflows: ['Infra deploy']
@@ -74,9 +74,9 @@ jobs:
       - name: Install Go
         uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v6
         with:
-          go-version-file: infra/go.mod
+          go-version-file: go.mod
           cache: true
-          cache-dependency-path: infra/go.sum
+          cache-dependency-path: go.sum
 
       - name: Install OpenTofu
         # Needed for `bin/with-secrets --stage app` to read `hetzner_ipv4`
@@ -96,7 +96,7 @@ jobs:
           chmod 700 ~/.ssh
           printf '%s\n' "$SSH_KEY" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
-          HOST=$(infra/bin/with-secrets --stage iac -- \
+          HOST=$(bin/with-secrets --stage iac -- \
             tofu -chdir=infra/tofu output -raw hetzner_ipv4 2>/dev/null || true)
           if [ -n "$HOST" ]; then
             echo "::add-mask::$HOST"

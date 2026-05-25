@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/eduvhc/iedora/infra/internal/testfakes"
+	"github.com/eduvhc/iedora/internal/testfakes"
 )
 
 // TestIssuerIsTrusted — the gate that decides "cert from Let's Encrypt

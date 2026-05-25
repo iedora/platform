@@ -1,9 +1,5 @@
 package main
 
-import (
-	"path/filepath"
-)
-
 // product describes one deployable artifact alongside the central infra.
 // Each entry in `products` becomes one fan-out goroutine in
 // runDeployProduct / runDestroyProduct.
@@ -53,7 +49,7 @@ var products = []product{
 			restart:        "unless-stopped",
 			cmd: []string{"node", "server.js"},
 			// Migrations are NOT here — they're a Stage 3 configurator
-			// (`infra/cmd/menu-migrate/`, registered in
+			// (`app-state/menu-db-migrations/`, registered in
 			// `appConfigurators`). Stage 4 hits an already-migrated DB.
 			logOpts: map[string]string{
 				"max-size": "10m",
@@ -102,6 +98,3 @@ var products = []product{
 	},
 }
 
-// repoRoot is `<infraDir>/..` — same resolution every product path
-// here is built on.
-func repoRoot() string { return filepath.Dir(infraDir()) }

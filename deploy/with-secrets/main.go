@@ -54,7 +54,7 @@ import (
 	"os/exec"
 	"syscall"
 
-	"github.com/eduvhc/iedora/infra/internal/bws"
+	"github.com/eduvhc/iedora/internal/bws"
 )
 
 func main() {

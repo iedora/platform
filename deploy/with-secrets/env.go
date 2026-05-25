@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/eduvhc/iedora/infra/internal/bws"
-	"github.com/eduvhc/iedora/infra/internal/cloudflare"
+	"github.com/eduvhc/iedora/internal/bws"
+	"github.com/eduvhc/iedora/internal/cloudflare"
 )
 
 // cfAccountResolver is the production CF account-discovery hook. Swapped

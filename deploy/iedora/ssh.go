@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"os/exec"
 	"os/user"
@@ -72,17 +71,3 @@ func sshExec(ctx context.Context, host string, remoteCmd string) error {
 	return cmd.Run()
 }
 
-// sshCapture runs an SSH command and returns its stdout. stderr is
-// forwarded so the user sees what went wrong.
-func sshCapture(ctx context.Context, host string, remoteCmd string) (string, error) {
-	cmd := exec.CommandContext(ctx, "ssh",
-		"-o", "StrictHostKeyChecking=accept-new",
-		"-o", "ConnectTimeout=10",
-		"root@"+host, remoteCmd)
-	cmd.Stderr = os.Stderr
-	out, err := cmd.Output()
-	if err != nil {
-		return "", fmt.Errorf("ssh root@%s %q: %w", host, remoteCmd, err)
-	}
-	return string(out), nil
-}

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os/exec"
 
-	"github.com/eduvhc/iedora/infra/internal/bws"
+	"github.com/eduvhc/iedora/internal/bws"
 )
 
 // runDoctor checks deploy-readiness on the operator's machine. Cheap

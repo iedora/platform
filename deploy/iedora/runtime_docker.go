@@ -10,7 +10,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/eduvhc/iedora/infra/internal/bws"
+	"github.com/eduvhc/iedora/internal/bws"
 )
 
 // dockerOnHetzner is the productRuntime for products that run as a single
@@ -61,7 +61,7 @@ type dockerOnHetzner struct {
 
 	// cmd — the container's entry command (replaces image CMD).
 	// Migrations are NOT run here — they're a Stage 3 configurator
-	// (`infra/cmd/menu-migrate/`) that runs before Stage 4. Stage 4's
+	// (`app-state/menu-db-migrations/`) that runs before Stage 4. Stage 4's
 	// responsibility is purely container lifecycle; schema is already
 	// at HEAD by the time the new container starts.
 	cmd []string
@@ -143,7 +143,7 @@ func (d *dockerOnHetzner) Deploy(ctx context.Context) error {
 	}
 
 	// Migrations are NOT run here — they're a Stage 3 configurator
-	// (see `appConfigurators` / `infra/cmd/menu-migrate/`) that runs
+	// (see `appConfigurators` / `app-state/menu-db-migrations/`) that runs
 	// before Stage 4 reaches Deploy. By the time we get here, schema
 	// is at HEAD.
 

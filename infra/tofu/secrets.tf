@@ -93,7 +93,7 @@ resource "terraform_data" "bws_sync_autogen" {
 
   triggers_replace = sha256(local.autogen_lookup[each.key])
 
-  # Single Go helper at infra/bin/bws-upsert handles list-then-edit-or-
+  # Single Go helper at bin/bws-upsert handles list-then-edit-or-
   # create, including the leading-`-` value quoting bws CLI's clap parser
   # is strict about. Same shape as null_resource.iedora_admin_grants ↔
   # bin/zitadel-grant. Replaces a duplicate bash+jq heredoc that drifted
@@ -104,6 +104,6 @@ resource "terraform_data" "bws_sync_autogen" {
       BWS_VALUE      = local.autogen_lookup[each.key]
       BWS_PROJECT_ID = var.bws_project_id
     }
-    command = "${path.module}/../bin/bws-upsert"
+    command = "${path.module}/../../bin/bws-upsert"
   }
 }

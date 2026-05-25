@@ -62,21 +62,38 @@ iedora/                                  repo root
   .mcp.json                              shadcn, postgres, bun, next-devtools, playwright MCP servers
   docs/                                  brand-level docs
 
-  infra/                                 SHARED INFRASTRUCTURE + Stage-3 configurators.
-                                         Tofu owns infra (VPS, networks, shared containers);
-                                         Go binaries own app-state reconcile + per-product deploy.
-    bin/iedora                             Stage 2/3/4 orchestrator: iac | app | deploy | pipeline
-    bin/with-secrets                       BWS env wrapper. `--stage iac|app|deploy [--product NAME]`
-    bin/zitadel-apply                      Stage 3 — reconciles Zitadel app state via REST
-    cmd/iedora/                            Go orchestrator (subcommands + productRuntime registry)
-    cmd/zitadel-apply/                     Stage 3 reconciler (JWT-bearer auth, BWS / file output)
-    cmd/with-secrets/                      Stage-filtered env wrapper
-    cmd/dev/                               local dev orchestrator (mirrors prod pipeline shape)
-    tofu/                                Single Tofu root. Hetzner VPS + R2 buckets + DNS + GitHub
-                                         Actions config + every SHARED container on the box
-                                         (postgres, zitadel, zitadel-login, caddy, openobserve,
-                                         backups). Menu container is owned by Stage 4, NOT Tofu.
-    backup/                              self-built Postgres-backup image
+  bin/                                   Shim entry points (go run wrappers — see deploy/CLAUDE.md)
+    iedora                                  pipeline orchestrator (iac | app | deploy | pipeline)
+    with-secrets                            BWS env wrapper. `--stage iac|app|deploy [--product NAME]`
+    bws-upsert                              Stage 2 helper invoked by Tofu's bws_sync_autogen provisioner
+    zitadel-apply                           Stage 3 — Zitadel app config (org / project / OIDC / PAT)
+    menu-db-migrations                      Stage 3 — drizzle-kit migrate on menu's postgres DB
+    openobserve-dashboards                  Stage 3 — push dashboard JSONs via SSH-L tunnel
+  go.mod, go.sum                         single Go module (github.com/eduvhc/iedora) at repo root
+  internal/                              Shared Go helpers (bws, cloudflare, r2, tlsprobe, testfakes)
+
+  infra/                                 Stage 2 ONLY. IaC for the shared estate.
+    tofu/                                  single encrypted Tofu root (VPS + CF + GH config + shared
+                                           containers: postgres, zitadel, zitadel-login, caddy,
+                                           openobserve, backups). Menu container = Stage 4, NOT here.
+    modules/services/                      Tofu sub-modules (postgres, openobserve, zitadel, …)
+    postgres/init.sql                      CREATE DATABASE menu / zitadel (Stage-2 container boot)
+    backup/                                self-built Postgres-backup image
+    bws-upsert/                            Go helper for Stage 2's terraform_data.bws_sync_autogen
+
+  app-state/                             Stage 3. Each subdir is a self-contained configurator.
+    zitadel/                               Zitadel REST reconciler (org / project / OIDC / PAT / …)
+    menu-db-migrations/                    drizzle-kit migrate runner (SSH + docker run)
+    openobserve-dashboards/                dashboard reconciler (SSH-L tunnel + go:embed JSONs)
+
+  deploy/                                Cross-stage orchestrator + env wrapper.
+    iedora/                                Go orchestrator + configurator registry + productRuntime registry
+    with-secrets/                          Stage-filtered BWS env wrapper
+
+  dev/                                   Local development stack (mirror of the 4 stages).
+    orchestrator/                          Go binary driving local Docker + LocalStack
+    tofu/                                  Tofu root that boots dev containers
+    .zitadel-bootstrap/                    (gitignored) local Zitadel FirstInstance outputs
 
   packages/
     eslint-config/                       flat-config factories shared by every workspace
@@ -88,7 +105,7 @@ iedora/                                  repo root
     house/                               Astro — iedora.com
 ```
 
-Menu's `infra/` owns a Dockerfile (built by CI into the GHCR image) plus a tiny Tofu root for the R2 assets bucket and `assets.iedora.com`. The menu container itself is declared in `infra/tofu/containers.tf` at the repo root.
+Menu's `infra/` owns a Dockerfile (built by CI into the GHCR image) plus a tiny Tofu root for the R2 assets bucket and `assets.iedora.com`. The menu container itself is declared in `infra/tofu/containers.tf` at the repo root, and its lifecycle (pull/run on every deploy) is owned by Stage 4 via [`deploy/iedora/runtime_docker.go`](deploy/iedora/runtime_docker.go).
 
 ## Commands
 

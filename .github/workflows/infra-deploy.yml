@@ -32,13 +32,13 @@ on:
       - 'infra/tofu/**'
       - 'infra/modules/**'
       - 'infra/postgres/**'
-      - 'infra/cmd/iedora/**'
-      - 'infra/cmd/with-secrets/**'
-      - 'infra/internal/**'
-      - 'infra/bin/iedora'
-      - 'infra/bin/with-secrets'
-      - 'infra/go.mod'
-      - 'infra/go.sum'
+      - 'deploy/iedora/**'
+      - 'deploy/with-secrets/**'
+      - 'internal/**'
+      - 'bin/iedora'
+      - 'bin/with-secrets'
+      - 'go.mod'
+      - 'go.sum'
       - 'Taskfile.yml'
       - '.github/workflows/infra-deploy.yml'
 
@@ -91,9 +91,9 @@ jobs:
       - name: Install Go
         uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v6
         with:
-          go-version-file: infra/go.mod
+          go-version-file: go.mod
           cache: true
-          cache-dependency-path: infra/go.sum
+          cache-dependency-path: go.sum
 
       - name: Install OpenTofu
         # Pin to the laptop's current major.minor (1.12.x). Bumping
@@ -112,9 +112,9 @@ jobs:
         id: host
         run: |
           set -euo pipefail
-          infra/bin/with-secrets --stage iac -- \
+          bin/with-secrets --stage iac -- \
             tofu -chdir=infra/tofu init -upgrade -input=false >/dev/null
-          HOST=$(infra/bin/with-secrets --stage iac -- \
+          HOST=$(bin/with-secrets --stage iac -- \
             tofu -chdir=infra/tofu output -raw hetzner_ipv4 2>/dev/null || echo "")
           if [ -n "$HOST" ]; then
             echo "::add-mask::$HOST"

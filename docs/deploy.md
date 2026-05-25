@@ -157,7 +157,7 @@ next run starts from canonical state.
 ## Stage 3 — App state (`task app:apply`)
 
 Walks the configurator registry in
-[`infra/cmd/iedora/configurators.go`](../infra/cmd/iedora/configurators.go).
+[`deploy/iedora/configurators.go`](../deploy/iedora/configurators.go).
 Each configurator is a separate binary that owns one running shared
 service's application-level configuration.
 
@@ -176,7 +176,7 @@ the binary anywhere under `infra/`.
 
 ### Current configurators (run in order)
 
-#### `zitadel-app-config` → [`bin/zitadel-apply`](../infra/bin/zitadel-apply)
+#### `zitadel-app-config` → [`bin/zitadel-apply`](../bin/zitadel-apply)
 
 Reconciles the Zitadel IdP's application state via REST. Authenticates
 with the FirstInstance-minted SA key (RSA JWT bearer, hand-rolled in Go
@@ -226,7 +226,7 @@ Operator reconciles via Zitadel UI before re-running.
 
 **Subsumes** the legacy `zitadel-grant` binary via `--grants-only`.
 
-#### `menu-db-migrations` → [`bin/menu-db-migrations`](../infra/bin/menu-db-migrations)
+#### `menu-db-migrations` → [`bin/menu-db-migrations`](../bin/menu-db-migrations)
 
 drizzle-kit migrate against menu's postgres database. SSHes to the box,
 runs `docker run --rm --network iedora -e DATABASE_URL=...
@@ -247,7 +247,7 @@ migration fails loud in the deploy log without crash-looping the live
 menu container. Multi-replica future is also unblocked — migrations
 run once per deploy, not once per replica boot.
 
-#### `openobserve-dashboards` → [`bin/openobserve-dashboards`](../infra/bin/openobserve-dashboards)
+#### `openobserve-dashboards` → [`bin/openobserve-dashboards`](../bin/openobserve-dashboards)
 
 Pushes 3 dashboards (`business`, `technical`, `correlation`) to the
 running OpenObserve. JSONs are embedded in the binary via
@@ -276,7 +276,7 @@ when new products land.
 ## Stage 4 — Deploy (`task deploy:<product>`)
 
 Per-product. Fans out across the registry in
-[`infra/cmd/iedora/products.go`](../infra/cmd/iedora/products.go). Each
+[`deploy/iedora/products.go`](../deploy/iedora/products.go). Each
 product has a `productRuntime` — the polymorphism point for "how does
 this product get shipped to its runtime."
 
@@ -373,7 +373,7 @@ TF_VAR_* aliases auto-emitted only for stages that use Tofu (iac,
 deploy). App stage doesn't get TF_VARs.
 
 Tests at
-[`infra/cmd/with-secrets/env_test.go`](../infra/cmd/with-secrets/env_test.go)
+[`deploy/with-secrets/env_test.go`](../deploy/with-secrets/env_test.go)
 cover every stage path.
 
 ## Local commands (Taskfile)
@@ -401,7 +401,7 @@ task zitadel:grants              # Re-run iedora-admin grants only (`bin/zitadel
 
 Each task is a 1-line shim into the Go orchestrator. The Taskfile
 exists so the operator has a stable command surface; the actual logic
-is in `infra/cmd/iedora/` and the per-configurator/per-runtime
+is in `deploy/iedora/` and the per-configurator/per-runtime
 binaries.
 
 ## CI flow
@@ -411,8 +411,8 @@ flows via `workflow_run` triggers.
 
 | Workflow | Stage | Trigger |
 |----------|-------|---------|
-| [`infra-deploy.yml`](../.github/workflows/infra-deploy.yml) | 2 | push to main on `infra/tofu/**`, `infra/cmd/iedora/**`, `infra/cmd/with-secrets/**`, `Taskfile.yml`. Manual dispatch. |
-| [`app-state.yml`](../.github/workflows/app-state.yml)       | 3 | `workflow_run` on infra-deploy success. Also: push on `infra/cmd/zitadel-apply/**`, `infra/cmd/menu-db-migrations/**`, `infra/cmd/openobserve-dashboards/**`. Manual dispatch. |
+| [`infra-deploy.yml`](../.github/workflows/infra-deploy.yml) | 2 | push to main on `infra/tofu/**`, `deploy/iedora/**`, `deploy/with-secrets/**`, `Taskfile.yml`. Manual dispatch. |
+| [`app-state.yml`](../.github/workflows/app-state.yml)       | 3 | `workflow_run` on infra-deploy success. Also: push on `app-state/zitadel/**`, `app-state/menu-db-migrations/**`, `app-state/openobserve-dashboards/**`. Manual dispatch. |
 | [`menu.yml`](../.github/workflows/menu.yml)                 | 1+4 | push to main on `products/menu/**`. Build + push image, then dispatches `deploy.yml(product=menu, sha=...)`. |
 | [`house.yml`](../.github/workflows/house.yml)               | 1+4 | push to main on `products/house/**`. Dispatches `deploy.yml(product=house)`. |
 | [`deploy.yml`](../.github/workflows/deploy.yml)             | 4 | reusable `workflow_call` invoked by `menu.yml` / `house.yml`. Generic over `product`. |
@@ -426,11 +426,11 @@ side of `deploy.yml` commit the encrypted `terraform.tfstate` back to
 
 ## Local dev stack (`task dev`)
 
-[`infra/cmd/dev/`](../infra/cmd/dev/) boots the same shape on the
+[`dev/orchestrator/`](../dev/orchestrator/) boots the same shape on the
 operator's Docker daemon — postgres, zitadel, zitadel-login,
 localstack (S3), openobserve. Same configurator pattern: after
 containers come up, the dev orchestrator runs `bin/zitadel-apply
---no-bws --output-file infra/dev/.zitadel-bootstrap/outputs.json`
+--no-bws --output-file dev/.zitadel-bootstrap/outputs.json`
 against `localhost:8080`, then composes
 `products/menu/.env` + `.env.local` in Go from the outputs file +
 tofu outputs + minted random session secret.
@@ -447,7 +447,7 @@ drops + recreates one database.
 Most day-2 work is SSH against the box. Resolve the host once and re-use:
 
 ```bash
-HOST=$(infra/bin/with-secrets --stage iac -- tofu -chdir=infra/tofu output -raw hetzner_ipv4)
+HOST=$(bin/with-secrets --stage iac -- tofu -chdir=infra/tofu output -raw hetzner_ipv4)
 
 # Logs
 ssh root@$HOST docker logs -f --tail=200 infra-zitadel        # or infra-menu-web / infra-caddy / …
@@ -470,7 +470,7 @@ ssh -L 5080:localhost:5080 root@$HOST   # then open http://localhost:5080
 | Secret kind | How to rotate |
 |-------------|---------------|
 | `INFRA_*` bootstrap (HCLOUD, CF, GH, etc.) | Regenerate at the source provider, then `bws secret edit <id>` with the new value. |
-| `IAC_*` (Tofu-minted) | `infra/bin/with-secrets --stage iac -- tofu -chdir=infra/tofu apply -replace=random_password.<name>`. The `terraform_data.bws_sync_autogen` write-through pushes the new value to BWS automatically. |
+| `IAC_*` (Tofu-minted) | `bin/with-secrets --stage iac -- tofu -chdir=infra/tofu apply -replace=random_password.<name>`. The `terraform_data.bws_sync_autogen` write-through pushes the new value to BWS automatically. |
 | `APP_ZITADEL_MENU_SA_TOKEN` | `bws secret delete <id>`, then `task app:apply` — zitadel-apply detects `(no BWS, yes Zitadel)`, deletes the live PAT, mints a new one, writes BWS. Menu container restarts on next `task deploy:menu`. |
 | `DEPLOY_MENU_SESSION_SECRET` | `bws secret delete <id>`, then `task deploy:menu`. `dockerOnHetzner.appSecrets` re-mints. All active sessions invalidate (users re-auth). |
 | `IAC_ZITADEL_MASTERKEY` | **Don't rotate casually.** It encrypts Zitadel's projection table — re-keying mid-flight is unsupported. To actually rotate: `TF_VAR_allow_masterkey_rotation=true task infra:up` (one-time override on the prevent_destroy lifecycle guard), then a Zitadel rebootstrap (see below). |
@@ -579,13 +579,13 @@ the affected stage.
 | `iedora.com` 530 / connection refused | n/a | A record resolves but TLS fails | Either `infra-caddy` is down (`docker logs infra-caddy`) or the worker isn't published. CF Workers' apex custom-domain takes a few seconds after `cloudflare_workers_custom_domain` create. |
 | `menu.iedora.com` 502 between deploys | 4 | Stage 4 stopped `infra-menu-web` and the new container hasn't come up yet | Wait ~5s. If persistent: `task deploy:menu` to restart. |
 | `tofu apply` hangs at Pass 2 | 2 | Cloud-init still installing Docker. `null_resource.docker_ready` waits up to 5m | `ssh root@<ip> 'cloud-init status'`. If stuck >10m: `tofu apply -replace=hcloud_server.iedora` for a fresh box. |
-| Destroy fails: `bucket not empty` 409 on CF R2 | 2 | `internal/r2.EmptyBucket` failed silently | Read the destroy log's `! R2 empty failed` line; check `infra/internal/r2/r2_test.go` is green; manually empty via the CF dashboard, retry. |
+| Destroy fails: `bucket not empty` 409 on CF R2 | 2 | `internal/r2.EmptyBucket` failed silently | Read the destroy log's `! R2 empty failed` line; check `internal/r2/r2_test.go` is green; manually empty via the CF dashboard, retry. |
 
 ## Pre-merge runbook
 
-Run before merging any change to the orchestrator (`infra/cmd/iedora/`,
-`infra/cmd/with-secrets/`, `infra/cmd/zitadel-apply/`, the other Stage 3
-binaries, `infra/tofu/*.tf`, `infra/internal/*`, `infra/bin/*`,
+Run before merging any change to the orchestrator (`deploy/iedora/`,
+`deploy/with-secrets/`, `app-state/zitadel/`, the other Stage 3
+binaries, `infra/tofu/*.tf`, `internal/*`, `infra/bin/*`,
 `Taskfile.yml`, or `products/*/infra/tofu/*.tf`). The sequence proves
 the moving parts compose correctly against live cloud APIs — unit
 tests cover individual helpers but only this catches cross-API

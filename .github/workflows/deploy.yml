@@ -3,7 +3,7 @@
 # (menu.yml, house.yml). Generic over product name: the inner
 # `task deploy:<product>` dispatches through the productRuntime
 # interface, so adding a 4th product = (1) new struct in
-# `infra/cmd/iedora/products.go`, (2) new caller workflow that invokes
+# `deploy/iedora/products.go`, (2) new caller workflow that invokes
 # THIS workflow with `inputs.product=<name>`.
 #
 # Inputs:
@@ -18,7 +18,7 @@ on:
   workflow_call:
     inputs:
       product:
-        description: 'Product name (matches `infra/cmd/iedora/products.go` registry: menu | house | …).'
+        description: 'Product name (matches `deploy/iedora/products.go` registry: menu | house | …).'
         type: string
         required: true
       image_sha:
@@ -104,12 +104,12 @@ jobs:
 
       - name: Install Go
         # Needed for `go run` inside bin/iedora + bin/with-secrets +
-        # bin/zitadel-apply. Aligns with `infra/go.mod` (go 1.26.2).
+        # bin/zitadel-apply. Aligns with `go.mod` (go 1.26.2).
         uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v6
         with:
-          go-version-file: infra/go.mod
+          go-version-file: go.mod
           cache: true
-          cache-dependency-path: infra/go.sum
+          cache-dependency-path: go.sum
 
       - name: Install OpenTofu
         # House uses tofu (per-product Cloudflare Workers root). Menu
@@ -137,7 +137,7 @@ jobs:
           # repeats this internally (the runtime resolves it lazily), but
           # we need it here to pre-populate known_hosts so the first SSH
           # doesn't fail on a host-key prompt.
-          HOST=$(infra/bin/with-secrets --stage iac -- \
+          HOST=$(bin/with-secrets --stage iac -- \
             tofu -chdir=infra/tofu output -raw hetzner_ipv4 2>/dev/null || true)
           if [ -n "$HOST" ]; then
             echo "::add-mask::$HOST"

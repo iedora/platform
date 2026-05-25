@@ -12,15 +12,15 @@ import (
 // that knows how to talk to one running shared service and bring its
 // app-level configuration to a declared state.
 //
-// One configurator per service. Today: Zitadel. Tomorrow (queued):
-// OpenObserve dashboards, future Postgres role provisioner, etc. Each
-// configurator is its own runnable artifact (Go binary, bash script — the
-// shape doesn't matter) under `infra/cmd/<name>/` or `infra/<name>/bin/`.
+// One configurator per concern. Today: Zitadel, menu DB migrations,
+// OpenObserve dashboards. Each lives in its own `app-state/<name>/`
+// directory with a thin `bin/<name>` shim at repo root.
 //
 // Adding a configurator:
-//   1. Drop the binary/script anywhere under infra/.
-//   2. Append one entry to `appConfigurators` below.
-//   3. Implement idempotency yourself — Stage 3 will run the binary on
+//   1. New directory under `app-state/<name>/` with a `package main`.
+//   2. A shim under `bin/<name>` that `go run -C $REPO_ROOT ./app-state/<name>`.
+//   3. Append one entry to `appConfigurators` below.
+//   4. Implement idempotency yourself — Stage 3 will run the binary on
 //      every deploy.
 //
 // Order in the slice = execution order. Sequential, not parallel —
@@ -31,8 +31,9 @@ type appConfigurator struct {
 	// name — short human label for logs ("zitadel").
 	name string
 
-	// binary — path to the executable, relative to infra/. Receives
-	// the orchestrator's full env (TF_VAR_*, INFRA_*, BWS_*, etc.).
+	// binary — path to the executable, relative to the repo root.
+	// Receives the orchestrator's full env (TF_VAR_*, IAC_*, APP_*,
+	// BWS_*, etc.).
 	binary string
 
 	// args — extra args after the binary. Empty for default behavior.
@@ -51,14 +52,14 @@ type appConfigurator struct {
 var appConfigurators = []appConfigurator{
 	{
 		// Org, project, roles, OIDC app, machine user + PAT, action
-		// targets, admin grants — see infra/cmd/zitadel-apply/.
+		// targets, admin grants — see app-state/zitadel/.
 		name:   "zitadel-app-config",
 		binary: "bin/zitadel-apply",
 	},
 	{
 		// drizzle-kit migrate against menu's postgres database. SSHes
 		// to the box and `docker run`s migrate.mjs from the menu image
-		// at MENU_IMAGE_SHA. See infra/cmd/menu-db-migrations/.
+		// at MENU_IMAGE_SHA. See app-state/menu-db-migrations/.
 		name:   "menu-db-migrations",
 		binary: "bin/menu-db-migrations",
 	},
@@ -68,7 +69,7 @@ var appConfigurators = []appConfigurator{
 		// firewall-internal in prod; the container's `expose_host_ip
 		// = 127.0.0.1` binding + Hetzner's edge firewall both block
 		// public access. JSONs are embedded in the binary at compile
-		// time. See `infra/cmd/openobserve-dashboards/`.
+		// time. See `app-state/openobserve-dashboards/`.
 		name:   "openobserve-dashboards",
 		binary: "bin/openobserve-dashboards",
 	},
@@ -78,7 +79,7 @@ var appConfigurators = []appConfigurator{
 // Stdout/stderr stream through to the operator's terminal so they see
 // the configurator's own log lines interleaved with stage banners.
 func runConfigurator(ctx context.Context, ac appConfigurator) error {
-	bin := filepath.Join(infraDir(), ac.binary)
+	bin := filepath.Join(repoRoot(), ac.binary)
 	if _, err := os.Stat(bin); err != nil {
 		return fmt.Errorf("configurator %q binary %s not found: %w", ac.name, bin, err)
 	}

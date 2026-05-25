@@ -112,7 +112,7 @@ const menuSAPATExpiry = "2099-01-01T00:00:00Z"
 //
 // The 6 outputs this binary writes back to BWS. Stage 4 (`iedora deploy menu`)
 // reads them when composing the menu container env. Keep aligned with
-// `infra/cmd/with-secrets/env.go` aliases.
+// `deploy/with-secrets/env.go` aliases.
 
 const (
 	bwsKeyOIDCClientID         = "APP_ZITADEL_MENU_OIDC_CLIENT_ID"

@@ -10,9 +10,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/eduvhc/iedora/infra/internal/bws"
-	"github.com/eduvhc/iedora/infra/internal/cloudflare"
-	"github.com/eduvhc/iedora/infra/internal/r2"
+	"github.com/eduvhc/iedora/internal/bws"
+	"github.com/eduvhc/iedora/internal/cloudflare"
+	"github.com/eduvhc/iedora/internal/r2"
 )
 
 // runIacApply is Stage 2 of the pipeline. Brings up shared infrastructure

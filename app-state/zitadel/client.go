@@ -191,7 +191,7 @@ func (c *client) signJWT() (string, error) {
 // HTTP retry policy. Zitadel's gateway can transiently 503 while its
 // internal read-model catches up — most commonly right after a freshly-
 // minted IAM grant, which is exactly when this binary runs. Same shape as
-// the prior zitadel-grant binary at infra/cmd/zitadel-grant/main.go:80-84.
+// the prior zitadel-grant binary at app-state/zitadel/main.go:80-84.
 const (
 	maxAttempts    = 6
 	initialBackoff = time.Second
@@ -366,5 +366,5 @@ func isNoChanges(status int, body []byte) bool {
 }
 
 // stderr indirection so tests can capture output. Mirrors the main
-// orchestrator pattern at infra/cmd/iedora/log.go.
+// orchestrator pattern at deploy/iedora/log.go.
 var stderr io.Writer = nil // set in main.go's init via the os.Stderr default

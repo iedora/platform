@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/eduvhc/iedora/infra/internal/bws"
+	"github.com/eduvhc/iedora/internal/bws"
 )
 
 // allBWSSecrets is the fixture that mirrors what a real BWS list would

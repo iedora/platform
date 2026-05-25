@@ -67,7 +67,7 @@ shape as every other GitHub Actions secret in this repo (`docs/deploy.md`
 write-through pattern with no exception.
 
 The chain: `IAC_BOOTSTRAP_CLAUDE_CODE_OAUTH_TOKEN` in BWS (`iedora-deploy`
-project) → `infra/bin/with-secrets` exports `TF_VAR_claude_code_oauth_token`
+project) → `bin/with-secrets` exports `TF_VAR_claude_code_oauth_token`
 → `variable "claude_code_oauth_token"` (`infra/tofu/variables.tf`) →
 `local.github_secrets["CLAUDE_CODE_OAUTH_TOKEN"]` (`infra/tofu/github.tf`)
 → `task up` reconciles the GitHub Actions secret the workflow

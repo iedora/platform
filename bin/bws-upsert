@@ -1,21 +1,12 @@
 #!/usr/bin/env bash
-# Transparent wrapper for the Go bws-upsert command at
-# infra/cmd/bws-upsert. Same shape as bin/iedora, bin/with-secrets, and
-# bin/zitadel-grant — `go run` compiles once into the user's GOCACHE;
-# subsequent invocations reuse the cached binary.
+# Transparent wrapper for bws-upsert at infra/bws-upsert.
+# `go run` compiles once into GOCACHE; subsequent invocations reuse the
+# cached binary.
 #
-# Used by:
-#   - infra/tofu/secrets.tf       terraform_data.bws_sync_autogen
-#                                 (write-through of AUTOGEN_INFRA_* values
-#                                 minted by random_password resources)
-#   - ad-hoc operator one-liners  `BWS_KEY=… BWS_VALUE=… bin/bws-upsert`
-#
-# Reads BWS_PROJECT_ID, BWS_KEY, BWS_VALUE from environment. See the
-# cmd godoc for details. BWS_ACCESS_TOKEN must also be in env — the
-# inner `bws` CLI consumes it.
+# Stage 2 helper. Invoked by terraform_data.bws_sync_autogen in infra/tofu/secrets.tf to write AUTOGEN values back to BWS. Reads BWS_PROJECT_ID, BWS_KEY, BWS_VALUE from env.
 set -euo pipefail
 
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-INFRA_DIR="$(dirname "$DIR")"
+REPO_ROOT="$(dirname "$DIR")"
 
-exec go run -C "$INFRA_DIR" ./cmd/bws-upsert "$@"
+exec go run -C "$REPO_ROOT" ./infra/bws-upsert "$@"

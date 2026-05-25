@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/eduvhc/iedora/infra/internal/bws"
-	"github.com/eduvhc/iedora/infra/internal/tlsprobe"
+	"github.com/eduvhc/iedora/internal/bws"
+	"github.com/eduvhc/iedora/internal/tlsprobe"
 )
 
 // ensureSAKey is the binary's self-bootstrap. It runs BEFORE reconcile

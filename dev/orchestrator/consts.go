@@ -26,7 +26,7 @@ const (
 	zitadelOutputsPathRel = "infra/dev/.zitadel-bootstrap/outputs.json"
 
 	// Path to the zitadel-apply shim relative to repo root.
-	zitadelApplyBinRel = "infra/bin/zitadel-apply"
+	zitadelApplyBinRel = "bin/zitadel-apply"
 
 	// ── Network endpoints (well-known dev hosts) ─────────────────────────
 

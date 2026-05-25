@@ -12,7 +12,7 @@ import (
 // iedora docker network — the resolver path Zitadel will use moments later
 // when it validates `menu-permissions` / `menu-grants` action_target URLs.
 //
-// This is a verbatim port of `infra/cmd/iedora/deploy.go:257-289` from
+// This is a verbatim port of `deploy/iedora/deploy.go:257-289` from
 // before the Zitadel extraction. Now it lives next to the code that
 // actually triggers the URL validation race, so the gate is where the
 // hazard is.
@@ -65,7 +65,7 @@ func waitForMenuDNS(ctx context.Context, host string, budget time.Duration) erro
 }
 
 // sshCapture runs an SSH command on root@host and returns stdout. Same
-// shape as infra/cmd/iedora/ssh.go::sshCapture; ported here because
+// shape as deploy/iedora/ssh.go::sshCapture; ported here because
 // zitadel-apply doesn't share that package.
 func sshCapture(ctx context.Context, host, remoteCmd string) (string, error) {
 	cmd := exec.CommandContext(ctx, "ssh",

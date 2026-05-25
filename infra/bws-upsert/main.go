@@ -28,7 +28,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/eduvhc/iedora/infra/internal/bws"
+	"github.com/eduvhc/iedora/internal/bws"
 )
 
 func main() {
