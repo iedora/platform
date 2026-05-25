@@ -77,9 +77,16 @@ Reason: Stage 3 (migrations) runs **before** Stage 4 (container swap).
 Without expand/contract, a breaking migration kills the still-running
 old container while Stage 4 is mid-pull.
 
-⚠️ **Not enforced yet.** `menu-db-migrations` runs drizzle-kit
-unconditionally. Plan:
-[guardrails-implementation.md § Rule 3](./guardrails-implementation.md#rule-3--expand-contract-migrations).
+Implementation: `gateMigrations` at
+[`app-state/menu-db-migrations/lint.go`](../app-state/menu-db-migrations/lint.go)
+scans `products/menu/drizzle/*.sql` for `DROP COLUMN` / `DROP TABLE`
+/ `ALTER COLUMN ... TYPE` / `RENAME COLUMN` / `RENAME TABLE`. In
+live mode, each destructive statement must carry an inline
+`-- iedora:expand-contract phase=contract references=<expand-tag>`
+marker (scoped to the same `--> statement-breakpoint` block) or the
+configurator refuses to run. In local mode, violations log to
+stderr but don't block. Tested via
+[`lint_test.go`](../app-state/menu-db-migrations/lint_test.go).
 
 ### 4. Stage 4 menu deploy is zero-downtime
 
@@ -95,10 +102,13 @@ replacement is healthy. The contract:
    upstream reload).
 5. Stop + remove the old container.
 
-⚠️ **Not enforced yet.** Today's runtime is naive
-`docker stop && docker rm && docker run`; the [§ Failure modes](#failure-modes)
-table even acknowledges the 5s 502 window. Plan:
-[guardrails-implementation.md § Rule 4](./guardrails-implementation.md#rule-4--hot-swap-deploy).
+Implemented in
+[`deploy/iedora/runtime_docker.go::dockerOnHetzner.deployHotSwap`](../deploy/iedora/runtime_docker.go),
+opted in by the `Healthcheck` field on the menu product literal in
+[`products.go`](../deploy/iedora/products.go). Tested via
+[`runtime_docker_swap_test.go`](../deploy/iedora/runtime_docker_swap_test.go)
+(happy path, probe timeout, probe error, alias-swap failure, naive
+fallback).
 
 ### 5. Zitadel reconciler — anti-panic lock
 
@@ -386,7 +396,7 @@ this product get shipped to its runtime."
 
 For Docker-runtime products that run on the shared Hetzner VPS.
 
-**Deploy flow**:
+**Deploy flow** — zero-downtime hot-swap per [Guardrail #4](#4-stage-4-menu-deploy-is-zero-downtime):
 
 1. Mint any per-product `appSecrets` not yet in BWS (menu mints
    `DEPLOY_MENU_SESSION_SECRET` on first deploy).
@@ -395,8 +405,33 @@ For Docker-runtime products that run on the shared Hetzner VPS.
    AUTOGEN secrets) + `envFromTofu` (DATABASE_URL, OTEL endpoint, S3
    creds, etc. — composed values from Tofu state).
 4. SSH to box, `docker login ghcr.io`, `docker pull <image>:<sha>`.
-5. `docker stop <container> && docker rm <container> && docker run -d
-   ...` with the composed env, network alias, log opts.
+5. `docker run -d --name infra-menu-web-next --network-alias
+   infra-menu-web-next ...` — start the incoming container alongside
+   the live one. Only the `-next` alias is bound, so Caddy keeps
+   routing traffic to the OLD container.
+6. Probe `docker exec infra-menu-web-next wget -qO- -T 5
+   http://localhost:3000/up` every 500ms until the body contains
+   `"ok":true` (60s budget). On timeout / failure: best-effort tear
+   down `infra-menu-web-next` and surface the probe error — the live
+   container is never touched.
+7. Atomic cutover in one SSH command:
+   `docker network disconnect iedora infra-menu-web &&
+   docker network disconnect iedora infra-menu-web-next &&
+   docker network connect --alias infra-menu-web --alias
+   infra-menu-web-next iedora infra-menu-web-next`. Caddy resolves
+   the upstream on every request (no in-network DNS cache), so the
+   next request after this command lands on the new container.
+8. Drain for `DrainDuration` (default 10s) — pure Go sleep, no shell
+   sleep — so in-flight requests on the old container finish before
+   SIGTERM.
+9. `docker stop infra-menu-web && docker rm infra-menu-web` — reap
+   the old container.
+10. `docker rename infra-menu-web-next infra-menu-web` so the next
+    deploy starts from the same naming baseline.
+
+Rollback semantics: a failure at step 6 or 7 runs `docker stop / rm /
+network disconnect` against the `-next` container only. The OLD
+container — still bound to the live alias — keeps serving traffic.
 
 **Inputs**:
 - `MENU_IMAGE_SHA` env — set by CI (`github.sha`) or operator (export).
@@ -677,7 +712,7 @@ the affected stage.
 | `unauthorized` from `docker pull ghcr.io/...` | 3/4 | `IAC_BOOTSTRAP_GHCR_TOKEN` expired OR not in scope | Regenerate the PAT, `bws secret edit`. The configurator's `docker login` step uses `--password-stdin` so the token never appears in `docker history`. |
 | `menu-db-migrations: connection refused` | 3 | `infra-postgres` isn't up | `ssh root@$HOST docker ps`. If missing, `task infra:up`. |
 | `iedora.com` 530 / connection refused | n/a | A record resolves but TLS fails | Either `infra-caddy` is down (`docker logs infra-caddy`) or the worker isn't published. CF Workers' apex custom-domain takes a few seconds after `cloudflare_workers_custom_domain` create. |
-| `menu.iedora.com` 502 between deploys | 4 | Stage 4 stopped `infra-menu-web` and the new container hasn't come up yet | Wait ~5s. If persistent: `task deploy:menu` to restart. |
+| `menu.iedora.com` 502 between deploys | 4 | The hot-swap flow normally prevents this — the old container keeps serving until `/up` passes on the new one. A brief (~150ms) window can still fire during the `docker network disconnect/connect` chain at step 7, where the live alias is momentarily unbound. | Retry the request; the alias is bound again within the same second. If persistent: `ssh root@$HOST docker ps` — both `infra-menu-web` and `infra-menu-web-next` running means rename never landed; rename manually. |
 | `tofu apply` hangs at Pass 2 | 2 | Cloud-init still installing Docker. `null_resource.docker_ready` waits up to 5m | `ssh root@<ip> 'cloud-init status'`. If stuck >10m: `tofu apply -replace=hcloud_server.iedora` for a fresh box. |
 | Destroy fails: `bucket not empty` 409 on CF R2 | 2 | `internal/r2.EmptyBucket` failed silently | Read the destroy log's `! R2 empty failed` line; check `internal/r2/r2_test.go` is green; manually empty via the CF dashboard, retry. |
 

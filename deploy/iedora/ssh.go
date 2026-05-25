@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"os"
 	"os/exec"
@@ -71,3 +72,44 @@ func sshExec(ctx context.Context, host string, remoteCmd string) error {
 	return cmd.Run()
 }
 
+// sshCapture runs an SSH command on root@host and returns captured stdout.
+// stderr still streams to the operator's terminal — only stdout is buffered,
+// which is the bit callers parse (e.g. the `/up` probe response body).
+func sshCapture(ctx context.Context, host string, remoteCmd string) (string, error) {
+	cmd := exec.CommandContext(ctx, "ssh",
+		"-o", "StrictHostKeyChecking=accept-new",
+		"-o", "ConnectTimeout=10",
+		"root@"+host, remoteCmd)
+	var out bytes.Buffer
+	cmd.Stdout = &out
+	cmd.Stderr = os.Stderr
+	err := cmd.Run()
+	return out.String(), err
+}
+
+// sshExecutor is the narrow seam `dockerOnHetzner` uses to talk to the
+// remote Docker daemon. Production wires `realSSH{}` (the package-level
+// `sshExec`/`sshCapture`); tests inject a fake that records the command
+// sequence and returns scripted responses.
+type sshExecutor interface {
+	// Exec runs a remote command, streaming output to the operator's
+	// terminal. Used for fire-and-check operations (pull, run, stop,
+	// rm, network connect/disconnect).
+	Exec(ctx context.Context, host, cmd string) error
+
+	// Capture runs a remote command and returns its stdout. Used by the
+	// `/up` probe to parse the response body.
+	Capture(ctx context.Context, host, cmd string) (string, error)
+}
+
+// realSSH is the production sshExecutor — thin wrapper over the package-
+// level sshExec / sshCapture helpers.
+type realSSH struct{}
+
+func (realSSH) Exec(ctx context.Context, host, cmd string) error {
+	return sshExec(ctx, host, cmd)
+}
+
+func (realSSH) Capture(ctx context.Context, host, cmd string) (string, error) {
+	return sshCapture(ctx, host, cmd)
+}

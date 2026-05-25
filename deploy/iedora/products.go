@@ -54,6 +54,13 @@ var products = []product{
 			logOpts: map[string]string{
 				"max-size": "10m",
 			},
+			// Guardrail #4 — opts menu into the zero-downtime hot-swap
+			// flow. Probe `/up` (returns 200 `{"ok":true,"db":"ok"}` on
+			// healthy DB connectivity) on container-local port 3000
+			// until ready, then atomically re-alias `infra-menu-web`
+			// from the old container to the new one. Timeout / Interval /
+			// DrainDuration left zero → defaults (60s / 500ms / 10s).
+			Healthcheck: &Healthcheck{Path: "/up", Port: 3000},
 			envStatic: map[string]string{
 				"NODE_ENV":                "production",
 				"NEXT_TELEMETRY_DISABLED": "1",

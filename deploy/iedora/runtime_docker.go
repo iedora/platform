@@ -9,6 +9,7 @@ import (
 	"os"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/eduvhc/iedora/internal/bws"
 )
@@ -80,6 +81,56 @@ type dockerOnHetzner struct {
 	// no IaC consumer and only the app reads it, so the product owns
 	// minting it. On every Deploy, missing keys are filled.
 	appSecrets []appSecret
+
+	// Healthcheck opts the product in to the zero-downtime hot-swap
+	// deploy path (Guardrail #4). When non-nil, Deploy starts the
+	// incoming container under `<containerName>-next`, probes
+	// `Path:Port` until 200 / `"ok":true`, then atomically re-aliases
+	// the docker network so Caddy starts routing to the new container.
+	// When nil, Deploy falls back to the naive `stop && rm && run`
+	// flow — preserved for future Docker products that don't want
+	// (or can't yet expose) a health endpoint.
+	Healthcheck *Healthcheck
+
+	// DrainDuration is the sleep between alias swap and old-container
+	// kill. Gives in-flight requests on the OLD container a chance to
+	// finish before SIGTERM. Zero → 10s default. Only consulted when
+	// Healthcheck is set (the naive flow has no drain phase).
+	DrainDuration time.Duration
+
+	// ssh is the seam for the SSH executor. Nil → realSSH{} (the
+	// package-level sshExec/sshCapture wrappers). Tests inject a fake.
+	ssh sshExecutor
+}
+
+// Healthcheck describes the HTTP probe used by the hot-swap deploy path
+// to decide when the incoming container is ready to take traffic. The
+// probe runs inside the container (`docker exec ... wget`), so the box
+// firewall never sees the request — the network path is identical to
+// what Caddy will use once the alias swap lands.
+type Healthcheck struct {
+	// Path — HTTP path on the container (e.g. "/up"). Must return 200
+	// with a body containing `"ok":true` when healthy.
+	Path string
+
+	// Port — port the container listens on (e.g. 3000). Used to build
+	// the localhost URL inside the container.
+	Port int
+
+	// Timeout — total budget for the probe loop. Zero → 60s default.
+	Timeout time.Duration
+
+	// Interval — gap between probe attempts. Zero → 500ms default.
+	Interval time.Duration
+}
+
+// sshClient returns the configured sshExecutor, defaulting to realSSH{}.
+// Pulled to a method so callers don't have to nil-check inline.
+func (d *dockerOnHetzner) sshClient() sshExecutor {
+	if d.ssh != nil {
+		return d.ssh
+	}
+	return realSSH{}
 }
 
 // appSecret declares one per-product secret the runtime mints on first
@@ -95,7 +146,14 @@ type appSecret struct {
 	length int
 }
 
-// Deploy implements productRuntime.
+// Deploy implements productRuntime. Two flows live here:
+//
+//   - Healthcheck != nil → zero-downtime hot-swap (Guardrail #4). Start
+//     the incoming container under `<containerName>-next` with the
+//     `-next` alias only, probe `/up` until healthy, atomically swap
+//     the docker network alias, drain, then reap the old container.
+//   - Healthcheck == nil → naive `stop && rm && run`. Kept for runtime
+//     consumers without a health endpoint; no current product uses it.
 func (d *dockerOnHetzner) Deploy(ctx context.Context) error {
 	// Mint any missing per-product app secrets BEFORE composing env —
 	// missing keys would otherwise fail the BWS lookup loudly inside
@@ -120,6 +178,8 @@ func (d *dockerOnHetzner) Deploy(ctx context.Context) error {
 		return err
 	}
 
+	ssh := d.sshClient()
+
 	// `docker login` first — same rationale as menu-db-migrations:
 	// kreuzwerker/docker's registry_auth only applies to Tofu-driven
 	// `docker_image` resources, not ad-hoc SSH+docker pulls.
@@ -132,13 +192,13 @@ func (d *dockerOnHetzner) Deploy(ctx context.Context) error {
 			"echo %s | docker login ghcr.io -u %s --password-stdin",
 			shellSingleQuote(ghcrToken), shellSingleQuote(owner),
 		)
-		if err := sshExec(ctx, host, loginCmd); err != nil {
+		if err := ssh.Exec(ctx, host, loginCmd); err != nil {
 			fmt.Fprintf(stderr, "  ! docker login failed (continuing — image may be cached): %v\n", err)
 		}
 	}
 
 	fmt.Fprintf(stderr, "→ docker pull %s\n", image)
-	if err := sshExec(ctx, host, "docker pull "+image); err != nil {
+	if err := ssh.Exec(ctx, host, "docker pull "+image); err != nil {
 		return fmt.Errorf("pull %s: %w", image, err)
 	}
 
@@ -147,36 +207,205 @@ func (d *dockerOnHetzner) Deploy(ctx context.Context) error {
 	// before Stage 4 reaches Deploy. By the time we get here, schema
 	// is at HEAD.
 
-	// Replace existing container.
+	if d.Healthcheck != nil {
+		return d.deployHotSwap(ctx, ssh, host, image, env)
+	}
+	return d.deployNaive(ctx, ssh, host, image, env)
+}
+
+// deployNaive is the legacy `stop && rm && run` flow. Kept available for
+// any future Docker product that ships without an /up endpoint; no
+// current product wires it (menu's struct sets Healthcheck).
+func (d *dockerOnHetzner) deployNaive(ctx context.Context, ssh sshExecutor, host, image string, env map[string]string) error {
 	fmt.Fprintf(stderr, "→ docker stop+rm+run %s\n", d.containerName)
 	// Best-effort stop/rm — non-fatal if container didn't exist.
-	if err := sshExec(ctx, host, fmt.Sprintf(
+	if err := ssh.Exec(ctx, host, fmt.Sprintf(
 		"docker stop %s 2>/dev/null; docker rm %s 2>/dev/null; true",
 		d.containerName, d.containerName,
 	)); err != nil {
 		return fmt.Errorf("stop+rm %s: %w", d.containerName, err)
 	}
 
-	runArgs := []string{"docker", "run", "-d",
-		"--name", d.containerName,
-		"--network", d.networkName,
-		"--restart", d.restart,
-	}
-	for _, a := range d.networkAliases {
-		runArgs = append(runArgs, "--network-alias", a)
-	}
-	for k, v := range d.logOpts {
-		runArgs = append(runArgs, "--log-opt", k+"="+v)
-	}
-	runArgs = append(runArgs, envArgs(env)...)
-	runArgs = append(runArgs, image)
-	runArgs = append(runArgs, d.cmd...)
-	if err := sshExec(ctx, host, shellJoin(runArgs)); err != nil {
+	runArgs := d.runArgs(d.containerName, d.networkAliases, env, image)
+	if err := ssh.Exec(ctx, host, shellJoin(runArgs)); err != nil {
 		return fmt.Errorf("run %s: %w", d.containerName, err)
 	}
 
 	fmt.Fprintf(stderr, "  ✓ %s running on %s\n", d.containerName, image)
 	return nil
+}
+
+// deployHotSwap implements Guardrail #4 — start `<containerName>-next`
+// alongside the live container, probe it, atomically re-alias, drain,
+// and reap. Any error after the new container is created triggers a
+// best-effort rollback that leaves the old container untouched.
+func (d *dockerOnHetzner) deployHotSwap(ctx context.Context, ssh sshExecutor, host, image string, env map[string]string) error {
+	nextName := d.containerName + "-next"
+
+	// 1. Start the incoming container with ONLY the `-next` alias. The
+	//    live alias (`<containerName>`) stays bound to the old container
+	//    so Caddy keeps routing live traffic until the swap.
+	fmt.Fprintf(stderr, "→ docker run %s (probing before swap)\n", nextName)
+	runArgs := d.runArgs(nextName, []string{nextName}, env, image)
+	if err := ssh.Exec(ctx, host, shellJoin(runArgs)); err != nil {
+		return fmt.Errorf("run %s: %w", nextName, err)
+	}
+
+	// 2. Probe `/up` inside the new container until healthy. The probe
+	//    runs through `docker exec ... wget`, so we test the same code
+	//    path Caddy will hit (container-local DB connectivity, env
+	//    resolution, /up handler).
+	if err := d.probe(ctx, ssh, host, nextName); err != nil {
+		d.rollbackNext(ctx, ssh, host, nextName)
+		return fmt.Errorf("probe %s: %w", nextName, err)
+	}
+	fmt.Fprintf(stderr, "  ✓ %s healthy\n", nextName)
+
+	// 3. Atomic cutover — single SSH command to minimise the window
+	//    where the live alias resolves to nothing. The disconnect+
+	//    connect chain is ~150ms on the box; Caddy resolves on each
+	//    request so a request that lands mid-chain sees ECONNREFUSED.
+	//    Live traffic served by old container while this runs.
+	fmt.Fprintf(stderr, "→ alias swap %s → %s\n", d.containerName, nextName)
+	swap := fmt.Sprintf(
+		"docker network disconnect %s %s && "+
+			"docker network disconnect %s %s && "+
+			"docker network connect --alias %s --alias %s %s %s",
+		d.networkName, d.containerName,
+		d.networkName, nextName,
+		d.containerName, nextName, d.networkName, nextName,
+	)
+	if err := ssh.Exec(ctx, host, swap); err != nil {
+		d.rollbackNext(ctx, ssh, host, nextName)
+		return fmt.Errorf("alias swap: %w", err)
+	}
+
+	// 4. Drain — give the old container's in-flight requests time to
+	//    finish before we SIGTERM it. Pure Go sleep; no shell sleep so
+	//    tests can shave it to 1ms.
+	drain := d.DrainDuration
+	if drain == 0 {
+		drain = 10 * time.Second
+	}
+	fmt.Fprintf(stderr, "→ drain %s\n", drain)
+	select {
+	case <-time.After(drain):
+	case <-ctx.Done():
+		return ctx.Err()
+	}
+
+	// 5. Reap the old container. Best-effort stop+rm: if it's already
+	//    gone (operator killed it mid-deploy) we want to continue to
+	//    the rename so the next deploy finds a stable name.
+	fmt.Fprintf(stderr, "→ reap old %s\n", d.containerName)
+	if err := ssh.Exec(ctx, host, fmt.Sprintf(
+		"docker stop %s 2>/dev/null; docker rm %s 2>/dev/null; true",
+		d.containerName, d.containerName,
+	)); err != nil {
+		return fmt.Errorf("reap %s: %w", d.containerName, err)
+	}
+
+	// 6. Rename `<containerName>-next` → `<containerName>` so the next
+	//    deploy starts from the same naming baseline. The network
+	//    alias already points at the right container; rename only
+	//    affects the docker-internal name.
+	fmt.Fprintf(stderr, "→ rename %s → %s\n", nextName, d.containerName)
+	if err := ssh.Exec(ctx, host, fmt.Sprintf(
+		"docker rename %s %s", nextName, d.containerName,
+	)); err != nil {
+		return fmt.Errorf("rename %s: %w", nextName, err)
+	}
+
+	fmt.Fprintf(stderr, "  ✓ %s running on %s\n", d.containerName, image)
+	return nil
+}
+
+// probe loops over `docker exec <name> wget -qO- -T 5 http://localhost:<port><path>`
+// every Interval until either: the response body contains `"ok":true` (→
+// healthy, return nil), or Timeout elapses (→ return error). Any wget
+// failure (connection refused, DNS, non-200) is a transient miss — we
+// just retry until the budget runs out.
+func (d *dockerOnHetzner) probe(ctx context.Context, ssh sshExecutor, host, name string) error {
+	hc := d.Healthcheck
+	timeout := hc.Timeout
+	if timeout == 0 {
+		timeout = 60 * time.Second
+	}
+	interval := hc.Interval
+	if interval == 0 {
+		interval = 500 * time.Millisecond
+	}
+
+	probeCmd := fmt.Sprintf(
+		"docker exec %s wget -qO- -T 5 http://localhost:%d%s",
+		name, hc.Port, hc.Path,
+	)
+
+	deadline := time.Now().Add(timeout)
+	var lastBody, lastErr string
+	for {
+		body, err := ssh.Capture(ctx, host, probeCmd)
+		if err == nil && strings.Contains(body, `"ok":true`) {
+			return nil
+		}
+		lastBody = body
+		if err != nil {
+			lastErr = err.Error()
+		}
+		if time.Now().After(deadline) {
+			return fmt.Errorf("timeout after %s (last err: %q, last body: %q)", timeout, lastErr, strings.TrimSpace(lastBody))
+		}
+		select {
+		case <-time.After(interval):
+		case <-ctx.Done():
+			return ctx.Err()
+		}
+	}
+}
+
+// rollbackNext is the best-effort cleanup when the hot-swap aborts after
+// `<containerName>-next` has been created. Errors are intentionally
+// ignored — every command is `2>/dev/null` on the remote side, and a
+// network-disconnect against an already-disconnected container is a
+// no-op the caller doesn't care about. The original error from Deploy
+// is what the operator needs to see; this just leaves the box clean.
+func (d *dockerOnHetzner) rollbackNext(ctx context.Context, ssh sshExecutor, host, nextName string) {
+	fmt.Fprintf(stderr, "  ! rolling back %s (old container untouched)\n", nextName)
+	_ = ssh.Exec(ctx, host, fmt.Sprintf(
+		"docker stop %s 2>/dev/null; "+
+			"docker rm %s 2>/dev/null; "+
+			"docker network disconnect %s %s 2>/dev/null; true",
+		nextName, nextName, d.networkName, nextName,
+	))
+}
+
+// runArgs composes the `docker run -d ...` argv for a container with the
+// given name + aliases. Shared between the naive and hot-swap flows so
+// env composition, log opts, and the entry command stay identical
+// between an old-style run and the `-next` container the swap creates.
+func (d *dockerOnHetzner) runArgs(name string, aliases []string, env map[string]string, image string) []string {
+	args := []string{"docker", "run", "-d",
+		"--name", name,
+		"--network", d.networkName,
+		"--restart", d.restart,
+	}
+	for _, a := range aliases {
+		args = append(args, "--network-alias", a)
+	}
+	// Sorted log-opt keys for stable command shape (helps test assertions
+	// and human-readable deploy logs).
+	logKeys := make([]string, 0, len(d.logOpts))
+	for k := range d.logOpts {
+		logKeys = append(logKeys, k)
+	}
+	sort.Strings(logKeys)
+	for _, k := range logKeys {
+		args = append(args, "--log-opt", k+"="+d.logOpts[k])
+	}
+	args = append(args, envArgs(env)...)
+	args = append(args, image)
+	args = append(args, d.cmd...)
+	return args
 }
 
 // Destroy implements productRuntime. Stops + removes the container on the
@@ -190,7 +419,7 @@ func (d *dockerOnHetzner) Destroy(ctx context.Context) error {
 		fmt.Fprintf(stderr, "  - %s: VPS unreachable (%v) — assuming already torn down\n", d.containerName, err)
 		return nil
 	}
-	return sshExec(ctx, host, fmt.Sprintf(
+	return d.sshClient().Exec(ctx, host, fmt.Sprintf(
 		"docker stop %s 2>/dev/null; docker rm %s 2>/dev/null; true",
 		d.containerName, d.containerName,
 	))

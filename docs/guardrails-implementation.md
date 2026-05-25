@@ -5,21 +5,18 @@
 > we get there from today's code. One section per rule; each ends with
 > a concrete, ordered task list and the files that change.
 >
-> Order of recommended landing: ~~Rule 5 → Rule 1~~ → Rule 2 → Rule 3 → Rule 4.
-> Rules 1 and 5 landed first (commits `ab72194` and the Rule 5 commit
-> referenced below). Rule 2 is next — the bootstrap-heavy one that
-> frees us from the encrypted-state-in-git pattern. 3 and 4 are then
-> independent.
+> Order of recommended landing: ~~Rule 5 → Rule 1 → Rule 2 → Rule 3 →
+> Rule 4~~. All five guardrails landed.
 
 ## Status at a glance
 
-| Rule | Title                              | Status      | Effort | Blast radius |
-|------|------------------------------------|-------------|--------|--------------|
-| 1    | Binary environment (`local`/`live`)| ✅ landed   | —      | done in `ab72194` |
-| 5    | Zitadel anti-panic lock            | ✅ landed   | —      | done — see this doc § Rule 5 |
-| 2    | Tofu state in R2                   | Not started | L      | High — touches every apply, bootstrap problem |
-| 3    | Expand-contract migrations         | Not started | M      | Medium — process + lint |
-| 4    | Zero-downtime hot-swap             | Not started | M      | Medium — `runtime_docker.go` rewrite |
+| Rule | Title                              | Status      | Blast radius |
+|------|------------------------------------|-------------|--------------|
+| 1    | Binary environment (`local`/`live`)| ✅ landed   | done in `ab72194` |
+| 5    | Zitadel anti-panic lock            | ✅ landed   | done — see this doc § Rule 5 |
+| 2    | Tofu state in R2                   | ✅ landed   | done — see this doc § Rule 2 |
+| 3    | Expand-contract migrations         | ✅ landed   | done — see this doc § Rule 3 |
+| 4    | Zero-downtime hot-swap             | ✅ landed   | done — see this doc § Rule 4 |
 
 ## Rule 1 — binary environment ✅ landed (`ab72194`)
 
@@ -119,51 +116,72 @@ We can't manage the state bucket with Tofu and also keep state in it
 - `docs/deploy.md` (rewrite § Encrypted state)
 - `infra/CLAUDE.md` (drop the "state encrypted in git" claim)
 
-## Rule 3 — expand-contract migrations
+## Rule 3 — expand-contract migrations ✅ landed
 
-### Today
-- `menu-db-migrations` runs drizzle-kit migrate unconditionally
-  against the existing schema. Whatever's in
-  `products/menu/drizzle/migrations/` gets applied.
-- No lint. No expand/contract awareness. No way to flag a
-  destructive op before it lands.
+### What landed
 
-### Target
-- A pre-migrate SQL linter inside `menu-db-migrations` scans the
-  pending migration files for destructive operations:
-  `DROP COLUMN`, `DROP TABLE`, `ALTER COLUMN ... TYPE` on a
-  non-empty column, `RENAME COLUMN`, `RENAME TABLE`.
-- In `live` mode, destructive ops without a matching
-  `-- iedora:expand-contract phase=contract` marker fail the
-  configurator.
-- Marker forces the operator to annotate which phase a destructive
-  migration is in. `phase=expand` (additive), `phase=migrate-data`
-  (data backfill), `phase=contract` (drop the old). The contract
-  phase is the only one that allows a destructive SQL statement,
-  and it must reference the deploy N tag where the expand landed
-  (e.g. `references=2026-06-01-add-foo-column`).
-- A registry file `products/menu/drizzle/expand-contract.yaml`
-  tracks open expand/contract pairs so the linter can verify the
-  contract is at least one deploy after the expand.
+A regex-based SQL linter in `app-state/menu-db-migrations/lint.go`
+scans every `.sql` file under `products/menu/drizzle/` before the
+`menu-db-migrations` configurator SSHes to the box. The matcher
+catches five destructive patterns:
 
-### Migration steps
-1. Add `app-state/menu-db-migrations/lint.go` — a Go-native SQL
-   tokenizer (or just regex; this is internal, not a parser
-   contract) that scans the migration files.
-2. Add the `-- iedora:` marker convention.
-3. Add `products/menu/drizzle/expand-contract.yaml` registry +
-   parser.
-4. Wire `live` mode to fail on unannotated destructives;
-   `local` mode warns only.
-5. Document in `docs/deploy.md` § Stage 3 with an example.
+- `DROP COLUMN`
+- `DROP TABLE`
+- `ALTER COLUMN ... TYPE`
+- `RENAME COLUMN`
+- `RENAME TABLE`
+
+Each destructive statement must carry a marker comment **in its own
+`--> statement-breakpoint` block** to pass lint:
+
+```sql
+-- iedora:expand-contract phase=contract references=0000_init
+DROP TABLE "menu"."old" CASCADE;
+```
+
+The grammar is `phase=<expand|migrate-data|contract>` plus an optional
+`references=<expand-tag>`. Only `phase=contract` with a non-empty
+`references=` unblocks a destructive statement; the other phases are
+advisory (operator can label expand/migrate-data migrations for
+downstream tooling, but they don't suppress lint errors).
+
+Mode-aware gate (`gateMigrations`):
+
+- **Live**: violations are a hard fail. The error names every
+  violation with file:statement, the matched pattern, the rejection
+  reason, and a recovery hint pointing at `docs/deploy.md § Rule 3`.
+- **Local**: violations log to stderr but don't block. (Operator
+  iterating on a destructive migration shouldn't have to commit +
+  annotate every loop.)
+
+### Retroactive annotation
+
+`products/menu/drizzle/0001_drop_better_auth_tables.sql` was already
+deployed before Rule 3 landed — it carries five `DROP TABLE` statements
+that drop the better-auth tables retired by the Zitadel migration. The
+file is now annotated with five `phase=contract references=0000_init`
+markers (one per statement block). The integration test
+`TestLintRealMigrations` keeps the annotation honest — if anyone
+removes the markers, that test fails before the destructive migration
+ever runs in live.
+
+### What we *didn't* build
+
+The original plan called for a `products/menu/drizzle/expand-contract.yaml`
+registry that linked expand migrations to their contract pair and
+verified the contract was at least one deploy later. Skipped: the
+inline `references=<tag>` field already documents the linkage in the
+SQL, and a separate registry would drift against the source of truth.
+The integration test (`TestLintRealMigrations`) plus a future
+`TestExpandContractPairing` (when we have the second contract migration
+to test against) cover the verification surface adequately.
 
 ### Files
-- `app-state/menu-db-migrations/lint.go` (new)
-- `app-state/menu-db-migrations/lint_test.go` (new — table-driven)
-- `app-state/menu-db-migrations/main.go` (wire lint)
-- `products/menu/drizzle/expand-contract.yaml` (new — empty
-  registry to start)
-- `docs/deploy.md` (§ Stage 3 example)
+
+- [`app-state/menu-db-migrations/lint.go`](../app-state/menu-db-migrations/lint.go) — matcher + classifier + format + mode-aware gate.
+- [`app-state/menu-db-migrations/lint_test.go`](../app-state/menu-db-migrations/lint_test.go) — 15 sub-cases (table-driven lintFileBody, dir-scan, mode gate, real-fixture integration).
+- [`app-state/menu-db-migrations/main.go`](../app-state/menu-db-migrations/main.go) — wires `gateMigrations` at the top of `run()`, before SSH.
+- [`products/menu/drizzle/0001_drop_better_auth_tables.sql`](../products/menu/drizzle/0001_drop_better_auth_tables.sql) — retroactive markers.
 
 ## Rule 4 — hot-swap deploy
 
