@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"net/http"
 	"time"
+
+	"github.com/eduvhc/iedora/infra/internal/mode"
 )
 
 // Reconcile runs the full app-state reconcile against the live Zitadel.
@@ -16,19 +18,20 @@ import (
 // Failure modes are explicit per resource — see the per-reconcile-fn
 // docs for the (bws-has, zitadel-has) recovery branches.
 type Config struct {
-	BaseURL       string   // "https://auth.iedora.com" or "http://localhost:8080"
-	SAKeyJSON     string   // FirstInstance-minted SA key
-	MenuHostname  string   // for action target endpoint URLs
-	AdminEmails   []string // emails to grant iedora-admin to
-	SSHHost       string   // Hetzner IPv4 for the menu DNS probe; empty in dev (no SSH target)
-	GrantsOnly    bool     // if true, skip full reconcile and only run admin grant pass
+	BaseURL       string    // "https://auth.iedora.com" or "http://localhost:8080"
+	SAKeyJSON     string    // FirstInstance-minted SA key
+	MenuHostname  string    // for action target endpoint URLs
+	AdminEmails   []string  // emails to grant iedora-admin to
+	SSHHost       string    // Hetzner IPv4 for the menu DNS probe; empty in local mode (no SSH target)
+	Mode          mode.Mode // binary environment guardrail; drives store choice + DNS gate
+	GrantsOnly    bool      // if true, skip full reconcile and only run admin grant pass
 	MenuDNSBudget time.Duration
 
 	// Store is where reconciled values (PAT, signing keys, OIDC creds,
 	// project id) are persisted + looked up on subsequent runs. Two
 	// implementations live in store.go:
-	//   - bwsStore   prod default
-	//   - memoryStore dev / `--no-bws` mode (optionally serialises to JSON)
+	//   - bwsStore   live mode (prod default)
+	//   - memoryStore local mode (optionally serialises to JSON)
 	Store secretStore
 }
 
@@ -84,7 +87,7 @@ func Reconcile(ctx context.Context, c *client, cfg Config) (*State, error) {
 		{"machine-user", func() error { return reconcileMachineUser(ctx, c, s) }},
 		{"iam-owner-grant", func() error { return reconcileIAMOwner(ctx, c, s) }},
 		{"pat", func() error { return reconcilePAT(ctx, c, s, cfg) }},
-		{"menu-dns-wait", func() error { return waitForMenuDNS(ctx, cfg.SSHHost, cfg.MenuDNSBudget) }},
+		{"menu-dns-wait", func() error { return waitForMenuDNS(ctx, cfg.Mode, cfg.SSHHost, cfg.MenuDNSBudget) }},
 		{"action-targets", func() error { return reconcileActionTargets(ctx, c, s, cfg) }},
 		{"action-executions", func() error { return reconcileExecutions(ctx, c, s) }},
 		{"oidc-app", func() error { return reconcileOIDCApp(ctx, c, s, cfg) }},

@@ -4,6 +4,8 @@ import (
 	"context"
 	"flag"
 	"fmt"
+
+	"github.com/eduvhc/iedora/infra/internal/mode"
 )
 
 // runAppApply is Stage 3 of the pipeline. Walks the configurator registry
@@ -26,6 +28,8 @@ import (
 //
 //	--only NAME   run only one configurator by name (debugging).
 func runAppApply(ctx context.Context, argv []string) error {
+	currentMode.Require(mode.Live)
+
 	fs := flag.NewFlagSet("app apply", flag.ContinueOnError)
 	fs.SetOutput(stderr)
 	only := fs.String("only", "", "run only this configurator (by name)")

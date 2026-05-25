@@ -50,11 +50,22 @@ import (
 	"path/filepath"
 	"strings"
 	"syscall"
+
+	"github.com/eduvhc/iedora/infra/internal/mode"
 )
+
+// runsIn pins this binary's deployment topology: Stage 3 against the
+// live Hetzner box. Never invoked by `cmd/dev`. If `cmd/dev` ever
+// needs to run drizzle migrations against the local postgres, add a
+// `--mode` flag here and gate the SSH path on `runsIn.IsLive()`. See
+// docs/deploy.md § Environment guardrails (Rule 1).
+const runsIn = mode.Live
 
 func main() {
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer cancel()
+
+	fmt.Fprintf(os.Stderr, "→ menu-db-migrations: mode=%s\n", runsIn)
 
 	if err := run(ctx); err != nil {
 		fmt.Fprintf(os.Stderr, "menu-db-migrations: %v\n", err)

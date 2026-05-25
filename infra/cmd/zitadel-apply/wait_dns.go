@@ -6,6 +6,8 @@ import (
 	"os/exec"
 	"strings"
 	"time"
+
+	"github.com/eduvhc/iedora/infra/internal/mode"
 )
 
 // waitForMenuDNS polls until `menu.iedora.com` resolves from inside the
@@ -26,12 +28,18 @@ import (
 //
 // host is the Hetzner box IPv4 (we SSH there and exec inside infra-caddy,
 // which has nslookup and lives on the same docker network as Zitadel).
-func waitForMenuDNS(ctx context.Context, host string, budget time.Duration) error {
+//
+// In local mode the gate is a no-op: the dev orchestrator hits localhost
+// and there's no DNS race to wait out. We branch on mode explicitly first
+// (the primary signal), then keep the empty-host check as defense-in-depth
+// for live — a missing ZA_SSH_HOST in live is operator misconfiguration.
+func waitForMenuDNS(ctx context.Context, m mode.Mode, host string, budget time.Duration) error {
 	const hostname = "menu.iedora.com"
-	if host == "" {
-		// Skip the gate when running from inside the box (no SSH target).
-		// Local dev (dev orchestrator) hits localhost — no DNS race.
+	if m.IsLocal() {
 		return nil
+	}
+	if host == "" {
+		return fmt.Errorf("live mode requires non-empty ZA_SSH_HOST for the menu-DNS gate")
 	}
 	fmt.Fprintf(stderr, "→ Waiting for %s to resolve from inside iedora network (budget %s)\n", hostname, budget)
 	start := time.Now()

@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/eduvhc/iedora/infra/internal/bws"
+	"github.com/eduvhc/iedora/infra/internal/mode"
 	"github.com/eduvhc/iedora/infra/internal/tlsprobe"
 )
 
@@ -28,18 +29,18 @@ import (
 //          just minted the key; nothing has read it yet).
 //  3. Persist the result to BWS so subsequent runs hit step (a).
 //
-// Skipped entirely when `--no-bws` is set: dev mode passes the key via
-// env and the orchestrator handles the probe + fetch.
+// Skipped entirely in local mode: the dev orchestrator passes the key
+// via env and handles the probe + fetch itself.
 //
 // Stage 3 orchestrator independence: this function is the contract that
 // makes `bin/zitadel-apply` self-sufficient. `cmd/iedora/app.go` knows
 // nothing about Zitadel — it just iterates configurators.
-func ensureSAKey(ctx context.Context, cfg Config, noBWS bool) (string, error) {
+func ensureSAKey(ctx context.Context, cfg Config, m mode.Mode) (string, error) {
 	if k := os.Getenv("IAC_BOOTSTRAP_ZITADEL_SA_KEY_JSON"); k != "" {
 		return k, nil
 	}
-	if noBWS {
-		return "", fmt.Errorf("--no-bws mode requires IAC_BOOTSTRAP_ZITADEL_SA_KEY_JSON in env (dev orchestrator should set it)")
+	if m.IsLocal() {
+		return "", fmt.Errorf("--mode local requires IAC_BOOTSTRAP_ZITADEL_SA_KEY_JSON in env (dev orchestrator should set it)")
 	}
 
 	// Warm-path BWS read. with-secrets normally injects this into env

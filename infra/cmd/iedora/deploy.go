@@ -5,6 +5,8 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+
+	"github.com/eduvhc/iedora/infra/internal/mode"
 )
 
 // runDeployProduct is Stage 4 of the pipeline. Dispatches to the
@@ -17,6 +19,8 @@ import (
 //	iedora deploy menu       — deploy just menu.
 //	iedora deploy house menu — multiple products in one call.
 func runDeployProduct(ctx context.Context, argv []string) error {
+	currentMode.Require(mode.Live)
+
 	fs := flag.NewFlagSet("deploy", flag.ContinueOnError)
 	fs.SetOutput(stderr)
 	if err := fs.Parse(argv); err != nil {
@@ -37,6 +41,8 @@ func runDeployProduct(ctx context.Context, argv []string) error {
 // deploy, but calls runtime.Destroy. With no positional arg, destroys
 // every product.
 func runDestroyProduct(ctx context.Context, argv []string) error {
+	currentMode.Require(mode.Live)
+
 	fs := flag.NewFlagSet("destroy", flag.ContinueOnError)
 	fs.SetOutput(stderr)
 	if err := fs.Parse(argv); err != nil {

@@ -21,7 +21,7 @@ const (
 	zitadelSAKeyPathRel = "infra/dev/.zitadel-bootstrap/zitadel-admin-sa.json"
 
 	// bin/zitadel-apply writes its 6 outputs as a JSON file at this
-	// path (when invoked with --no-bws --output-file). The dev
+	// path (when invoked with --mode local --output-file). The dev
 	// orchestrator reads it back when composing menu env.
 	zitadelOutputsPathRel = "infra/dev/.zitadel-bootstrap/outputs.json"
 

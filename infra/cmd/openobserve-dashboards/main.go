@@ -63,7 +63,17 @@ import (
 	"strings"
 	"syscall"
 	"time"
+
+	"github.com/eduvhc/iedora/infra/internal/mode"
 )
+
+// runsIn pins this binary's deployment topology: Stage 3 against the
+// live Hetzner box (SSH `-L` tunnel into OO bound to 127.0.0.1:5080).
+// Never invoked by `cmd/dev` — dev's openobserve binds directly. If
+// dev ever needs to push dashboards locally, add a `--mode` flag and
+// branch the tunnel-vs-direct path on `runsIn.IsLive()`. See
+// docs/deploy.md § Environment guardrails (Rule 1).
+const runsIn = mode.Live
 
 // dashboardsFS embeds every JSON in the repo's
 // `infra/openobserve/dashboards/` directory at compile time. Editing a
@@ -76,6 +86,8 @@ var dashboardsFS embed.FS
 func main() {
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer cancel()
+
+	fmt.Fprintf(os.Stderr, "→ openobserve-dashboards: mode=%s\n", runsIn)
 
 	if err := run(ctx); err != nil {
 		fmt.Fprintf(os.Stderr, "openobserve-dashboards: %v\n", err)

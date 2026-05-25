@@ -1,5 +1,5 @@
 // Dev container orchestrator. Brings up the local dev stack via Tofu,
-// then reconciles the local Zitadel via `bin/zitadel-apply --no-bws`
+// then reconciles the local Zitadel via `bin/zitadel-apply --mode local`
 // (Stage 3 in dev mode — writes outputs to a JSON file instead of BWS),
 // then composes products/menu/.env + .env.local in Go from a combination
 // of Tofu outputs, the JSON outputs file, and minted random secrets.
@@ -36,9 +36,18 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/eduvhc/iedora/infra/internal/mode"
 )
 
 func main() {
+	// `cmd/dev` is the local twin of `cmd/iedora` — Docker daemon on
+	// localhost, no BWS, freely destructible. The Require call documents
+	// the invariant and panics if anyone ever flips this to Live by
+	// mistake. See docs/deploy.md § Environment guardrails (Rule 1).
+	m := mode.Local
+	m.Require(mode.Local)
+
 	sel := parseFlags()
 
 	repoRoot := findRepoRoot()
@@ -80,7 +89,7 @@ func main() {
 //     openobserve, localstack, house). No menu_env modules, no zitadel
 //     provider — those went away in the iac/app split refactor.
 //  3. Wait for Zitadel /debug/ready.
-//  4. bin/zitadel-apply --no-bws --output-file <path> — reconciles
+//  4. bin/zitadel-apply --mode local --output-file <path> — reconciles
 //     local Zitadel from scratch, writes a JSON file of its 6 outputs.
 //  5. (Env file composition is run by the caller via writeMenuEnvFiles,
 //     not here.)
@@ -125,8 +134,8 @@ func applyDevStack(selected []string, devTofuDir, zitadelSAKeyPath, zitadelOutpu
 	if err := os.MkdirAll(filepath.Dir(zitadelOutputsPath), 0o700); err != nil {
 		fail("mkdir for outputs.json: %v", err)
 	}
-	// `--no-bws` swaps the bws-backed store for an in-memory one; the
-	// orchestrator passes the SA key + reconcile inputs as env vars.
+	// `--mode local` swaps the bws-backed store for an in-memory one;
+	// the orchestrator passes the SA key + reconcile inputs as env vars.
 	// Outputs land at zitadelOutputsPath; subsequent runs seed from
 	// that file so PAT + signing keys stay stable across `task dev` cycles.
 	runInWithEnv(filepath.Dir(zitadelApplyBin),
@@ -134,11 +143,10 @@ func applyDevStack(selected []string, devTofuDir, zitadelSAKeyPath, zitadelOutpu
 			"IAC_BOOTSTRAP_ZITADEL_SA_KEY_JSON=" + string(saKey),
 			"ZA_BASE_URL=http://localhost:8080",
 			"ZA_MENU_HOSTNAME=localhost:3000",
-			// Empty ZA_SSH_HOST disables the menu-DNS gate (irrelevant
-			// for localhost — no resolver race).
-			"ZA_SSH_HOST=",
+			// ZA_SSH_HOST is irrelevant in local mode — wait_dns.go
+			// short-circuits before reading it. Leaving it unset.
 		},
-		zitadelApplyBin, "--no-bws", "--output-file", zitadelOutputsPath)
+		zitadelApplyBin, "--mode", "local", "--output-file", zitadelOutputsPath)
 }
 
 // destroyDevStack tears the dev stack down. Each step is best-effort

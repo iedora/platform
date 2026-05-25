@@ -26,7 +26,18 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/eduvhc/iedora/infra/internal/mode"
 )
+
+// currentMode pins this binary to Live. `iedora` is the live-side
+// orchestrator by design — `cmd/dev` is the local twin. Destructive
+// entry points re-assert this with currentMode.Require(mode.Live) as
+// belt-and-suspenders: if anyone ever imports this main package or
+// flips the constant for local testing, the guard panics on the first
+// destructive call rather than silently shelling into production APIs.
+// See docs/deploy.md § Environment guardrails (Rule 1).
+var currentMode = mode.Live
 
 func main() {
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)

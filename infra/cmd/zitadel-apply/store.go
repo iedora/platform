@@ -15,12 +15,12 @@ import (
 // secretStore is the abstraction over where reconciled values are
 // persisted. Two implementations:
 //
-//   - bwsStore: prod default. Reads + writes go through Bitwarden Secrets
-//     Manager via the existing `infra/internal/bws` package.
-//   - memoryStore: dev / `--no-bws` mode. Reads + writes live in an
-//     in-process map. Optionally serialized to a JSON file at the end of
-//     the run via Flush so the dev orchestrator can compose env files
-//     from the result.
+//   - bwsStore: live mode (prod default). Reads + writes go through
+//     Bitwarden Secrets Manager via the existing `infra/internal/bws`
+//     package.
+//   - memoryStore: local mode (dev). Reads + writes live in an in-process
+//     map. Optionally serialized to a JSON file at the end of the run via
+//     Flush so the dev orchestrator can compose env files from the result.
 //
 // The interface lets reconcile.go stay agnostic to where values land —
 // the (bws-has, zitadel-has) recovery matrix works the same way for
@@ -94,11 +94,10 @@ func (s *bwsStore) Delete(ctx context.Context, key string) error {
 
 func (s *bwsStore) Flush() error { return nil }
 
-// memoryStore — dev / `--no-bws` mode. Reads see only what's been
-// written this session (no cross-run persistence) PLUS any values
-// pre-seeded via NewMemoryStore (e.g. dev orchestrator reads an
-// existing outputs.json from a prior `task dev` to keep values stable
-// across restarts).
+// memoryStore — local mode. Reads see only what's been written this
+// session (no cross-run persistence) PLUS any values pre-seeded via
+// newMemoryStore (e.g. dev orchestrator reads an existing outputs.json
+// from a prior `task dev` to keep values stable across restarts).
 type memoryStore struct {
 	mu         sync.Mutex
 	values     map[string]string
