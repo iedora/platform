@@ -53,7 +53,7 @@ services:
       POSTGRES_DB: postgres
     volumes:
       - postgres_data:/var/lib/postgresql
-      - ../postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - ../infra/iac/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     ports:
       - "5432:5432"
     healthcheck:
@@ -187,12 +187,12 @@ services:
       ZITADEL_FIRSTINSTANCE_ORG_HUMAN_PASSWORDCHANGEREQUIRED: "false"
       ZITADEL_FIRSTINSTANCE_ORG_LOGINCLIENT_MACHINE_USERNAME: login-client
       ZITADEL_FIRSTINSTANCE_ORG_LOGINCLIENT_MACHINE_NAME: Login Client
-      ZITADEL_FIRSTINSTANCE_ORG_LOGINCLIENT_PAT_EXPIRATIONDATE: 2099-01-01T00:00:00Z
+      ZITADEL_FIRSTINSTANCE_ORG_LOGINCLIENT_PAT_EXPIRATIONDATE: "2099-01-01T00:00:00Z"
       ZITADEL_FIRSTINSTANCE_LOGINCLIENTPATPATH: /zitadel-bootstrap/login-client.pat
       ZITADEL_FIRSTINSTANCE_ORG_MACHINE_MACHINE_USERNAME: menu-sa
       ZITADEL_FIRSTINSTANCE_ORG_MACHINE_MACHINE_NAME: Menu
       ZITADEL_FIRSTINSTANCE_ORG_MACHINE_MACHINEKEY_TYPE: "1"
-      ZITADEL_FIRSTINSTANCE_ORG_MACHINE_MACHINEKEY_EXPIRATIONDATE: 2099-01-01T00:00:00Z
+      ZITADEL_FIRSTINSTANCE_ORG_MACHINE_MACHINEKEY_EXPIRATIONDATE: "2099-01-01T00:00:00Z"
       ZITADEL_FIRSTINSTANCE_MACHINEKEYPATH: /zitadel-bootstrap/menu-sa.json
       ZITADEL_DEFAULTINSTANCE_FEATURES_LOGINV2_REQUIRED: "true"
       ZITADEL_DEFAULTINSTANCE_FEATURES_LOGINV2_BASEURI: http://localhost:3001/ui/v2/login
@@ -246,7 +246,7 @@ services:
   house:
     image: iedora-house:local
     build:
-      context: ../..
+      context: ..
       dockerfile: products/house/Dockerfile
     container_name: infra-house
     profiles: [house]
@@ -268,7 +268,7 @@ services:
   menu:
     image: iedora-menu:local
     build:
-      context: ../..
+      context: ..
       dockerfile: products/menu/Dockerfile
     container_name: infra-menu
     profiles: [menu]
@@ -282,9 +282,9 @@ services:
     # doesn't fail before the orchestrator writes them. The orchestrator
     # composes .env after `bin/zitadel-apply` runs, then starts menu.
     env_file:
-      - path: ../../products/menu/.env
+      - path: ../products/menu/.env
         required: false
-      - path: ../../products/menu/.env.local
+      - path: ../products/menu/.env.local
         required: false
     ports:
       - "3000:3000"
