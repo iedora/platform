@@ -80,7 +80,7 @@ Operators always invoke via shims at the repo root (`bin/<name>`); those shims `
 1. **Declarative-first.** Every cloud resource is Tofu-managed under `infra/iac/tofu/`. **Edit `.tf` files, never the upstream UI** — `tofu apply` silently clobbers UI edits.
 2. **Tofu-managed credentials write through to BWS** as `IAC_*` (`iac/tofu/secrets.tf::terraform_data.bws_sync` → `bin/bws-sync`). Editing BWS directly is wasted work; the next apply restores Tofu's value. On `tofu destroy`, the same wrapper deletes them.
 3. **Bootstrap order is BWS → Tofu → write-through.** Operator pastes the `IAC_BOOTSTRAP_*` keys first; everything else is Tofu-minted.
-4. **Follow [`docs/terraform-style.md`](../docs/terraform-style.md)** when editing any `.tf` — pessimistic `~>` pins, `for_each` over `count`, `validation` blocks.
+4. **HCL conventions** (see § HCL style below) — pessimistic `~>` pins, `for_each` over `count`, `validation` blocks on every input, `removed {}` over `tofu state rm`.
 5. **State lives in Cloudflare R2** via the OpenTofu `s3` backend. Bootstrap helper at [`iac/cmd/state-bucket-bootstrap/`](iac/cmd/state-bucket-bootstrap/).
 6. **The box owns its containers — Tofu only renders the compose.** Adding/editing a service = edit `iac/tofu/compose.tf`. Tofu renders the YAML; `terraform_data.iedora_sync` SCPs it to the box and `systemctl restart iedora.service` reconciles. **No `docker_*` Tofu resources** — the kreuzwerker provider is intentionally gone (it forced multi-pass applies, MaxStartups workarounds, and state-rm dances on destroy).
 7. **Run the pre-merge runbook on every deploy-shape change** — see [`docs/deploy/README.md`](../docs/deploy/README.md) § Pre-merge runbook.
@@ -112,3 +112,46 @@ go run ./dev/cmd/local-stack                                  # Local dev stack
 **Required in your shell**: `BWS_ACCESS_TOKEN` (one-time setup, keep in keychain / direnv).
 
 For day-2 raw-SSH ops (logs, psql, backup, restore, rotation), see [`docs/deploy/README.md` § Day-2 operations](../docs/deploy/README.md#day-2-operations).
+
+## HCL style — LLM-safe conventions
+
+LLMs produce HCL that parses far more often than HCL that applies. Apply these to every `.tf` in `infra/iac/tofu/`.
+
+1. **Pessimistic version pins.** `~> X.Y` for every provider. Never `>=`, never unbounded.
+2. **`for_each` over `count`.** `count` shifts addresses when an element is removed; `for_each` keyed on a set/map keeps them stable. For zero-or-one gates use `lifecycle { enabled = expr }` (OpenTofu 1.11+) — the resource lives at its canonical address (no `[0]` index) when enabled, has zero instances when not.
+3. **Every input variable has a `validation` block.** Cheapest pre-`apply` gate. Pair with `nullable = false` when required.
+4. **`locals` blocks are short, self-documenting, named as nouns.** `local.tunnel_cname` is unambiguous; `local.tmp` is not.
+5. **Every sensitive output gets `sensitive = true`.** Prevents accidental log leaks.
+6. **Resource naming.** `<provider>_<noun>.<role>_<qualifier>`. Examples: `cloudflare_dns_record.menu_iedora`, `cloudflare_r2_bucket.assets`.
+
+### Removing resources without destroying them
+
+Two declarative levers, paired:
+
+- **`removed {}` block** — drops a resource from state. Use during a refactor when the resource moves elsewhere, gets renamed, or stops being managed.
+- **`lifecycle { destroy = false }`** (OpenTofu 1.12+) on the same resource — when later removed from configuration, TF treats the destroy as a no-op (resource stays alive in the wild, just exits state).
+
+Combined:
+
+```hcl
+removed {
+  from = cloudflare_dns_record.legacy_subdomain
+  lifecycle {
+    destroy = false   # state-only removal; the DNS record stays in CF
+  }
+}
+```
+
+Anti-pattern: don't reach for `tofu state rm` from the CLI — leaves no audit trail. Keep the `removed {}` block in `.tf` for ONE PR cycle (state migration applies), then delete it.
+
+### Closed-loop apply
+
+```bash
+tofu fmt
+tofu validate                       # syntactic + provider-schema check
+tofu plan -out=plan.bin             # see exactly what will change
+# Eyeball. Unexpected destroys → STOP.
+tofu apply plan.bin
+```
+
+If a `plan` is unreadable (hundreds of unrelated diffs), the change is too big — split it.
