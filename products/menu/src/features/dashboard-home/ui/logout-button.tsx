@@ -2,7 +2,7 @@
 
 import { useTranslations } from 'next-intl'
 import { Button } from '@iedora/design-system'
-import { SIGN_OUT_PATH } from '@/shared/brand'
+import { signOutUrl } from '@/shared/brand'
 
 export function LogoutButton() {
   const t = useTranslations('AppHeader')
@@ -11,12 +11,12 @@ export function LogoutButton() {
       variant="ghost"
       data-test-id="dashboard-logout"
       onClick={() => {
-        // /api/auth/logout clears menu's session cookie + bounces the
-        // browser to Zitadel's end_session, which drops the Zitadel-side
-        // session and lands the user back on `/`. Plain href navigation
-        // (no fetch) — keeps the route handler cookie-set headers in the
-        // top-level response.
-        window.location.assign(SIGN_OUT_PATH)
+        // Cross-origin redirect to the `core` product's sign-out flow.
+        // core clears the cookie on `.iedora.com` (so every iedora
+        // product loses the session) and bounces the browser back to
+        // the brand landing. Plain href navigation (no fetch) — the
+        // top-level Set-Cookie response gets to the browser unwrapped.
+        window.location.assign(signOutUrl(window.location.origin))
       }}
     >
       {t('logout')}

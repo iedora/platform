@@ -26,16 +26,22 @@ const serverSchema = z.object({
   // Same Postgres instance as DATABASE_URL — different DB.
   CORE_DATABASE_URL: z.url(),
   // ≥ 32-char secret used by better-auth to sign session tokens.
-  IEDORA_AUTH_SECRET: z.string().min(32),
-  // Canonical URL of the auth API. Today: menu's own origin
-  // (`MENU_PUBLIC_URL`); when the `core` product lands this becomes
-  // `https://core.iedora.com` and menu just consumes the cookie.
-  IEDORA_AUTH_BASE_URL: z.url(),
+  IEDORA_CORE_SECRET: z.string().min(32),
+  // Canonical URL of the auth API — the `core` product's origin.
+  // Prod: `https://core.iedora.com`. Dev: `http://localhost:3000`.
+  // better-auth's baseURL points here; cookies issue from this origin
+  // on the parent `.iedora.com` domain so SSO works across products.
+  IEDORA_CORE_BASE_URL: z.url(),
+  // Client-side mirror — inlined into the browser bundle by Next at
+  // build time (NEXT_PUBLIC_* prefix). Includes the `/core` path
+  // segment in dev (`http://localhost:3000/core`) and the bare host in
+  // prod (`https://core.iedora.com`) so route construction is uniform.
+  NEXT_PUBLIC_CORE_URL: z.url(),
   // Comma-separated allow-list for CSRF (browser-origin checks).
-  IEDORA_AUTH_TRUSTED_ORIGINS: z.string().default(''),
+  IEDORA_CORE_TRUSTED_ORIGINS: z.string().default(''),
   // Parent-domain cookie scope. Production: `.iedora.com` (default).
   // Dev: `localhost`. Empty string falls back to better-auth's default.
-  IEDORA_AUTH_COOKIE_DOMAIN: z.string().default('.iedora.com'),
+  IEDORA_CORE_COOKIE_DOMAIN: z.string().default('.iedora.com'),
 
   // Menu's public base URL — used for absolute URL construction via
   // `publicUrl()`. Must match the canonical hostname the menu serves

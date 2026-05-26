@@ -123,6 +123,16 @@ resource "cloudflare_dns_record" "menu_iedora" {
   comment = "CF Tunnel → infra-menu-web on the Hetzner box"
 }
 
+resource "cloudflare_dns_record" "core_iedora" {
+  zone_id = data.cloudflare_zone.iedora.zone_id
+  name    = "core.${var.zone_name}"
+  type    = "CNAME"
+  content = local.tunnel_cname
+  ttl     = 1
+  proxied = true
+  comment = "CF Tunnel → menu container (proxy.ts rewrites core.iedora.com → /core/*)"
+}
+
 resource "cloudflare_dns_record" "iedora_apex" {
   zone_id = data.cloudflare_zone.iedora.zone_id
   name    = var.zone_name

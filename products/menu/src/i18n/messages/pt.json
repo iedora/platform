@@ -472,5 +472,54 @@
     "client": {
       "toggleTitle": "Clica para alternar detalhes do cliente"
     }
+  },
+  "Core": {
+    "signIn": {
+      "title": "Bem-vindo de volta",
+      "subtitle": "Inicie sessão para continuar na iedora.",
+      "emailLabel": "Email",
+      "emailPlaceholder": "voce@restaurante.com",
+      "passwordLabel": "Palavra-passe",
+      "submit": "Entrar",
+      "submitting": "A entrar…",
+      "noAccount": "Ainda não tem conta?",
+      "signUpLink": "Crie uma",
+      "errorGeneric": "Não foi possível iniciar sessão. Verifique as credenciais."
+    },
+    "signUp": {
+      "title": "Crie a sua conta",
+      "subtitle": "Demora um minuto.",
+      "nameLabel": "Nome",
+      "namePlaceholder": "O seu nome completo",
+      "emailLabel": "Email",
+      "emailPlaceholder": "voce@restaurante.com",
+      "passwordLabel": "Palavra-passe",
+      "passwordHint": "12 caracteres ou mais.",
+      "submit": "Criar conta",
+      "submitting": "A criar conta…",
+      "haveAccount": "Já tem conta?",
+      "signInLink": "Iniciar sessão",
+      "errorGeneric": "Não foi possível criar a conta. Tente novamente."
+    },
+    "signOut": {
+      "title": "Sessão terminada",
+      "body": "Até breve."
+    },
+    "admin": {
+      "title": "Admin",
+      "subtitle": "Superfície de staff iedora.",
+      "sessions": {
+        "title": "Sessões",
+        "subtitle": "Sessões activas em todos os produtos iedora.",
+        "columnUser": "Utilizador",
+        "columnDevice": "Dispositivo",
+        "columnIp": "IP",
+        "columnIssued": "Iniciada",
+        "columnExpires": "Expira",
+        "revoke": "Revogar",
+        "revoking": "A revogar…",
+        "empty": "Sem sessões activas."
+      }
+    }
   }
 }

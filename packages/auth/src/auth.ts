@@ -24,13 +24,13 @@ import { ac, roles, iedoraAdmin } from './permissions'
 let cached: ReturnType<typeof build> | null = null
 
 function build() {
-  const baseURL = process.env.IEDORA_AUTH_BASE_URL
-  const secret = process.env.IEDORA_AUTH_SECRET
-  const trustedOriginsRaw = process.env.IEDORA_AUTH_TRUSTED_ORIGINS ?? ''
+  const baseURL = process.env.IEDORA_CORE_BASE_URL
+  const secret = process.env.IEDORA_CORE_SECRET
+  const trustedOriginsRaw = process.env.IEDORA_CORE_TRUSTED_ORIGINS ?? ''
 
   if (!baseURL || !secret) {
     throw new Error(
-      '[iedora/auth] IEDORA_AUTH_BASE_URL and IEDORA_AUTH_SECRET must be set.',
+      '[iedora/auth] IEDORA_CORE_BASE_URL and IEDORA_CORE_SECRET must be set.',
     )
   }
 
@@ -59,10 +59,10 @@ function build() {
     advanced: {
       // Parent-domain cookie so menu.iedora.com + core.iedora.com + any
       // future iedora.com surface read the same session. Override with
-      // `IEDORA_AUTH_COOKIE_DOMAIN` in dev (where `.localhost` is invalid).
+      // `IEDORA_CORE_COOKIE_DOMAIN` in dev (where `.localhost` is invalid).
       crossSubDomainCookies: {
         enabled: true,
-        domain: process.env.IEDORA_AUTH_COOKIE_DOMAIN ?? '.iedora.com',
+        domain: process.env.IEDORA_CORE_COOKIE_DOMAIN ?? '.iedora.com',
       },
     },
     plugins: [

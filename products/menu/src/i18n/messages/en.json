@@ -472,5 +472,54 @@
     "client": {
       "toggleTitle": "Click to toggle client details"
     }
+  },
+  "Core": {
+    "signIn": {
+      "title": "Welcome back",
+      "subtitle": "Sign in to continue to iedora.",
+      "emailLabel": "Email",
+      "emailPlaceholder": "you@restaurant.com",
+      "passwordLabel": "Password",
+      "submit": "Sign in",
+      "submitting": "Signing in…",
+      "noAccount": "Don't have an account?",
+      "signUpLink": "Create one",
+      "errorGeneric": "Could not sign in. Please check your credentials."
+    },
+    "signUp": {
+      "title": "Create your account",
+      "subtitle": "It takes a minute.",
+      "nameLabel": "Name",
+      "namePlaceholder": "Your full name",
+      "emailLabel": "Email",
+      "emailPlaceholder": "you@restaurant.com",
+      "passwordLabel": "Password",
+      "passwordHint": "12 characters or more.",
+      "submit": "Create account",
+      "submitting": "Creating account…",
+      "haveAccount": "Already have an account?",
+      "signInLink": "Sign in",
+      "errorGeneric": "Could not create your account. Please try again."
+    },
+    "signOut": {
+      "title": "Signed out",
+      "body": "See you soon."
+    },
+    "admin": {
+      "title": "Admin",
+      "subtitle": "Iedora-staff surface.",
+      "sessions": {
+        "title": "Sessions",
+        "subtitle": "Active sessions across every iedora product.",
+        "columnUser": "User",
+        "columnDevice": "Device",
+        "columnIp": "IP",
+        "columnIssued": "Issued",
+        "columnExpires": "Expires",
+        "revoke": "Revoke",
+        "revoking": "Revoking…",
+        "empty": "No active sessions."
+      }
+    }
   }
 }

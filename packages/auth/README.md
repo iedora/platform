@@ -44,10 +44,10 @@ const session = await auth.api.getSession({ headers: await headers() })
 | Var | What |
 |---|---|
 | `CORE_DATABASE_URL` | Postgres URL pointing at the `core` DB (auth tables live in the `core` schema) |
-| `IEDORA_AUTH_SECRET`       | ≥ 32-char secret used to sign session tokens |
-| `IEDORA_AUTH_BASE_URL`     | Canonical URL of the auth API (e.g. `https://core.iedora.com`) |
-| `IEDORA_AUTH_TRUSTED_ORIGINS` | Comma-separated list of allowed origins for CSRF |
-| `IEDORA_AUTH_COOKIE_DOMAIN` | Override the parent-domain cookie scope (default `.iedora.com`; use `localhost` in dev) |
+| `IEDORA_CORE_SECRET`       | ≥ 32-char secret used to sign session tokens |
+| `IEDORA_CORE_BASE_URL`     | Canonical URL of the auth API (e.g. `https://core.iedora.com`) |
+| `IEDORA_CORE_TRUSTED_ORIGINS` | Comma-separated list of allowed origins for CSRF |
+| `IEDORA_CORE_COOKIE_DOMAIN` | Override the parent-domain cookie scope (default `.iedora.com`; use `localhost` in dev) |
 
 ## Permission model
 

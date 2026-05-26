@@ -16,11 +16,11 @@ Ranked by severity for the iedora stack.
 | 7 | [GHSA-wxw3-q3m9-c3jr](https://github.com/advisories) — Better Auth OAuth state mismatch w/o PKCE | n/a | retired | We don't use better-auth's OAuth-client flow today — auth is email+password with the organization + admin plugins. Reinstate the check if/when we add OIDC client flows |
 | 19 | Multi-tenant IDOR (org-scoped data leakage) | medium | contained | menu's `requireRestaurantAccess` cross-checks the restaurant's `organizationId` against `auth.api.listOrganizations` for the active session. Audit any path reading org data outside this guard |
 | 20 | Role escalation via mass-assignment | mitigated | done | `user.role` is `additionalFields: { role: { input: false } }` in `@iedora/auth` — not writable via public signup. The cross-tenant `iedora-admin` role is granted out-of-band only |
-| 22 | CSRF on state-changing endpoints | mitigated | done | better-auth's built-in CSRF (Origin/Referer + trusted-origins allow-list driven by `IEDORA_AUTH_TRUSTED_ORIGINS`) + SameSite=Lax on the `better-auth.session_token` cookie + Next 16 server actions |
+| 22 | CSRF on state-changing endpoints | mitigated | done | better-auth's built-in CSRF (Origin/Referer + trusted-origins allow-list driven by `IEDORA_CORE_TRUSTED_ORIGINS`) + SameSite=Lax on the `better-auth.session_token` cookie + Next 16 server actions |
 | 25 | Sensitive-data logging | mitigated | done | `logger.level = 'error'` in production |
 | 27 | Webhook secret encryption at rest | low | deferred | n/a today — no inbound webhooks. Revisit when external integrations land |
-| 34 | `IEDORA_AUTH_SECRET` leak | high | mitigated | Tofu-minted per Stage 4 (`DEPLOY_MENU_IEDORA_AUTH_SECRET`), only present in the menu container's env; rotation invalidates all active sessions (documented in `deploy.md` § Secret rotation) |
-| 35 | Cross-product cookie scope | medium | mitigated | Cookie domain pinned to `.iedora.com` via `IEDORA_AUTH_COOKIE_DOMAIN`. Only first-party products under iedora.com see the session token; subdomain takeover risk handled by CF DNS being Tofu-managed |
+| 34 | `IEDORA_CORE_SECRET` leak | high | mitigated | Tofu-minted per Stage 4 (`DEPLOY_MENU_IEDORA_CORE_SECRET`), only present in the menu container's env; rotation invalidates all active sessions (documented in `deploy.md` § Secret rotation) |
+| 35 | Cross-product cookie scope | medium | mitigated | Cookie domain pinned to `.iedora.com` via `IEDORA_CORE_COOKIE_DOMAIN`. Only first-party products under iedora.com see the session token; subdomain takeover risk handled by CF DNS being Tofu-managed |
 
 ## Supply-chain perimeter
 

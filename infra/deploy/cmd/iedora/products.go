@@ -66,17 +66,18 @@ var products = []product{
 			// to BWS. Tofu doesn't manage these — they have no IaC
 			// consumer.
 			appSecrets: []appSecret{
-				{bwsKey: "DEPLOY_IEDORA_AUTH_SECRET", length: 48},
+				{bwsKey: "DEPLOY_IEDORA_CORE_SECRET", length: 48},
 			},
 			envFromBWS: map[string]string{
-				"DEPLOY_IEDORA_AUTH_SECRET": "IEDORA_AUTH_SECRET",
+				"DEPLOY_IEDORA_CORE_SECRET": "IEDORA_CORE_SECRET",
 			},
 			envFromTofu: map[string]string{
 				"menu_database_url":           "DATABASE_URL",
 				"core_database_url":           "CORE_DATABASE_URL",
 				"menu_public_url":             "MENU_PUBLIC_URL",
-				"iedora_auth_base_url":        "IEDORA_AUTH_BASE_URL",
-				"iedora_auth_trusted_origins": "IEDORA_AUTH_TRUSTED_ORIGINS",
+				"iedora_core_base_url":        "IEDORA_CORE_BASE_URL",
+				"iedora_core_trusted_origins": "IEDORA_CORE_TRUSTED_ORIGINS",
+				"next_public_core_url":       "NEXT_PUBLIC_CORE_URL",
 				"menu_s3_endpoint":            "S3_ENDPOINT",
 				"menu_s3_public_url":          "S3_PUBLIC_URL",
 				"menu_s3_bucket":              "S3_BUCKET",

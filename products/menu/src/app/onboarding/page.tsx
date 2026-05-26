@@ -3,11 +3,12 @@ import { redirect } from 'next/navigation'
 import { Wordmark } from '@iedora/design-system'
 import { getSession } from '@/features/auth'
 import { signInUrl } from '@/shared/brand'
+import { publicUrl } from '@/shared/url'
 import { OnboardingForm } from './onboarding-form'
 
 export default async function OnboardingPage() {
   const session = await getSession()
-  if (!session?.user) redirect(signInUrl('/onboarding'))
+  if (!session?.user) redirect(signInUrl(publicUrl('/onboarding').toString()))
 
   // No org-existence gate here: /onboarding doubles as the "add another
   // restaurant" form for existing users. The action (`completeOnboarding`)

@@ -14,8 +14,8 @@ output "assets_public_url" {
 }
 
 # ── Hetzner outputs ──────────────────────────────────────────────────────────
-# IPv4 is the source of truth for: the docker provider host, the
-# zitadel-rebootstrap SSH commands, and the A records pointed at the box.
+# IPv4 is the source of truth for: the docker provider host, day-2 SSH
+# commands, and the A records pointed at the box.
 
 output "hetzner_ipv4" {
   description = "Public IPv4 of the Hetzner CAX11 box. A records + SSH targets resolve here."
@@ -57,14 +57,19 @@ output "menu_public_url" {
   value       = "https://${var.menu_public_hostname}"
 }
 
-output "iedora_auth_base_url" {
-  description = "Canonical URL of the auth API (menu's own origin today; core.iedora.com in Phase 2)."
-  value       = "https://${var.menu_public_hostname}"
+output "iedora_core_base_url" {
+  description = "Canonical URL of the auth API. Lives on core.iedora.com — every product redirects sign-in here so cookies always issue from one origin."
+  value       = "https://core.${var.zone_name}"
 }
 
-output "iedora_auth_trusted_origins" {
-  description = "Comma-separated trusted origins for CSRF (menu + apex + www today)."
-  value       = "https://${var.menu_public_hostname},https://${var.zone_name},https://www.${var.zone_name}"
+output "next_public_core_url" {
+  description = "Same canonical URL as iedora_core_base_url, surfaced under a NEXT_PUBLIC_* name so it's inlined into the browser bundle at build time."
+  value       = "https://core.${var.zone_name}"
+}
+
+output "iedora_core_trusted_origins" {
+  description = "Comma-separated trusted origins for CSRF (every iedora.com subdomain that calls the auth API)."
+  value       = "https://core.${var.zone_name},https://${var.menu_public_hostname},https://${var.zone_name},https://www.${var.zone_name}"
 }
 
 output "menu_s3_endpoint" {

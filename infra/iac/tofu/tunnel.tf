@@ -52,6 +52,13 @@ resource "cloudflare_zero_trust_tunnel_cloudflared_config" "iedora" {
         hostname = var.menu_public_hostname
         service  = "http://infra-menu-web:3000"
       },
+      # ── core.iedora.com ───────────────────────────────────────
+      # Same upstream as menu; proxy.ts rewrites under /core/* and
+      # gates direct visits to /core/* on other hosts (404).
+      {
+        hostname = "core.${var.zone_name}"
+        service  = "http://infra-menu-web:3000"
+      },
       # ── iedora.com (apex + www) ───────────────────────────────
       # Both go to the menu container; proxy.ts rewrites apex requests
       # under /house/* internally.

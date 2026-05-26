@@ -8,6 +8,7 @@ import { getEffectiveOrganizationId, getSession } from '@/features/auth'
 import { auth } from '@/shared/auth'
 import { nextAvailableSlug, slugify } from '@/features/restaurant-slug'
 import { signInUrl } from '@/shared/brand'
+import { publicUrl } from '@/shared/url'
 import { db } from '@/shared/db/client'
 import { menu, restaurant } from '@/shared/db/schema'
 import { canAddRestaurant } from '@/features/plans'
@@ -62,7 +63,7 @@ export async function completeOnboarding(
   const { restaurantName } = parsed.data
 
   const session = await getSession()
-  if (!session?.user) redirect(signInUrl('/onboarding'))
+  if (!session?.user) redirect(signInUrl(publicUrl('/onboarding').toString()))
 
   const decision = await enforceRateLimit('onboarding', `user:${session.user.id}`)
   if (!decision.ok) {

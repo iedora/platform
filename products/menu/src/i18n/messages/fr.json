@@ -1,5 +1,54 @@
 {
   "AppHeader": {
     "logout": "Se déconnecter"
+  },
+  "Core": {
+    "signIn": {
+      "title": "Bon retour",
+      "subtitle": "Connectez-vous pour continuer sur iedora.",
+      "emailLabel": "Email",
+      "emailPlaceholder": "vous@restaurant.com",
+      "passwordLabel": "Mot de passe",
+      "submit": "Se connecter",
+      "submitting": "Connexion en cours…",
+      "noAccount": "Pas encore de compte ?",
+      "signUpLink": "Créez-en un",
+      "errorGeneric": "Connexion impossible. Vérifiez vos identifiants."
+    },
+    "signUp": {
+      "title": "Créez votre compte",
+      "subtitle": "Une minute suffit.",
+      "nameLabel": "Nom",
+      "namePlaceholder": "Votre nom complet",
+      "emailLabel": "Email",
+      "emailPlaceholder": "vous@restaurant.com",
+      "passwordLabel": "Mot de passe",
+      "passwordHint": "12 caractères ou plus.",
+      "submit": "Créer le compte",
+      "submitting": "Création en cours…",
+      "haveAccount": "Déjà inscrit ?",
+      "signInLink": "Se connecter",
+      "errorGeneric": "Impossible de créer le compte. Réessayez."
+    },
+    "signOut": {
+      "title": "Déconnecté",
+      "body": "À bientôt."
+    },
+    "admin": {
+      "title": "Admin",
+      "subtitle": "Espace équipe iedora.",
+      "sessions": {
+        "title": "Sessions",
+        "subtitle": "Sessions actives sur tous les produits iedora.",
+        "columnUser": "Utilisateur",
+        "columnDevice": "Appareil",
+        "columnIp": "IP",
+        "columnIssued": "Ouverte",
+        "columnExpires": "Expire",
+        "revoke": "Révoquer",
+        "revoking": "Révocation…",
+        "empty": "Aucune session active."
+      }
+    }
   }
 }

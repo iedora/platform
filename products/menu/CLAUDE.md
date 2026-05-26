@@ -101,7 +101,7 @@ products/menu/
   next.config.ts, tsconfig.json      paths: @/* → ./src/*
   Dockerfile                         app build (Bun-install + Node-build + standalone). Same Dockerfile dev (built locally by `go run ./dev/cmd/local-stack`) and prod (built + pushed to GHCR by .github/workflows/menu.yml) consume.
   .env                               Committed. Statics + Zod-valid placeholders for the dynamic keys. The local-dev orchestrator (`dev/cmd/local-stack/`) overlays the real values into `.env.local`.
-  .env.local                         user-owned, gitignored. Real CORE_DATABASE_URL + IEDORA_AUTH_* values for the host bun-run-dev path; user can also override any key to point at remote services.
+  .env.local                         user-owned, gitignored. Real CORE_DATABASE_URL + IEDORA_CORE_* values for the host bun-run-dev path; user can also override any key to point at remote services.
   package.json                       workspace deps to @iedora/auth, @iedora/design-system, @iedora/observability
   scripts/check-migrations.ts        dev-time guardrail
   tests/e2e/

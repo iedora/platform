@@ -3,17 +3,18 @@
 import * as React from "react";
 import Link from "next/link";
 import { Badge, Nav, NavActions, NavBrand, PageProgress, Wordmark } from "@iedora/design-system";
-import { APP_HOSTNAME, BRAND_NAME, BRAND_URL, CONTACT_EMAIL, SIGN_IN_PATH } from "@/shared/brand";
+import { APP_HOSTNAME, BRAND_NAME, BRAND_URL, CONTACT_EMAIL, signInUrl, signUpUrl } from "@/shared/brand";
 import "./landing.css";
 
 /**
- * Sign-in / sign-up share the same destination: `/api/auth/login` is a
- * server-side handler that mints the PKCE-state cookie and 302s the
- * browser to Zitadel's /oauth/v2/authorize. "Sign in" and "Get started"
- * are the same OIDC flow — Zitadel decides whether to render login or
- * registration based on session state.
+ * Sign-in / sign-up cross-navigate to the `core` product's auth pages
+ * (`https://core.iedora.com/sign-in` in prod, `http://localhost:3000/core/
+ * sign-in` in dev). The pages call better-auth via `authClient.signIn.email`
+ * / `signUp.email` and set the cookie on the parent `.iedora.com` domain
+ * so SSO across iedora products works transparently.
  */
-const AUTH_HREF = SIGN_IN_PATH;
+const SIGN_IN_HREF = signInUrl();
+const SIGN_UP_HREF = signUpUrl();
 
 type LangCode = "en" | "pt" | "es" | "fr";
 
@@ -351,14 +352,14 @@ function LandingNav({ c, lang, setLang }: { c: Copy; lang: LangCode; setLang: (l
       <NavActions>
         <LangSwitcher lang={lang} setLang={setLang} />
         <Link
-          href={AUTH_HREF}
+          href={SIGN_IN_HREF}
           className="nav-link"
           data-test-id="landing-signin"
         >
           {c.nav.signin}
         </Link>
         <Link
-          href={AUTH_HREF}
+          href={SIGN_IN_HREF}
           className="nav-cta"
           data-test-id="landing-cta"
         >
@@ -545,7 +546,7 @@ function Hero({
             <div className="hero-ctas">
               <Link
                 className="btn btn-primary"
-                href={AUTH_HREF}
+                href={SIGN_IN_HREF}
                 data-test-id="landing-hero-cta"
               >
                 {c.hero.ctaPrimary}
@@ -587,7 +588,7 @@ function Pricing({ c }: { c: Copy }) {
               {c.pricing.free.feats.map((f, i) => <li key={i}>{f}</li>)}
             </ul>
             <div className="menu-card-foot">
-              <Link className="btn btn-ghost" href={AUTH_HREF} data-test-id="landing-pricing-free-cta">
+              <Link className="btn btn-ghost" href={SIGN_IN_HREF} data-test-id="landing-pricing-free-cta">
                 {c.pricing.free.cta}
               </Link>
             </div>
@@ -609,7 +610,7 @@ function Pricing({ c }: { c: Copy }) {
               {c.pricing.pro.feats.map((f, i) => <li key={i}>{f}</li>)}
             </ul>
             <div className="menu-card-foot">
-              <Link className="btn btn-primary" href={AUTH_HREF} data-test-id="landing-pricing-pro-cta">
+              <Link className="btn btn-primary" href={SIGN_IN_HREF} data-test-id="landing-pricing-pro-cta">
                 {c.pricing.pro.cta}
               </Link>
             </div>
@@ -631,7 +632,7 @@ function Closing({ c }: { c: Copy }) {
           <span className="eyebrow">{c.closing.eyebrow}</span>
           <h2>{c.closing.h}</h2>
           <div className="hero-ctas" style={{ justifyContent: "center" }}>
-            <Link className="btn btn-primary" href={AUTH_HREF} data-test-id="landing-closing-cta">
+            <Link className="btn btn-primary" href={SIGN_IN_HREF} data-test-id="landing-closing-cta">
               {c.closing.ctaPrimary}
             </Link>
           </div>

@@ -232,7 +232,7 @@ Plain `tofu apply` on [`infra/iac/tofu/`](../infra/iac/tofu/). Owns:
 
 - The menu container — Stage 4 (`dockerOnHetzner`).
 - DB migrations, OO dashboards — Stage 3.
-- The `IEDORA_AUTH_SECRET` for better-auth — Stage 4 (`appSecrets`,
+- The `IEDORA_CORE_SECRET` for better-auth — Stage 4 (`appSecrets`,
   minted on first deploy).
 
 ### Single-pass apply
@@ -353,8 +353,8 @@ For Docker-runtime products that run on the shared Hetzner VPS.
 **Deploy flow** — zero-downtime hot-swap per [Guardrail #4](#4-stage-4-menu-deploy-is-zero-downtime):
 
 1. Mint any per-product `appSecrets` not yet in BWS (menu mints
-   `DEPLOY_MENU_IEDORA_AUTH_SECRET` on first deploy — the
-   `IEDORA_AUTH_SECRET` better-auth signs session tokens with).
+   `DEPLOY_MENU_IEDORA_CORE_SECRET` on first deploy — the
+   `IEDORA_CORE_SECRET` better-auth signs session tokens with).
 2. Resolve box IPv4 from `tofu output -raw hetzner_ipv4`.
 3. Compose env from `envStatic` + `envFromBWS` (Stage 3 outputs +
    AUTOGEN secrets) + `envFromTofu` (DATABASE_URL, OTEL endpoint, S3
@@ -442,7 +442,7 @@ Unclassified keys never enter the spawned process's env.
 | `IAC_BOOTSTRAP_*`   | Operator (manual)   | `IAC_BOOTSTRAP_HCLOUD_TOKEN`, `IAC_BOOTSTRAP_CLOUDFLARE_API_TOKEN`, `IAC_BOOTSTRAP_GHCR_TOKEN`     |
 | `IAC_*`             | Tofu (Stage 2)      | `IAC_POSTGRES_PASSWORD`, `IAC_BACKUP_PASSPHRASE`                                                  |
 | `APP_<service>_*`   | Stage 3 configurator| (none today — was the home of Zitadel outputs; future `core-db-migrations` may add some)         |
-| `DEPLOY_<product>_*`| Stage 4 productRuntime | `DEPLOY_MENU_IEDORA_AUTH_SECRET`                                                              |
+| `DEPLOY_<product>_*`| Stage 4 productRuntime | `DEPLOY_MENU_IEDORA_CORE_SECRET`                                                              |
 
 The prefix tells you who writes the value — which means it also tells
 you where to look when it goes wrong and which `--stage` will surface
@@ -454,7 +454,7 @@ it. Rotation playbooks for each prefix are in § Secret rotation below.
 | app    | IAC_BOOTSTRAP_GHCR_TOKEN (for menu-db-migrations pulls), OO email/password (dashboards Basic auth), universal keys |
 | deploy | Universal + CF/state (for per-product Tofu) + IAC_BOOTSTRAP_GHCR_TOKEN (docker pull) + per-product extras gated by `--product`          |
 
-Per-product extras for `--product menu`: `DEPLOY_MENU_IEDORA_AUTH_SECRET`.
+Per-product extras for `--product menu`: `DEPLOY_MENU_IEDORA_CORE_SECRET`.
 
 TF_VAR_* aliases auto-emitted only for stages that use Tofu (iac,
 deploy). App stage doesn't get TF_VARs.
@@ -533,7 +533,7 @@ Each service is gated by a compose profile matching its name.
 1. Translates `--only`/`--except` into compose profile flags.
 2. `docker compose up -d --wait` for everything except menu.
 3. Composes `products/menu/.env` from local-stack statics +
-   a minted `IEDORA_AUTH_SECRET` (persisted across runs).
+   a minted `IEDORA_CORE_SECRET` (persisted across runs).
 4. `docker compose up -d menu` — the menu container's `env_file:`
    picks up the just-written `.env`.
 
@@ -580,7 +580,7 @@ ssh -L 5080:localhost:5080 root@$HOST   # then open http://localhost:5080
 |-------------|---------------|
 | `IAC_BOOTSTRAP_*` (HCLOUD, CF, GH, GHCR, etc.) | Regenerate at the source provider, then `bws secret edit <id>` with the new value. |
 | `IAC_*` (Tofu-minted) | `bin/iedora-env --stage iac -- tofu -chdir=infra/iac/tofu\1apply -replace=random_password.<name>`. The `terraform_data.bws_sync_autogen` write-through pushes the new value to BWS automatically. |
-| `DEPLOY_MENU_IEDORA_AUTH_SECRET` | `bws secret delete <id>`, then `bin/iedora-env bin/iedora deploy menu`. `dockerOnHetzner.appSecrets` re-mints. All active better-auth sessions invalidate (users re-authenticate). |
+| `DEPLOY_MENU_IEDORA_CORE_SECRET` | `bws secret delete <id>`, then `bin/iedora-env bin/iedora deploy menu`. `dockerOnHetzner.appSecrets` re-mints. All active better-auth sessions invalidate (users re-authenticate). |
 
 <!-- TODO(phase-1-sweep): document an auth-rebootstrap day-2 procedure
      (drop+recreate the `core` Postgres DB without affecting `menu`)
@@ -874,7 +874,7 @@ tunnel-then-reconcile flow on a fresh target.
 ### Expected state after a cold deploy
 
 - **Tofu state** (`infra/iac/tofu/`): ~26 resources (hcloud VPS/firewall/key, cloudflare R2/DNS/api_tokens incl. iedora.com apex + www, github_actions_secret/variable, random_password.*, terraform_data.{bws_sync,iedora_sync,data_bucket_purge,assets_bucket_purge}).
-- **BWS**: `DEPLOY_MENU_IEDORA_AUTH_SECRET` minted by Stage 4 + `IAC_BOOTSTRAP_HOST_IP` + autogen passwords from `bws_sync`.
+- **BWS**: `DEPLOY_MENU_IEDORA_CORE_SECRET` minted by Stage 4 + `IAC_BOOTSTRAP_HOST_IP` + autogen passwords from `bws_sync`.
 - **Box** (`ssh root@$HOST docker ps`): `infra-postgres`, `infra-cloudflared`, `infra-openobserve`, `infra-pg-backup` (compose-managed via `iedora.service`) + `infra-menu-web` (Stage-4-owned, NOT in compose).
 - **Public endpoints**:
   - `https://menu.iedora.com/up` → 200 `{"ok":true,"db":"ok"}`

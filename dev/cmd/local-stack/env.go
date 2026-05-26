@@ -36,7 +36,7 @@ func writeMenuEnvFiles(envPath, envLocalPath string, selected []string) {
 }
 
 // composeMenuEnv returns the full menu env map for the local stack.
-// `envLocalPath` is consulted only to recover an existing IEDORA_AUTH_SECRET
+// `envLocalPath` is consulted only to recover an existing IEDORA_CORE_SECRET
 // across orchestrator runs (so sign-ins survive a restart).
 func composeMenuEnv(envLocalPath string) map[string]string {
 	authSecret := stableAuthSecret(envLocalPath)
@@ -52,10 +52,11 @@ func composeMenuEnv(envLocalPath string) map[string]string {
 		"HOST_NAME":                   "localhost",
 		"GIT_SHA":                     "dev",
 		"MENU_PUBLIC_URL":             "http://localhost:3000",
-		"IEDORA_AUTH_BASE_URL":        "http://localhost:3000",
-		"IEDORA_AUTH_TRUSTED_ORIGINS": "http://localhost:3000",
-		"IEDORA_AUTH_COOKIE_DOMAIN":   "localhost",
-		"IEDORA_AUTH_SECRET":          authSecret,
+		"IEDORA_CORE_BASE_URL":        "http://localhost:3000",
+		"IEDORA_CORE_TRUSTED_ORIGINS": "http://localhost:3000",
+		"IEDORA_CORE_COOKIE_DOMAIN":   "localhost",
+		"IEDORA_CORE_SECRET":          authSecret,
+		"NEXT_PUBLIC_CORE_URL":        "http://localhost:3000/core",
 		"S3_PUBLIC_URL":               "http://localhost:4566/iedora-assets",
 		"DATABASE_URL":                "postgres://postgres:Password1!@infra-postgres:5432/menu",
 		"CORE_DATABASE_URL":           "postgres://postgres:Password1!@infra-postgres:5432/core",
@@ -67,13 +68,13 @@ func composeMenuEnv(envLocalPath string) map[string]string {
 	}
 }
 
-// stableAuthSecret keeps IEDORA_AUTH_SECRET stable across orchestrator
+// stableAuthSecret keeps IEDORA_CORE_SECRET stable across orchestrator
 // runs so existing sign-ins survive a restart. If `.env.local` already
 // pins one, reuse it; otherwise mint 48 bytes and persist via the
 // .env.local writer downstream.
 func stableAuthSecret(envLocalPath string) string {
 	existing := parseEnvLocal(envLocalPath)
-	if v, ok := existing["IEDORA_AUTH_SECRET"]; ok && v != "" && v != placeholderValue {
+	if v, ok := existing["IEDORA_CORE_SECRET"]; ok && v != "" && v != placeholderValue {
 		return v
 	}
 	buf := make([]byte, 48)
