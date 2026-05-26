@@ -13,9 +13,8 @@ import (
 // ── constants ────────────────────────────────────────────────────────────────
 
 const (
-	logPrefix        = "[local]"
-	envFileMode      = 0o600
-	placeholderValue = "<please_fill>"
+	logPrefix   = "[local]"
+	envFileMode = 0o600
 )
 
 // ── service catalog ──────────────────────────────────────────────────────────
