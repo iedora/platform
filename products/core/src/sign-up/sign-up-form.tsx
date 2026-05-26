@@ -10,7 +10,7 @@ import {
   FieldLabel,
 } from '@iedora/design-system'
 import { authClient } from '@iedora/auth/client'
-import { SIGN_IN_PATH } from '@/shared/brand'
+import { SIGN_IN_PATH } from '@iedora/brand'
 
 export function SignUpForm({ next }: { next: string }) {
   const t = useTranslations('Core.signUp')

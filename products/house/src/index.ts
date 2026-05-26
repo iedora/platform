@@ -1,9 +1,7 @@
 /**
  * @iedora/product-house — apex brand landing for iedora.com.
  *
- * Public API: a single Next.js page module re-exported here. Consumers
- * (apps/web/src/app/house/page.tsx) re-export `default` + `metadata`
- * to mount the page at a host-aware route, with `proxy.ts` rewriting
- * the apex host into `/house/*` internally.
+ * Re-exports the landing page module. Consumers (apps/web) mount it
+ * via a 1-line re-export at `apps/web/src/app/house/page.tsx`.
  */
 export { default, metadata } from './landing-page'

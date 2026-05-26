@@ -8,7 +8,7 @@
  * surface without pulling the server-only modules.
  */
 
-export { getAuth } from './auth'
+export { getAuth, auth } from './auth'
 export type { Auth, AuthSession } from './auth'
 
 export {

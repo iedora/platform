@@ -98,3 +98,14 @@ export function getAuth() {
 
 export type Auth = ReturnType<typeof build>
 export type AuthSession = Awaited<ReturnType<Auth['api']['getSession']>>
+
+/**
+ * Lazy singleton — same instance every product binds to. `getAuth()`
+ * is preserved for callers that want the resolved object directly;
+ * `auth` is a Proxy that intercepts every access so `next build`
+ * collecting page data on an empty env doesn't open a Postgres socket
+ * just to satisfy a top-level `import { auth } from '@iedora/auth'`.
+ */
+export const auth: Auth = new Proxy({} as Auth, {
+  get: (_t, key) => Reflect.get(getAuth(), key),
+})
