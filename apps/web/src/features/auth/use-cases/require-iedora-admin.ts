@@ -1,6 +1,6 @@
 import 'server-only'
 import { notFound, redirect } from 'next/navigation'
-import { signInUrl } from '@/shared/brand'
+import { signInUrl } from '@iedora/brand'
 import { IEDORA_ADMIN_ROLE } from '../roles'
 import type { AuthGateway, Session } from '../ports'
 

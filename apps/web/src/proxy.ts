@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { publicUrl } from '@/shared/url'
-import { signInUrl } from '@/shared/brand'
+import { signInUrl } from '@iedora/brand'
 
 const protectedPrefixes = ['/dashboard', '/onboarding']
 

@@ -10,7 +10,7 @@ import { env } from './env'
  * browser can't follow (`http://0.0.0.0:3000/r/<slug>`).
  *
  * Pure URL hygiene (path validation, no env) lives in
- * `@/shared/url-validate`. The split exists so pure helpers can be
+ * `@iedora/brand`. The split exists so pure helpers can be
  * unit-tested without env validation running.
  *
  * `req.url`, `req.nextUrl.origin`, `req.headers.get('host')` are not
@@ -25,8 +25,9 @@ import { env } from './env'
  * Build an absolute URL anchored at MENU_PUBLIC_URL.
  *
  * Rejects absolute or protocol-relative inputs as a defence — callers
- * that want to redirect off-host (e.g. to the Zitadel authorize URL)
- * pass the upstream URL directly to `NextResponse.redirect`; this
+ * that want to redirect off-host (e.g. to `core.iedora.com`) pass
+ * the upstream URL directly to `NextResponse.redirect` or use the
+ * `signInUrl()`/`signOutUrl()` helpers from `@iedora/brand`; this
  * helper is for OUR origin only.
  */
 export function publicUrl(
@@ -57,10 +58,5 @@ export function publicUrl(
   return url
 }
 
-// Re-export the pure validator so consumers that need both helpers
-// can `import { publicUrl, isSameOriginPath } from '@/shared/url'`.
-// Consumers that need ONLY validation should import from
-// `@/shared/url-validate` directly — that avoids env-validation
-// running at module-load time (matters for unit tests that don't
-// stand up the full env).
-export { isSameOriginPath } from './url-validate'
+// Consumers needing isSameOriginPath import from @iedora/brand directly.
+

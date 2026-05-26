@@ -1,8 +1,8 @@
 import 'server-only'
 import { notFound, redirect } from 'next/navigation'
 import { headers } from 'next/headers'
-import { signInUrl } from '@/shared/brand'
-import { auth as iedoraAuth } from '@/shared/auth'
+import { signInUrl } from '@iedora/brand'
+import { auth as iedoraAuth } from '@iedora/auth'
 import { scopeToPermission, type Scope } from '../scopes'
 import type { AuthGateway, Session } from '../ports'
 

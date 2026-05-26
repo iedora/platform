@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { Wordmark } from '@iedora/design-system'
 import { getSession } from '@/features/auth'
-import { signInUrl } from '@/shared/brand'
+import { signInUrl } from '@iedora/brand'
 import { publicUrl } from '@/shared/url'
 import { OnboardingForm } from './onboarding-form'
 

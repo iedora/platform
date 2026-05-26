@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { BRAND_NAME, BRAND_URL } from '@/shared/brand'
+import { BRAND_NAME, BRAND_URL } from '@iedora/brand'
 import type { RenderProps } from '../../types'
 import { formatPrice } from '../../format'
 

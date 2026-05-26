@@ -1,5 +1,5 @@
 import { toNextJsHandler } from '@iedora/auth/next'
-import { auth } from '@/shared/auth'
+import { auth } from '@iedora/auth'
 
 /**
  * Catch-all auth API route. better-auth handles every sub-path under

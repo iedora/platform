@@ -3,7 +3,7 @@ import { headers } from 'next/headers'
 import { and, eq } from 'drizzle-orm'
 import { db } from '@/shared/db/client'
 import { restaurant } from '@/shared/db/schema'
-import { auth } from '@/shared/auth'
+import { auth } from '@iedora/auth'
 import type { AuthGateway, Session } from '../ports'
 
 /**

@@ -2,7 +2,7 @@
 
 import { useTranslations } from 'next-intl'
 import { Button } from '@iedora/design-system'
-import { signOutUrl } from '@/shared/brand'
+import { signOutUrl } from '@iedora/brand'
 
 export function LogoutButton() {
   const t = useTranslations('AppHeader')

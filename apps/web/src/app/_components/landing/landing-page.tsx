@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { Badge, Nav, NavActions, NavBrand, PageProgress, Wordmark } from "@iedora/design-system";
-import { APP_HOSTNAME, BRAND_NAME, BRAND_URL, CONTACT_EMAIL, signInUrl, signUpUrl } from "@/shared/brand";
+import { APP_HOSTNAME, BRAND_NAME, BRAND_URL, CONTACT_EMAIL, signInUrl, signUpUrl } from '@iedora/brand';
 import "./landing.css";
 
 /**

@@ -43,7 +43,7 @@ access-control engine in `@iedora/auth` actually checks.
 - `/api/auth/[...all]` — better-auth's catch-all. Owns sign-in / sign-up
   / sign-out / get-session / organization + admin plugin endpoints.
   Mounted by `toNextJsHandler(auth)` against the singleton from
-  `@/shared/auth`.
+  `@iedora/auth`.
 
 ## Session + cookie
 
