@@ -459,4 +459,3 @@ jobs:
       image_sha: ${{ github.sha }}
     secrets:
       BWS_ACCESS_TOKEN: ${{ secrets.BWS_ACCESS_TOKEN }}
-      IAC_BOOTSTRAP_SSH_PRIVATE_KEY: ${{ secrets.IAC_BOOTSTRAP_SSH_PRIVATE_KEY }}

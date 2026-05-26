@@ -743,19 +743,20 @@ First-time setup on a fresh laptop + empty cloud:
    The `IAC_BOOTSTRAP_TOFU_STATE_*` keys are minted by
    `state-bucket-bootstrap` on first apply — DO NOT populate them.
 
-5. **Set the two bootstrap GH Actions secrets** that the CI workflow
-   needs BEFORE it can even hydrate the BWS env. These can NOT be
-   Tofu-managed (chicken-egg: `infra-deploy.yml` reads them to run
-   Tofu in the first place). One-time, survives `tofu destroy`:
+5. **Set the bootstrap GH Actions secret** that the CI workflow needs
+   BEFORE it can even hydrate the BWS env. Just ONE — `BWS_ACCESS_TOKEN`.
+   It can NOT be Tofu-managed (chicken-egg: `infra-deploy.yml` reads
+   it to run Tofu in the first place). One-time, survives `tofu
+   destroy`:
 
    ```bash
-   # BWS machine token — same value as your shell BWS_ACCESS_TOKEN.
-   bws secret get $PROJECT_ID -o json | jq -r '.value' | gh secret set BWS_ACCESS_TOKEN --repo eduvhc/iedora
-   # Or just: gh secret set BWS_ACCESS_TOKEN --repo eduvhc/iedora    (paste interactively)
-
-   # Same SSH key that's in BWS IAC_BOOTSTRAP_SSH_PRIVATE_KEY.
-   gh secret set IAC_BOOTSTRAP_SSH_PRIVATE_KEY --repo eduvhc/iedora < ~/.ssh/id_ed25519
+   # Paste the BWS machine token (same value as your shell BWS_ACCESS_TOKEN).
+   gh secret set BWS_ACCESS_TOKEN --repo eduvhc/iedora
    ```
+
+   That's the only secret CI needs. Everything else (SSH private key,
+   CF/Hetzner/GHCR tokens, …) comes from BWS — `bin/iedora-env`
+   hydrates them inside each job from `BWS_ACCESS_TOKEN`.
 
    You also need the `BWS_PROJECT_ID` and `CLOUDFLARE_ACCOUNT_ID` GH
    Actions VARIABLES (not secrets) — these ARE Tofu-managed (via
@@ -833,7 +834,8 @@ the affected stage; the rest have explicit recovery steps below.
 
 | Symptom | Cause | Recovery |
 |---------|-------|----------|
-| `App state (Stage 3)` workflow fails with `Error loading key "/home/runner/.ssh/id_ed25519": error in libcrypto`, `SSH_KEY:` line is empty in the env dump | `tofu destroy` removed the `github_actions_secret.secrets` resources Tofu had written — `IAC_BOOTSTRAP_SSH_PRIVATE_KEY` and `BWS_ACCESS_TOKEN` are gone from the repo. | Expected after a `tofu destroy`. Either: (a) `bin/iedora-env tofu -chdir=infra/iac/tofu apply` rewrites them on next apply, (b) set manually with `gh secret set <NAME> --repo eduvhc/iedora`, or (c) ignore — next real deploy fixes it. |
+| Any CI workflow fails with `BWS_ACCESS_TOKEN must be set in your shell` | `BWS_ACCESS_TOKEN` GH Actions secret was removed (most often by `tofu destroy` if it was Tofu-managed historically, or never set on a fresh repo). | Set it manually — one-time, survives destroy: `gh secret set BWS_ACCESS_TOKEN --repo eduvhc/iedora`. Then re-run the workflow. CI uses this token to hydrate every other secret from BWS via `bin/iedora-env`. |
+| Stage 3 / 4 workflow fails with `Error loading key "/home/runner/.ssh/id_ed25519": error in libcrypto` | The SSH-key-write step couldn't read `$IAC_BOOTSTRAP_SSH_PRIVATE_KEY` from the BWS-hydrated env — usually means the BWS secret itself was deleted or never set. | `bws secret list "$BWS_PROJECT_ID"` to confirm presence; recreate with `bws secret create IAC_BOOTSTRAP_SSH_PRIVATE_KEY "$(cat ~/.ssh/id_ed25519)" "$BWS_PROJECT_ID"` if missing. |
 | `menu.yml` E2E run hangs / fails after long re-arrangement | Stale CI cache (e.g. node_modules, Playwright browsers) confused by a workspaces refactor. | Re-run the workflow with `gh run rerun <run-id> --failed`. If still red: bump the cache key or delete the cache via the Actions UI. |
 
 ## IaC test layers

@@ -81,13 +81,13 @@ jobs:
           tofu_wrapper: false
 
       - name: Configure SSH (Stage 3 configurators SSH to the box)
-        env:
-          SSH_KEY: ${{ secrets.IAC_BOOTSTRAP_SSH_PRIVATE_KEY }}
+        # SSH key comes from BWS (IAC_BOOTSTRAP_SSH_PRIVATE_KEY), hydrated
+        # via bin/iedora-env. Single source of truth — not a separate GH
+        # Actions secret.
         run: |
           set -euo pipefail
-          mkdir -p ~/.ssh
-          chmod 700 ~/.ssh
-          printf '%s\n' "$SSH_KEY" > ~/.ssh/id_ed25519
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          bin/iedora-env bash -c 'printf "%s\n" "$IAC_BOOTSTRAP_SSH_PRIVATE_KEY"' > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
           printf 'StrictHostKeyChecking accept-new\n' > ~/.ssh/config
           chmod 600 ~/.ssh/config

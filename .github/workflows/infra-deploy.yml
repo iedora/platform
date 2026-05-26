@@ -91,19 +91,6 @@ jobs:
         # plenty fast on the runner.
         run: sudo apt-get update -qq && sudo apt-get install -yqq rclone
 
-      - name: Configure SSH (terraform_data.iedora_sync connects to the box)
-        env:
-          SSH_KEY: ${{ secrets.IAC_BOOTSTRAP_SSH_PRIVATE_KEY }}
-        run: |
-          set -euo pipefail
-          mkdir -p ~/.ssh
-          chmod 700 ~/.ssh
-          printf '%s\n' "$SSH_KEY" > ~/.ssh/id_ed25519
-          chmod 600 ~/.ssh/id_ed25519
-          # Accept any new host key — Tofu's SSH lib does the same.
-          printf 'StrictHostKeyChecking accept-new\n' > ~/.ssh/config
-          chmod 600 ~/.ssh/config
-
       - name: state-bucket-bootstrap (Day-1 mints, Day-2 no-op)
         # Idempotent: if BWS already has the 3 IAC_BOOTSTRAP_TOFU_STATE_*
         # keys + the CF token matches the access_key, exits 0 silently.
@@ -113,6 +100,19 @@ jobs:
 
       - name: tofu init
         run: bin/iedora-env tofu -chdir=infra/iac/tofu init -input=false -upgrade
+
+      - name: Write SSH key for terraform_data.iedora_sync
+        # Single source of truth: the key in BWS (IAC_BOOTSTRAP_SSH_PRIVATE_KEY).
+        # `bin/iedora-env` hydrates it as an env var; we just need it on disk
+        # for the system ssh client that Tofu's SSH lib + Stage 3/4 configurators
+        # shell out to. NOT a separate GH Actions secret.
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          bin/iedora-env bash -c 'printf "%s\n" "$IAC_BOOTSTRAP_SSH_PRIVATE_KEY"' > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          printf 'StrictHostKeyChecking accept-new\n' > ~/.ssh/config
+          chmod 600 ~/.ssh/config
 
       - name: tofu apply
         env:
