@@ -348,7 +348,7 @@ Operator reconciles via Zitadel UI before re-running.
 
 **Subsumes** the legacy `zitadel-grant` binary via `--grants-only`.
 
-#### `menu-db-migrations` → [`bin/menu-db-migrations`](../bin/menu-db-migrations)
+#### `menu-db-migrations` → [`infra/app-state/menu-db-migrations`](../infra/app-state/menu-db-migrations/) (in-process)
 
 drizzle-kit migrate against menu's postgres database. SSHes to the box,
 runs `docker run --rm --network iedora -e DATABASE_URL=...
@@ -369,7 +369,7 @@ migration fails loud in the deploy log without crash-looping the live
 menu container. Multi-replica future is also unblocked — migrations
 run once per deploy, not once per replica boot.
 
-#### `openobserve-dashboards` → [`bin/openobserve-dashboards`](../bin/openobserve-dashboards)
+#### `openobserve-dashboards` → [`infra/app-state/openobserve-dashboards`](../infra/app-state/openobserve-dashboards/) (in-process)
 
 Pushes 3 dashboards (`business`, `technical`, `correlation`) to the
 running OpenObserve. JSONs are embedded in the binary via

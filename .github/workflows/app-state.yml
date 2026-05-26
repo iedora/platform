@@ -23,8 +23,6 @@ on:
       - 'infra/app-state/**'
       - 'infra/deploy/cmd/iedora/configurators.go'
       - 'bin/zitadel-apply'
-      - 'bin/menu-db-migrations'
-      - 'bin/openobserve-dashboards'
       - 'internal/**'
       - 'go.mod'
       - 'go.sum'

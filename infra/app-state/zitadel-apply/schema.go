@@ -1,4 +1,4 @@
-package main
+package zitadelapply
 
 // Canonical names + IDs for every Zitadel resource the binary reconciles.
 // One source of truth, mirrored from `infra/iac/tofu/zitadel.tf` at extraction

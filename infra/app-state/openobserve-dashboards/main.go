@@ -41,7 +41,11 @@
 //	OO_ORG          OpenObserve org name. Default "default".
 //	OO_FOLDER       Dashboard folder. Default "default".
 //	OO_LOCAL_PORT   Local forwarded port. Default 15080.
-package main
+//
+// Exported entry point is Run(ctx) — iedora's app-apply orchestrator
+// imports + calls it in-process. There is no bin/openobserve-dashboards
+// shim anymore; the configurator runs as part of `bin/iedora app apply`.
+package openobservedashboards
 
 import (
 	"bytes"
@@ -57,7 +61,6 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
-	"os/signal"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -83,16 +86,12 @@ const runsIn = mode.Live
 //go:embed dashboards/*.json
 var dashboardsFS embed.FS
 
-func main() {
-	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
-	defer cancel()
-
+// Run is the configurator's entry point. Invoked in-process by iedora's
+// app-apply orchestrator (configurators.go). Errors bubble up — the
+// orchestrator owns logging + exit code, not us.
+func Run(ctx context.Context) error {
 	fmt.Fprintf(os.Stderr, "→ openobserve-dashboards: mode=%s\n", runsIn)
-
-	if err := run(ctx); err != nil {
-		fmt.Fprintf(os.Stderr, "openobserve-dashboards: %v\n", err)
-		os.Exit(1)
-	}
+	return run(ctx)
 }
 
 func run(ctx context.Context) error {

@@ -34,11 +34,15 @@
 // shell still has BWS_ACCESS_TOKEN, the wrapper still hydrates the iac
 // env when fetching tofu outputs at the boundary.
 //
-// Actually — since this binary runs UNDER `bin/with-secrets --stage app`,
+// Exported entry point is Run(ctx) — iedora's app-apply orchestrator
+// imports + calls it in-process. There is no bin/menu-db-migrations
+// shim anymore; the configurator runs as part of `bin/iedora app apply`.
+//
+// Since this code runs UNDER `bin/with-secrets --stage app`,
 // it only sees app-scope env. To call `tofu output`, it shells out to
 // `bin/with-secrets --stage iac -- tofu output -raw ...`. Cheap nested
 // invocation: bws-list cache, no extra credential round-trip.
-package main
+package menudbmigrations
 
 import (
 	"bytes"
@@ -46,10 +50,8 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"os/signal"
 	"path/filepath"
 	"strings"
-	"syscall"
 
 	"github.com/eduvhc/iedora/internal/mode"
 	"github.com/eduvhc/iedora/internal/ssh"
@@ -67,16 +69,11 @@ var remoteSSH = &ssh.Client{Stdout: os.Stderr, Stderr: os.Stderr}
 // docs/deploy.md § Environment guardrails (Rule 1).
 const runsIn = mode.Live
 
-func main() {
-	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
-	defer cancel()
-
+// Run is the configurator's entry point. Invoked in-process by iedora's
+// app-apply orchestrator (configurators.go).
+func Run(ctx context.Context) error {
 	fmt.Fprintf(os.Stderr, "→ menu-db-migrations: mode=%s\n", runsIn)
-
-	if err := run(ctx); err != nil {
-		fmt.Fprintf(os.Stderr, "menu-db-migrations: %v\n", err)
-		os.Exit(1)
-	}
+	return run(ctx)
 }
 
 func run(ctx context.Context) error {
