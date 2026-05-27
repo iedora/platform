@@ -1,6 +1,6 @@
-CREATE SCHEMA "imopush";
+CREATE SCHEMA IF NOT EXISTS "imopush";
 --> statement-breakpoint
-CREATE TABLE "imopush"."integrator_status" (
+CREATE TABLE IF NOT EXISTS "imopush"."integrator_status" (
 	"property_reference" text NOT NULL,
 	"integrator_key" text NOT NULL,
 	"state" text DEFAULT 'idle' NOT NULL,
@@ -11,7 +11,7 @@ CREATE TABLE "imopush"."integrator_status" (
 	CONSTRAINT "integrator_status_property_reference_integrator_key_pk" PRIMARY KEY("property_reference","integrator_key")
 );
 --> statement-breakpoint
-CREATE TABLE "imopush"."property" (
+CREATE TABLE IF NOT EXISTS "imopush"."property" (
 	"reference" text PRIMARY KEY NOT NULL,
 	"type" text NOT NULL,
 	"operation" text NOT NULL,
