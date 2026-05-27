@@ -213,6 +213,40 @@ Rejected alternatives at decision time:
   requires opening Postgres reach to the runner network — touching
   the firewall is bigger blast radius than wanted.
 
+### DOCKER-2: migrate bundle still couples to Next image build
+**size:** M · **risk:** low
+
+DOCKER-1's fix bundled migrate scripts as a separate Dockerfile
+stage (`migrate-bundler`), but kept the output in the SAME image as
+the Next.js app. Cost: any SQL-file change in
+`packages/auth/drizzle/` or `products/menu/drizzle/` invalidates the
+deps-stage COPY which propagates to the Next builder stage, forcing
+a full ~10min Next rebuild for a 1-keyword migration fix.
+
+Schema migrations land much more often than Next code changes.
+Coupling them to Next's build cycle was a deferred trade-off (see
+DOCKER-1 — option (a) "Dedicated migrate image" was rejected for
+"two pushes per deploy", which mispriced the SQL-vs-code change
+frequency).
+
+Fix: split off a separate `ghcr.io/eduvhc/migrate:<sha>` image.
+
+  - `infra/migrate/Dockerfile` (new): just the migrate-bundler stage,
+    plus a small runtime layer (node-slim + the bundles + sql).
+    ~50MB.
+  - `.github/workflows/migrate.yml` (new): builds + pushes on
+    `packages/auth/drizzle/**`, `packages/auth/scripts/**`,
+    `products/menu/drizzle/**`, `products/menu/scripts/**` changes.
+  - Stage-3 configurators (Go) switch image:
+      ghcr.io/eduvhc/web:<sha>  → ghcr.io/eduvhc/migrate:<sha>
+  - apps/web/Dockerfile: drops the migrate-bundler stage and the
+    `/app/migrate` copy. Next image stays focused on serving HTTP.
+  - web.yml's `run_app_state` dispatch passes the migrate SHA, not
+    the web SHA. (They drift independently now.)
+
+Deferred until DOCKER-1's bundle approach validates end-to-end at
+least once. Tracked here so the work isn't lost.
+
 ## TypeScript / monorepo
 
 ### TS-1: Composite TS project references only on `products/menu`
