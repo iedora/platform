@@ -58,15 +58,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
-      - name: Install bws CLI
-        env:
-          BWS_VERSION: '2.0.0'
-        run: |
-          set -euo pipefail
-          curl -fsSL -o /tmp/bws.zip \
-            "https://github.com/bitwarden/sdk-sm/releases/download/bws-v${BWS_VERSION}/bws-x86_64-unknown-linux-gnu-${BWS_VERSION}.zip"
-          unzip -q /tmp/bws.zip -d /tmp/bws
-          sudo install -m 0755 /tmp/bws/bws /usr/local/bin/bws
+      - uses: ./.github/actions/infra/install-bws
 
       - name: Install Go
         # Needed for `go run`-style execution of `bin/iedora`.
@@ -93,21 +85,9 @@ jobs:
         # in-flight refresh, if any.
         run: bin/iedora-env tofu -chdir=infra/iac/tofu init -input=false -upgrade -lock-timeout=5m
 
-      - name: Configure SSH (required by dockerOnHetzner runtime)
-        # SSH key comes from BWS (IAC_BOOTSTRAP_SSH_PRIVATE_KEY), hydrated
-        # via bin/iedora-env. Single source of truth — not a separate GH
-        # Actions secret.
-        run: |
-          set -euo pipefail
-          mkdir -p ~/.ssh && chmod 700 ~/.ssh
-          bin/iedora-env bash -c 'printf "%s\n" "$IAC_BOOTSTRAP_SSH_PRIVATE_KEY"' > ~/.ssh/id_ed25519
-          chmod 600 ~/.ssh/id_ed25519
-          printf 'StrictHostKeyChecking accept-new\n' > ~/.ssh/config
-          chmod 600 ~/.ssh/config
-          eval "$(ssh-agent -s)"
-          ssh-add ~/.ssh/id_ed25519
-          echo "SSH_AUTH_SOCK=$SSH_AUTH_SOCK" >> "$GITHUB_ENV"
-          echo "SSH_AGENT_PID=$SSH_AGENT_PID" >> "$GITHUB_ENV"
+      - uses: ./.github/actions/infra/ssh-setup
+        with:
+          bws-access-token: ${{ secrets.BWS_ACCESS_TOKEN }}
 
       - name: bin/iedora deploy ${{ inputs.product }}
         run: bin/iedora-env bin/iedora deploy ${{ inputs.product }}

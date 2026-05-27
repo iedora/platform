@@ -45,6 +45,36 @@ test-results/
 # Test coverage
 coverage/
 
-# Go build/test artifacts (keeps context smaller)
-**/go-build/
-**/vendor/
+# Database backups — never allowed in image context. Even gpg-encrypted
+# dumps leak volume + schedule metadata from the filenames.
+*.dump
+*.dump.gpg
+*.sql.gz
+*.bak
+
+# Go build artefacts from `go build ./...` at the repo root. Each binary
+# is 5-15 MB; they inflate the build context but are never used by the
+# Node.js image.
+/bws-sync
+/bws-upsert
+/iedora
+/infra-pg-backup
+/local-stack
+/menu-db-migrations
+/openobserve-dashboards
+/state-bucket-bootstrap
+
+# Playwright — browser binaries + merge artefacts + auth state
+playwright/.cache/
+blob-report/
+playwright/.auth/
+.playwright-mcp/
+
+# Vitest runner cache
+.vitest-cache/
+
+# Local reference checkouts
+services-references/
+
+# Build output
+dist/

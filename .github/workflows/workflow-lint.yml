@@ -1,0 +1,35 @@
+# Workflow-level policy scan — catches drift into anti-patterns:
+# missing permissions:, untrusted pull_request_target inputs, deprecated
+# runners, unpinned actions, etc. Runs only when workflow/action files
+# change. ~30s per invocation.
+#
+# actionlint runs locally too (dev loop), but CI is the enforcement gate.
+
+name: '[security] Workflow policy'
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/**'
+      - '.github/actions/**'
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/**'
+      - '.github/actions/**'
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: Lint workflows
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+      - run: |
+          bash <(curl -fsSL https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash)
+          ./actionlint -color .github/workflows/*.yml
+        shell: bash

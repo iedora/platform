@@ -43,7 +43,7 @@ on:
       - 'package.json'
       - 'tsconfig*.json'
       - '.github/workflows/web.yml'
-      - '.github/actions/setup/**'
+      - '.github/actions/**'
   pull_request:
     branches: [main]
     paths:
@@ -60,7 +60,7 @@ on:
       - 'package.json'
       - 'tsconfig*.json'
       - '.github/workflows/web.yml'
-      - '.github/actions/setup/**'
+      - '.github/actions/**'
   # Re-trigger the real hosted runner without a new commit:
   #   gh workflow run web.yml --ref <branch>
   # Useful for verifying a green local repro against actual CI hardware
@@ -180,31 +180,11 @@ jobs:
       # can't push to it. IAC_BOOTSTRAP_GHCR_TOKEN is the same PAT, mirrored to
       # BWS + GHA secrets via Tofu. Fetch from BWS to keep it off the
       # repo's plaintext secrets list.
-      - name: Install bws CLI
-        env:
-          BWS_VERSION: '2.0.0'
-        run: |
-          set -euo pipefail
-          curl -fsSL -o /tmp/bws.zip \
-            "https://github.com/bitwarden/sdk-sm/releases/download/bws-v${BWS_VERSION}/bws-aarch64-unknown-linux-gnu-${BWS_VERSION}.zip"
-          unzip -q /tmp/bws.zip -d /tmp/bws
-          sudo install -m 0755 /tmp/bws/bws /usr/local/bin/bws
+      - uses: ./.github/actions/infra/install-bws
 
-      - name: Log in to GHCR
-        env:
-          BWS_ACCESS_TOKEN: ${{ secrets.BWS_ACCESS_TOKEN }}
-        # `bin/iedora-env` auto-discovers BWS_PROJECT_ID from the
-        # token's accessible projects + hydrates every secret as env.
-        # That's why every OTHER bws-touching workflow uses it. The
-        # earlier raw `bws secret list "$BWS_PROJECT_ID"` here was the
-        # one workflow that broke the pattern.
-        run: |
-          set -euo pipefail
-          bin/iedora-env bash -c '
-            set -euo pipefail
-            [ -n "${IAC_BOOTSTRAP_GHCR_TOKEN:-}" ] || { echo "IAC_BOOTSTRAP_GHCR_TOKEN missing in BWS" >&2; exit 1; }
-            echo "$IAC_BOOTSTRAP_GHCR_TOKEN" | docker login ghcr.io -u eduvhc --password-stdin
-          '
+      - uses: ./.github/actions/infra/ghcr-login
+        with:
+          bws-access-token: ${{ secrets.BWS_ACCESS_TOKEN }}
 
       # Build context: REPO ROOT (Bun workspace) — Dockerfile copies in
       # `package.json`, `bun.lock`, `tsconfig.base.json`, and every
@@ -218,7 +198,7 @@ jobs:
       #     rollback knob via `gh workflow run deploy.yml --field image_sha=…`.
       - name: Build and push
         id: build
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: apps/web/Dockerfile
@@ -229,6 +209,8 @@ jobs:
           push: true
           provenance: true
           sbom: true
+          build-args: |
+            DEPLOYMENT_VERSION=${{ github.sha }}
           cache-from: type=gha,scope=web-arm64
           cache-to: type=gha,mode=max,scope=web-arm64
 
@@ -237,7 +219,7 @@ jobs:
       # to the resulting image digest so `gh attestation verify oci://...`
       # resolves against the published artifact.
       - name: Attest SLSA build provenance
-        uses: actions/attest-build-provenance@v4
+        uses: actions/attest@v4
         with:
           subject-name: ghcr.io/eduvhc/web
           subject-digest: ${{ steps.build.outputs.digest }}

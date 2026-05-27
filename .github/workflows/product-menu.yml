@@ -15,14 +15,14 @@ on:
       - 'products/menu/**'
       - 'packages/eslint-config/**'
       - '.github/workflows/product-menu.yml'
-      - '.github/actions/setup/**'
+      - '.github/actions/**'
   pull_request:
     branches: [main]
     paths:
       - 'products/menu/**'
       - 'packages/eslint-config/**'
       - '.github/workflows/product-menu.yml'
-      - '.github/actions/setup/**'
+      - '.github/actions/**'
   workflow_dispatch:
 
 concurrency:

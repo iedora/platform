@@ -12,24 +12,24 @@ Tag legend:
 
 ## CI / GitHub Actions
 
-### CI-1: BWS install + GHCR login boilerplate duplicated across workflows
-**size:** S · **risk:** low
+### CI-1: ~~BWS install + GHCR login boilerplate duplicated across workflows~~ → resolved
+**size:** ~~S~~ · **risk:** ~~low~~
 
-The 8-line "Install bws CLI" + 7-line "Log in to GHCR" patterns repeat
-across `web.yml` + `infra-deploy.yml` (×2 jobs after consolidation) +
-`deploy.yml` + `app-state.yml`. ~50 lines of repetition. Adding a new
-workflow that needs BWS access copies the same snippets again.
+Resolved with two composite actions:
+- `.github/actions/install-bws/action.yml` — auto-detects arch (aarch64/x86_64)
+- `.github/actions/ghcr-login/action.yml` — fetches PAT from BWS + runs docker login
 
-Fix: composite actions at
-- `.github/actions/install-bws/action.yml` (input: BWS_ACCESS_TOKEN)
-- `.github/actions/ghcr-login/action.yml` (uses install-bws)
+All 4 workflows (`web.yml`, `infra-deploy.yml`, `app-state.yml`, `deploy.yml`)
+now use these instead of the 8-line install + 7-line login inline blocks.
 
-### CI-2: SSH key write boilerplate duplicated across 3 workflows
-**size:** S · **risk:** low
+### CI-2: ~~SSH key write boilerplate duplicated across 3 workflows~~ → resolved
+**size:** ~~S~~ · **risk:** ~~low~~
 
-The 7-line block that writes `IAC_BOOTSTRAP_SSH_PRIVATE_KEY` to
-`~/.ssh/id_ed25519` + adds the agent appears in `infra-deploy.yml`,
-`app-state.yml`, `deploy.yml`. Same fix as CI-1: composite action.
+Resolved with:
+- `.github/actions/ssh-setup/action.yml` — writes key + ssh config from BWS,
+  optionally registers with ssh-agent (`register-agent: true` default).
+  `infra-deploy.yml` passes `register-agent: 'false'` (Tofu needs the
+  key on disk, not in agent); `app-state.yml` + `deploy.yml` use defaults.
 
 ### CI-3: web.yml has 76 lines of inline shell in `run:` blocks
 **size:** M · **risk:** low
@@ -67,18 +67,16 @@ If/when this matters: add `go` to the codeql.yml language matrix and
 min/run); justified if the Go surface grows or starts handling
 untrusted input.
 
-### SEC-2: GitHub Actions workflows have no policy scan
-**size:** S · **risk:** low
+### SEC-2: ~~GitHub Actions workflows have no policy scan~~ → resolved
+**size:** ~~S~~ · **risk:** ~~low~~
 
-`actionlint` runs LOCALLY (used during this session) but isn't in CI.
-Workflows can drift into anti-patterns: missing `permissions:`
-declarations, untrusted `pull_request_target` inputs interpolated
-into shell, deprecated runners, supply-chain risks from unpinned
-actions (now using tag refs — see tech-debt note on CI elsewhere).
+Resolved by `.github/workflows/workflow-lint.yml` — runs `actionlint` on
+every push + PR that touches `.github/workflows/**` or
+`.github/actions/**`. ~30s per invocation. Blocks missing permissions,
+untrusted inputs, deprecated runners, unpinned actions at CI time.
 
-Fix: add a workflow that runs `actionlint` + optionally
-`pinact`/`zizmor` on every PR + push that touches
-`.github/workflows/**`. ~5 min CI cost, blocks bad practice early.
+`actionlint` still runs locally in the dev loop; CI is the enforcement
+gate.
 
 ### CI-4: ~~cross-workflow gating via `gh run list` polling~~ → resolved
 **size:** ~~L~~ · **risk:** ~~med~~
