@@ -59,6 +59,7 @@ export type ListUsersResult = {
 
 export interface AdminUsersGateway {
   listUsers(input: ListUsersInput): Promise<ListUsersResult>
+  getUserById(input: { userId: string }): Promise<AdminUser | null>
   listUserSessions(input: { userId: string }): Promise<ReadonlyArray<AdminUserSession>>
   banUser(input: {
     userId: string

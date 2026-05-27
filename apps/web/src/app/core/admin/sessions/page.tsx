@@ -1,98 +1,122 @@
-import { headers } from 'next/headers'
 import { getTranslations } from 'next-intl/server'
-import { Card, CardTitle, CardDesc, EmptyState, Table } from '@iedora/design-system'
+import {
+  Card,
+  EmptyState,
+  Table,
+  Field,
+  FieldLabel,
+  FieldInput,
+  Checkbox,
+  Button,
+} from '@iedora/design-system'
 import { requireIedoraAdmin } from '@iedora/product-core'
-import { auth } from '@iedora/auth'
-import { SessionRow } from './session-row'
+import {
+  betterAuthAdminSessionsGateway,
+  listAllSessions,
+} from '@iedora/product-core/features/admin-sessions'
+import { AdminPage } from '@iedora/product-core/shared/ui/admin-page'
+import { SessionRow } from '@iedora/product-core/features/admin-sessions/ui/session-row'
 
-type AdminSessionRow = {
-  id: string
-  token: string
-  userId: string
-  userEmail: string
-  userName: string
-  ipAddress: string | null
-  userAgent: string | null
-  createdAt: Date
-  expiresAt: Date
-}
+type Search = Promise<{ q?: string; impersonated?: string }>
 
-/**
- * Sessions admin — the iedora-staff view of every active session
- * across every product. Replaces the slice that lived under the
- * menu's `dashboard/admin/sessions` route. Data sourced through
- * `auth.api.*` (fan-out per user); the cross-product boundary
- * (`packages/auth/README.md`) means we never touch `core.session`
- * directly even though this page IS the core product's surface.
- */
-export default async function SessionsAdmin() {
+export default async function SessionsAdminPage({
+  searchParams,
+}: {
+  searchParams: Search
+}) {
   await requireIedoraAdmin()
   const t = await getTranslations('Core.admin.sessions')
-  const h = await headers()
+  const params = await searchParams
 
-  const usersResponse = await auth.api.listUsers({
-    query: { limit: 200, sortBy: 'createdAt', sortDirection: 'desc' },
-    headers: h,
-  })
+  const q = params.q?.trim() || undefined
+  const impersonatedOnly = params.impersonated === 'true'
 
-  const rows: AdminSessionRow[] = []
-  for (const user of usersResponse.users) {
-    const sessions = await auth.api.listUserSessions({
-      body: { userId: user.id },
-      headers: h,
-    })
-    for (const s of sessions.sessions) {
-      rows.push({
-        id: s.id,
-        token: s.token,
-        userId: user.id,
-        userEmail: user.email,
-        userName: user.name,
-        ipAddress: s.ipAddress ?? null,
-        userAgent: s.userAgent ?? null,
-        createdAt: new Date(s.createdAt),
-        expiresAt: new Date(s.expiresAt),
-      })
-    }
-  }
-
-  rows.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+  const gateway = betterAuthAdminSessionsGateway()
+  const sessions = await listAllSessions(gateway, { q, impersonatedOnly })
 
   return (
-    <Card>
-      <CardTitle as="h2">{t('title')}</CardTitle>
-      <CardDesc>{t('subtitle')}</CardDesc>
-      {rows.length === 0 ? (
+    <AdminPage
+      crumbs={[{ label: t('crumbAdmin'), href: '/core/admin', testId: 'admin' }]}
+      title={t('title')}
+      description={t('subtitle')}
+      data-test-id="admin-sessions-page"
+    >
+      <Card>
+        <form
+          // GET form — every input becomes a search param so the
+          // URL is the single source of state.
+          className="flex flex-col gap-3 sm:flex-row sm:items-end"
+          data-test-id="admin-sessions-filter"
+        >
+          <Field className="flex-1">
+            <FieldLabel htmlFor="q">{t('filterQueryLabel')}</FieldLabel>
+            <FieldInput
+              id="q"
+              name="q"
+              type="search"
+              defaultValue={q ?? ''}
+              placeholder={t('filterQueryPlaceholder')}
+              data-test-id="admin-sessions-filter-q"
+              inputMode="search"
+              autoComplete="off"
+            />
+          </Field>
+          <label className="flex items-center gap-2 text-sm sm:pb-2">
+            <Checkbox
+              name="impersonated"
+              value="true"
+              defaultChecked={impersonatedOnly}
+              data-test-id="admin-sessions-filter-impersonated"
+            />
+            <span>{t('filterImpersonated')}</span>
+          </label>
+          <Button
+            type="submit"
+            variant="primary"
+            data-test-id="admin-sessions-filter-submit"
+          >
+            {t('filterApply')}
+          </Button>
+        </form>
+      </Card>
+
+      {sessions.length === 0 ? (
         <EmptyState label={t('empty')} />
       ) : (
-        <Table data-test-id="core-admin-sessions-table">
-          <thead>
-            <tr>
-              <th>{t('columnUser')}</th>
-              <th>{t('columnDevice')}</th>
-              <th>{t('columnIp')}</th>
-              <th>{t('columnIssued')}</th>
-              <th>{t('columnExpires')}</th>
-              <th />
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row) => (
-              <SessionRow
-                key={row.id}
-                rowId={row.id}
-                token={row.token}
-                userEmail={row.userEmail}
-                userName={row.userName}
-                ipAddress={row.ipAddress}
-                userAgent={row.userAgent}
-                createdAtIso={row.createdAt.toISOString()}
-                expiresAtIso={row.expiresAt.toISOString()}
-              />
-            ))}
-          </tbody>
-        </Table>
+        <Card>
+          <div className="overflow-x-auto">
+            <Table data-test-id="admin-sessions-table">
+              <thead>
+                <tr>
+                  <th>{t('columnUser')}</th>
+                  <th>{t('columnDevice')}</th>
+                  <th>{t('columnIp')}</th>
+                  <th>{t('columnIssued')}</th>
+                  <th>{t('columnExpires')}</th>
+                  <th />
+                </tr>
+              </thead>
+              <tbody>
+                {sessions.map((s) => (
+                  <SessionRow
+                    key={s.id}
+                    rowId={s.id}
+                    token={s.token}
+                    userId={s.userId}
+                    userEmail={s.userEmail}
+                    userName={s.userName}
+                    ipAddress={s.ipAddress}
+                    userAgent={s.userAgent}
+                    createdAtIso={s.createdAt.toISOString()}
+                    expiresAtIso={s.expiresAt.toISOString()}
+                    impersonatedBy={s.impersonatedBy}
+                  />
+                ))}
+              </tbody>
+            </Table>
+          </div>
+        </Card>
       )}
-    </Card>
+    </AdminPage>
   )
 }

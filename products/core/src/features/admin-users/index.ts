@@ -16,6 +16,7 @@ export type {
 
 export { betterAuthAdminUsersGateway } from './adapters/better-auth'
 export { listUsers } from './use-cases/list-users'
+export { getUserById } from './use-cases/get-user'
 export { listUserSessions } from './use-cases/list-user-sessions'
 export {
   ALLOWED_CROSS_TENANT_ROLES,

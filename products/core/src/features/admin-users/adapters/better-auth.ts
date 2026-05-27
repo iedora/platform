@@ -1,6 +1,7 @@
 import 'server-only'
 import { headers as nextHeaders } from 'next/headers'
-import { auth } from '@iedora/auth'
+import { eq } from 'drizzle-orm'
+import { auth, getCoreDb, schema } from '@iedora/auth'
 import type {
   AdminUser,
   AdminUserSession,
@@ -64,6 +65,19 @@ export function betterAuthAdminUsersGateway(): AdminUsersGateway {
         page: input.page,
         pageSize: input.pageSize,
       }
+    },
+
+    async getUserById({ userId }) {
+      // better-auth has no admin-side `getUser({ id })` endpoint, so
+      // fall through to Drizzle. Cheaper than re-paging listUsers.
+      const db = getCoreDb()
+      const [row] = await db
+        .select()
+        .from(schema.user)
+        .where(eq(schema.user.id, userId))
+        .limit(1)
+      if (!row) return null
+      return mapUser(row)
     },
 
     async listUserSessions({ userId }) {

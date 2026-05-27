@@ -75,6 +75,10 @@ export function makeFakeGateway(
       }
     },
 
+    async getUserById({ userId }) {
+      return state.users.find((u) => u.id === userId) ?? null
+    },
+
     async listUserSessions({ userId }) {
       return state.sessions.filter((s) => s.userId === userId)
     },

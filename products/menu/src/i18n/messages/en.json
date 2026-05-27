@@ -340,8 +340,12 @@
     "remainingCount": "{count, plural, =0 {None remaining} =1 {1 remaining} other {# remaining}}",
     "resetsAt": "Next slot frees up {when}",
     "plans": {
-      "free": { "name": "Free" },
-      "casa": { "name": "Casa" }
+      "free": {
+        "name": "Free"
+      },
+      "casa": {
+        "name": "Casa"
+      }
     }
   },
   "Builder": {
@@ -518,7 +522,178 @@
         "columnExpires": "Expires",
         "revoke": "Revoke",
         "revoking": "Revoking…",
-        "empty": "No active sessions."
+        "empty": "No active sessions.",
+        "crumbAdmin": "Admin",
+        "impersonatedBadge": "Impersonated",
+        "filterQueryLabel": "Search",
+        "filterQueryPlaceholder": "Email or name",
+        "filterImpersonated": "Impersonated only",
+        "filterApply": "Apply"
+      },
+      "nav": {
+        "ariaLabel": "Admin navigation",
+        "openNavigation": "Open navigation",
+        "closeNavigation": "Close navigation",
+        "brandHome": "iedora home",
+        "sectionAdmin": "Admin",
+        "sectionExit": "Session",
+        "overview": "Overview",
+        "users": "Users",
+        "organizations": "Organizations",
+        "sessions": "Sessions",
+        "signOut": "Sign out"
+      },
+      "overview": {
+        "title": "Admin",
+        "description": "Iedora-staff cross-tenant controls.",
+        "users": {
+          "title": "Users",
+          "count": "{count} total",
+          "cta": "Manage users"
+        },
+        "orgs": {
+          "title": "Organizations",
+          "description": "Every tenant org in the core schema.",
+          "cta": "Manage organizations"
+        },
+        "sessions": {
+          "title": "Sessions",
+          "description": "Every active session across every product.",
+          "cta": "Inspect sessions"
+        }
+      },
+      "users": {
+        "title": "Users",
+        "description": "Every user on the platform, across every tenant.",
+        "crumbAdmin": "Admin",
+        "columnUser": "User",
+        "columnRole": "Role",
+        "columnStatus": "Status",
+        "columnCreated": "Created",
+        "roleIedoraAdmin": "Iedora admin",
+        "roleMember": "Tenant",
+        "statusActive": "Active",
+        "statusBanned": "Banned",
+        "statusUnverified": "Unverified",
+        "empty": "No users match.",
+        "paginationPrev": "Prev",
+        "paginationNext": "Next",
+        "paginationOf": "Page {page} of {totalPages}",
+        "filters": {
+          "queryLabel": "Search",
+          "queryPlaceholder": "Email or name",
+          "roleLabel": "Role",
+          "roleAny": "Any role",
+          "roleIedoraAdmin": "Iedora admin",
+          "roleMember": "Tenant",
+          "bannedLabel": "Status",
+          "bannedAny": "Any status",
+          "bannedYes": "Banned",
+          "bannedNo": "Active",
+          "apply": "Apply",
+          "applying": "Applying…"
+        },
+        "row": {
+          "view": "View",
+          "ban": "Ban",
+          "unban": "Unban",
+          "unbanning": "Unbanning…",
+          "impersonate": "Impersonate",
+          "impersonating": "Impersonating…"
+        },
+        "ban": {
+          "trigger": "Ban",
+          "title": "Ban user",
+          "description": "Ban {email}. They will be signed out of every active session.",
+          "reasonLabel": "Reason",
+          "reasonPlaceholder": "Optional — shown internally on audit log.",
+          "daysLabel": "Duration",
+          "daysPlaceholder": "Days (leave blank for permanent)",
+          "daysHint": "Leave blank to ban permanently.",
+          "cancel": "Cancel",
+          "submit": "Ban",
+          "submitting": "Banning…",
+          "errorGeneric": "Could not ban this user."
+        },
+        "role": {
+          "member": "Tenant",
+          "iedoraAdmin": "Iedora admin",
+          "updated": "Role updated.",
+          "errorGeneric": "Could not update the role."
+        },
+        "detail": {
+          "crumbAdmin": "Admin",
+          "crumbUsers": "Users",
+          "descriptionSelf": "This is you. Destructive actions are disabled.",
+          "roleTitle": "Role",
+          "roleDesc": "Cross-tenant role on the user row.",
+          "statusTitle": "Status",
+          "statusActive": "Active",
+          "statusBanned": "Banned",
+          "statusVerified": "Verified email",
+          "statusUnverified": "Unverified email",
+          "banReasonLabel": "Reason",
+          "sessionsTitle": "Active sessions",
+          "sessionsCount": "{count} active",
+          "sessionsEmpty": "No active sessions.",
+          "sessionColumnDevice": "Device",
+          "sessionColumnIp": "IP",
+          "sessionColumnIssued": "Issued",
+          "sessionColumnExpires": "Expires",
+          "revokeAll": "Revoke all sessions"
+        }
+      },
+      "orgs": {
+        "title": "Organizations",
+        "description": "Every tenant org on the platform.",
+        "crumbAdmin": "Admin",
+        "columnOrg": "Organization",
+        "columnMembers": "Members",
+        "columnPlan": "Plan",
+        "columnCreated": "Created",
+        "view": "View",
+        "empty": "No organizations match.",
+        "paginationPrev": "Prev",
+        "paginationNext": "Next",
+        "paginationOf": "Page {page} of {totalPages}",
+        "filters": {
+          "queryLabel": "Search",
+          "queryPlaceholder": "Name or slug",
+          "apply": "Apply",
+          "applying": "Applying…"
+        },
+        "members": {
+          "role-owner": "Owner",
+          "role-admin": "Admin",
+          "role-member": "Member",
+          "remove": "Remove",
+          "confirmRemove": "Confirm remove",
+          "removing": "Removing…",
+          "cancel": "Cancel"
+        },
+        "invitations": {
+          "cancel": "Cancel",
+          "cancelling": "Cancelling…"
+        },
+        "detail": {
+          "crumbAdmin": "Admin",
+          "crumbOrgs": "Organizations",
+          "description": "{count} members.",
+          "membersTitle": "Members",
+          "membersCount": "{count} total",
+          "membersEmpty": "No members.",
+          "memberColumnUser": "User",
+          "memberColumnJoined": "Joined",
+          "memberColumnRole": "Role",
+          "invitationsTitle": "Invitations",
+          "invitationsCount": "{count} pending",
+          "invitationsEmpty": "No pending invitations.",
+          "invitationsEmptyTitle": "Invitations",
+          "inviteColumnEmail": "Email",
+          "inviteColumnRole": "Role",
+          "inviteColumnInviter": "Inviter",
+          "inviteColumnExpires": "Expires"
+        }
       }
     }
   }

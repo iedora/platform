@@ -1,0 +1,232 @@
+import { getTranslations } from 'next-intl/server'
+import Link from 'next/link'
+import {
+  Card,
+  EmptyState,
+  Table,
+  Badge,
+  Button,
+} from '@iedora/design-system'
+import { requireIedoraAdmin } from '@iedora/product-core'
+import {
+  betterAuthAdminUsersGateway,
+  listUsers,
+} from '@iedora/product-core/features/admin-users'
+import { AdminPage } from '@iedora/product-core/shared/ui/admin-page'
+import { UsersFilterBar } from '@iedora/product-core/features/admin-users/ui/users-filter-bar'
+import { UserRowActions } from '@iedora/product-core/features/admin-users/ui/user-row-actions'
+import { APP_URL } from '@iedora/brand'
+
+const PAGE_SIZE = 50
+
+type Params = Promise<Record<string, never>>
+type Search = Promise<{
+  q?: string
+  role?: string
+  banned?: string
+  page?: string
+  sort?: string
+  dir?: string
+}>
+
+export default async function UsersAdminPage({
+  searchParams,
+}: {
+  params: Params
+  searchParams: Search
+}) {
+  const session = await requireIedoraAdmin()
+  const t = await getTranslations('Core.admin.users')
+  const params = await searchParams
+
+  const q = params.q?.trim() || undefined
+  const role =
+    params.role === 'iedora-admin'
+      ? 'iedora-admin'
+      : params.role === 'member'
+        ? null
+        : undefined
+  const banned =
+    params.banned === 'true' ? true : params.banned === 'false' ? false : undefined
+  const page = Math.max(1, Number(params.page) || 1)
+  const sortBy =
+    params.sort === 'name' || params.sort === 'email' ? params.sort : 'createdAt'
+  const sortDirection = params.dir === 'asc' ? 'asc' : 'desc'
+
+  const gateway = betterAuthAdminUsersGateway()
+  const result = await listUsers(gateway, {
+    q,
+    role,
+    banned,
+    page,
+    pageSize: PAGE_SIZE,
+    sortBy,
+    sortDirection,
+  })
+
+  const totalPages = Math.max(1, Math.ceil(result.total / PAGE_SIZE))
+
+  return (
+    <AdminPage
+      crumbs={[{ label: t('crumbAdmin'), href: '/core/admin', testId: 'admin' }]}
+      title={t('title')}
+      description={t('description')}
+      data-test-id="admin-users-page"
+    >
+      <Card>
+        <UsersFilterBar
+          defaults={{
+            q: params.q,
+            role:
+              params.role === 'iedora-admin' || params.role === 'member'
+                ? params.role
+                : null,
+            banned:
+              params.banned === 'true' || params.banned === 'false'
+                ? params.banned
+                : null,
+          }}
+        />
+      </Card>
+
+      {result.users.length === 0 ? (
+        <EmptyState label={t('empty')} />
+      ) : (
+        <Card>
+          <div className="overflow-x-auto">
+            <Table data-test-id="admin-users-table">
+              <thead>
+                <tr>
+                  <th>{t('columnUser')}</th>
+                  <th>{t('columnRole')}</th>
+                  <th>{t('columnStatus')}</th>
+                  <th>{t('columnCreated')}</th>
+                  <th />
+                </tr>
+              </thead>
+              <tbody>
+                {result.users.map((u) => (
+                  <tr
+                    key={u.id}
+                    data-test-id={`admin-users-row-${u.id}`}
+                  >
+                    <td>
+                      <Link
+                        href={`/core/admin/users/${u.id}`}
+                        className="block hover:underline"
+                        data-test-id={`admin-users-row-link-${u.id}`}
+                      >
+                        <div className="font-medium">{u.name || '—'}</div>
+                        <div className="text-xs text-[var(--ink-70)]">
+                          {u.email}
+                        </div>
+                      </Link>
+                    </td>
+                    <td>
+                      {u.role === 'iedora-admin' ? (
+                        <Badge>{t('roleIedoraAdmin')}</Badge>
+                      ) : (
+                        <span className="text-xs text-[var(--ink-70)]">
+                          {t('roleMember')}
+                        </span>
+                      )}
+                    </td>
+                    <td>
+                      {u.banned ? (
+                        <Badge data-test-id={`admin-users-banned-badge-${u.id}`}>
+                          {t('statusBanned')}
+                        </Badge>
+                      ) : u.emailVerified ? (
+                        <span className="text-xs text-[var(--ink-70)]">
+                          {t('statusActive')}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-[var(--ink-70)]">
+                          {t('statusUnverified')}
+                        </span>
+                      )}
+                    </td>
+                    <td className="text-xs whitespace-nowrap">
+                      {u.createdAt.toLocaleDateString()}
+                    </td>
+                    <td>
+                      <UserRowActions
+                        userId={u.id}
+                        userEmail={u.email}
+                        isBanned={u.banned}
+                        isSelf={u.id === session.user.id}
+                        postImpersonateUrl={APP_URL}
+                      />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </Table>
+          </div>
+
+          {totalPages > 1 ? (
+            <Pagination
+              currentPage={page}
+              totalPages={totalPages}
+              params={params}
+              labels={{
+                prev: t('paginationPrev'),
+                next: t('paginationNext'),
+                of: t('paginationOf', { page, totalPages }),
+              }}
+            />
+          ) : null}
+        </Card>
+      )}
+    </AdminPage>
+  )
+}
+
+function Pagination({
+  currentPage,
+  totalPages,
+  params,
+  labels,
+}: {
+  currentPage: number
+  totalPages: number
+  params: Record<string, string | undefined>
+  labels: { prev: string; next: string; of: string }
+}) {
+  const buildHref = (page: number) => {
+    const sp = new URLSearchParams()
+    for (const [k, v] of Object.entries(params)) {
+      if (k !== 'page' && v) sp.set(k, v)
+    }
+    if (page > 1) sp.set('page', String(page))
+    const q = sp.toString()
+    return q ? `?${q}` : '?'
+  }
+  return (
+    <nav
+      className="mt-4 flex items-center justify-between gap-3 text-xs"
+      aria-label="Pagination"
+      data-test-id="admin-users-pagination"
+    >
+      <Button
+        as="a"
+        href={buildHref(Math.max(1, currentPage - 1))}
+        variant="ghost"
+        aria-disabled={currentPage <= 1}
+        data-test-id="admin-users-pagination-prev"
+      >
+        ← {labels.prev}
+      </Button>
+      <span className="text-[var(--ink-70)]">{labels.of}</span>
+      <Button
+        as="a"
+        href={buildHref(Math.min(totalPages, currentPage + 1))}
+        variant="ghost"
+        aria-disabled={currentPage >= totalPages}
+        data-test-id="admin-users-pagination-next"
+      >
+        {labels.next} →
+      </Button>
+    </nav>
+  )
+}

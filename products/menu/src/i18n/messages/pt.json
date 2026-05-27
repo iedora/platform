@@ -340,8 +340,12 @@
     "remainingCount": "{count, plural, =0 {Nenhuma restante} =1 {1 restante} other {# restantes}}",
     "resetsAt": "Próximo slot liberta a {when}",
     "plans": {
-      "free": { "name": "Free" },
-      "casa": { "name": "Casa" }
+      "free": {
+        "name": "Free"
+      },
+      "casa": {
+        "name": "Casa"
+      }
     }
   },
   "Builder": {
@@ -510,15 +514,186 @@
       "subtitle": "Superfície de staff iedora.",
       "sessions": {
         "title": "Sessões",
-        "subtitle": "Sessões activas em todos os produtos iedora.",
+        "subtitle": "Sessões ativas em todos os produtos iedora.",
         "columnUser": "Utilizador",
         "columnDevice": "Dispositivo",
         "columnIp": "IP",
-        "columnIssued": "Iniciada",
+        "columnIssued": "Emitida",
         "columnExpires": "Expira",
         "revoke": "Revogar",
         "revoking": "A revogar…",
-        "empty": "Sem sessões activas."
+        "empty": "Sem sessões ativas.",
+        "crumbAdmin": "Admin",
+        "impersonatedBadge": "Personificada",
+        "filterQueryLabel": "Pesquisar",
+        "filterQueryPlaceholder": "Email ou nome",
+        "filterImpersonated": "Apenas personificadas",
+        "filterApply": "Aplicar"
+      },
+      "nav": {
+        "ariaLabel": "Navegação de admin",
+        "openNavigation": "Abrir navegação",
+        "closeNavigation": "Fechar navegação",
+        "brandHome": "Início iedora",
+        "sectionAdmin": "Admin",
+        "sectionExit": "Sessão",
+        "overview": "Visão geral",
+        "users": "Utilizadores",
+        "organizations": "Organizações",
+        "sessions": "Sessões",
+        "signOut": "Terminar sessão"
+      },
+      "overview": {
+        "title": "Admin",
+        "description": "Controlos cross-tenant para a equipa iedora.",
+        "users": {
+          "title": "Utilizadores",
+          "count": "{count} no total",
+          "cta": "Gerir utilizadores"
+        },
+        "orgs": {
+          "title": "Organizações",
+          "description": "Todas as orgs no schema core.",
+          "cta": "Gerir organizações"
+        },
+        "sessions": {
+          "title": "Sessões",
+          "description": "Todas as sessões ativas em todos os produtos.",
+          "cta": "Inspecionar sessões"
+        }
+      },
+      "users": {
+        "title": "Utilizadores",
+        "description": "Todos os utilizadores na plataforma, em todos os tenants.",
+        "crumbAdmin": "Admin",
+        "columnUser": "Utilizador",
+        "columnRole": "Papel",
+        "columnStatus": "Estado",
+        "columnCreated": "Criado",
+        "roleIedoraAdmin": "Admin iedora",
+        "roleMember": "Tenant",
+        "statusActive": "Ativo",
+        "statusBanned": "Banido",
+        "statusUnverified": "Não verificado",
+        "empty": "Nenhum utilizador corresponde.",
+        "paginationPrev": "Anterior",
+        "paginationNext": "Próximo",
+        "paginationOf": "Página {page} de {totalPages}",
+        "filters": {
+          "queryLabel": "Pesquisar",
+          "queryPlaceholder": "Email ou nome",
+          "roleLabel": "Papel",
+          "roleAny": "Qualquer papel",
+          "roleIedoraAdmin": "Admin iedora",
+          "roleMember": "Tenant",
+          "bannedLabel": "Estado",
+          "bannedAny": "Qualquer estado",
+          "bannedYes": "Banido",
+          "bannedNo": "Ativo",
+          "apply": "Aplicar",
+          "applying": "A aplicar…"
+        },
+        "row": {
+          "view": "Ver",
+          "ban": "Banir",
+          "unban": "Desbanir",
+          "unbanning": "A desbanir…",
+          "impersonate": "Personificar",
+          "impersonating": "A personificar…"
+        },
+        "ban": {
+          "trigger": "Banir",
+          "title": "Banir utilizador",
+          "description": "Banir {email}. Todas as sessões ativas serão encerradas.",
+          "reasonLabel": "Motivo",
+          "reasonPlaceholder": "Opcional — apenas para auditoria interna.",
+          "daysLabel": "Duração",
+          "daysPlaceholder": "Dias (em branco = permanente)",
+          "daysHint": "Em branco = banimento permanente.",
+          "cancel": "Cancelar",
+          "submit": "Banir",
+          "submitting": "A banir…",
+          "errorGeneric": "Não foi possível banir este utilizador."
+        },
+        "role": {
+          "member": "Tenant",
+          "iedoraAdmin": "Admin iedora",
+          "updated": "Papel atualizado.",
+          "errorGeneric": "Não foi possível atualizar o papel."
+        },
+        "detail": {
+          "crumbAdmin": "Admin",
+          "crumbUsers": "Utilizadores",
+          "descriptionSelf": "És tu. Ações destrutivas estão desativadas.",
+          "roleTitle": "Papel",
+          "roleDesc": "Papel cross-tenant na linha do utilizador.",
+          "statusTitle": "Estado",
+          "statusActive": "Ativo",
+          "statusBanned": "Banido",
+          "statusVerified": "Email verificado",
+          "statusUnverified": "Email não verificado",
+          "banReasonLabel": "Motivo",
+          "sessionsTitle": "Sessões ativas",
+          "sessionsCount": "{count} ativas",
+          "sessionsEmpty": "Sem sessões ativas.",
+          "sessionColumnDevice": "Dispositivo",
+          "sessionColumnIp": "IP",
+          "sessionColumnIssued": "Emitida",
+          "sessionColumnExpires": "Expira",
+          "revokeAll": "Revogar todas as sessões"
+        }
+      },
+      "orgs": {
+        "title": "Organizações",
+        "description": "Todas as orgs tenant na plataforma.",
+        "crumbAdmin": "Admin",
+        "columnOrg": "Organização",
+        "columnMembers": "Membros",
+        "columnPlan": "Plano",
+        "columnCreated": "Criada",
+        "view": "Ver",
+        "empty": "Nenhuma organização corresponde.",
+        "paginationPrev": "Anterior",
+        "paginationNext": "Próximo",
+        "paginationOf": "Página {page} de {totalPages}",
+        "filters": {
+          "queryLabel": "Pesquisar",
+          "queryPlaceholder": "Nome ou slug",
+          "apply": "Aplicar",
+          "applying": "A aplicar…"
+        },
+        "members": {
+          "role-owner": "Proprietário",
+          "role-admin": "Admin",
+          "role-member": "Membro",
+          "remove": "Remover",
+          "confirmRemove": "Confirmar remoção",
+          "removing": "A remover…",
+          "cancel": "Cancelar"
+        },
+        "invitations": {
+          "cancel": "Cancelar",
+          "cancelling": "A cancelar…"
+        },
+        "detail": {
+          "crumbAdmin": "Admin",
+          "crumbOrgs": "Organizações",
+          "description": "{count} membros.",
+          "membersTitle": "Membros",
+          "membersCount": "{count} no total",
+          "membersEmpty": "Sem membros.",
+          "memberColumnUser": "Utilizador",
+          "memberColumnJoined": "Entrou",
+          "memberColumnRole": "Papel",
+          "invitationsTitle": "Convites",
+          "invitationsCount": "{count} pendentes",
+          "invitationsEmpty": "Sem convites pendentes.",
+          "invitationsEmptyTitle": "Convites",
+          "inviteColumnEmail": "Email",
+          "inviteColumnRole": "Papel",
+          "inviteColumnInviter": "Convidador",
+          "inviteColumnExpires": "Expira"
+        }
       }
     }
   }
