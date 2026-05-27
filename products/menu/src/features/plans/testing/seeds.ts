@@ -3,7 +3,7 @@ import { testDb } from '../../../shared/testing/e2e-db'
 import type { PlanCode } from '../types'
 
 /**
- * `org_plan` is menu-owned billing metadata keyed by Zitadel orgId.
+ * `org_plan` is menu-owned billing metadata keyed by better-auth org id.
  * `setPlan` upserts so a spec can flip free → casa to exercise the
  * upgrade flow without re-seeding the row.
  */

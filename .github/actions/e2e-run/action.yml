@@ -1,0 +1,77 @@
+# Composite action: E2E run.
+#
+# Shared Playwright harness for products that serve through `apps/web`
+# (the Next.js shell). Each product declares its own `services` (Postgres
+# ± S3Mock) and `matrix.shard` in the workflow job; this action runs the
+# common pipeline — wait-for-services, DB migrations, Playwright install,
+# production Next.js build, spec execution, and report upload.
+#
+# Every product that runs E2E needs:
+#   1. A `playwright.config.ts` at the product root (webServer →
+#      `../../apps/web`).
+#   2. A `.env.test` with DATABASE_URL, CORE_DATABASE_URL, and (if S3)
+#      S3_* env vars.
+#   3. Scripts in package.json: `test:e2e`, `db:migrate:test`.
+#   4. An `e2e` job in its CI workflow that calls this action after
+#      typecheck + lint + unit.
+
+name: 'E2E run'
+description: 'Shared Playwright harness — services, migrations, build, specs, report.'
+
+inputs:
+  product:
+    description: 'Product name (menu, core). Used for artifact naming.'
+    required: true
+  working_directory:
+    description: 'Path from repo root to the product directory.'
+    required: true
+  db_name:
+    description: 'Postgres database name for the test DB.'
+    required: true
+  needs_s3mock:
+    description: 'Whether the product uses S3 uploads and needs the s3mock service.'
+    default: 'false'
+  shard:
+    description: 'Current shard index (e.g. 1/2). Forwarded to Playwright --shard.'
+    default: '1/1'
+  grep_invert:
+    description: 'Pattern passed to --grep-invert (e.g. @flaky).'
+    default: '@flaky'
+
+runs:
+  using: composite
+  steps:
+    - name: Wait for S3Mock + create bucket
+      if: inputs.needs_s3mock == 'true'
+      shell: bash
+      run: bash "${GITHUB_WORKSPACE}/.github/scripts/wait-s3mock.sh"
+
+    - name: Apply DB migrations
+      shell: bash
+      working-directory: ${{ github.workspace }}/${{ inputs.working_directory }}
+      run: bun run db:migrate:test
+
+    - name: Install Playwright browsers
+      shell: bash
+      working-directory: ${{ github.workspace }}/${{ inputs.working_directory }}
+      run: bunx playwright install --with-deps chromium
+
+    - name: Build apps/web (production)
+      shell: bash
+      working-directory: ${{ github.workspace }}/apps/web
+      run: bun --env-file=../../${{ inputs.working_directory }}/.env.test next build
+
+    - name: Run Playwright
+      shell: bash
+      working-directory: ${{ github.workspace }}/${{ inputs.working_directory }}
+      env:
+        CI: 'true'
+      run: bun run test:e2e -- --grep-invert "${{ inputs.grep_invert }}" --shard=${{ inputs.shard }}
+
+    - name: Upload Playwright report
+      if: always()
+      uses: actions/upload-artifact@v7
+      with:
+        name: playwright-report-${{ inputs.product }}-${{ inputs.shard }}
+        path: ${{ inputs.working_directory }}/playwright-report
+        retention-days: 14

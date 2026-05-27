@@ -1,4 +1,12 @@
-import { text, timestamp, boolean, integer, pgSchema } from 'drizzle-orm/pg-core'
+import {
+  text,
+  timestamp,
+  boolean,
+  integer,
+  jsonb,
+  index,
+  pgSchema,
+} from 'drizzle-orm/pg-core'
 
 /**
  * Drizzle schema for the iedora auth surface.
@@ -40,7 +48,7 @@ export const user = coreSchema.table('user', {
   /**
    * Cross-tenant role granted directly on the user. `null` for normal
    * tenants; `'iedora-admin'` for staff. Resolved by better-auth's
-   * `admin` plugin to back `requireIedoraAdmin` / `requireScope`.
+   * `admin` plugin to back `requireScope` / `hasScope`.
    */
   role: text('role'),
   /** Set by the `admin` plugin when an account is banned. */
@@ -153,6 +161,80 @@ export const rateLimit = coreSchema.table('rate_limit', {
   lastRequest: timestamp('last_request'),
 })
 
+/**
+ * Audit log — every state-changing event on the auth + admin surface.
+ *
+ * Append-only by design. No row is ever updated or deleted by app code;
+ * a future vacuum-job may purge old rows under a retention policy, but
+ * day 0 there's no TTL — events live forever.
+ *
+ * `actor_*` columns are denormalized snapshots taken at the moment of
+ * the event — the user row may be banned/renamed later, but the audit
+ * trail remembers what was true when the action happened. Same for
+ * `target_*`.
+ *
+ * `event` is the namespaced event key (see `audit.ts` for the registry).
+ * Examples: `user.signed-up`, `user.banned`, `member.removed`,
+ * `auth.denied`. New event types are free strings — no enum.
+ *
+ * `outcome` is one of:
+ *   - `success` — action completed
+ *   - `denied`  — caller authenticated but lacked the required scope
+ *   - `error`   — action threw at the gateway layer (audit fires anyway)
+ *
+ * `meta` is a free-form JSON blob — ban reason, role granted, scope
+ * attempted, etc. Search via `WHERE meta->>'key' = ...` when needed.
+ *
+ * Indexes are tuned for the four read paths the admin UI uses:
+ * timeline (at DESC), per-actor history, per-target history (by user
+ * AND by org separately), and per-event-type filter.
+ */
+export const auditLog = coreSchema.table(
+  'audit_log',
+  {
+    id: text('id').primaryKey(),
+    at: timestamp('at', { withTimezone: true }).notNull().defaultNow(),
+
+    // Actor — snapshot of who did the thing.
+    actorUserId: text('actor_user_id'),
+    actorRole: text('actor_role'),
+    actorEmail: text('actor_email'),
+
+    // Event taxonomy.
+    event: text('event').notNull(),
+    outcome: text('outcome').notNull(),
+
+    // Target(s) — populated when the event has one. Multiple may be
+    // set (e.g. session.revoked has target_user_id + target_session_id).
+    targetUserId: text('target_user_id'),
+    targetOrgId: text('target_org_id'),
+    targetSessionId: text('target_session_id'),
+
+    // Caller context. `ipHash` is SHA-256 of the IP, hex — keeps the
+    // audit trail useful for "same actor came back" without retaining
+    // raw PII at rest.
+    ipHash: text('ip_hash'),
+    userAgent: text('user_agent'),
+    requestPath: text('request_path'),
+
+    // Free-form details. Examples: { reason, banExpiresIn, role,
+    // scope, attemptedPath, previousRole, organizationId }.
+    meta: jsonb('meta'),
+
+    // Filter toggle for the timeline UI — `false` for high-volume
+    // routine events (page views), `true` for state changes worth
+    // highlighting (bans, role changes, impersonations).
+    important: boolean('important').notNull().default(false),
+  },
+  (t) => [
+    index('audit_log_at_idx').on(t.at),
+    index('audit_log_actor_idx').on(t.actorUserId, t.at),
+    index('audit_log_target_user_idx').on(t.targetUserId, t.at),
+    index('audit_log_target_org_idx').on(t.targetOrgId, t.at),
+    index('audit_log_event_idx').on(t.event, t.at),
+  ],
+)
+
 export const schema = {
   user,
   session,
@@ -162,4 +244,5 @@ export const schema = {
   member,
   invitation,
   rateLimit,
+  auditLog,
 }

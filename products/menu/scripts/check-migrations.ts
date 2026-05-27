@@ -15,7 +15,7 @@ import journal from '../drizzle/meta/_journal.json' with { type: 'json' }
 type JournalEntry = { idx: number; tag: string; when: number }
 
 async function main() {
-  const url = process.env.DATABASE_URL
+  const url = process.env.MENU_DATABASE_URL
   if (!url) return
 
   const sql = postgres(url, {

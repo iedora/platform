@@ -4,7 +4,7 @@
  * interface.
  *
  * Tenant scoping is INTENTIONALLY ABSENT — qr_code is a cross-tenant table
- * that only `iedora-admin` callers touch (see `requireIedoraAdmin` in
+ * that only `iedora-admin` callers touch (see `requireScope` in
  * `@/features/auth`). Restaurant existence checks happen at the use-case
  * layer when binding, not here.
  */

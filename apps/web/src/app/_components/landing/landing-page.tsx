@@ -3,7 +3,8 @@
 import * as React from "react";
 import Link from "next/link";
 import { Badge, Nav, NavActions, NavBrand, PageProgress, Wordmark } from "@iedora/design-system";
-import { APP_HOSTNAME, BRAND_NAME, BRAND_URL, CONTACT_EMAIL, signInUrl, signUpUrl } from '@iedora/brand';
+import { BRAND_NAME, BRAND_URL, CONTACT_EMAIL, PRODUCTS, productUrl } from '@iedora/brand';
+import { signInUrl, signUpUrl } from '@iedora/product-core/url';
 import "./landing.css";
 
 /**
@@ -459,7 +460,7 @@ function EditorMock({
       <div className="laptop-screen">
         <div className="laptop-bar" aria-hidden="true">
           <i></i><i></i><i></i>
-          <span className="url">{APP_HOSTNAME} / house-tavern / editor</span>
+          <span className="url">{new URL(productUrl(PRODUCTS.menu)).host} / house-tavern / editor</span>
         </div>
         <div className="editor">
           <div className="editor-side">

@@ -2,8 +2,7 @@ import { redirect } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 import { Card, CardDesc, CardTitle } from '@iedora/design-system'
 import { getSession } from '@iedora/product-core'
-import { isSameIedoraOrigin } from '@iedora/brand'
-import { APP_URL } from '@iedora/brand'
+import { isSameIedoraOrigin, PRODUCTS, productUrl } from '@iedora/brand'
 import { SignInForm } from './sign-in-form'
 
 type Props = {
@@ -22,7 +21,7 @@ export default async function SignInPage({ searchParams }: Props) {
   // If already signed in, skip the form. Honour `next` when it points
   // at a trusted iedora-family origin; fall back to the menu app.
   const session = await getSession()
-  const next = isSameIedoraOrigin(rawNext) ? rawNext! : APP_URL
+  const next = isSameIedoraOrigin(rawNext) ? rawNext! : productUrl(PRODUCTS.menu)
   if (session?.user) {
     redirect(next)
   }

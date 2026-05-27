@@ -25,3 +25,6 @@ export {
 
 export { schema } from './schema'
 export { getCoreDb } from './db'
+
+export { recordAudit } from './audit'
+export type { AuditInput, AuditOutcome } from './audit'

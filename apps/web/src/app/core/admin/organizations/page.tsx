@@ -8,7 +8,8 @@ import {
   Badge,
   Pagination,
 } from '@iedora/design-system'
-import { requireIedoraAdmin } from '@iedora/product-core'
+import { requireScope } from '@iedora/product-core'
+import { SCOPES } from '@iedora/auth/scopes'
 import {
   drizzleAdminOrgsGateway,
   listOrgs,
@@ -30,7 +31,7 @@ export default async function OrganizationsAdminPage({
 }: {
   searchParams: Search
 }) {
-  await requireIedoraAdmin()
+  await requireScope(SCOPES.core.staff.orgs.list)
   const t = await getTranslations('Core.admin.orgs')
   const params = await searchParams
 

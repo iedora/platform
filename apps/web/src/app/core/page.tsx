@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { getSession } from '@iedora/product-core'
-import { APP_URL, signInUrl } from '@iedora/brand'
+import { PRODUCTS, productUrl } from '@iedora/brand'
+import { signInUrl } from '@iedora/product-core/url'
 
 /**
  * Root of the `core` product. If signed in, bounce to the menu app —
@@ -12,7 +13,7 @@ import { APP_URL, signInUrl } from '@iedora/brand'
 export default async function CoreHome() {
   const session = await getSession()
   if (session?.user) {
-    redirect(APP_URL)
+    redirect(productUrl(PRODUCTS.menu))
   }
   redirect(signInUrl())
 }

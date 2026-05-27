@@ -2,10 +2,10 @@
 // migrations against the menu database.
 //
 // Why this lives in Stage 3 (not Stage 4): migrations are application
-// state of a shared service (postgres), exactly like Zitadel app config
-// is application state of the zitadel service. Running them before
-// Stage 4 (the menu container deploy) means a bad migration fails
-// loudly in the deploy log without crash-looping the live menu.
+// state of a shared service (postgres) — they reconcile the schema
+// independently of any product container. Running them before Stage 4
+// (the menu container deploy) means a bad migration fails loudly in
+// the deploy log without crash-looping the live menu.
 // Multi-replica future is also unblocked — migrations run once per
 // deploy, not once per replica boot.
 //
@@ -26,7 +26,7 @@
 // Inputs resolved from Tofu outputs (central root):
 //
 //	hetzner_ipv4              SSH target.
-//	menu_database_url         DATABASE_URL the container sees (postgres+pwd composed).
+//	menu_database_url         MENU_DATABASE_URL the container sees (postgres+pwd composed).
 //
 // No BWS reads. Stage 3 env hydration via `bin/iedora-env`
 // doesn't include postgres password (it's iac-scoped); we get the
@@ -141,7 +141,7 @@ func run(ctx context.Context) error {
 
 	// Run the one-shot migrator. `--rm` so a failed migration doesn't
 	// leave a stopped container clogging the box. `--network` matches
-	// what the menu container sees so DATABASE_URL's `infra-postgres`
+	// what the menu container sees so MENU_DATABASE_URL's `infra-postgres`
 	// DNS resolves. Env passed via `-e` is operator-readable in `docker
 	// inspect` for ~seconds (until --rm cleans up); fine for a deploy
 	// step, not appropriate for a long-running container.
@@ -151,7 +151,7 @@ func run(ctx context.Context) error {
 	dockerCmd := fmt.Sprintf(
 		"docker run --rm --network %s -e %s %s /migrate/menu/scripts/migrate.mjs",
 		shellQuote(network),
-		shellQuote("DATABASE_URL="+dbURL),
+		shellQuote("MENU_DATABASE_URL="+dbURL),
 		shellQuote(image),
 	)
 	if err := remoteSSH.Exec(ctx, host, dockerCmd); err != nil {

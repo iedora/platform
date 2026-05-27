@@ -1,7 +1,8 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { requireScope, SCOPES } from '../auth'
+import { requireScope } from '../auth'
+import { SCOPES } from '@iedora/auth/scopes'
 import { drizzleQrCodesGateway } from './adapters/drizzle'
 import { bindCode as runBind } from './use-cases/bind'
 import { bulkGenerate as runBulkGenerate } from './use-cases/bulk-generate'
@@ -52,7 +53,7 @@ export async function createCodeAction(input: {
   restaurantId?: string
   label?: string
 }): Promise<ActionResult<{ code: string }>> {
-  await requireScope(SCOPES.QR_CODES_WRITE)
+  await requireScope(SCOPES.menu.tenant.qrCodes.create)
   const res = await runCreateCode(drizzleQrCodesGateway, input)
   if (!res.ok) return { ok: false, error: errMsg(res.error) }
   revalidatePath(ADMIN_PATH)
@@ -62,7 +63,7 @@ export async function createCodeAction(input: {
 export async function bulkGenerateAction(
   count: number,
 ): Promise<ActionResult<{ codes: string[] }>> {
-  await requireScope(SCOPES.QR_CODES_WRITE)
+  await requireScope(SCOPES.menu.tenant.qrCodes.create)
   const res = await runBulkGenerate(drizzleQrCodesGateway, { count })
   if (!res.ok) return { ok: false, error: errMsg(res.error) }
   revalidatePath(ADMIN_PATH)
@@ -73,7 +74,7 @@ export async function bindCodeAction(input: {
   code: string
   restaurantId: string
 }): Promise<ActionResult> {
-  await requireScope(SCOPES.QR_CODES_UPDATE)
+  await requireScope(SCOPES.menu.tenant.qrCodes.update)
   const res = await runBind(drizzleQrCodesGateway, input)
   if (!res.ok) return { ok: false, error: errMsg(res.error) }
   revalidatePath(ADMIN_PATH)
@@ -81,7 +82,7 @@ export async function bindCodeAction(input: {
 }
 
 export async function unbindCodeAction(code: string): Promise<ActionResult> {
-  await requireScope(SCOPES.QR_CODES_UPDATE)
+  await requireScope(SCOPES.menu.tenant.qrCodes.update)
   const res = await runUnbind(drizzleQrCodesGateway, code)
   if (!res.ok) return { ok: false, error: errMsg(res.error) }
   revalidatePath(ADMIN_PATH)
@@ -92,7 +93,7 @@ export async function updateLabelAction(input: {
   code: string
   label: string
 }): Promise<ActionResult> {
-  await requireScope(SCOPES.QR_CODES_UPDATE)
+  await requireScope(SCOPES.menu.tenant.qrCodes.update)
   const res = await runUpdateLabel(drizzleQrCodesGateway, input)
   if (!res.ok) return { ok: false, error: errMsg(res.error) }
   revalidatePath(ADMIN_PATH)
@@ -100,7 +101,7 @@ export async function updateLabelAction(input: {
 }
 
 export async function deleteCodeAction(code: string): Promise<ActionResult> {
-  await requireScope(SCOPES.QR_CODES_DELETE)
+  await requireScope(SCOPES.menu.tenant.qrCodes.delete)
   const res = await runDeleteCode(drizzleQrCodesGateway, code)
   if (!res.ok) return { ok: false, error: errMsg(res.error) }
   revalidatePath(ADMIN_PATH)

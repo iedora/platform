@@ -64,13 +64,111 @@
         "sectionExit": "Session",
         "overview": "Vue d'ensemble",
         "users": "Utilisateurs",
+        "access": "Accès",
         "organizations": "Organisations",
         "sessions": "Sessions",
+        "audit": "Audit",
         "signOut": "Se déconnecter"
+      },
+      "audit": {
+        "title": "Journal d'audit",
+        "description": "Timeline append-only de chaque changement d'état sur la surface auth + admin. Protégé par `staff:core:audit:read`.",
+        "crumbAdmin": "Admin",
+        "filterEventLabel": "Événement",
+        "filterEventPlaceholder": "ex. user.banned",
+        "filterActorLabel": "Email de l'acteur",
+        "filterActorPlaceholder": "Filtrer par acteur",
+        "filterImportantOnly": "Importants uniquement",
+        "filterApply": "Appliquer",
+        "empty": "Aucun événement ne correspond au filtre.",
+        "columnAt": "Quand",
+        "columnEvent": "Événement",
+        "columnOutcome": "Résultat",
+        "columnActor": "Acteur",
+        "columnTarget": "Cible",
+        "columnDetail": "Méta",
+        "actorSystem": "système",
+        "detailShow": "voir",
+        "paginationPrev": "Précédent",
+        "paginationNext": "Suivant",
+        "paginationOf": "Page {page} sur {totalPages}"
+      },
+      "access": {
+        "title": "Accès",
+        "description": "Les fonctionnalités sont protégées par des scopes. Un rôle n'est qu'un paquet nommé de scopes — ce qui s'affiche ci-dessous est le binding en direct, dérivé de la taxonomie d'auth.",
+        "crumbAdmin": "Admin",
+        "rolesHeading": "Rôles staff",
+        "scopesHeading": "Scopes",
+        "youBadge": "vous",
+        "noScopes": "Aucun scope accordé.",
+        "verbCount": "{count, plural, =0 {aucun verbe} one {# verbe} other {# verbes}}",
+        "roles": {
+          "iedora-admin": {
+            "description": "Rôle suprême cross-tenant. Tous les scopes sur toutes les ressources."
+          },
+          "iedora-support": {
+            "description": "Cycle de vie des utilisateurs au quotidien. Ne peut pas attribuer de rôles ni se faire passer pour un utilisateur."
+          }
+        },
+        "products": {
+          "core": "Core (auth + admin)",
+          "menu": "Menu (restaurants)"
+        },
+        "kinds": {
+          "staff": "Staff (cross-tenant)",
+          "tenant": "Per-tenant"
+        },
+        "scopes": {
+          "core": {
+            "staff": {
+              "users": {
+                "read": "Lister et consulter les utilisateurs (incl. leurs sessions).",
+                "ban": "Bannir et débannir des comptes (cycle de vie réversible).",
+                "set-role": "Attribuer ou révoquer des rôles staff. Privilégié — admin uniquement.",
+                "impersonate": "Se connecter en tant qu'un autre utilisateur. Privilégié — admin uniquement."
+              },
+              "orgs": {
+                "list": "Lister toutes les orgs (tenants).",
+                "get": "Voir les membres et invitations en attente d'une org."
+              },
+              "members": {
+                "remove": "Retirer un membre d'une org (dépannage).",
+                "update-role": "Promouvoir ou rétrograder le rôle d'un membre. Privilégié — admin uniquement (accorde owner du tenant)."
+              },
+              "invitations": {
+                "cancel": "Annuler une invitation en attente."
+              },
+              "sessions": {
+                "list": "Lister les sessions actives de tous les utilisateurs.",
+                "revoke": "Tuer une session (unique ou toutes-de-l'user)."
+              },
+              "audit": {
+                "read": "Lire le journal d'audit append-only de chaque changement d'état sur la surface auth + admin."
+              },
+              "admin": {
+                "read": "Entrer dans le shell admin cross-tenant. Tous les rôles staff l'ont."
+              }
+            }
+          },
+          "menu": {
+            "tenant": {
+              "qr-codes": {
+                "read": "Voir les QR codes de l'org.",
+                "create": "Créer de nouveaux QR codes (unité ou en lot).",
+                "update": "Lier un QR code existant à un restaurant.",
+                "delete": "Supprimer des QR codes."
+              }
+            }
+          }
+        }
       },
       "overview": {
         "title": "Admin",
         "description": "Contrôles cross-tenant pour l'équipe iedora.",
+        "you": {
+          "signedInAs": "Connecté en tant que",
+          "roleAdmin": "iedora-admin"
+        },
         "users": {
           "title": "Utilisateurs",
           "count": "{count} au total",
@@ -78,7 +176,7 @@
         },
         "orgs": {
           "title": "Organisations",
-          "description": "Toutes les orgs dans le schéma core.",
+          "count": "{count} au total",
           "cta": "Gérer les organisations"
         },
         "sessions": {

@@ -9,7 +9,9 @@
     "./schema": "./src/schema.ts",
     "./client": "./src/client.ts",
     "./next": "./src/next.ts",
-    "./permissions": "./src/permissions.ts"
+    "./permissions": "./src/permissions.ts",
+    "./scopes": "./src/scopes.ts",
+    "./audit": "./src/audit.ts"
   },
   "scripts": {
     "test": "vitest run",

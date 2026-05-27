@@ -9,7 +9,8 @@ import {
   Badge,
   Button,
 } from '@iedora/design-system'
-import { requireIedoraAdmin } from '@iedora/product-core'
+import { hasScope, requireScope } from '@iedora/product-core'
+import { SCOPES } from '@iedora/auth/scopes'
 import {
   betterAuthAdminUsersGateway,
   listUserSessions,
@@ -25,7 +26,7 @@ async function revokeAllUserSessionsForm(userId: string) {
   'use server'
   await revokeAllAction({ userId })
 }
-import { APP_URL } from '@iedora/brand'
+import { PRODUCTS, productUrl } from '@iedora/brand'
 
 type Params = Promise<{ userId: string }>
 
@@ -34,7 +35,12 @@ export default async function UserAdminDetailPage({
 }: {
   params: Params
 }) {
-  const session = await requireIedoraAdmin()
+  const session = await requireScope(SCOPES.core.staff.users.read)
+  const [canImpersonate, canBan, canSetRole] = await Promise.all([
+    hasScope(SCOPES.core.staff.users.impersonate),
+    hasScope(SCOPES.core.staff.users.ban),
+    hasScope(SCOPES.core.staff.users.setRole),
+  ])
   const t = await getTranslations('Core.admin.users.detail')
   const { userId } = await params
 
@@ -60,7 +66,9 @@ export default async function UserAdminDetailPage({
           userEmail={user.email}
           isBanned={user.banned}
           isSelf={isSelf}
-          postImpersonateUrl={APP_URL}
+          postImpersonateUrl={productUrl(PRODUCTS.menu)}
+          canImpersonate={canImpersonate}
+          canBan={canBan}
         />
       }
       data-test-id="admin-user-detail"
@@ -77,6 +85,7 @@ export default async function UserAdminDetailPage({
               userId={userId}
               currentRole={user.role}
               disabled={isSelf}
+              canSetRole={canSetRole}
             />
           </div>
         </Card>

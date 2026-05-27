@@ -16,6 +16,7 @@ on:
       - 'packages/eslint-config/**'
       - '.github/workflows/product-menu.yml'
       - '.github/actions/setup/**'
+      - '.github/actions/e2e-run/**'
       - '.github/scripts/wait-s3mock.sh'
   pull_request:
     branches: [main]
@@ -24,6 +25,7 @@ on:
       - 'packages/eslint-config/**'
       - '.github/workflows/product-menu.yml'
       - '.github/actions/setup/**'
+      - '.github/actions/e2e-run/**'
       - '.github/scripts/wait-s3mock.sh'
   workflow_dispatch:
 
@@ -107,39 +109,16 @@ jobs:
           initialBuckets: menu-test
         ports:
           - 9090:9090
-    defaults:
-      run:
-        working-directory: products/menu
+    # No `defaults.run.working-directory` — every step delegates to
+    # composite actions that set their own working directories. See
+    # docs/testing/e2e-architecture.md for the full contract.
     steps:
       - uses: actions/checkout@v6
       - uses: ./.github/actions/setup
-
-      - name: Wait for S3Mock + create bucket
-        run: bash "${GITHUB_WORKSPACE}/.github/scripts/wait-s3mock.sh"
-
-      - name: Apply DB migrations
-        run: bun run db:migrate:test
-
-      - name: Install Playwright browsers
-        run: bunx playwright install --with-deps chromium
-
-      - name: Build menu (production)
-        # next build runs under Node even when invoked via bun run.
-        # oven-sh/bun#23944 only affects `bun build` (the Bun bundler).
-        # Build runs at the apps/web level — products/menu pages are
-        # mounted there via re-exports.
-        working-directory: apps/web
-        run: bun --env-file=../../products/menu/.env.test next build
-
-      - name: Run Playwright
-        env:
-          CI: 'true'
-        run: bun run test:e2e -- --grep-invert "@flaky" --shard=${{ matrix.shard }}
-
-      - name: Upload Playwright report
-        if: always()
-        uses: actions/upload-artifact@v7
+      - uses: ./.github/actions/e2e-run
         with:
-          name: playwright-report-${{ strategy.job-index }}
-          path: products/menu/playwright-report
-          retention-days: 14
+          product: menu
+          working_directory: products/menu
+          db_name: menu_test
+          needs_s3mock: true
+          shard: ${{ matrix.shard }}

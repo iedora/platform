@@ -9,8 +9,8 @@
 //     Hetzner firewall that already blocks port 5080 publicly). The
 //     bash script's `curl https://obs.iedora.com` path doesn't reach.
 //
-//   - Symmetry with the other Stage 3 configurators (`zitadel-apply`,
-//     `menu-db-migrations`). All three are Go binaries with their own
+//   - Symmetry with the other Stage 3 configurators (e.g.
+//     `menu-db-migrations`). Each is a Go binary with its own
 //     health-gate + credential fetch + idempotent reconcile.
 //
 //   - Dashboards travel with the binary (`//go:embed`), so there's no

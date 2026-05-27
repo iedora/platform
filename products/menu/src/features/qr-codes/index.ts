@@ -14,7 +14,7 @@ import { resolveCode as runResolveCode } from './use-cases/resolve'
  * path of every sticker scan.
  *
  * `listQrCodesForAdmin` is the admin-page reader. Caller MUST have already
- * called `requireIedoraAdmin` — this function doesn't re-check, by design
+ * called `requireScope` — this function doesn't re-check, by design
  * (the page-level guard is the single source of truth).
  */
 

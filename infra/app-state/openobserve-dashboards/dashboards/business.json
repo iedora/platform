@@ -121,61 +121,6 @@
           ]
         },
         {
-          "id": "p_orgs_created_7d",
-          "type": "metric",
-          "title": "New orgs (7d)",
-          "description": "Successful Zitadel create-org calls in the last 7 days. The funnel top \u2014 every new tenant.",
-          "queryType": "sql",
-          "layout": {
-            "x": 32,
-            "y": 0,
-            "w": 16,
-            "h": 9,
-            "i": 3
-          },
-          "config": {
-            "show_legends": false,
-            "unit": "short",
-            "decimals": 0,
-            "base_map": {
-              "type": "osm"
-            },
-            "map_view": {
-              "zoom": 1,
-              "lat": 0,
-              "lng": 0
-            }
-          },
-          "queries": [
-            {
-              "query": "SELECT COUNT(*) AS y_axis_1 FROM \"default\" WHERE operation_name = 'zitadel.create-org' AND (span_status IS NULL OR span_status != 'ERROR')",
-              "customQuery": true,
-              "fields": {
-                "stream": "default",
-                "stream_type": "traces",
-                "x": [],
-                "y": [
-                  {
-                    "label": "Orgs",
-                    "alias": "y_axis_1",
-                    "column": "y_axis_1",
-                    "color": "#60b259",
-                    "aggregationFunction": "sum"
-                  }
-                ],
-                "filter": {
-                  "filterType": "group",
-                  "logicalOperator": "AND",
-                  "conditions": []
-                }
-              },
-              "config": {
-                "promql_legend": ""
-              }
-            }
-          ]
-        },
-        {
           "id": "p_views_30d",
           "type": "bar",
           "title": "Views per day (30d)",

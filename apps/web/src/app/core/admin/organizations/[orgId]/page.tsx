@@ -9,7 +9,8 @@ import {
   Table,
   Badge,
 } from '@iedora/design-system'
-import { requireIedoraAdmin } from '@iedora/product-core'
+import { requireScope } from '@iedora/product-core'
+import { SCOPES } from '@iedora/auth/scopes'
 import {
   drizzleAdminOrgsGateway,
   getFullOrg,
@@ -25,7 +26,7 @@ export default async function OrganizationDetailPage({
 }: {
   params: Params
 }) {
-  await requireIedoraAdmin()
+  await requireScope(SCOPES.core.staff.orgs.get)
   const t = await getTranslations('Core.admin.orgs.detail')
   const { orgId } = await params
 

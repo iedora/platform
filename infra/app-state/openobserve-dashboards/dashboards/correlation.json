@@ -205,78 +205,10 @@
       "name": "Cross-service",
       "panels": [
         {
-          "id": "p_zitadel_cascade",
-          "type": "line",
-          "title": "Zitadel calls per minute by outcome (15m)",
-          "description": "Layer this with HTTP p95 in the other tab \u2014 Zitadel saturation pushes request latency. If both spike together, the root cause is upstream of menu.",
-          "queryType": "sql",
-          "layout": {
-            "x": 0,
-            "y": 0,
-            "w": 48,
-            "h": 12,
-            "i": 1
-          },
-          "config": {
-            "show_legends": true,
-            "base_map": {
-              "type": "osm"
-            },
-            "map_view": {
-              "zoom": 1,
-              "lat": 0,
-              "lng": 0
-            }
-          },
-          "queries": [
-            {
-              "query": "SELECT histogram(_timestamp, '1 minute') AS x_axis_1, COALESCE(span_status, 'UNSET') AS breakdown_1, COUNT(*) AS y_axis_1 FROM \"default\" WHERE service_name = 'iedora-menu' AND operation_name LIKE 'zitadel.%' GROUP BY x_axis_1, breakdown_1 ORDER BY x_axis_1",
-              "customQuery": true,
-              "fields": {
-                "stream": "default",
-                "stream_type": "traces",
-                "x": [
-                  {
-                    "label": "Time",
-                    "alias": "x_axis_1",
-                    "column": "x_axis_1",
-                    "color": null
-                  }
-                ],
-                "y": [
-                  {
-                    "label": "Calls",
-                    "alias": "y_axis_1",
-                    "column": "y_axis_1",
-                    "color": "#5960b2",
-                    "aggregationFunction": "sum"
-                  }
-                ],
-                "breakdown": [
-                  {
-                    "label": "Outcome",
-                    "alias": "breakdown_1",
-                    "column": "breakdown_1",
-                    "color": null
-                  }
-                ],
-                "filter": {
-                  "filterType": "group",
-                  "logicalOperator": "AND",
-                  "conditions": []
-                }
-              },
-              "config": {
-                "promql_legend": ""
-              }
-            }
-          ]
-        },
-        {
           "id": "p_multi_service_traces",
           "type": "table",
           "title": "Recent multi-service traces (15m)",
-          "description": "Traces that span at least 2 services (menu + zitadel). Cross-product debugging starts here \u2014 click any row to see the full trace.",
+          "description": "Traces spanning at least 2 services. Cross-product debugging starts here \u2014 click any row to see the full trace.",
           "queryType": "sql",
           "layout": {
             "x": 0,

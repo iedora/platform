@@ -5,7 +5,7 @@ export default defineConfig({
   out: './drizzle',
   dialect: 'postgresql',
   dbCredentials: {
-    url: process.env.DATABASE_URL!,
+    url: process.env.MENU_DATABASE_URL!,
   },
   casing: 'snake_case',
   // Each iedora product tracks its own migrations in its own table. Genkan

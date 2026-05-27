@@ -1,4 +1,4 @@
-import { relations, sql } from 'drizzle-orm'
+import { relations } from 'drizzle-orm'
 import {
   pgSchema,
   primaryKey,
@@ -12,18 +12,18 @@ import {
 import type { LanguageCode, LocalizedText } from '../../features/i18n/types'
 import type { PlanCode } from '../../features/plans/types'
 
-// Single Postgres schema for the menu product: `menu.*`. Zitadel owns its
-// own database — menu has ZERO local identity state. The user/session/
-// account/verification tables Better Auth used were dropped in #20; menu
-// now mints its own session JWE (jose / random_password.menu_session_secret)
-// and reads user claims off the Zitadel-issued id_token.
+// Single Postgres schema for the menu product: `menu.*`. Identity lives
+// in the `core` schema (better-auth: user / session / account / organization
+// / member / invitation) on the SAME Postgres instance but a separate
+// schema — there's no FK from `menu.*` to `core.*` because the two
+// schemas are owned by different products and migrated independently.
 export const menuSchema = pgSchema('menu')
 
-// ─── Org plan (menu-owned billing metadata, keyed by Zitadel orgId) ──────────
-// Zitadel owns the organization record. The plan / tier is a menu-domain
-// concern (it gates restaurant counts, monthly views, etc.) so it lives here.
-// `organizationId` is a UUID handed back by Zitadel's create-org API; no FK
-// — Zitadel is a separate database.
+// ─── Org plan (menu-owned billing metadata, keyed by org id) ────────────
+// `core.organization` (better-auth) owns the org row. The plan / tier is
+// a menu-domain concern (it gates restaurant counts, monthly views, etc.)
+// so it lives here. `organizationId` mirrors better-auth's org id; no FK
+// because the column belongs to a different schema and product.
 export const orgPlan = menuSchema.table('org_plan', {
   organizationId: text('organization_id').primaryKey(),
   plan: text('plan').$type<PlanCode>().notNull().default('free'),
@@ -36,9 +36,9 @@ export const orgPlan = menuSchema.table('org_plan', {
 
 // One row per AI menu-import generation. Weekly quota is enforced by the
 // plans slice: a count of rows for `(organizationId, createdAt > now - 7d)`
-// against the plan's `aiMenuGenerationsPerWeek` limit. The org id is the
-// Zitadel-issued UUID (same convention as `restaurant.organizationId`);
-// no FK because Zitadel lives in a separate DB.
+// against the plan's `aiMenuGenerationsPerWeek` limit. The org id mirrors
+// `core.organization.id` (same convention as `restaurant.organizationId`);
+// no FK because the column lives in a different schema/product.
 export const aiMenuGeneration = menuSchema.table(
   'ai_menu_generation',
   {
@@ -92,9 +92,9 @@ export const restaurant = menuSchema.table(
     id: text('id')
       .primaryKey()
       .$defaultFn(() => crypto.randomUUID()),
-    // Zitadel-issued organization UUID. No FK — Zitadel lives in a separate
-    // database. Tenancy is enforced at the DAL via the identity slice
-    // (`requireRestaurantAccess` calls `listOrganizations` against Zitadel).
+    // Better-auth organization id (mirrors `core.organization.id`). No FK
+    // because identity lives in a different schema/product. Tenancy is
+    // enforced at the DAL via `requireRestaurantAccess` (`@/features/auth`).
     organizationId: text('organization_id').notNull(),
     name: text('name').notNull(),
     slug: text('slug').notNull().unique(),
@@ -267,7 +267,7 @@ export const viewSeen = menuSchema.table(
 export const dailyView = menuSchema.table(
   'daily_view',
   {
-    // Zitadel-issued org UUID. No FK — Zitadel is a separate database.
+    // Better-auth org id (mirrors `core.organization.id`); no FK across schemas.
     organizationId: text('organization_id').notNull(),
     restaurantId: text('restaurant_id')
       .notNull()
@@ -292,8 +292,8 @@ export type InvoiceStatus = 'paid' | 'pending' | 'void'
  * never rewrites historical invoices. Stripe (or any PSP) will fill these in
  * later via webhook; for now the table is the single source of truth.
  *
- * `organizationId` is a Zitadel-issued UUID — no FK, since Zitadel is a
- * separate database.
+ * `organizationId` mirrors `core.organization.id` (better-auth); no FK
+ * across the menu / core schema boundary.
  */
 export const invoice = menuSchema.table(
   'invoice',
@@ -324,7 +324,7 @@ export const invoice = menuSchema.table(
 // setting `restaurantId`. `onDelete: 'set null'` keeps the sticker valid if a
 // restaurant is later deleted — the code can be rebound rather than discarded.
 //
-// CRUD is Iedora-staff only (see `requireIedoraAdmin`); tenant scoping does
+// CRUD is Iedora-staff only (see `requireScope`); tenant scoping does
 // NOT apply here — this is a cross-tenant operational table.
 
 export const qrCode = menuSchema.table(
@@ -361,50 +361,6 @@ export const rateLimitEvent = menuSchema.table(
       .defaultNow(),
   },
   (t) => [index('rate_limit_event_key_time_idx').on(t.key, t.occurredAt)],
-)
-
-// ─── Auth: server-side session store ──────────────────────────────────────────
-// Menu's session is now a server-side row keyed by an opaque `id`; the
-// `menu_session` cookie holds only `{sid, sub, exp}` (JWE-sealed). Permissions
-// + roles live HERE so a grant change in Zitadel can be reflected without
-// waiting for the cookie to expire — the webhook updates the row directly,
-// the admin UI can `revoked_at = now()` to terminate, and every request
-// resolves the active permission set with a single PK lookup.
-//
-// `id` is a 256-bit random urlsafe-base64 string minted at /api/auth/callback.
-// `user_id` is the Zitadel sub claim. No FK — Zitadel lives in a separate DB.
-// `permissions_version` bumps whenever the webhook rewrites permissions; the
-// admin UI surfaces it for debugging "why doesn't my new scope show up".
-export const session = menuSchema.table(
-  'session',
-  {
-    id: text('id').primaryKey(),
-    userId: text('user_id').notNull(),
-    email: text('email').notNull(),
-    name: text('name').notNull(),
-    roles: jsonb('roles').$type<string[]>().notNull().default([]),
-    permissions: jsonb('permissions').$type<string[]>().notNull().default([]),
-    permissionsVersion: integer('permissions_version').notNull().default(1),
-    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
-    lastSeenAt: timestamp('last_seen_at', { withTimezone: true }).defaultNow().notNull(),
-    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
-    // Set when an admin revokes the session, or when the user logs out. Once
-    // set, every subsequent open() returns null and the DAL bounces the user
-    // back through OIDC. Kept (not deleted) for the admin UI's audit log; a
-    // periodic vacuum job can purge rows past `expires_at + 30d`.
-    revokedAt: timestamp('revoked_at', { withTimezone: true }),
-    revokedReason: text('revoked_reason'),
-    userAgent: text('user_agent'),
-    // SHA-256 of the client IP, hex. Storing the hash (not the IP itself)
-    // keeps the audit trail useful without holding raw PII at rest.
-    ipHash: text('ip_hash'),
-  },
-  (t) => [
-    index('session_user_active_idx')
-      .on(t.userId)
-      .where(sql`${t.revokedAt} IS NULL`),
-    index('session_expires_idx').on(t.expiresAt),
-  ],
 )
 
 // ─── Relations ────────────────────────────────────────────────────────────────

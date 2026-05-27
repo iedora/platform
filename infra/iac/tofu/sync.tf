@@ -51,7 +51,7 @@ resource "terraform_data" "iedora_sync" {
   #   - `reload` runs ExecReload = `docker compose up -d --remove-
   #     orphans` — only containers whose config changed get recreated.
   #     `restart` would Stop+Start the whole stack via ExecStop=
-  #     docker compose down, taking postgres + zitadel down for no
+  #     docker compose down, taking postgres + openobserve down for no
   #     reason.
   #   - `|| start` covers the case where the service isn't yet active
   #     (a fresh-box first apply where cloud-init beat us to it leaves

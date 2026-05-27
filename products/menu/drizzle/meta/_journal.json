@@ -5,50 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1779026401908,
-      "tag": "0000_init",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1779240459783,
-      "tag": "0001_drop_better_auth_tables",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1779313590253,
-      "tag": "0002_nervous_logan",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1779368043535,
-      "tag": "0003_boring_carmella_unuscione",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1779467296200,
-      "tag": "0004_red_victor_mancha",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "7",
-      "when": 1779473614104,
-      "tag": "0005_bouncy_cassandra_nova",
-      "breakpoints": true
-    },
-    {
-      "idx": 6,
-      "version": "7",
-      "when": 1779497730460,
-      "tag": "0006_fancy_puppet_master",
+      "when": 1779898320873,
+      "tag": "0000_mysterious_moon_knight",
       "breakpoints": true
     }
   ]

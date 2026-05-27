@@ -1,6 +1,6 @@
 import 'server-only'
 import { redirect } from 'next/navigation'
-import { signInUrl } from '@iedora/brand'
+import { signInUrl } from '@iedora/product-core/url'
 import type { AuthGateway } from '../ports'
 
 /**

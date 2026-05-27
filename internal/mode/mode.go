@@ -16,7 +16,7 @@
 //	    ...
 //	}
 //
-// Usage at boot (cmd/zitadel-apply — runs in both):
+// Usage at boot (a configurator that supports both modes):
 //
 //	modeFlag := flag.String("mode", "live", "live | local")
 //	flag.Parse()

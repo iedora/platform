@@ -58,7 +58,7 @@ RUN mkdir -p /out/core/scripts /out/core/drizzle \
 # Layout matches Stage-3 configurators' invocation:
 #   /migrate/core/scripts/migrate.mjs   (CORE_DATABASE_URL env)
 #   /migrate/core/drizzle/              (auth's sql + meta/_journal.json)
-#   /migrate/menu/scripts/migrate.mjs   (DATABASE_URL env)
+#   /migrate/menu/scripts/migrate.mjs   (MENU_DATABASE_URL env)
 #   /migrate/menu/drizzle/              (menu's sql + meta/_journal.json)
 #
 # Stage 3 invokes:
@@ -71,7 +71,7 @@ COPY --from=bundler --chown=nonroot:nonroot /out/ /migrate/
 # Default ENTRYPOINT is `/nodejs/bin/node` per the distroless image.
 # Stage 3 passes the script path as CMD args at `docker run` time.
 # CMD here is just a safe default (running it without args is a no-op
-# since the script needs CORE_DATABASE_URL / DATABASE_URL).
+# since the script needs CORE_DATABASE_URL / MENU_DATABASE_URL).
 CMD ["/migrate/core/scripts/migrate.mjs"]
 
 LABEL org.opencontainers.image.source="https://github.com/eduvhc/iedora"

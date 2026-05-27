@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { getTranslations } from 'next-intl/server'
 import { BRAND_URL } from '@iedora/brand'
 import {
+  Badge,
   Sidebar,
   SidebarBrand,
   SidebarClose,
@@ -10,22 +11,36 @@ import {
   SidebarTrigger,
   Wordmark,
 } from '@iedora/design-system'
+import { hasStaffScope } from '@iedora/auth/permissions'
+import { SCOPES } from '@iedora/auth/scopes'
 import { ActiveSidebarLinks, type ActiveSidebarItem } from './active-sidebar-links'
 
 /**
  * Cross-tenant admin chrome. Two-column on lg+, drawer on mobile.
  * No restaurant context — the sidebar is a fixed taxonomy of admin
- * surfaces (overview / users / orgs / sessions). Keep the taxonomy
- * short — if it grows past five, add a second section group.
+ * surfaces (overview / users / access / orgs / sessions). Keep the
+ * taxonomy short — if it grows past six, add a second section group.
+ *
+ * `userRole` powers the footer chip ("iedora-admin" / "iedora-support")
+ * so the active grouper is always visible — reinforces the "role is a
+ * grouper, scopes are the real currency" model.
  */
 export async function AdminShell({
   children,
   userEmail,
+  userRole,
 }: {
   children: React.ReactNode
   userEmail: string
+  userRole: string | null
 }) {
   const t = await getTranslations('Core.admin.nav')
+
+  // Scope-aware nav: links to surfaces the caller can't reach are
+  // omitted. Mirrors the gating in each page's `requireScope` call so
+  // the sidebar never advertises a 404. The wildcard role binding
+  // means iedora-admin sees everything automatically.
+  const canSeeAudit = await hasStaffScope(userRole, SCOPES.core.staff.audit.read)
 
   const items: ReadonlyArray<ActiveSidebarItem> = [
     {
@@ -45,6 +60,11 @@ export async function AdminShell({
       testId: 'admin-nav-users',
     },
     {
+      href: '/core/admin/access',
+      label: t('access'),
+      testId: 'admin-nav-access',
+    },
+    {
       href: '/core/admin/organizations',
       label: t('organizations'),
       testId: 'admin-nav-organizations',
@@ -54,6 +74,15 @@ export async function AdminShell({
       label: t('sessions'),
       testId: 'admin-nav-sessions',
     },
+    ...(canSeeAudit
+      ? ([
+          {
+            href: '/core/admin/audit',
+            label: t('audit'),
+            testId: 'admin-nav-audit',
+          },
+        ] as const)
+      : []),
     { kind: 'section', label: t('sectionExit'), testId: 'admin-nav-section-exit' },
     { href: '/sign-out', label: t('signOut'), testId: 'admin-nav-sign-out' },
   ]
@@ -85,13 +114,23 @@ export async function AdminShell({
           <ActiveSidebarLinks ariaLabel={t('ariaLabel')} items={items} />
 
           <SidebarFooter>
-            <span
-              className="min-w-0 truncate font-[family-name:var(--mono)] text-[10.5px] uppercase tracking-[0.18em] text-[var(--ink-40)]"
-              title={userEmail}
-              data-test-id="admin-user-email"
-            >
-              {userEmail}
-            </span>
+            <div className="min-w-0 space-y-1.5">
+              <span
+                className="block min-w-0 truncate font-[family-name:var(--mono)] text-[10.5px] uppercase tracking-[0.18em] text-[var(--ink-40)]"
+                title={userEmail}
+                data-test-id="admin-user-email"
+              >
+                {userEmail}
+              </span>
+              {userRole ? (
+                <Badge
+                  variant={userRole === 'iedora-admin' ? 'accent' : 'ink'}
+                  data-test-id="admin-user-role"
+                >
+                  {userRole}
+                </Badge>
+              ) : null}
+            </div>
           </SidebarFooter>
         </Sidebar>
 

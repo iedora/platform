@@ -1,9 +1,10 @@
 import 'server-only'
 import { notFound, redirect } from 'next/navigation'
 import { headers } from 'next/headers'
-import { signInUrl } from '@iedora/brand'
+import { signInUrl } from '@iedora/product-core/url'
 import { auth as iedoraAuth } from '@iedora/auth'
-import { scopeToPermission, type Scope } from '../scopes'
+import { type Scope } from '@iedora/auth/scopes'
+import { scopeToPermission } from '@iedora/auth/permissions'
 import type { AuthGateway, Session } from '../ports'
 
 /**

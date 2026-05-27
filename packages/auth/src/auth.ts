@@ -5,7 +5,8 @@ import { organization, admin } from 'better-auth/plugins'
 import { nextCookies } from 'better-auth/next-js'
 import { getCoreDb } from './db'
 import { schema } from './schema'
-import { ac, roles, iedoraAdmin } from './permissions'
+import { ac, roles, iedoraAdmin, iedoraSupport } from './permissions'
+import { recordAudit } from './audit'
 
 /**
  * The canonical iedora auth instance. Every product imports this — there
@@ -24,13 +25,14 @@ import { ac, roles, iedoraAdmin } from './permissions'
 let cached: ReturnType<typeof build> | null = null
 
 function build() {
-  const baseURL = process.env.IEDORA_CORE_BASE_URL
-  const secret = process.env.IEDORA_CORE_SECRET
-  const trustedOriginsRaw = process.env.IEDORA_CORE_TRUSTED_ORIGINS ?? ''
+  const baseURL = process.env.CORE_BASE_URL
+  const secret = process.env.CORE_SECRET
+  const trustedOriginsRaw = process.env.CORE_TRUSTED_ORIGINS ?? ''
+  const bootstrapAdminsRaw = process.env.IEDORA_BOOTSTRAP_ADMIN_EMAILS ?? ''
 
   if (!baseURL || !secret) {
     throw new Error(
-      '[iedora/auth] IEDORA_CORE_BASE_URL and IEDORA_CORE_SECRET must be set.',
+      '[iedora/auth] CORE_BASE_URL and CORE_SECRET must be set.',
     )
   }
 
@@ -38,6 +40,16 @@ function build() {
     .split(',')
     .map((s) => s.trim())
     .filter(Boolean)
+
+  // CSV of emails auto-promoted to `iedora-admin` on signup — covers
+  // the founding account so the first deploy doesn't need a manual
+  // SQL UPDATE. Anything else lands via the admin UI.
+  const bootstrapAdminEmails = new Set(
+    bootstrapAdminsRaw
+      .split(',')
+      .map((s) => s.trim().toLowerCase())
+      .filter(Boolean),
+  )
 
   return betterAuth({
     baseURL,
@@ -48,6 +60,66 @@ function build() {
       schema,
       usePlural: false,
     }),
+    databaseHooks: {
+      user: {
+        create: {
+          // Bootstrap the founding iedora-admin on first signup. Avoids
+          // needing a manual SQL UPDATE after the first deploy — the
+          // founder's account is auto-promoted to the cross-tenant role
+          // as it's created. Idempotent: only fires on row creation.
+          before: async (user) => {
+            if (bootstrapAdminEmails.has(user.email.toLowerCase())) {
+              return { data: { ...user, role: 'iedora-admin' } }
+            }
+            return { data: user }
+          },
+          // Audit: every signup. Outcome is always `success` here
+          // (better-auth's `before` already validated email +
+          // password rules). `bootstrap-admin` lands in meta so the
+          // audit trail explicitly records the auto-promotion.
+          after: async (user) => {
+            const promoted = bootstrapAdminEmails.has(user.email.toLowerCase())
+            await recordAudit({
+              event: 'user.signed-up',
+              outcome: 'success',
+              actor: {
+                userId: user.id,
+                role: (user.role as string | undefined) ?? null,
+                email: user.email,
+              },
+              target: { userId: user.id },
+              meta: promoted
+                ? { bootstrapAdminPromotion: true }
+                : null,
+              important: true,
+            })
+          },
+        },
+      },
+      session: {
+        create: {
+          // Audit every successful sign-in. better-auth populates IP +
+          // user-agent on the session row itself; we read them back
+          // and don't have a Headers object to pass through, so the
+          // ip_hash falls to `null` on the row — we record the IP
+          // directly in `meta` since the session model already stored
+          // it server-side (no extra PII exposure).
+          after: async (session) => {
+            await recordAudit({
+              event: 'user.signed-in',
+              outcome: 'success',
+              actor: { userId: session.userId },
+              target: { userId: session.userId, sessionId: session.id },
+              meta: {
+                ipAddress: session.ipAddress ?? null,
+                impersonatedBy: session.impersonatedBy ?? null,
+              },
+              important: true,
+            })
+          },
+        },
+      },
+    },
     emailAndPassword: {
       enabled: true,
       // Email verification is opt-in for now — we don't have SMTP in the
@@ -59,10 +131,10 @@ function build() {
     advanced: {
       // Parent-domain cookie so menu.iedora.com + core.iedora.com + any
       // future iedora.com surface read the same session. Override with
-      // `IEDORA_CORE_COOKIE_DOMAIN` in dev (where `.localhost` is invalid).
+      // `CORE_COOKIE_DOMAIN` in dev (where `.localhost` is invalid).
       crossSubDomainCookies: {
         enabled: true,
-        domain: process.env.IEDORA_CORE_COOKIE_DOMAIN ?? '.iedora.com',
+        domain: process.env.CORE_COOKIE_DOMAIN ?? '.iedora.com',
       },
     },
     plugins: [
@@ -78,10 +150,16 @@ function build() {
       }),
       admin({
         ac,
-        // Cross-tenant `iedora-admin` role. Resolves against the wildcard
-        // permission set bound in `permissions.ts`.
-        adminRoles: ['iedora-admin'],
-        roles: { 'iedora-admin': iedoraAdmin },
+        // Cross-tenant staff roles. Both are recognised by the admin
+        // plugin (so its endpoints unlock for either), but our
+        // application-level `requireScope` gates the fine-grained
+        // verbs — `iedora-support` cannot reach `users:set-role` /
+        // `users:impersonate`, the AC binding refuses.
+        adminRoles: ['iedora-admin', 'iedora-support'],
+        roles: {
+          'iedora-admin': iedoraAdmin,
+          'iedora-support': iedoraSupport,
+        },
       }),
       // `nextCookies()` MUST be the last plugin — it patches the response
       // pipeline to ship Set-Cookie headers through Next's server-action

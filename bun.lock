@@ -233,6 +233,7 @@
         "@iedora/db": "workspace:*",
         "@iedora/design-system": "workspace:*",
         "@iedora/observability": "workspace:*",
+        "@iedora/product-core": "workspace:*",
         "ai": "^6.0.190",
         "clsx": "^2.1.1",
         "drizzle-orm": "catalog:",

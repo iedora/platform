@@ -6,9 +6,8 @@ import { getEffectiveOrganizationId as _getEffectiveOrganizationId } from './use
 import { requireActiveOrganization as _requireActiveOrganization } from './use-cases/require-active-organization'
 import { requireRestaurantAccess as _requireRestaurantAccess } from './use-cases/require-restaurant-access'
 import { requireRestaurantBySlug as _requireRestaurantBySlug } from './use-cases/require-restaurant-by-slug'
-import { requireIedoraAdmin as _requireIedoraAdmin } from './use-cases/require-iedora-admin'
 import { requireScope as _requireScope } from './use-cases/require-scope'
-import type { Scope } from './scopes'
+import type { Scope } from '@iedora/auth/scopes'
 
 /**
  * Public API of the auth slice. Convenience wrappers bind the production
@@ -33,11 +32,11 @@ export const getSession = cache(() => drizzleAuthGateway.getSession())
 export const verifySession = cache(() => _verifySession(drizzleAuthGateway))
 
 /**
- * Legacy signature kept for back-compat — the `_userId` argument is
- * unused; the active org now lives on the better-auth session row and
- * the lookup is a single read. Callers can drop the arg over time.
+ * Returns the caller's active organization id (`session.activeOrganizationId`
+ * from better-auth's organization plugin), or null when none is set / no
+ * session. Cached per render via React's `cache()`.
  */
-export const getEffectiveOrganizationId = cache((_userId?: string) =>
+export const getEffectiveOrganizationId = cache(() =>
   _getEffectiveOrganizationId(drizzleAuthGateway),
 )
 
@@ -54,14 +53,6 @@ export const requireRestaurantBySlug = cache((slug: string) =>
 )
 
 /**
- * Cross-tenant guard. Requires the user's cross-tenant `role` to be
- * `iedora-admin`. Use for staff-only surfaces and legacy call sites.
- * New surfaces should reach for `requireScope(scope)` — fine-grained,
- * capability-based, AC-backed.
- */
-export const requireIedoraAdmin = cache(() => _requireIedoraAdmin(drizzleAuthGateway))
-
-/**
  * Capability-based guard. Resolves the caller's permissions through
  * better-auth's organization plugin (per-org `member.role` evaluated
  * against the @iedora/auth statement). `iedora-admin` short-circuits to
@@ -73,5 +64,3 @@ export const requireScope = cache((scope: Scope) =>
 
 export type { AuthGateway, Session } from './ports'
 export { IEDORA_ADMIN_ROLE } from './roles'
-export { SCOPES, type Scope, scopeToPermission } from './scopes'
-export { BUNDLES } from './bundles'

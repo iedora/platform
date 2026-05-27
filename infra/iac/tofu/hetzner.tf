@@ -2,7 +2,7 @@
 # cloud-init that installs docker, drops the compose stack at
 # /etc/iedora/, and registers `iedora.service` to bring everything up.
 #
-# Day-2 changes to compose/Caddyfile DON'T re-run cloud-init — they're
+# Day-2 changes to the compose file DON'T re-run cloud-init — they're
 # delivered by `terraform_data.iedora_sync` (see sync.tf). One SSH
 # session per change, default Tofu parallelism, no per-container SSH.
 
@@ -49,8 +49,8 @@ resource "hcloud_firewall" "iedora" {
 
 # ── The server ──────────────────────────────────────────────────────────────
 # CAX11: 2 vCPU ARM Ampere, 4 GB RAM, 40 GB SSD. Covers postgres + openobserve
-# + zitadel + zitadel-login + caddy + menu container + backups with idle RAM
-# ~1.7 GB. Scale to cax21 (4/8) for Phase 4 multi-tenant ramp — Hetzner
+# + cloudflared + web (Next.js) container + backups with idle RAM
+# headroom. Scale to cax21 (4/8) when multi-tenant load demands — Hetzner
 # resize is in-place, no destroy/recreate.
 
 resource "hcloud_server" "iedora" {
@@ -83,7 +83,7 @@ resource "hcloud_server" "iedora" {
   }
 
   lifecycle {
-    # cloud-init runs once. Compose / Caddyfile updates go through
+    # cloud-init runs once. Compose updates go through
     # `terraform_data.iedora_sync` — we deliberately ignore user_data
     # so a compose edit doesn't trigger a server replace (which would
     # wipe bind-mounted postgres data).

@@ -11,7 +11,7 @@ ExecStart=/usr/bin/docker compose -f /etc/iedora/docker-compose.yml up -d --remo
 # ExecReload is idempotent — `compose up -d` only recreates services
 # whose config changed. Day-2 reconciliation goes through `systemctl
 # reload`, NOT `restart`, so unchanged containers (postgres
-# mid-transaction, zitadel with live sessions) keep running.
+# mid-transaction, openobserve with live ingest) keep running.
 ExecReload=/usr/bin/docker compose -f /etc/iedora/docker-compose.yml up -d --remove-orphans
 ExecStop=/usr/bin/docker compose -f /etc/iedora/docker-compose.yml down
 

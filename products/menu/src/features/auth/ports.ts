@@ -13,16 +13,9 @@
  * Source: better-auth's `auth.api.getSession()` plus the organization
  * plugin's `activeOrganizationId`. Translated by `adapters/drizzle.ts`.
  *
- * `roles` is a back-compat shim — the previous Zitadel implementation
- * surfaced an array; better-auth gives us a scalar `role` (cross-tenant)
- * plus a per-org `member.role` looked up at permission-check time. We
- * expose both so existing consumers that read `.role` (singular) or
- * `.roles.includes('iedora-admin')` keep working.
- *
- * `permissions` is intentionally always `[]` — granular per-resource
- * checks go through `requireScope()` (which calls
- * `auth.api.hasPermission` under the hood), not through a flat list on
- * the session. New consumers should reach for `requireScope`.
+ * `role` is the cross-tenant scalar (`'iedora-admin'`, `'iedora-support'`,
+ * or `null` for tenants). Per-org permissions are evaluated at call time
+ * via `requireScope()`, NOT through a flat list on the session.
  */
 export type Session = {
   user: {
@@ -30,17 +23,11 @@ export type Session = {
     email: string
     name: string
     role: string | null
-    roles: string[]
-    permissions: string[]
   }
   session: {
     id: string
     activeOrganizationId: string | null
   }
-  /** Back-compat alias for `session.id`. */
-  sid: string
-  /** Back-compat: Unix-seconds expiry mirrored from `session.expiresAt`. */
-  expiresAt: number
 }
 
 /**

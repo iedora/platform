@@ -8,7 +8,7 @@ import { restaurant } from '../../../shared/db/schema'
  * iedora-admin QR-codes surface to bind physical stickers to any
  * restaurant regardless of org membership. Tenant scoping deliberately
  * does NOT apply — the caller must already be gated via
- * `requireScope(SCOPES.QR_CODES_*)`.
+ * `requireScope(SCOPES.menu.tenant.qrCodes.*)`.
  */
 export async function listRestaurantsCrossTenant() {
   return db

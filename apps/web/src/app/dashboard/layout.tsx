@@ -13,7 +13,6 @@ import {
   getEffectiveOrganizationId,
   getSession,
   IEDORA_ADMIN_ROLE,
-  SCOPES,
 } from '@iedora/product-menu/features/auth'
 import { listRestaurantsWithCounts } from '@iedora/product-menu/features/dashboard-home'
 import { getOrganizationPlan, planHas } from '@iedora/product-menu/features/plans'
@@ -34,7 +33,7 @@ export default async function DashboardLayout({
   // the per-page DAL guards (`verifySession`, `requireActiveOrganization`).
   const session = await getSession()
   const organizationId = session?.user
-    ? await getEffectiveOrganizationId(session.user.id)
+    ? await getEffectiveOrganizationId()
     : null
   const plan = organizationId
     ? await getOrganizationPlan(organizationId)
@@ -47,10 +46,13 @@ export default async function DashboardLayout({
     ? await listRestaurantsWithCounts(organizationId)
     : []
   const showAnalyticsLink = plan ? planHas(plan, 'analytics') : false
-  const showAdminLink =
-    session?.user.permissions.includes(SCOPES.QR_CODES_READ) ?? false
-  const showSessionsLink =
-    session?.user.roles.includes(IEDORA_ADMIN_ROLE) ?? false
+  // Both staff-only links — QR codes admin is cross-tenant
+  // (`requireScope` in `products/menu/src/features/qr-codes/`)
+  // and the sessions surface is the same. Anyone whose `user.role` is
+  // `iedora-admin` sees them.
+  const isStaffAdmin = session?.user.role === IEDORA_ADMIN_ROLE
+  const showAdminLink = isStaffAdmin
+  const showSessionsLink = isStaffAdmin
 
   const t = await getTranslations('AppHeader')
   const nav = await getTranslations('DashboardNav')

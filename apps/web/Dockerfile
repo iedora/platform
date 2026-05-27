@@ -136,9 +136,10 @@ USER nextjs
 WORKDIR /app/apps/web
 EXPOSE 3000
 
-# Caddy on the Hetzner box uses /up as the upstream health probe. /up
-# returns 200 from Next as soon as server.js binds the port. Node 24's
-# global fetch covers the whole one-liner; no curl needed in the image.
+# cloudflared on the Hetzner box uses /up as the upstream health probe.
+# /up returns 200 from Next as soon as server.js binds the port. Node
+# 24's global fetch covers the whole one-liner; no curl needed in the
+# image.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
     CMD node -e "fetch('http://127.0.0.1:3000/up').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
 

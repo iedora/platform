@@ -115,10 +115,9 @@ apps/web/
     journeys/                     cross-slice user journeys
 ```
 
-> TODO(phase-1-sweep): the e2e harness was tied to the deleted Zitadel
-> mock at `_bootstrap.ts`. Better-auth runs in-process, so `signIn`
-> now calls `auth.api.signInEmail` against the test DB directly (no
-> network IdP to mock). The fixture + spec patterns below are being
+> Auth in tests goes through `auth.api.signInEmail` against the test
+> DB — better-auth runs in-process, so there's no network IdP to mock
+> and no bootstrap server. The fixture + spec patterns below are being
 > rebuilt against `@iedora/auth`; treat the snippets as historical
 > reference until the new harness lands.
 
@@ -208,25 +207,27 @@ bun run test:e2e:debug      # PWDEBUG=1
 
 ## CI integration
 
-One workflow per workspace. Each `paths:`-filtered.
+One workflow per workspace. Each `paths:`-filtered. See [`docs/testing/e2e-architecture.md`](../../../docs/testing/e2e-architecture.md) for the cross-product E2E design and the shared composite action.
 
 ```
 .github/
-  actions/setup/action.yml      composite: Bun + bun install --frozen-lockfile
+  actions/
+    setup/action.yml             composite: Bun + bun install --frozen-lockfile
+    e2e-run/action.yml           shared Playwright harness (services, migrate, build, specs)
   workflows/
-    menu.yml                     menu's full pipeline
+    product-menu.yml             menu's full pipeline
     design-system.yml            @iedora/design-system
     observability.yml            @iedora/observability
 ```
 
-**`menu.yml` jobs** (parallel except e2e):
+**`product-menu.yml` jobs** (parallel except e2e):
 
 - **Typecheck** — `bun run typecheck`. ~2 min.
 - **Lint** — `bun run lint`. ~2 min.
-- **Unit (Vitest)** — `bun run test`. Docker available so testcontainers can boot Redis. ~3 min.
-- **E2E (Playwright)** — `needs: [typecheck, lint, unit]`. Postgres 18 + adobe/s3mock as service containers. Shard matrix is parked at `1/1` today — bump to `[1/2, 2/2]` (or 4) when the suite grows past ~10 min. The infra (per-worker DB fork) is already in place.
+- **Unit (Vitest)** — `bun run test`. ~3 min.
+- **E2E (Playwright)** — `needs: [typecheck, lint, unit]`. Declares Postgres 18 + adobe/s3mock as service containers, then delegates everything else to `.github/actions/e2e-run` (composite action). Shard matrix is parked at `1/1` — bump to `[1/2, 2/2]` when the suite grows past ~10 min. Per-worker DB isolation is already wired.
 
-The composite action `.github/actions/setup` installs Bun + runs `bun install --frozen-lockfile`. Every job that needs deps is one line: `uses: ./.github/actions/setup`.
+Every job that needs deps is one line: `uses: ./.github/actions/setup`.
 
 Branch protection is deliberately off — solo, AI-driven; CI is the signal.
 

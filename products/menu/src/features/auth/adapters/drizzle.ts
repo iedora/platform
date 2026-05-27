@@ -18,30 +18,17 @@ async function readSession(): Promise<Session | null> {
   const s = await auth.api.getSession({ headers: await headers() })
   if (!s?.user) return null
 
-  const role = s.user.role ?? null
   return {
     user: {
       id: s.user.id,
       email: s.user.email,
       name: s.user.name,
-      role,
-      // Back-compat shim — the previous Zitadel implementation surfaced
-      // `roles` as an array. With better-auth, the cross-tenant role is
-      // a scalar (`user.role`); we project it into a single-element
-      // array so consumers calling `.roles.includes('iedora-admin')`
-      // keep working without changes.
-      roles: role ? [role] : [],
-      // Always empty — granular per-resource checks go through
-      // `requireScope()` (which calls `auth.api.hasPermission`), not
-      // through a flat list on the session.
-      permissions: [],
+      role: s.user.role ?? null,
     },
     session: {
       id: s.session.id,
       activeOrganizationId: s.session.activeOrganizationId ?? null,
     },
-    sid: s.session.id,
-    expiresAt: Math.floor(new Date(s.session.expiresAt).getTime() / 1000),
   }
 }
 

@@ -38,8 +38,8 @@ const PermissionGroupR2BucketItemWrite = "2efd5506f9c8494dacb1fa10a3e7d5b6"
 var httpClient = &http.Client{Timeout: 10 * time.Second}
 
 // HTTP retry policy. 5 attempts × (1+2+4+8+16=31s) worst-case wait,
-// well under any operator's attention budget. Mirrors the shape of
-// cmd/zitadel-grant/main.go's `doWithRetry`.
+// well under any operator's attention budget. Exponential backoff
+// with a hard cap — defensive against CF API rate-limits / blips.
 const (
 	maxAttempts    = 5
 	initialBackoff = time.Second

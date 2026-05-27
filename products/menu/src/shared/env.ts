@@ -19,34 +19,41 @@ const serverSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
 
   // Database ------------------------------------------------------------
-  DATABASE_URL: z.url(),
+  // Postgres URL pointing at the `menu` database (this product's
+  // schema). Prefixed `MENU_*` to mirror `CORE_DATABASE_URL` — every
+  // product owns its own DB env var so future split (menu → own
+  // deployment / microservice) is a single flip.
+  MENU_DATABASE_URL: z.url(),
 
   // Auth (@iedora/auth — better-auth) -----------------------------------
   // Postgres URL pointing at the `core` database (better-auth tables).
-  // Same Postgres instance as DATABASE_URL — different DB.
+  // Same Postgres instance as MENU_DATABASE_URL — different DB.
   CORE_DATABASE_URL: z.url(),
   // ≥ 32-char secret used by better-auth to sign session tokens.
-  IEDORA_CORE_SECRET: z.string().min(32),
+  CORE_SECRET: z.string().min(32),
   // Canonical URL of the auth API — the `core` product's origin.
   // Prod: `https://core.iedora.com`. Dev: `http://localhost:3000`.
   // better-auth's baseURL points here; cookies issue from this origin
   // on the parent `.iedora.com` domain so SSO works across products.
-  IEDORA_CORE_BASE_URL: z.url(),
+  CORE_BASE_URL: z.url(),
   // Client-side mirror — inlined into the browser bundle by Next at
   // build time (NEXT_PUBLIC_* prefix). Includes the `/core` path
   // segment in dev (`http://localhost:3000/core`) and the bare host in
   // prod (`https://core.iedora.com`) so route construction is uniform.
   NEXT_PUBLIC_CORE_URL: z.url(),
   // Comma-separated allow-list for CSRF (browser-origin checks).
-  IEDORA_CORE_TRUSTED_ORIGINS: z.string().default(''),
+  CORE_TRUSTED_ORIGINS: z.string().default(''),
   // Parent-domain cookie scope. Production: `.iedora.com` (default).
   // Dev: `localhost`. Empty string falls back to better-auth's default.
-  IEDORA_CORE_COOKIE_DOMAIN: z.string().default('.iedora.com'),
+  CORE_COOKIE_DOMAIN: z.string().default('.iedora.com'),
 
-  // Menu's public base URL — used for absolute URL construction via
+  // Menu's public URL — used for absolute URL construction via
   // `publicUrl()`. Must match the canonical hostname the menu serves
-  // (`https://menu.iedora.com` in prod, `http://localhost:3000` in dev).
-  MENU_PUBLIC_URL: z.url(),
+  // (`https://menu.iedora.com` in prod, `http://localhost:3000` in
+  // dev). `NEXT_PUBLIC_` so the client bundle has it too (mirrors
+  // `NEXT_PUBLIC_CORE_URL`'s shape — every product's public URL
+  // follows this convention).
+  NEXT_PUBLIC_MENU_URL: z.url(),
 
   // Rate-limit kill-switch. Set 'true' in e2e tests so the slice short-circuits
   // to "always ok" and load-bearing flows (org creation, asset upload) can

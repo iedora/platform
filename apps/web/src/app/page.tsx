@@ -5,7 +5,7 @@ import LandingPage from './_components/landing/landing-page'
 export default async function Home() {
   const session = await getSession()
   if (session) {
-    const organizationId = await getEffectiveOrganizationId(session.user.id)
+    const organizationId = await getEffectiveOrganizationId()
     if (!organizationId) redirect('/onboarding')
     redirect('/dashboard')
   }

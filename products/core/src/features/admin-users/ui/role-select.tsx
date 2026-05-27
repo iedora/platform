@@ -11,9 +11,17 @@ type Props = {
   currentRole: string | null
   /** Disables the control when the user is the caller. */
   disabled?: boolean
+  /**
+   * Render the picker only when the caller holds
+   * `staff:core:users:set-role`. Page computes via
+   * `hasScope(SCOPES.core.staff.users.setRole)` and passes down. Positive
+   * semantics: render IF the scope is held; falsy ⇒ shows current
+   * role as plain text (no mutation affordance).
+   */
+  canSetRole?: boolean
 }
 
-export function RoleSelect({ userId, currentRole, disabled }: Props) {
+export function RoleSelect({ userId, currentRole, disabled, canSetRole }: Props) {
   const t = useTranslations('Core.admin.users.role')
   const [pending, startTransition] = useTransition()
   const [status, setStatus] = useState<'idle' | 'ok' | 'err'>('idle')
@@ -26,6 +34,20 @@ export function RoleSelect({ userId, currentRole, disabled }: Props) {
       const result = await setUserRoleAction({ userId, role })
       setStatus(result.ok ? 'ok' : 'err')
     })
+  }
+
+  if (!canSetRole) {
+    // No-op read-only fallback: just surface the current role label
+    // so the page still communicates the user's role, but without
+    // the mutation affordance.
+    return (
+      <span
+        className="text-sm text-[var(--ink-70)]"
+        data-test-id={`admin-users-role-readonly-${userId}`}
+      >
+        {currentRole === 'iedora-admin' ? t('iedoraAdmin') : t('member')}
+      </span>
+    )
   }
 
   return (

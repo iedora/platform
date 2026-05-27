@@ -6,29 +6,53 @@ import {
   CardDesc,
   CardFoot,
   Button,
+  Badge,
 } from '@iedora/design-system'
-import { requireIedoraAdmin } from '@iedora/product-core'
+import { requireScope } from '@iedora/product-core'
+import { SCOPES } from '@iedora/auth/scopes'
+import {
+  drizzleAdminOrgsGateway,
+  listOrgs,
+} from '@iedora/product-core/features/admin-orgs'
 import { auth } from '@iedora/auth'
 import { AdminPage } from '@iedora/product-core/shared/ui/admin-page'
 
 /**
- * Admin overview — landing for /core/admin. Three big numeric stats
- * (users / orgs / banned) + jump-off cards into the three management
- * surfaces. No filters; no URL state — this page is purely a hub.
+ * Admin overview — landing for /core/admin. Two stacked layers:
+ *
+ *   1. "Signed in as" identity card — the smoking-gun proof that
+ *      whoever's looking carries `iedora-admin`. Doubles as the hook
+ *      validator: after the bootstrap signup, the badge here is
+ *      the immediate yes/no answer.
+ *   2. Three jump-off cards (users / orgs / sessions) carrying real
+ *      aggregate counts for users + orgs. Sessions stays
+ *      qualitative — `listAllSessions` has no cheap total and the
+ *      number churns by the minute.
+ *
+ * Mobile-first: identity card is full-width and stacks vertically
+ * under sm; stat cards go 1→2→3 cols across breakpoints.
  */
 export default async function CoreAdminOverview() {
-  await requireIedoraAdmin()
+  const session = await requireScope(SCOPES.core.staff.admin.read)
   const t = await getTranslations('Core.admin.overview')
   const h = await headers()
 
-  // Cheap aggregate via better-auth's listUsers — we already pay the
-  // round-trip; counting the returned set is free. Cap at 1 to elicit
-  // the `total` envelope without scrolling the actual rows.
-  const usersResponse = await auth.api.listUsers({
-    query: { limit: 1, sortBy: 'createdAt', sortDirection: 'desc' },
-    headers: h,
-  })
+  // Cheap aggregates — both endpoints already return a `total`
+  // envelope. Cap at 1 row to skip scrolling actual data.
+  const [usersResponse, orgsResult] = await Promise.all([
+    auth.api.listUsers({
+      query: { limit: 1, sortBy: 'createdAt', sortDirection: 'desc' },
+      headers: h,
+    }),
+    listOrgs(drizzleAdminOrgsGateway(), {
+      page: 1,
+      pageSize: 1,
+      sortBy: 'createdAt',
+      sortDirection: 'desc',
+    }),
+  ])
   const totalUsers = usersResponse.total ?? usersResponse.users?.length ?? 0
+  const totalOrgs = orgsResult.total
 
   return (
     <AdminPage
@@ -36,6 +60,36 @@ export default async function CoreAdminOverview() {
       description={t('description')}
       data-test-id="admin-overview"
     >
+      <Card data-test-id="admin-overview-identity">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
+          <div className="min-w-0 space-y-1">
+            <div className="text-xs uppercase tracking-[0.18em] text-[var(--ink-40)]">
+              {t('you.signedInAs')}
+            </div>
+            <div
+              className="truncate text-base font-medium"
+              data-test-id="admin-overview-identity-name"
+            >
+              {session.user.name || session.user.email}
+            </div>
+            {session.user.name ? (
+              <div
+                className="truncate text-xs text-[var(--ink-70)]"
+                data-test-id="admin-overview-identity-email"
+              >
+                {session.user.email}
+              </div>
+            ) : null}
+          </div>
+          <Badge
+            variant={session.user.role === 'iedora-admin' ? 'accent' : 'ink'}
+            data-test-id="admin-overview-identity-role"
+          >
+            {session.user.role}
+          </Badge>
+        </div>
+      </Card>
+
       <section
         className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
         data-test-id="admin-overview-cards"
@@ -53,7 +107,7 @@ export default async function CoreAdminOverview() {
         </Card>
         <Card data-test-id="admin-overview-card-orgs">
           <CardTitle as="h2">{t('orgs.title')}</CardTitle>
-          <CardDesc>{t('orgs.description')}</CardDesc>
+          <CardDesc>{t('orgs.count', { count: totalOrgs })}</CardDesc>
           <CardFoot>
             <Button
               as="a"

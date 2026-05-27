@@ -419,64 +419,6 @@
     "translate": "Translate",
     "back": "Back"
   },
-  "SessionsAdmin": {
-    "stats": {
-      "title": "Overview",
-      "sessions": "Sessions",
-      "users": "Users",
-      "new24h": "New 24h",
-      "stale24h": "Stale > 24h",
-      "avgAge": "Avg age",
-      "avgAgeHint": "since last seen",
-      "maxPermVersion": "Max perm. v",
-      "maxPermVersionHint": "webhook bumps",
-      "loginsHint": "logins",
-      "noneHint": "none",
-      "browsers": "Browsers",
-      "operatingSystems": "Operating systems"
-    },
-    "list": {
-      "activeCount": "Active sessions ({total} across {users, plural, =1 {# user} other {# users}})",
-      "empty": "No active sessions."
-    },
-    "userCard": {
-      "thisDevice": "(this device)",
-      "unverified": "unverified",
-      "roleTooltip": "Role: {role}",
-      "sessionsCount": "{count, plural, =1 {# session} other {# sessions}}",
-      "toggleSessionsTitle": "Toggle active sessions detail",
-      "revokeAll": "Revoke all",
-      "revokeAllConfirm": "Revoke EVERY active session for {name} ({email})? This logs them out on every device.",
-      "revokeAllStatus": "Revoked {count, plural, =1 {# session} other {# sessions}}.",
-      "noMfa": "no MFA",
-      "noMfaTitle": "No MFA factor enrolled"
-    },
-    "state": {
-      "unavailableLabel": "— state",
-      "unavailableTitle": "Zitadel state unavailable",
-      "title": "Zitadel user state"
-    },
-    "session": {
-      "ipTooltip": "SHA-256 of client IP, truncated",
-      "permissionsVersion": "permissions v{version}",
-      "lastSeen": "Seen: {when}",
-      "expires": "Exp: {when}",
-      "revoke": "Revoke",
-      "revokeOwnConfirm": "This is YOUR session. Revoking will log you out and bounce you through OIDC. Continue?",
-      "revokedStatus": "Revoked — row will disappear on next refresh."
-    },
-    "scopes": {
-      "empty": "No scopes granted",
-      "bundleEmpty": "No scopes bundled under this role",
-      "direct": "Direct / Other Scopes",
-      "roleBadge": "Role",
-      "copyTitle": "Copy scope",
-      "count": "{count, plural, =1 {# scope} other {# scopes}}"
-    },
-    "client": {
-      "toggleTitle": "Click to toggle client details"
-    }
-  },
   "Core": {
     "signIn": {
       "title": "Welcome back",
@@ -539,13 +481,111 @@
         "sectionExit": "Session",
         "overview": "Overview",
         "users": "Users",
+        "access": "Access",
         "organizations": "Organizations",
         "sessions": "Sessions",
+        "audit": "Audit",
         "signOut": "Sign out"
+      },
+      "audit": {
+        "title": "Audit log",
+        "description": "Append-only timeline of every state change on the auth + admin surface. Gated by `staff:core:audit:read`.",
+        "crumbAdmin": "Admin",
+        "filterEventLabel": "Event",
+        "filterEventPlaceholder": "e.g. user.banned",
+        "filterActorLabel": "Actor email",
+        "filterActorPlaceholder": "Filter by actor",
+        "filterImportantOnly": "Important only",
+        "filterApply": "Apply",
+        "empty": "No audit events match the current filter.",
+        "columnAt": "When",
+        "columnEvent": "Event",
+        "columnOutcome": "Outcome",
+        "columnActor": "Actor",
+        "columnTarget": "Target",
+        "columnDetail": "Meta",
+        "actorSystem": "system",
+        "detailShow": "show",
+        "paginationPrev": "Previous",
+        "paginationNext": "Next",
+        "paginationOf": "Page {page} of {totalPages}"
+      },
+      "access": {
+        "title": "Access",
+        "description": "Features are gated by scopes. A role is just a named bundle of scopes — what's shown below is the live binding, derived from the auth taxonomy.",
+        "crumbAdmin": "Admin",
+        "rolesHeading": "Staff roles",
+        "scopesHeading": "Scopes",
+        "youBadge": "you",
+        "noScopes": "No scopes granted.",
+        "verbCount": "{count, plural, =0 {no verbs} one {# verb} other {# verbs}}",
+        "roles": {
+          "iedora-admin": {
+            "description": "Supreme cross-tenant role. Every scope on every resource."
+          },
+          "iedora-support": {
+            "description": "Day-to-day user lifecycle. Cannot grant roles nor impersonate."
+          }
+        },
+        "products": {
+          "core": "Core (auth + admin)",
+          "menu": "Menu (restaurants)"
+        },
+        "kinds": {
+          "staff": "Staff (cross-tenant)",
+          "tenant": "Per-tenant"
+        },
+        "scopes": {
+          "core": {
+            "staff": {
+              "users": {
+                "read": "List and inspect users (incl. their sessions).",
+                "ban": "Ban and unban accounts (reversible lifecycle).",
+                "set-role": "Grant or revoke staff roles. Privileged — admin-only.",
+                "impersonate": "Sign in as another user. Privileged — admin-only."
+              },
+              "orgs": {
+                "list": "List every tenant organization.",
+                "get": "View an org's members and pending invitations."
+              },
+              "members": {
+                "remove": "Remove a member from an org (troubleshooting).",
+                "update-role": "Promote or demote a member's org role. Privileged — admin-only (grants tenant owner)."
+              },
+              "invitations": {
+                "cancel": "Cancel a pending invitation."
+              },
+              "sessions": {
+                "list": "List active sessions across every user.",
+                "revoke": "Kill a session (single or all-for-user)."
+              },
+              "audit": {
+                "read": "Read the append-only audit log of every state change on the auth + admin surface."
+              },
+              "admin": {
+                "read": "Enter the cross-tenant admin shell. Held by every staff role."
+              }
+            }
+          },
+          "menu": {
+            "tenant": {
+              "qr-codes": {
+                "read": "View QR codes belonging to the org.",
+                "create": "Mint new QR codes (single or bulk).",
+                "update": "Bind an existing QR code to a restaurant.",
+                "delete": "Delete QR codes."
+              }
+            }
+          }
+        }
       },
       "overview": {
         "title": "Admin",
         "description": "Iedora-staff cross-tenant controls.",
+        "you": {
+          "signedInAs": "Signed in as",
+          "roleAdmin": "iedora-admin"
+        },
         "users": {
           "title": "Users",
           "count": "{count} total",
@@ -553,7 +593,7 @@
         },
         "orgs": {
           "title": "Organizations",
-          "description": "Every tenant org in the core schema.",
+          "count": "{count} total",
           "cta": "Manage organizations"
         },
         "sessions": {

@@ -419,64 +419,6 @@
     "translate": "Traduzir",
     "back": "Voltar"
   },
-  "SessionsAdmin": {
-    "stats": {
-      "title": "Visão geral",
-      "sessions": "Sessões",
-      "users": "Utilizadores",
-      "new24h": "Novas 24h",
-      "stale24h": "Inativas > 24h",
-      "avgAge": "Idade média",
-      "avgAgeHint": "desde a última atividade",
-      "maxPermVersion": "Versão máx. perm.",
-      "maxPermVersionHint": "incrementos via webhook",
-      "loginsHint": "inícios de sessão",
-      "noneHint": "nenhuma",
-      "browsers": "Navegadores",
-      "operatingSystems": "Sistemas operativos"
-    },
-    "list": {
-      "activeCount": "Sessões ativas ({total} em {users, plural, =1 {# utilizador} other {# utilizadores}})",
-      "empty": "Sem sessões ativas."
-    },
-    "userCard": {
-      "thisDevice": "(este dispositivo)",
-      "unverified": "não verificado",
-      "roleTooltip": "Papel: {role}",
-      "sessionsCount": "{count, plural, =1 {# sessão} other {# sessões}}",
-      "toggleSessionsTitle": "Alternar detalhe das sessões ativas",
-      "revokeAll": "Revogar tudo",
-      "revokeAllConfirm": "Revogar TODAS as sessões ativas de {name} ({email})? Sai automaticamente em todos os dispositivos.",
-      "revokeAllStatus": "Revogadas {count, plural, =1 {# sessão} other {# sessões}}.",
-      "noMfa": "sem MFA",
-      "noMfaTitle": "Sem fator MFA registado"
-    },
-    "state": {
-      "unavailableLabel": "— estado",
-      "unavailableTitle": "Estado do Zitadel indisponível",
-      "title": "Estado do utilizador no Zitadel"
-    },
-    "session": {
-      "ipTooltip": "SHA-256 do IP do cliente, truncado",
-      "permissionsVersion": "permissões v{version}",
-      "lastSeen": "Visto: {when}",
-      "expires": "Exp: {when}",
-      "revoke": "Revogar",
-      "revokeOwnConfirm": "Esta é a TUA sessão. Revogar termina-te a sessão e força nova autenticação via OIDC. Continuar?",
-      "revokedStatus": "Revogada — a linha desaparece na próxima atualização."
-    },
-    "scopes": {
-      "empty": "Sem âmbitos concedidos",
-      "bundleEmpty": "Sem âmbitos agrupados neste papel",
-      "direct": "Âmbitos diretos / outros",
-      "roleBadge": "Papel",
-      "copyTitle": "Copiar âmbito",
-      "count": "{count, plural, =1 {# âmbito} other {# âmbitos}}"
-    },
-    "client": {
-      "toggleTitle": "Clica para alternar detalhes do cliente"
-    }
-  },
   "Core": {
     "signIn": {
       "title": "Bem-vindo de volta",
@@ -539,13 +481,111 @@
         "sectionExit": "Sessão",
         "overview": "Visão geral",
         "users": "Utilizadores",
+        "access": "Acessos",
         "organizations": "Organizações",
         "sessions": "Sessões",
+        "audit": "Auditoria",
         "signOut": "Terminar sessão"
+      },
+      "audit": {
+        "title": "Log de auditoria",
+        "description": "Timeline append-only de cada mudança de estado em auth + admin. Gateado por `staff:core:audit:read`.",
+        "crumbAdmin": "Admin",
+        "filterEventLabel": "Evento",
+        "filterEventPlaceholder": "ex.: user.banned",
+        "filterActorLabel": "Email do actor",
+        "filterActorPlaceholder": "Filtrar por actor",
+        "filterImportantOnly": "Só importantes",
+        "filterApply": "Aplicar",
+        "empty": "Sem eventos para o filtro atual.",
+        "columnAt": "Quando",
+        "columnEvent": "Evento",
+        "columnOutcome": "Outcome",
+        "columnActor": "Actor",
+        "columnTarget": "Alvo",
+        "columnDetail": "Meta",
+        "actorSystem": "sistema",
+        "detailShow": "ver",
+        "paginationPrev": "Anterior",
+        "paginationNext": "Seguinte",
+        "paginationOf": "Página {page} de {totalPages}"
+      },
+      "access": {
+        "title": "Acessos",
+        "description": "Cada funcionalidade é gateada por scopes. Um role é apenas um pacote nomeado de scopes — o que se mostra abaixo é o binding em tempo real, derivado da taxonomia de auth.",
+        "crumbAdmin": "Admin",
+        "rolesHeading": "Roles de staff",
+        "scopesHeading": "Scopes",
+        "youBadge": "tu",
+        "noScopes": "Sem scopes atribuídos.",
+        "verbCount": "{count, plural, =0 {sem verbos} one {# verbo} other {# verbos}}",
+        "roles": {
+          "iedora-admin": {
+            "description": "Role supremo cross-tenant. Todos os scopes em todos os recursos."
+          },
+          "iedora-support": {
+            "description": "Lifecycle de users no dia-a-dia. Não pode atribuir roles nem fazer impersonate."
+          }
+        },
+        "products": {
+          "core": "Core (auth + admin)",
+          "menu": "Menu (restaurantes)"
+        },
+        "kinds": {
+          "staff": "Staff (cross-tenant)",
+          "tenant": "Per-tenant"
+        },
+        "scopes": {
+          "core": {
+            "staff": {
+              "users": {
+                "read": "Listar e ver detalhes de users (incl. sessões).",
+                "ban": "Bloquear e desbloquear contas (lifecycle reversível).",
+                "set-role": "Atribuir ou revogar roles de staff. Privilegiado — só admin.",
+                "impersonate": "Entrar como outro user. Privilegiado — só admin."
+              },
+              "orgs": {
+                "list": "Listar todas as orgs (tenants).",
+                "get": "Ver membros e convites pendentes de uma org."
+              },
+              "members": {
+                "remove": "Remover um membro de uma org (troubleshooting).",
+                "update-role": "Promover ou despromover o role de um membro. Privilegiado — só admin (dá owner do tenant)."
+              },
+              "invitations": {
+                "cancel": "Cancelar um convite pendente."
+              },
+              "sessions": {
+                "list": "Listar sessões ativas de todos os users.",
+                "revoke": "Matar uma sessão (singular ou todas-do-user)."
+              },
+              "audit": {
+                "read": "Ler o log de auditoria append-only de todas as mudanças de estado em auth + admin."
+              },
+              "admin": {
+                "read": "Entrar no shell admin cross-tenant. Todos os roles de staff têm-no."
+              }
+            }
+          },
+          "menu": {
+            "tenant": {
+              "qr-codes": {
+                "read": "Ver QR codes da org.",
+                "create": "Gerar QR codes novos (singular ou em bulk).",
+                "update": "Ligar um QR code existente a um restaurante.",
+                "delete": "Eliminar QR codes."
+              }
+            }
+          }
+        }
       },
       "overview": {
         "title": "Admin",
         "description": "Controlos cross-tenant para a equipa iedora.",
+        "you": {
+          "signedInAs": "Sessão iniciada como",
+          "roleAdmin": "iedora-admin"
+        },
         "users": {
           "title": "Utilizadores",
           "count": "{count} no total",
@@ -553,7 +593,7 @@
         },
         "orgs": {
           "title": "Organizações",
-          "description": "Todas as orgs no schema core.",
+          "count": "{count} no total",
           "cta": "Gerir organizações"
         },
         "sessions": {

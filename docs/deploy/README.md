@@ -245,7 +245,7 @@ Plain `tofu apply` on [`infra/iac/tofu/`](../infra/iac/tofu/). Owns:
 
 - The web container — Stage 4 (`dockerOnHetzner`).
 - DB migrations, OO dashboards — Stage 3.
-- The `IEDORA_CORE_SECRET` for better-auth — Stage 4 (`appSecrets`,
+- The `CORE_SECRET` for better-auth — Stage 4 (`appSecrets`,
   minted on first deploy).
 
 ### Single-pass apply
@@ -382,8 +382,8 @@ For Docker-runtime products that run on the shared Hetzner VPS.
 **Deploy flow** — zero-downtime hot-swap per [Guardrail #4](#4-stage-4-menu-deploy-is-zero-downtime):
 
 1. Mint any per-product `appSecrets` not yet in BWS (menu mints
-   `DEPLOY_MENU_IEDORA_CORE_SECRET` on first deploy — the
-   `IEDORA_CORE_SECRET` better-auth signs session tokens with).
+   `DEPLOY_MENU_CORE_SECRET` on first deploy — the
+   `CORE_SECRET` better-auth signs session tokens with).
 2. Resolve box IPv4 from `tofu output -raw hetzner_ipv4`.
 3. Compose env from `envStatic` + `envFromBWS` (Stage 3 outputs +
    AUTOGEN secrets) + `envFromTofu` (DATABASE_URL, OTEL endpoint, S3
@@ -471,8 +471,8 @@ Unclassified keys never enter the spawned process's env.
 |---------------------|---------------------|---------------------------------------------------------------------------------------------------|
 | `IAC_BOOTSTRAP_*`   | Operator (manual)   | `IAC_BOOTSTRAP_HCLOUD_TOKEN`, `IAC_BOOTSTRAP_CLOUDFLARE_API_TOKEN`, `IAC_BOOTSTRAP_GHCR_TOKEN`     |
 | `IAC_*`             | Tofu (Stage 2)      | `IAC_POSTGRES_PASSWORD`, `IAC_BACKUP_PASSPHRASE`                                                  |
-| `APP_<service>_*`   | Stage 3 configurator| (none today — was the home of Zitadel outputs; future `core-db-migrations` may add some)         |
-| `DEPLOY_<product>_*`| Stage 4 productRuntime | `DEPLOY_MENU_IEDORA_CORE_SECRET`                                                              |
+| `APP_<service>_*`   | Stage 3 configurator| (none today — reserved namespace for future configurator-owned outputs)                          |
+| `DEPLOY_<product>_*`| Stage 4 productRuntime | `DEPLOY_MENU_CORE_SECRET`                                                              |
 
 The prefix tells you who writes the value — which means it also tells
 you where to look when it goes wrong and which `--stage` will surface
@@ -484,7 +484,7 @@ it. Rotation playbooks for each prefix are in § Secret rotation below.
 | app    | IAC_BOOTSTRAP_GHCR_TOKEN (for menu-db-migrations pulls), OO email/password (dashboards Basic auth), universal keys |
 | deploy | Universal + CF/state (for per-product Tofu) + IAC_BOOTSTRAP_GHCR_TOKEN (docker pull) + per-product extras gated by `--product`          |
 
-Per-product extras for `--product menu`: `DEPLOY_MENU_IEDORA_CORE_SECRET`.
+Per-product extras for `--product menu`: `DEPLOY_MENU_CORE_SECRET`.
 
 TF_VAR_* aliases auto-emitted only for stages that use Tofu (iac,
 deploy). App stage doesn't get TF_VARs.
@@ -724,7 +724,7 @@ tunnel-then-reconcile flow on a fresh target.
 ### Expected state after a cold deploy
 
 - **Tofu state** (`infra/iac/tofu/`): ~23 resources (hcloud VPS/firewall/key, cloudflare R2/DNS/api_tokens incl. iedora.com apex + www + core, tunnel + tunnel-config, random_password.*, terraform_data.{bws_sync,iedora_sync,data_bucket_purge,assets_bucket_purge}).
-- **BWS**: `DEPLOY_IEDORA_CORE_SECRET` minted by Stage 4 + `IAC_BOOTSTRAP_HOST_IP` + autogen passwords from `bws_sync`.
+- **BWS**: `DEPLOY_CORE_SECRET` minted by Stage 4 + `IAC_BOOTSTRAP_HOST_IP` + autogen passwords from `bws_sync`.
 - **Box** (`ssh root@$HOST docker ps`): `infra-postgres`, `infra-cloudflared`, `infra-openobserve`, `infra-pg-backup` (compose-managed via `iedora.service`) + `infra-web` (Stage-4-owned, NOT in compose).
 - **Public endpoints**:
   - `https://menu.iedora.com/up` → 200 `{"ok":true,"db":"ok"}`
@@ -857,9 +857,7 @@ as the operator / agent count rises:
   writes outputs; Stage 4 reads them directly. The encrypted Tofu state
   is canonical for infra; BWS is canonical for app state.
 
-Historical note: the Zitadel-as-IdP era of this design (a Stage 3
-`zitadel-apply` configurator that reconciled an external Zitadel
-container via REST) was retired when auth moved in-process via
-`@iedora/auth` (better-auth). The remaining Stage 3 surface is much
-smaller — just menu-db-migrations + openobserve-dashboards (plus
+Auth runs in-process via `@iedora/auth` (better-auth) — no external
+IdP, no Stage 3 reconciler for identity. The Stage 3 surface today is
+just `menu-db-migrations` + `openobserve-dashboards` (plus
 `core-db-migrations` to come).

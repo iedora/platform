@@ -8,7 +8,8 @@ import {
   FieldInput,
   Button,
 } from '@iedora/design-system'
-import { requireIedoraAdmin } from '@iedora/product-core'
+import { requireScope } from '@iedora/product-core'
+import { SCOPES } from '@iedora/auth/scopes'
 import {
   betterAuthAdminSessionsGateway,
   listAllSessions,
@@ -23,7 +24,7 @@ export default async function SessionsAdminPage({
 }: {
   searchParams: Search
 }) {
-  await requireIedoraAdmin()
+  await requireScope(SCOPES.core.staff.sessions.list)
   const t = await getTranslations('Core.admin.sessions')
   const params = await searchParams
 

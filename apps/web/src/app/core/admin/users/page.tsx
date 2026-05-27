@@ -7,7 +7,8 @@ import {
   Badge,
   Pagination,
 } from '@iedora/design-system'
-import { requireIedoraAdmin } from '@iedora/product-core'
+import { hasScope, requireScope } from '@iedora/product-core'
+import { SCOPES } from '@iedora/auth/scopes'
 import {
   betterAuthAdminUsersGateway,
   listUsers,
@@ -15,7 +16,7 @@ import {
 import { AdminPage } from '@iedora/product-core/shared/ui/admin-page'
 import { UsersFilterBar } from '@iedora/product-core/features/admin-users/ui/users-filter-bar'
 import { UserRowActions } from '@iedora/product-core/features/admin-users/ui/user-row-actions'
-import { APP_URL } from '@iedora/brand'
+import { PRODUCTS, productUrl } from '@iedora/brand'
 
 const PAGE_SIZE = 50
 
@@ -35,7 +36,11 @@ export default async function UsersAdminPage({
   params: Params
   searchParams: Search
 }) {
-  const session = await requireIedoraAdmin()
+  const session = await requireScope(SCOPES.core.staff.users.read)
+  const [canImpersonate, canBan] = await Promise.all([
+    hasScope(SCOPES.core.staff.users.impersonate),
+    hasScope(SCOPES.core.staff.users.ban),
+  ])
   const t = await getTranslations('Core.admin.users')
   const params = await searchParams
 
@@ -155,7 +160,9 @@ export default async function UsersAdminPage({
                         userEmail={u.email}
                         isBanned={u.banned}
                         isSelf={u.id === session.user.id}
-                        postImpersonateUrl={APP_URL}
+                        postImpersonateUrl={productUrl(PRODUCTS.menu)}
+                        canImpersonate={canImpersonate}
+                        canBan={canBan}
                       />
                     </td>
                   </tr>

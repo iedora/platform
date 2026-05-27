@@ -20,6 +20,8 @@
     "./features/admin-sessions": "./src/features/admin-sessions/index.ts",
     "./features/admin-sessions/actions": "./src/features/admin-sessions/actions.ts",
     "./features/admin-sessions/ui/session-row": "./src/features/admin-sessions/ui/session-row.tsx",
+    "./features/audit": "./src/features/audit/index.ts",
+    "./url": "./src/url.ts",
     "./shared/ui": "./src/shared/ui/index.ts",
     "./shared/ui/admin-page": "./src/shared/ui/admin-page.tsx",
     "./shared/ui/admin-shell": "./src/shared/ui/admin-shell.tsx",

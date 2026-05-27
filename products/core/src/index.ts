@@ -10,3 +10,4 @@
  * `apps/web/src/app/core/`, NOT here.
  */
 export * from './guards'
+export * from './url'

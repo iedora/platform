@@ -6,7 +6,7 @@ import type { QrCodesGateway } from '../ports'
 
 /**
  * Production adapter. The qr-codes slice is admin-only (gated by
- * `requireIedoraAdmin`) so we don't apply tenant scoping here — that
+ * `requireScope`) so we don't apply tenant scoping here — that
  * happens at the use-case layer (none required, by design).
  *
  * Insert paths use `onConflictDoNothing()` on the PK so bulk import is

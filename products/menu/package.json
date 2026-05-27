@@ -73,6 +73,7 @@
     "@iedora/brand": "workspace:*",
     "@iedora/db": "workspace:*",
     "@iedora/design-system": "workspace:*",
+    "@iedora/product-core": "workspace:*",
     "@iedora/observability": "workspace:*",
     "ai": "^6.0.190",
     "clsx": "^2.1.1",

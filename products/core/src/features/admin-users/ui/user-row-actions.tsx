@@ -15,12 +15,29 @@ type Props = {
   isSelf: boolean
   /** Post-impersonation redirect target — usually the menu app's `/`. */
   postImpersonateUrl: string
+  /**
+   * Render the "Impersonate" button only when the caller holds
+   * `staff:core:users:impersonate`. Pages compute this via
+   * `hasScope(SCOPES.core.staff.users.impersonate)` and pass it down. Positive
+   * semantics: render IF the scope is held; falsy ⇒ hidden.
+   */
+  canImpersonate?: boolean
+  /**
+   * Render the "Ban" / "Unban" buttons only when the caller holds
+   * `staff:core:users:ban`. Same positive-only convention.
+   */
+  canBan?: boolean
 }
 
 /**
  * The right-edge action cluster for each row in the users table.
  * Mobile-first: stays a horizontal flex that wraps if it doesn't fit
  * (no overflow menu — three actions is fine inline on phones).
+ *
+ * All privileged buttons are gated by capability props (positive
+ * semantics: render IF the scope is held). The View button is always
+ * present — read access is implicit at this surface (page already
+ * gated by `users:read`).
  */
 export function UserRowActions({
   userId,
@@ -28,6 +45,8 @@ export function UserRowActions({
   isBanned,
   isSelf,
   postImpersonateUrl,
+  canImpersonate,
+  canBan,
 }: Props) {
   const t = useTranslations('Core.admin.users.row')
   const router = useRouter()
@@ -63,7 +82,7 @@ export function UserRowActions({
         {t('view')}
       </Button>
 
-      {!isSelf && (
+      {canImpersonate && !isSelf && (
         <Button
           variant="ghost"
           onClick={impersonate}
@@ -74,24 +93,25 @@ export function UserRowActions({
         </Button>
       )}
 
-      {isBanned ? (
-        <Button
-          variant="ghost"
-          onClick={unban}
-          disabled={pending || isSelf}
-          data-test-id={`admin-users-row-unban-${userId}`}
-        >
-          {pending ? t('unbanning') : t('unban')}
-        </Button>
-      ) : (
-        !isSelf && (
-          <BanUserDialog
-            userId={userId}
-            userEmail={userEmail}
-            triggerLabel={t('ban')}
-          />
-        )
-      )}
+      {canBan &&
+        (isBanned ? (
+          <Button
+            variant="ghost"
+            onClick={unban}
+            disabled={pending || isSelf}
+            data-test-id={`admin-users-row-unban-${userId}`}
+          >
+            {pending ? t('unbanning') : t('unban')}
+          </Button>
+        ) : (
+          !isSelf && (
+            <BanUserDialog
+              userId={userId}
+              userEmail={userEmail}
+              triggerLabel={t('ban')}
+            />
+          )
+        ))}
     </div>
   )
 }

@@ -28,7 +28,7 @@ const SCHEMA = 'menu'
  * `MENU_TEST_ISOLATE_WORKERS=1` without touching slice seeds.
  */
 export function workerDatabaseUrl(workerIndex = 0): string {
-  const base = process.env.DATABASE_URL ?? DEFAULT_URL
+  const base = process.env.MENU_DATABASE_URL ?? DEFAULT_URL
   if (process.env.MENU_TEST_ISOLATE_WORKERS !== '1') return base
   const u = new URL(base)
   u.pathname = `/menu_test_w${workerIndex}`

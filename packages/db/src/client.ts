@@ -26,7 +26,7 @@ export interface CreateDbOptions {
  * helpers that operate on it. One factory per product database.
  *
  * Why a factory and not a free-standing `db` export: each product has
- * its own DATABASE_URL and its own schema. A factory keeps the
+ * its own `<PRODUCT>_DATABASE_URL` and its own schema. A factory keeps the
  * postgres-js + drizzle wiring identical across products without
  * leaking either one's connection or schema types into the other.
  *

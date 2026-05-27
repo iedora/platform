@@ -63,7 +63,7 @@ function callShouldSample(
 describe("NoiseFilteringSampler", () => {
   it("drops the patterns load-bearingly listed in NOISE_PATTERNS without consulting the inner sampler", () => {
     // Real-world scenarios this protects:
-    //   - Caddy + uptime probes hit /up once per second per replica —
+    //   - cloudflared + uptime probes hit /up once per second per replica —
     //     that's 86,400 spans/host/day. At 10% sampling that's still
     //     8,640 spans/day of pure health-check noise.
     //   - /api/track/[slug] is the public-menu view beacon — fires

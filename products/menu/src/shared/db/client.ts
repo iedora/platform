@@ -13,7 +13,7 @@ import * as schema from './schema'
  * per-product so HMR-safe caches don't collide if a future feature
  * imports another product's db handle in the same process.
  */
-const handle = createDb(env.DATABASE_URL, schema, { cacheKey: 'iedora/menu' })
+const handle = createDb(env.MENU_DATABASE_URL, schema, { cacheKey: 'iedora/menu' })
 
 export const db = handle.db
 export type DB = typeof db

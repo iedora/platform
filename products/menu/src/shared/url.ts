@@ -22,7 +22,7 @@ import { env } from './env'
  */
 
 /**
- * Build an absolute URL anchored at MENU_PUBLIC_URL.
+ * Build an absolute URL anchored at NEXT_PUBLIC_MENU_URL.
  *
  * Rejects absolute or protocol-relative inputs as a defence — callers
  * that want to redirect off-host (e.g. to `core.iedora.com`) pass
@@ -43,7 +43,7 @@ export function publicUrl(
   }
   const url = new URL(
     path.startsWith('/') ? path : `/${path}`,
-    env.MENU_PUBLIC_URL,
+    env.NEXT_PUBLIC_MENU_URL,
   )
   if (searchParams) {
     const entries =
@@ -57,6 +57,4 @@ export function publicUrl(
   }
   return url
 }
-
-// Consumers needing isSameOriginPath import from @iedora/brand directly.
 

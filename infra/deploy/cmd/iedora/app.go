@@ -16,8 +16,8 @@ import (
 // target service is healthy. Each configurator binary is fully
 // self-contained — it owns:
 //
-//   - Health-gating its target service (e.g. `bin/zitadel-apply` does
-//     a TLS probe + SA-key fetch before reconciling).
+//   - Health-gating its target service (e.g. waiting for postgres to
+//     be reachable before applying migrations).
 //   - Locating its own credentials (BWS, env, fetched on demand).
 //   - Idempotent reconcile + recovery.
 //

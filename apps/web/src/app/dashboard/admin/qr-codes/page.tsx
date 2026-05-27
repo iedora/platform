@@ -1,5 +1,6 @@
 import { headers } from 'next/headers'
-import { requireScope, SCOPES } from '@iedora/product-menu/features/auth'
+import { requireScope } from '@iedora/product-menu/features/auth'
+import { SCOPES } from '@iedora/auth/scopes'
 import { listQrCodesForAdmin } from '@iedora/product-menu/features/qr-codes'
 import { computeQrStats } from '@iedora/product-menu/features/qr-codes/stats'
 import { QrCodesAdmin } from '@iedora/product-menu/features/qr-codes/ui/qr-codes-admin'
@@ -9,7 +10,7 @@ import { DashboardPage } from '@iedora/product-menu/shared/ui/dashboard-page'
 /**
  * Cross-tenant admin surface for binding QR codes to restaurants.
  *
- * Gating order matters: `requireIedoraAdmin` (cookie + role) FIRST, before
+ * Gating order matters: `requireScope` (cookie + role) FIRST, before
  * any DB read. Without the role the route 404s — we don't want to leak the
  * existence of this surface to tenant users.
  *
@@ -20,7 +21,7 @@ import { DashboardPage } from '@iedora/product-menu/shared/ui/dashboard-page'
 export default async function QrCodesAdminPage() {
   // Page-level gate is the most permissive scope this surface needs —
   // mutations are gated individually inside each server action.
-  await requireScope(SCOPES.QR_CODES_READ)
+  await requireScope(SCOPES.menu.tenant.qrCodes.read)
 
   const [rows, restaurants] = await Promise.all([
     listQrCodesForAdmin(),

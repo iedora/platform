@@ -84,7 +84,7 @@ const DEFAULT_METRIC_EXPORT_INTERVAL_MS = 60_000;
  * Spans whose name matches any of these regexes are dropped at sampling
  * time — never recorded, never exported. Two big sources of noise:
  *
- *   - `/up` health checks: hit by Caddy + uptime checks. One per
+ *   - `/up` health checks: hit by cloudflared + uptime checks. One per
  *     second per host. Useless in traces, would dominate the budget.
  *   - `/api/track/[slug]` view beacon: every public-menu visit fires one.
  *     Same volume problem; the metric is already counted via the row

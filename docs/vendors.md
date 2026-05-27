@@ -77,16 +77,7 @@ OSS we run on customer data. Trust based on community maintenance + audit histor
 | **Maintainer** | Bekacru / better-auth-org |
 | **Known CVEs** | Watched via GitHub Advisory Database |
 | **Monitoring** | GitHub Advisory Database + better-auth security advisories |
-| **Replacement** | Replacement would require swapping the `@iedora/auth` internals (auth-instance + Drizzle schema) — consumers see only `auth.api.*`, so the swap is contained. Realistic options: Lucia, hand-rolled, or back to an external IdP (Zitadel / Keycloak). Multi-day project either way |
-
-### Zitadel (removed)
-
-| | |
-|---|---|
-| **What we used** | Previously the self-hosted IdP at `auth.iedora.com`. Owned user / org / OAuth-client state in the `zitadel` Postgres database; menu federated via OIDC (`openid-client` + `jose`) |
-| **License** | Apache 2.0 |
-| **Maintainer** | ZITADEL (Swiss company, commercial backing) |
-| **Status** | No longer in the dependency graph as of the auth-in-process migration. Container + Stage 3 reconciler + `openid-client` / `jose` deps removed. Kept in this register for one review cycle so any incident-response runbook referencing it still resolves to a source |
+| **Replacement** | Replacement would require swapping the `@iedora/auth` internals (auth-instance + Drizzle schema) — consumers see only `auth.api.*`, so the swap is contained. Realistic options: Lucia, hand-rolled, or back to an external IdP (Keycloak / WorkOS). Multi-day project either way |
 
 ### Drizzle ORM
 
@@ -161,7 +152,7 @@ Before adopting a new third-party:
 
 | Capability | What we don't use | What we do instead | Why |
 |---|---|---|---|
-| Identity | Auth0, Clerk, WorkOS, Stytch, Zitadel | better-auth in-process (via `@iedora/auth`) | Single Postgres instance, zero extra service to run, full control of the data model. Swap-out path documented above |
+| Identity | Auth0, Clerk, WorkOS, Stytch | better-auth in-process (via `@iedora/auth`) | Single Postgres instance, zero extra service to run, full control of the data model. Swap-out path documented above |
 | Observability | Datadog, Sentry, Honeycomb | OpenObserve (self-hosted) + OTel | Single-operator; alerting is operator's eyes |
 | CI | CircleCI, Buildkite | GitHub Actions | Already inside GitHub trust boundary |
 | Background jobs | Inngest, Trigger.dev | In-process intervals + DB advisory locks | Cron-like work is rare and small |

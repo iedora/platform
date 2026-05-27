@@ -2,8 +2,7 @@ import { redirect } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 import { Card, CardDesc, CardTitle } from '@iedora/design-system'
 import { getSession } from '@iedora/product-core'
-import { isSameIedoraOrigin } from '@iedora/brand'
-import { APP_URL } from '@iedora/brand'
+import { isSameIedoraOrigin, PRODUCTS, productUrl } from '@iedora/brand'
 import { SignUpForm } from './sign-up-form'
 
 type Props = {
@@ -13,7 +12,7 @@ type Props = {
 export default async function SignUpPage({ searchParams }: Props) {
   const t = await getTranslations('Core.signUp')
   const { next: rawNext } = await searchParams
-  const next = isSameIedoraOrigin(rawNext) ? rawNext! : APP_URL
+  const next = isSameIedoraOrigin(rawNext) ? rawNext! : productUrl(PRODUCTS.menu)
 
   const session = await getSession()
   if (session?.user) {

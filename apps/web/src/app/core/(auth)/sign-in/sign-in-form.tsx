@@ -10,7 +10,7 @@ import {
   FieldLabel,
 } from '@iedora/design-system'
 import { authClient } from '@iedora/auth/client'
-import { SIGN_UP_PATH } from '@iedora/brand'
+import { signUpUrl } from '@iedora/product-core/url'
 
 export function SignInForm({ next }: { next: string }) {
   const t = useTranslations('Core.signIn')
@@ -86,7 +86,7 @@ export function SignInForm({ next }: { next: string }) {
       <p className="text-sm text-muted-foreground">
         {t('noAccount')}{' '}
         <Link
-          href={`${SIGN_UP_PATH}?next=${encodeURIComponent(next)}`}
+          href={signUpUrl(next)}
           className="underline"
           data-test-id="sign-in-sign-up-link"
         >
