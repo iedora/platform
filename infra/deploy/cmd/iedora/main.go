@@ -51,6 +51,8 @@ func main() {
 		err = runDestroyProduct(ctx, os.Args[2:])
 	case "doctor":
 		err = runDoctor(ctx, os.Args[2:])
+	case "local":
+		err = runLocal(ctx, os.Args[2:])
 	case "-h", "--help", "help":
 		usage()
 		return
@@ -86,9 +88,9 @@ Stage subcommands:
   deploy [products…]    Ship product artifacts (Stage 4). Empty list = all.
   destroy [products…]   Tear down product artifacts. Empty list = all.
   doctor                Diagnose deploy-readiness on the operator's machine.
+  local env             Write apps/web/.env from topology. Called by bin/dev-stack.
 
 Flags for app apply:
-  --ready-budget DUR    Max wait for Zitadel /debug/ready + LE cert (default 6m).
   --only NAME           Run only one configurator by name.
 
 Stage 2 (IaC) is plain Tofu — no subcommand here. Run:

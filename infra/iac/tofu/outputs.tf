@@ -57,8 +57,8 @@ output "core_database_url" {
   sensitive   = true
 }
 
-output "menu_public_url" {
-  description = "Public base URL of the menu app."
+output "next_public_menu_url" {
+  description = "Public base URL of the menu app — inlined into the client bundle (NEXT_PUBLIC_* prefix)."
   value       = "https://${var.menu_public_hostname}"
 }
 

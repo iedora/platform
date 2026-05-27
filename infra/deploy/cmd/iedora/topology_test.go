@@ -7,7 +7,7 @@ func TestSurfaceTofuEnv(t *testing.T) {
 	// flips this test deliberately — keep them in lockstep with
 	// outputs.tf.
 	want := map[string]string{
-		"menu_public_url":      "MENU_PUBLIC_URL",
+		"next_public_menu_url": "NEXT_PUBLIC_MENU_URL",
 		"core_base_url":        "CORE_BASE_URL",
 		"next_public_core_url": "NEXT_PUBLIC_CORE_URL",
 		"core_trusted_origins": "CORE_TRUSTED_ORIGINS",
