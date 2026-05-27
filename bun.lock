@@ -118,8 +118,8 @@
         "vitest": "catalog:",
       },
       "peerDependencies": {
-        "react": "^19.0.0",
-        "react-dom": "^19.0.0",
+        "react": "^19.2.0",
+        "react-dom": "^19.2.0",
       },
     },
     "packages/eslint-config": {
@@ -192,7 +192,7 @@
       "peerDependencies": {
         "next": "^16.2.6",
         "next-intl": "^4.9.2",
-        "react": "^19.0.0",
+        "react": "^19.2.0",
       },
     },
     "products/imopush": {
@@ -224,7 +224,7 @@
       },
       "peerDependencies": {
         "next": "^16.2.6",
-        "react": "^19.0.0",
+        "react": "^19.2.0",
       },
     },
     "products/menu": {
@@ -281,8 +281,8 @@
       "peerDependencies": {
         "next": "^16.2.6",
         "next-intl": "^4.9.2",
-        "react": "^19.0.0",
-        "react-dom": "^19.0.0",
+        "react": "^19.2.0",
+        "react-dom": "^19.2.0",
       },
     },
   },
