@@ -19,8 +19,8 @@ import {
   SectionHeader,
 } from '@iedora/design-system'
 import { useTranslations } from 'next-intl'
-import { ImageUpload } from '@/features/upload/ui/image-upload'
-import type { LanguageCode, LocalizedText } from '@/features/i18n'
+import { ImageUpload } from '../../upload/ui/image-upload'
+import type { LanguageCode, LocalizedText } from '../../i18n'
 import { deleteItem, updateItem } from '../actions'
 import type { BuilderItem, BuilderVariant } from './types'
 import {

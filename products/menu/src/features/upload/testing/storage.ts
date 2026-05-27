@@ -15,7 +15,7 @@ import {
   putObject,
   objectExists,
   deleteObject,
-} from '@/shared/testing/e2e-storage'
+} from '../../../shared/testing/e2e-storage'
 
 export { putObject, objectExists, deleteObject }
 

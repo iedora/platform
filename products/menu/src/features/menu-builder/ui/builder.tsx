@@ -18,7 +18,7 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
 import { useTranslations } from 'next-intl'
-import type { LanguageCode } from '@/features/i18n'
+import type { LanguageCode } from '../../i18n'
 import { reorderCategories } from '../actions'
 import { SortableCategory } from './sortable-category'
 import { SectionChips } from './section-chips'

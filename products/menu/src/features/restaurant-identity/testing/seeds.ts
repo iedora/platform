@@ -1,5 +1,5 @@
 import 'server-only'
-import { testDb } from '@/shared/testing/e2e-db'
+import { testDb } from '../../../shared/testing/e2e-db'
 
 /**
  * Restaurant-identity owns the `restaurant` row. Seeds insert directly via

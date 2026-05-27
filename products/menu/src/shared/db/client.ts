@@ -1,6 +1,6 @@
 import 'server-only'
 import { createDb } from '@iedora/db'
-import { env } from '@/shared/env'
+import { env } from '../env'
 import * as schema from './schema'
 
 /**

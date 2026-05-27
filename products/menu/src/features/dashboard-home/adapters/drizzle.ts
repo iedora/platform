@@ -1,7 +1,7 @@
 import 'server-only'
 import { eq, inArray, sql } from 'drizzle-orm'
-import { db } from '@/shared/db/client'
-import { category, item, menu, restaurant } from '@/shared/db/schema'
+import { db } from '../../../shared/db/client'
+import { category, item, menu, restaurant } from '../../../shared/db/schema'
 import type { DashboardReadPort } from '../ports'
 
 /**

@@ -2,7 +2,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { NextIntlClientProvider } from 'next-intl'
-import en from '@/i18n/messages/en.json'
+import en from '../../../i18n/messages/en.json'
 import { MenuOnboardingPage } from './menu-onboarding-page'
 
 // The wizard reaches the menu-import + upload server actions; stub them

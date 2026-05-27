@@ -8,7 +8,7 @@ import {
   FieldInput,
   FieldLabel,
 } from '@iedora/design-system'
-import type { LocalizedText } from '@/features/i18n'
+import type { LocalizedText } from '../../i18n'
 
 /**
  * Shared variants editor for both the Add-item and Edit-item dialogs.

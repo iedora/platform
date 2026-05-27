@@ -1,8 +1,8 @@
 import 'server-only'
 import { headers } from 'next/headers'
 import { and, eq } from 'drizzle-orm'
-import { db } from '@/shared/db/client'
-import { restaurant } from '@/shared/db/schema'
+import { db } from '../../../shared/db/client'
+import { restaurant } from '../../../shared/db/schema'
 import { auth } from '@iedora/auth'
 import type { AuthGateway, Session } from '../ports'
 

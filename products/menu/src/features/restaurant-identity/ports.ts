@@ -1,5 +1,5 @@
-import type { RestaurantTheme } from '@/shared/db/schema'
-import type { LanguageCode, LocalizedText } from '@/features/i18n'
+import type { RestaurantTheme } from '../../shared/db/schema'
+import type { LanguageCode, LocalizedText } from '../i18n'
 
 /**
  * IdentityWritePort — mutations on the restaurant row's branding +

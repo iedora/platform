@@ -8,14 +8,14 @@
  */
 import 'server-only'
 import { and, eq, isNull, or, sql } from 'drizzle-orm'
-import type { LanguageCode, LocalizedText } from '@/features/i18n'
-import { db } from '@/shared/db/client'
+import type { LanguageCode, LocalizedText } from '../../i18n'
+import { db } from '../../../shared/db/client'
 import {
   category,
   item,
   restaurant,
   type ItemVariant,
-} from '@/shared/db/schema'
+} from '../../../shared/db/schema'
 import type { StaleRow, TranslationDataPort } from '../ports'
 
 export const drizzleTranslationData: TranslationDataPort = {

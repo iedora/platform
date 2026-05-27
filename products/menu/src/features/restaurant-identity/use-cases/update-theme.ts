@@ -1,7 +1,7 @@
 import 'server-only'
 import { z } from 'zod'
-import type { RestaurantTheme } from '@/shared/db/schema'
-import { FONTS, HEX_PATTERN, LAYOUTS } from '@/features/menu-publishing/rsc/theme'
+import type { RestaurantTheme } from '../../../shared/db/schema'
+import { FONTS, HEX_PATTERN, LAYOUTS } from '../../menu-publishing/rsc/theme'
 import type { IdentityWritePort } from '../ports'
 
 // LAYOUTS comes from the templates registry (AGENTS.md hard rule #8) — the

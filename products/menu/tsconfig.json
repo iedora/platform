@@ -6,10 +6,12 @@
     "jsx": "preserve",
     // Composite project — apps/web references this via `tsc --build`.
     // We emit ONLY `.d.ts` files to `./dist/`; runtime keeps reading
-    // the `.ts` sources via Next's transpilePackages. The `.d.ts`
-    // outputs are what apps/web sees when typechecking — internal
-    // `@/` paths get resolved during this project's compile, so
-    // apps/web never has to know they exist.
+    // the `.ts` sources via Next's transpilePackages. apps/web's tsc
+    // reads the `.d.ts` outputs (cached + incremental), not the source.
+    //
+    // Source uses RELATIVE imports between slices — no internal `@/`
+    // path mapping. Same convention as packages/auth, packages/db,
+    // products/imopush, etc.
     "composite": true,
     "declaration": true,
     "declarationMap": true,
@@ -19,10 +21,7 @@
     "noEmit": false,
     "outDir": "./dist",
     "rootDir": "./src",
-    "tsBuildInfoFile": "./dist/.tsbuildinfo",
-    "paths": {
-      "@/*": ["./src/*"]
-    }
+    "tsBuildInfoFile": "./dist/.tsbuildinfo"
   },
   "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.mts"],
   "exclude": [

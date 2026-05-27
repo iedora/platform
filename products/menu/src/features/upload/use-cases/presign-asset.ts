@@ -1,8 +1,8 @@
 import 'server-only'
 import { and, eq } from 'drizzle-orm'
 import { z } from 'zod'
-import { db } from '@/shared/db/client'
-import { item } from '@/shared/db/schema'
+import { db } from '../../../shared/db/client'
+import { item } from '../../../shared/db/schema'
 import { TARGET_CONSTRAINTS, buildKey } from '../targets'
 import type { PresignedUpload, Storage } from '../types'
 

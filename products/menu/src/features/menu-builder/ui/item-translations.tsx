@@ -9,7 +9,7 @@ import {
   FieldLabel,
   FieldTextarea,
 } from '@iedora/design-system'
-import { LANGUAGE_META, type LanguageCode, type LocalizedText } from '@/features/i18n'
+import { LANGUAGE_META, type LanguageCode, type LocalizedText } from '../../i18n'
 import type { EditableVariant } from './variants-editor'
 
 /**

@@ -1,13 +1,13 @@
 import 'server-only'
 import { and, asc, eq, inArray } from 'drizzle-orm'
-import { db } from '@/shared/db/client'
-import { category, item, menu, type ItemVariant } from '@/shared/db/schema'
+import { db } from '../../../shared/db/client'
+import { category, item, menu, type ItemVariant } from '../../../shared/db/schema'
 import {
   type LanguageCode,
   type LocalizedText,
   localized,
   localizedNullable,
-} from '@/features/i18n'
+} from '../../i18n'
 import type { PublicMenu } from '../rsc/types'
 
 // Single source of truth for "fetch a restaurant's menu/category/item tree".

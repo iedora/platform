@@ -1,5 +1,5 @@
 import 'server-only'
-import type { LanguageCode, LocalizedText } from '@/features/i18n'
+import type { LanguageCode, LocalizedText } from '../../i18n'
 
 // Sample data for the "Sample menu" button. English is required as the
 // source-of-truth string; other registered languages are optional. At seed

@@ -28,8 +28,8 @@ vi.mock('server-only', () => ({}))
 
 const { makeDrizzleMenuWrite } = await import('./drizzle')
 import type { MenuWritePort } from '../ports'
-import { makeTestDb, type TestDb } from '@/shared/testing/pglite'
-import { category, item, menu, restaurant } from '@/shared/db/schema'
+import { makeTestDb, type TestDb } from '../../../shared/testing/pglite'
+import { category, item, menu, restaurant } from '../../../shared/db/schema'
 
 let t: TestDb
 let writer: MenuWritePort

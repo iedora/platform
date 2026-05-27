@@ -6,7 +6,7 @@ import {
   getLanguage,
   localizedNullable,
   pickLanguage,
-} from '@/features/i18n'
+} from '../../i18n'
 import { loadRestaurantSnapshot, localizeTree } from '..'
 import { resolveTheme, type ResolvedTheme } from './theme'
 import { MenuRenderer } from './menu-renderer'

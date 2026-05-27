@@ -14,7 +14,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@iedora/design-system'
-import { requestUploadUrl, commitAsset } from '@/features/upload/actions'
+import { requestUploadUrl, commitAsset } from '../../upload/actions'
 import type { PatchCurrentMenu, PatchOperation } from '../ports'
 import { analyzeMenuPatch, applyMenuPatchAction } from '../actions'
 import { CameraCapture } from './camera-capture'

@@ -1,4 +1,4 @@
-import { iedoraAdminProfile, type PermissionProfile } from '@/features/auth/testing'
+import { iedoraAdminProfile, type PermissionProfile } from '../../auth/testing'
 
 /**
  * QR-codes admin surfaces require `iedora-admin`. Re-export the auth

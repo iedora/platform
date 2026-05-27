@@ -14,7 +14,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@iedora/design-system'
-import { LANGUAGE_META, type LanguageCode } from '@/features/i18n'
+import { LANGUAGE_META, type LanguageCode } from '../../i18n'
 import { refreshTranslationsAction } from '../actions'
 import type { RefreshResult } from '../use-cases/refresh-translations'
 

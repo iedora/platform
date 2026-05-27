@@ -1,7 +1,7 @@
 import 'server-only'
 import { z } from 'zod'
-import { LANGUAGE_CODES } from '@/features/i18n'
-import type { LanguageCode } from '@/features/i18n'
+import { LANGUAGE_CODES } from '../../i18n'
+import type { LanguageCode } from '../../i18n'
 import type { ImageAnalysisPort, ParseMenuResult } from '../ports'
 
 const ParsedItemSchema = z.object({

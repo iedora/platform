@@ -1,5 +1,5 @@
 import 'server-only'
-import { SAMPLE_MENU, SAMPLE_MENU_NAME, buildI18n, pickDefault } from '@/features/menu-publishing'
+import { SAMPLE_MENU, SAMPLE_MENU_NAME, buildI18n, pickDefault } from '../../menu-publishing'
 import type { MenuWritePort, SampleMenuSeed } from '../ports'
 
 export type SeedSampleMenuResult = { ok: true; menuId: string }

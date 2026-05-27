@@ -9,8 +9,8 @@ import {
   FieldInput,
   FieldLabel,
 } from '@iedora/design-system'
-import type { LanguageCode } from '@/features/i18n'
-import { requestUploadUrl, commitAsset } from '@/features/upload/actions'
+import type { LanguageCode } from '../../i18n'
+import { requestUploadUrl, commitAsset } from '../../upload/actions'
 import type {
   ParsedCategory,
   ParsedItem,

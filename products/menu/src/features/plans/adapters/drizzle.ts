@@ -1,7 +1,7 @@
 import 'server-only'
 import { and, count, eq, gt } from 'drizzle-orm'
-import { db } from '@/shared/db/client'
-import { aiMenuGeneration, orgPlan, restaurant } from '@/shared/db/schema'
+import { db } from '../../../shared/db/client'
+import { aiMenuGeneration, orgPlan, restaurant } from '../../../shared/db/schema'
 import type { PlansGateway } from '../ports'
 
 /**

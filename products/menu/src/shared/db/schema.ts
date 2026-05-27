@@ -9,8 +9,8 @@ import {
   jsonb,
   index,
 } from 'drizzle-orm/pg-core'
-import type { LanguageCode, LocalizedText } from '@/features/i18n/types'
-import type { PlanCode } from '@/features/plans/types'
+import type { LanguageCode, LocalizedText } from '../../features/i18n/types'
+import type { PlanCode } from '../../features/plans/types'
 
 // Single Postgres schema for the menu product: `menu.*`. Zitadel owns its
 // own database — menu has ZERO local identity state. The user/session/

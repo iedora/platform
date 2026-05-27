@@ -1,6 +1,6 @@
 import 'server-only'
 import { z } from 'zod'
-import { localizedSchema, pruneLocalized } from '@/features/i18n/server'
+import { localizedSchema, pruneLocalized } from '../../i18n/server'
 import type { IdentityWritePort } from '../ports'
 
 // Empty strings collapse to null on the server so the DB doesn't carry "" rows

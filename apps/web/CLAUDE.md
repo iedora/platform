@@ -23,11 +23,13 @@ Repo-level conventions: [`../../AGENTS.md`](../../AGENTS.md).
 
 1. **Routes live here, slices live in products/.** `apps/web/src/app/`
    contains every `page.tsx`, `route.ts`, `layout.tsx`,
-   `not-found.tsx`, and `actions.ts`. Files import slice surfaces via
-   `@/features/<slice>` (the path resolves to `products/menu/src/features/<slice>`
-   through the tsconfig fallback below), and shared utilities via
-   `@/shared/...`. Adding business logic INSIDE a route file is the
-   bug — that's slice work.
+   `not-found.tsx`, and `actions.ts`. Files import from workspace
+   packages by package name —
+   `import { ... } from '@iedora/product-menu/features/auth'`,
+   `import { ... } from '@iedora/product-core'`, etc. Each subpath is
+   declared in the target package's `package.json::exports`.
+   Adding business logic INSIDE a route file is the bug — that's
+   slice work.
 
 2. **`src/proxy.ts` owns host dispatch only.** Optimistic cookie
    checks for protected paths are fine; real auth lives in the DAL of
@@ -37,18 +39,18 @@ Repo-level conventions: [`../../AGENTS.md`](../../AGENTS.md).
    Per-product layouts (e.g. core's sign-in shell, dashboard chrome)
    live at the appropriate sub-route's `layout.tsx`.
 
-4. **tsconfig path fallback resolves `@/...` to `products/menu/`** —
-   `tsconfig.json::paths` has `"@/*": ["./src/*", "../../products/menu/src/*"]`.
-   That means a route in apps/web can write
-   `import { ... } from '@/features/auth'` and TypeScript + Turbopack
-   resolve it to `products/menu/src/features/auth`. The fallback
-   covers menu slices specifically (menu has the biggest surface);
-   core surface imports go through `@iedora/product-core`.
+4. **No tsconfig path aliasing.** `apps/web/tsconfig.json` has no
+   `paths` entries. Every cross-package import goes through the
+   declared package name. This is what lets new products land
+   without touching this file.
 
 5. **One image, three hosts.** The Docker image published as
    `ghcr.io/eduvhc/web` serves `menu.iedora.com`, `core.iedora.com`,
    and `iedora.com` from the same node process. Adding a new host =
-   new entry in `proxy.ts` + new sub-route under `src/app/<host>/`.
+   new entry in `proxy.ts` + new sub-route under `src/app/<host>/`
+   + new workspace dep in `package.json` + new entry in
+   `next.config.ts::transpilePackages` + new project reference in
+   `tsconfig.json::references`.
 
 ## File layout
 

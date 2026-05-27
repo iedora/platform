@@ -1,6 +1,6 @@
 import path from 'node:path'
 import { makeTestDb as makeTestDbGeneric, type TestDb as GenericTestDb } from '@iedora/db/testing'
-import * as schema from '@/shared/db/schema'
+import * as schema from '../db/schema'
 
 /**
  * One isolated in-memory Postgres for each test (or suite). Binds the

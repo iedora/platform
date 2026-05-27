@@ -1,6 +1,6 @@
 import 'server-only'
-import type { LanguageCode, LocalizedText } from '@/features/i18n'
-import type { ItemVariant } from '@/shared/db/schema'
+import type { LanguageCode, LocalizedText } from '../../i18n'
+import type { ItemVariant } from '../../../shared/db/schema'
 
 /**
  * Source-of-truth FLIP helpers used when an operator changes the

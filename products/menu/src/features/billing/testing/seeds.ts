@@ -1,6 +1,6 @@
 import 'server-only'
-import { testDb } from '@/shared/testing/e2e-db'
-import type { PlanCode } from '@/features/plans'
+import { testDb } from '../../../shared/testing/e2e-db'
+import type { PlanCode } from '../../plans'
 
 export type SeedInvoiceInput = {
   organizationId: string

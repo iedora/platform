@@ -1,7 +1,7 @@
 import 'server-only'
 import { asc } from 'drizzle-orm'
-import { db } from '@/shared/db/client'
-import { restaurant } from '@/shared/db/schema'
+import { db } from '../../../shared/db/client'
+import { restaurant } from '../../../shared/db/schema'
 
 /**
  * Cross-tenant projection of every restaurant in the system. Used by the

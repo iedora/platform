@@ -1,15 +1,15 @@
 import 'server-only'
 import { eq } from 'drizzle-orm'
 import type { PgDatabase, PgQueryResultHKT } from 'drizzle-orm/pg-core'
-import { db } from '@/shared/db/client'
-import * as schema from '@/shared/db/schema'
+import { db } from '../../../shared/db/client'
+import * as schema from '../../../shared/db/schema'
 import {
   category as categoryTable,
   item as itemTable,
   restaurant,
   type ItemVariant,
-} from '@/shared/db/schema'
-import type { LanguageCode, LocalizedText } from '@/features/i18n'
+} from '../../../shared/db/schema'
+import type { LanguageCode, LocalizedText } from '../../i18n'
 import {
   promoteField,
   promoteNullableField,

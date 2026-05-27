@@ -13,8 +13,8 @@
  */
 import 'server-only'
 import { and, max, eq } from 'drizzle-orm'
-import { db } from '@/shared/db/client'
-import { category, item, menu, restaurant } from '@/shared/db/schema'
+import { db } from '../../../shared/db/client'
+import { category, item, menu, restaurant } from '../../../shared/db/schema'
 import type { MenuImportPort } from '../ports'
 
 function only<T>(rows: T[], op: string): T {

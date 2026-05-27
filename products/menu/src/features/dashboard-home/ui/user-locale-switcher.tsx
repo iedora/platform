@@ -3,7 +3,7 @@
 import { useTransition } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 import { useRouter } from 'next/navigation'
-import { LANGUAGE_META, type LanguageCode } from '@/features/i18n'
+import { LANGUAGE_META, type LanguageCode } from '../../i18n'
 import { setUserLocale } from '../actions'
 
 /**

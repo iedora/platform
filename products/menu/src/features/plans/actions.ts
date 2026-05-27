@@ -1,7 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { requireActiveOrganization } from '@/features/auth'
+import { requireActiveOrganization } from '../auth'
 import { drizzlePlans } from './adapters/drizzle'
 import { setOrganizationPlan as run } from './use-cases/set-organization-plan'
 import type { PlanCode } from './types'

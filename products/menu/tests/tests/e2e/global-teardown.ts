@@ -1,4 +1,4 @@
-import { closeTestDb } from '@/shared/testing/e2e-db'
+import { closeTestDb } from '../../../src/shared/testing/e2e-db'
 
 export default async function globalTeardown() {
   await closeTestDb()

@@ -21,7 +21,7 @@ import {
 import { CSS } from '@dnd-kit/utilities'
 import { FieldInput } from '@iedora/design-system'
 import { useTranslations } from 'next-intl'
-import type { LanguageCode } from '@/features/i18n'
+import type { LanguageCode } from '../../i18n'
 import { reorderItems, updateCategoryName } from '../actions'
 import { CategoryTranslateDialog } from './category-translate-dialog'
 import { CategoryMenu } from './category-menu'

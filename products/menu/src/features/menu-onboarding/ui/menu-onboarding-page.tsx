@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { Button, Wordmark } from '@iedora/design-system'
-import { MenuImportWizard } from '@/features/menu-import/ui/menu-import-wizard'
+import { MenuImportWizard } from '../../menu-import/ui/menu-import-wizard'
 
 /**
  * Onboarding step that lives just after the restaurant has been

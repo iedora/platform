@@ -1,7 +1,7 @@
 import 'server-only'
 import { and, desc, eq, gte, lt, sql } from 'drizzle-orm'
-import { db } from '@/shared/db/client'
-import { invoice } from '@/shared/db/schema'
+import { db } from '../../../shared/db/client'
+import { invoice } from '../../../shared/db/schema'
 import type { BillingReadPort } from '../ports'
 
 /**

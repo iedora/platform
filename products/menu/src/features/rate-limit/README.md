@@ -5,7 +5,7 @@ Sliding-window rate limiting backed by Postgres. One slice for every per-actor c
 ## Public API
 
 ```ts
-import { enforceRateLimit, extractClientIp } from '@/features/rate-limit'
+import { enforceRateLimit, extractClientIp } from '@iedora/product-menu/features/rate-limit'
 
 // Server action — `actor` is whatever bucket you want to throttle on.
 const decision = await enforceRateLimit('presign', `org:${orgId}`)

@@ -1,4 +1,4 @@
-import type { LanguageCode } from '@/features/i18n'
+import type { LanguageCode } from '../i18n'
 
 /**
  * Ports for the menu-import slice.

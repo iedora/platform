@@ -1,6 +1,6 @@
 import 'server-only'
 import { z } from 'zod'
-import { LANGUAGE_CODES, type LanguageCode } from '@/features/i18n'
+import { LANGUAGE_CODES, type LanguageCode } from '../../i18n'
 import type { IdentityWritePort } from '../ports'
 
 // defaultLanguage MUST be in supportedLanguages so the fallback chain in

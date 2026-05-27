@@ -54,15 +54,31 @@ export function boundaries({ elements }) {
                     captured: { slice: '!{{from.captured.slice}}' },
                   },
                   dependency: {
+                    // Relative form is the canonical cross-slice
+                    // import shape (every workspace package uses it).
+                    // Depth-1 (`../<sibling>`) is from a slice's
+                    // top-level files (actions.ts, ports.ts, index.ts);
+                    // depth-2 (`../../<sibling>`) is from inside a
+                    // slice's subdirectory (use-cases/, ui/, adapters/,
+                    // testing/, e2e/, rsc/).
                     source: [
-                      '@/features/*',
-                      '@/features/*/actions',
-                      '@/features/*/client',
-                      '@/features/*/server',
-                      '@/features/*/ui/**',
-                      '@/features/*/rsc/**',
-                      '@/features/*/testing',
-                      '@/features/*/testing/**',
+                      '../*',
+                      '../*/actions',
+                      '../*/client',
+                      '../*/server',
+                      '../*/ui/**',
+                      '../*/rsc/**',
+                      '../*/testing',
+                      '../*/testing/**',
+
+                      '../../*',
+                      '../../*/actions',
+                      '../../*/client',
+                      '../../*/server',
+                      '../../*/ui/**',
+                      '../../*/rsc/**',
+                      '../../*/testing',
+                      '../../*/testing/**',
                     ],
                   },
                 },

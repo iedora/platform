@@ -1,6 +1,6 @@
 import 'server-only'
-import type { LanguageCode } from '@/features/i18n'
-import type { ItemVariant } from '@/shared/db/schema'
+import type { LanguageCode } from '../../i18n'
+import type { ItemVariant } from '../../../shared/db/schema'
 import type {
   StaleRow,
   TranslatableField,

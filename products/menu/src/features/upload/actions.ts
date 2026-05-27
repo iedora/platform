@@ -1,8 +1,8 @@
 'use server'
 
 import { z } from 'zod'
-import { requireRestaurantAccess } from '@/features/auth'
-import { enforceRateLimit } from '@/features/rate-limit'
+import { requireRestaurantAccess } from '../auth'
+import { enforceRateLimit } from '../rate-limit'
 import { getStorage } from './adapters/factory'
 import { clearAsset as runClearAsset } from './use-cases/clear-asset'
 import { commitAsset as runCommitAsset } from './use-cases/commit-asset'

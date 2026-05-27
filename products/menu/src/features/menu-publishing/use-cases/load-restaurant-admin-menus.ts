@@ -3,9 +3,9 @@ import { eq } from 'drizzle-orm'
 import { unstable_cache } from 'next/cache'
 import { SpanStatusCode } from '@opentelemetry/api'
 import { meter, tracer, IEDORA_RESTAURANT_ID, IEDORA_ORGANIZATION_ID } from '@iedora/observability'
-import { listMenusWithCounts, type MenuWithCounts } from '@/features/dashboard-home'
-import { db } from '@/shared/db/client'
-import { restaurant } from '@/shared/db/schema'
+import { listMenusWithCounts, type MenuWithCounts } from '../../dashboard-home'
+import { db } from '../../../shared/db/client'
+import { restaurant } from '../../../shared/db/schema'
 import { restaurantTag } from '../cache'
 
 const adminMenusLoadDuration = meter.createHistogram(

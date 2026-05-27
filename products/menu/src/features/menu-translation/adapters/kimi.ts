@@ -14,7 +14,7 @@ import 'server-only'
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible'
 import { generateObject } from 'ai'
 import { z } from 'zod'
-import type { LanguageCode } from '@/features/i18n'
+import type { LanguageCode } from '../../i18n'
 import type { TranslationPort } from '../ports'
 
 const KIMI_BASE_URL = 'https://api.moonshot.ai/v1'

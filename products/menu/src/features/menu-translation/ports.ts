@@ -1,5 +1,5 @@
-import type { LanguageCode } from '@/features/i18n'
-import type { ItemVariant } from '@/shared/db/schema'
+import type { LanguageCode } from '../i18n'
+import type { ItemVariant } from '../../shared/db/schema'
 
 /**
  * A single translatable field on a row. The combination of `{rowKind, id,

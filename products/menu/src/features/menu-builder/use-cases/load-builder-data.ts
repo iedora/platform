@@ -1,5 +1,5 @@
 import 'server-only'
-import type { LanguageCode } from '@/features/i18n'
+import type { LanguageCode } from '../../i18n'
 import type { MenuReadPort } from '../ports'
 import type { BuilderCategory } from '../ui/types'
 

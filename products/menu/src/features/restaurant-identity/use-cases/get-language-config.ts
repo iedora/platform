@@ -1,8 +1,8 @@
 import 'server-only'
 import { eq } from 'drizzle-orm'
-import { db } from '@/shared/db/client'
-import { restaurant } from '@/shared/db/schema'
-import type { LanguageCode } from '@/features/i18n'
+import { db } from '../../../shared/db/client'
+import { restaurant } from '../../../shared/db/schema'
+import type { LanguageCode } from '../../i18n'
 
 /**
  * Minimal `(defaultLanguage, supportedLanguages)` projection for one

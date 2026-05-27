@@ -1,8 +1,8 @@
 'use server'
 
-import { requireRestaurantBySlug } from '@/features/auth'
-import type { LanguageCode } from '@/features/i18n'
-import { revalidateRestaurant } from '@/features/menu-publishing'
+import { requireRestaurantBySlug } from '../auth'
+import type { LanguageCode } from '../i18n'
+import { revalidateRestaurant } from '../menu-publishing'
 import { drizzleTranslationData } from './adapters/drizzle'
 import { kimiTranslationAdapter } from './adapters/kimi'
 import {

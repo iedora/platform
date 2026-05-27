@@ -1,7 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { requireScope, SCOPES } from '@/features/auth'
+import { requireScope, SCOPES } from '../auth'
 import { drizzleQrCodesGateway } from './adapters/drizzle'
 import { bindCode as runBind } from './use-cases/bind'
 import { bulkGenerate as runBulkGenerate } from './use-cases/bulk-generate'

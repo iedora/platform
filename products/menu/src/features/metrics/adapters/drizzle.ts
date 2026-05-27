@@ -1,8 +1,8 @@
 import 'server-only'
 import { and, count, eq, gte, lte, max, sql } from 'drizzle-orm'
-import { db } from '@/shared/db/client'
-import { dailyView, item, menu, restaurant } from '@/shared/db/schema'
-import type { LanguageCode } from '@/features/i18n'
+import { db } from '../../../shared/db/client'
+import { dailyView, item, menu, restaurant } from '../../../shared/db/schema'
+import type { LanguageCode } from '../../i18n'
 import type { MetricsGateway } from '../ports'
 
 /**

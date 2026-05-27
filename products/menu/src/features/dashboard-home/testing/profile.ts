@@ -1,4 +1,4 @@
-import type { PermissionProfile } from '@/features/auth/testing'
+import type { PermissionProfile } from '../../auth/testing'
 
 export const dashboardMemberProfile: PermissionProfile = {
   roles: [],

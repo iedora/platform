@@ -10,10 +10,7 @@
     "allowJs": true,
     "jsx": "preserve",
     "noEmit": true,
-    "types": ["node"],
-    "paths": {
-      "@/*": ["./src/*"]
-    }
+    "types": ["node"]
   },
   "include": [
     "src/**/*.test.ts",

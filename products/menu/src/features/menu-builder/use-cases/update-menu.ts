@@ -1,6 +1,6 @@
 import 'server-only'
 import { z } from 'zod'
-import { localizedSchema, pruneLocalized } from '@/features/i18n/server'
+import { localizedSchema, pruneLocalized } from '../../i18n/server'
 import type { MenuWritePort } from '../ports'
 
 const Input = z.object({

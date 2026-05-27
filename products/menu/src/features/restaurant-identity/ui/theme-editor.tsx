@@ -15,19 +15,19 @@ import {
   FieldTextarea,
   SectionHeader,
 } from '@iedora/design-system'
-import { ImageUpload } from '@/features/upload/ui/image-upload'
-import { LocalizedFields } from '@/features/i18n/ui/localized-fields'
-import { MenuRenderer } from '@/features/menu-publishing/rsc/menu-renderer'
-import type { PublicMenu, PublicRestaurant } from '@/features/menu-publishing/rsc/types'
-import type { LocalizedText } from '@/features/i18n'
+import { ImageUpload } from '../../upload/ui/image-upload'
+import { LocalizedFields } from '../../i18n/ui/localized-fields'
+import { MenuRenderer } from '../../menu-publishing/rsc/menu-renderer'
+import type { PublicMenu, PublicRestaurant } from '../../menu-publishing/rsc/types'
+import type { LocalizedText } from '../../i18n'
 import {
   DEFAULT_THEME,
   FONTS,
   HEX_PATTERN,
   LAYOUTS,
   type ResolvedTheme,
-} from '@/features/menu-publishing/rsc/theme'
-import { LANGUAGE_META, type LanguageCode } from '@/features/i18n'
+} from '../../menu-publishing/rsc/theme'
+import { LANGUAGE_META, type LanguageCode } from '../../i18n'
 import {
   updateIdentity,
   updateLanguageSettings,

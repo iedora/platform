@@ -1,7 +1,7 @@
 import 'server-only'
 import { and, eq, like, ne, or } from 'drizzle-orm'
-import { db } from '@/shared/db/client'
-import { restaurant } from '@/shared/db/schema'
+import { db } from '../../../shared/db/client'
+import { restaurant } from '../../../shared/db/schema'
 import type { SlugRegistry } from '../ports'
 
 /**

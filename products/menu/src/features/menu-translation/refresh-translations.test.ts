@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import type { LanguageCode } from '@/features/i18n'
+import type { LanguageCode } from '../i18n'
 import type {
   StaleRow,
   TranslatableField,

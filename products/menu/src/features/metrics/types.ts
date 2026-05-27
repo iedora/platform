@@ -1,4 +1,4 @@
-import type { LanguageCode } from '@/features/i18n'
+import type { LanguageCode } from '../i18n'
 import type { AnalyticsRange } from './range'
 
 export type DailyPoint = { day: string; count: number }

@@ -1,5 +1,5 @@
 import 'server-only'
-import { testDb } from '@/shared/testing/e2e-db'
+import { testDb } from '../../../shared/testing/e2e-db'
 
 /**
  * Inject prior rate-limit events so a spec doesn't need to fire N real

@@ -3,8 +3,8 @@ import { and, eq, lt, sql } from 'drizzle-orm'
 import type { PgDatabase, PgQueryResultHKT } from 'drizzle-orm/pg-core'
 import { SpanStatusCode } from '@opentelemetry/api'
 import { meter, tracer, IEDORA_RESTAURANT_ID, IEDORA_ORGANIZATION_ID } from '@iedora/observability'
-import type * as schema from '@/shared/db/schema'
-import { rateLimitEvent } from '@/shared/db/schema'
+import type * as schema from '../../../shared/db/schema'
+import { rateLimitEvent } from '../../../shared/db/schema'
 import type { RateLimitDecision, RateLimiter } from '../ports'
 
 /**

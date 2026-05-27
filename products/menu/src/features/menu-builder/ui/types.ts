@@ -1,4 +1,4 @@
-import type { LocalizedText } from '@/features/i18n'
+import type { LocalizedText } from '../../i18n'
 
 /**
  * Ad-hoc price variant on an item — "Meia dose", "Imperial", "Jarra 1L".

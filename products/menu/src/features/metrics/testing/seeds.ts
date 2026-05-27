@@ -1,5 +1,5 @@
 import 'server-only'
-import { testDb } from '@/shared/testing/e2e-db'
+import { testDb } from '../../../shared/testing/e2e-db'
 
 /**
  * Pre-seed a daily_view bucket. Useful for analytics-range specs that

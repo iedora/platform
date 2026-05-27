@@ -1,9 +1,9 @@
 import 'server-only'
 import { and, eq } from 'drizzle-orm'
 import { z } from 'zod'
-import { revalidateRestaurant } from '@/features/menu-publishing'
-import { db } from '@/shared/db/client'
-import { item, restaurant } from '@/shared/db/schema'
+import { revalidateRestaurant } from '../../menu-publishing'
+import { db } from '../../../shared/db/client'
+import { item, restaurant } from '../../../shared/db/schema'
 import type { AssetTarget } from '../types'
 import type { Storage } from '../types'
 

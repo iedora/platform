@@ -1,4 +1,4 @@
-import type { LanguageCode, LocalizedText } from '@/features/i18n'
+import type { LanguageCode, LocalizedText } from '../i18n'
 import type { BuilderCategory } from './ui/types'
 
 /**

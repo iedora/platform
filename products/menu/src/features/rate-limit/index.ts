@@ -1,6 +1,6 @@
 import 'server-only'
-import { db } from '@/shared/db/client'
-import { env } from '@/shared/env'
+import { db } from '../../shared/db/client'
+import { env } from '../../shared/env'
 import { postgresLimiter } from './adapters/postgres'
 import { POLICIES, type Policy, type PolicyName } from './policies'
 import type { RateLimitDecision } from './ports'

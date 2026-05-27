@@ -22,8 +22,8 @@ const { postgresLimiter } = await import('./adapters/postgres')
 const { check } = await import('./use-cases/check')
 import type { RateLimiter } from './ports'
 import { POLICIES, type PolicyName } from './policies'
-import { makeTestDb, type TestDb } from '@/shared/testing/pglite'
-import { rateLimitEvent } from '@/shared/db/schema'
+import { makeTestDb, type TestDb } from '../../shared/testing/pglite'
+import { rateLimitEvent } from '../../shared/db/schema'
 
 let t: TestDb
 let limiter: RateLimiter

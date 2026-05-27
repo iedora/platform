@@ -1,9 +1,9 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { requireRestaurantBySlug } from '@/features/auth'
-import { revalidateRestaurant } from '@/features/menu-publishing'
-import type { LocalizedText } from '@/features/i18n'
+import { requireRestaurantBySlug } from '../auth'
+import { revalidateRestaurant } from '../menu-publishing'
+import type { LocalizedText } from '../i18n'
 import { drizzleMenuWrite } from './adapters/drizzle'
 import { createCategory as runCreateCategory } from './use-cases/create-category'
 import { updateCategoryName as runUpdateCategoryName } from './use-cases/update-category-name'

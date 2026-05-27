@@ -1,13 +1,13 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { requireRestaurantBySlug } from '@/features/auth'
-import type { LanguageCode } from '@/features/i18n'
-import { revalidateRestaurant } from '@/features/menu-publishing'
+import { requireRestaurantBySlug } from '../auth'
+import type { LanguageCode } from '../i18n'
+import { revalidateRestaurant } from '../menu-publishing'
 import {
   canGenerateAiMenu,
   recordAiGeneration,
-} from '@/features/plans'
+} from '../plans'
 import type {
   ParsedCategory,
   ParseMenuErrorCode,
@@ -129,7 +129,7 @@ export async function importMenuFromParsed(
 export type AnalyzePatchResult =
   | {
       operations: PatchOperation[]
-      language: import('@/features/i18n').LanguageCode
+      language: import('../i18n').LanguageCode
       currency: string
       quota: { used: number; limit: number }
     }

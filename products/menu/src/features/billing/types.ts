@@ -1,5 +1,5 @@
-import type { InvoiceStatus } from '@/shared/db/schema'
-import type { PlanCode } from '@/features/plans'
+import type { InvoiceStatus } from '../../shared/db/schema'
+import type { PlanCode } from '../plans'
 
 /**
  * Invoice shape returned by the slice. Mirrors the columns the billing page

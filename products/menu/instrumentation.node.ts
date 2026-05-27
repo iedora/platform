@@ -17,8 +17,8 @@ export async function registerNode() {
   registerIedoraOtel({ serviceName: 'iedora-menu' })
 
   const [{ closeDb }, { log }] = await Promise.all([
-    import('@/shared/db/client'),
-    import('@/shared/log'),
+    import('./src/shared/db/client'),
+    import('./src/shared/log'),
   ])
 
   let shuttingDown = false

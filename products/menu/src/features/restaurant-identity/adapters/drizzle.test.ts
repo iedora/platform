@@ -34,15 +34,15 @@ vi.mock('server-only', () => ({}))
 
 const { makeDrizzleIdentityWrite } = await import('./drizzle')
 import type { IdentityWritePort } from '../ports'
-import { makeTestDb, type TestDb } from '@/shared/testing/pglite'
+import { makeTestDb, type TestDb } from '../../../shared/testing/pglite'
 import {
   category,
   item,
   menu,
   restaurant,
   type ItemVariant,
-} from '@/shared/db/schema'
-import type { LocalizedText } from '@/features/i18n'
+} from '../../../shared/db/schema'
+import type { LocalizedText } from '../../i18n'
 
 let t: TestDb
 let writer: IdentityWritePort

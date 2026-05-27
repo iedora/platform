@@ -1,8 +1,8 @@
 import 'server-only'
 import { eq } from 'drizzle-orm'
-import { db } from '@/shared/db/client'
-import { restaurant, type RestaurantTheme } from '@/shared/db/schema'
-import type { LanguageCode, LocalizedText } from '@/features/i18n'
+import { db } from '../../../shared/db/client'
+import { restaurant, type RestaurantTheme } from '../../../shared/db/schema'
+import type { LanguageCode, LocalizedText } from '../../i18n'
 
 /**
  * Wide projection of a single restaurant used by the theme editor.

@@ -1,7 +1,7 @@
 import 'server-only'
 import { asc, desc, eq } from 'drizzle-orm'
-import { db } from '@/shared/db/client'
-import { qrCode, restaurant } from '@/shared/db/schema'
+import { db } from '../../../shared/db/client'
+import { qrCode, restaurant } from '../../../shared/db/schema'
 import type { QrCodesGateway } from '../ports'
 
 /**

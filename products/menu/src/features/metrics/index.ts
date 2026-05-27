@@ -1,7 +1,7 @@
 import 'server-only'
 import { cache } from 'react'
 import { meter, tenantAttributes } from '@iedora/observability'
-import type { LanguageCode } from '@/features/i18n'
+import type { LanguageCode } from '../i18n'
 import { drizzleMetrics } from './adapters/drizzle'
 import { getOrganizationAnalytics as _getOrganizationAnalytics } from './use-cases/get-organization-analytics'
 import { getOrganizationMonthlyViews as _getOrganizationMonthlyViews } from './use-cases/get-organization-monthly-views'

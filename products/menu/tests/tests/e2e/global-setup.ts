@@ -1,4 +1,4 @@
-import { truncateAll } from '@/shared/testing/e2e-db'
+import { truncateAll } from '../../../src/shared/testing/e2e-db'
 
 /**
  * Runs once before the suite. Today this is a hygiene truncate — the

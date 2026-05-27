@@ -1,4 +1,4 @@
-import type { PermissionProfile } from '@/features/auth/testing'
+import type { PermissionProfile } from '../../auth/testing'
 
 /**
  * Restaurant-identity gates by tenant membership, not by atomic scopes
