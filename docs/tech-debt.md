@@ -194,6 +194,50 @@ task primitive) would centralize "run X across every workspace".
 
 For now, CI has per-workspace jobs which serves the same goal.
 
+### TS-5: no task-graph cache — build/lint/test re-run on every workflow invocation
+**size:** L · **risk:** med
+
+Even when nothing in a workspace changed since the last successful
+run, `[apps:web] CI` (and every per-product/package CI) runs:
+- `actions/checkout@v6` — full clone
+- `oven-sh/setup-bun@v2` — Bun install
+- `bun install` — install deps (cached partially)
+- `tsc` typecheck — no cache (TS-1 partially addresses for composite menu)
+- `eslint` — no cache (`--cache` flag exists but unused)
+- `vitest run` — runs all tests (`--changed` exists but unused)
+- `docker buildx build` — uses GHA cache (`cache-from: type=gha`)
+
+GHA itself doesn't skip equivalent invocations; the job dispatcher
+runs the steps regardless. CI-5 trims WHICH workflows trigger;
+this ticket is about making each invocation cheap when its inputs
+are unchanged.
+
+True industry standard: a task-graph cache like **Turborepo** or
+**Nx**. Each task's inputs hash to a key; first run populates a
+remote cache (S3/R2); subsequent runs that hash to the same key
+read the cached output (logs + artifacts) and skip the work entirely.
+
+For this repo specifically:
+- Turborepo + Bun workspaces is the canonical pairing.
+- Remote cache could live in the existing R2 bucket.
+- `turbo run typecheck lint test build` at the root replaces
+  per-workspace dispatches; CI calls turbo once.
+
+Cheaper interim wins (without adopting a task runner):
+- Add `--cache --cache-location .eslintcache` to every `lint` script.
+  ~50% faster on warm runs. Per-workspace, no graph.
+- Add `vitest --changed origin/main` mode for PRs. Skips tests for
+  files git-unchanged vs main.
+- Composite TS (TS-1) extends `.tsbuildinfo` to every package; tsc
+  reuses prior typecheck results.
+- `actions/cache` with key = `bun.lock` hash for `node_modules`
+  install step. Already partially done by oven-sh/setup-bun cache,
+  but the workspace-internal `node_modules/.bun` could be cached too.
+
+None of these match the leverage of a real task runner. Defer
+until CI cost or wall-time becomes painful — currently each run is
+~3-10 min which is tolerable.
+
 ### TS-4: drizzle-orm version pinned in 4 workspaces independently
 **size:** S · **risk:** low
 
