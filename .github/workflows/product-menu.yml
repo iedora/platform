@@ -109,7 +109,7 @@ jobs:
 
       - name: Wait for S3Mock + create bucket
         run: |
-          for i in $(seq 1 30); do
+          for _ in $(seq 1 30); do
             if curl -fsS http://localhost:9090/ >/dev/null 2>&1; then
               echo "S3Mock ready"; break
             fi

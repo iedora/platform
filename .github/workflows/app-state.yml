@@ -81,6 +81,7 @@ jobs:
           BWS_ACCESS_TOKEN: ${{ secrets.BWS_ACCESS_TOKEN }}
         run: |
           set -euo pipefail
+          # shellcheck disable=SC2016 — ${} expansions are for the inner bash, not this shell
           bin/iedora-env bash -c '
             set -euo pipefail
             [ -n "${IAC_BOOTSTRAP_GHCR_TOKEN:-}" ] || { echo "IAC_BOOTSTRAP_GHCR_TOKEN missing in BWS" >&2; exit 1; }

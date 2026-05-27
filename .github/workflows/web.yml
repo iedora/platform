@@ -273,7 +273,7 @@ jobs:
           # Poll for a new run created AFTER our snapshot. GHA can take
           # a few seconds to register a workflow_dispatch run.
           run_id=""
-          for i in $(seq 1 20); do
+          for _ in $(seq 1 20); do
             sleep 3
             latest=$(gh run list \
                        --repo "$REPO" \
