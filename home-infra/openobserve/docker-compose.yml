@@ -33,7 +33,7 @@ services:
       ZO_HTTP_PORT: "5080"
       ZO_GRPC_PORT: "5081"
       ZO_ROOT_USER_EMAIL: ${ZO_ROOT_USER_EMAIL}
-      ZO_ROOT_USER_PASSWORD: ${ZO_ROOT_USER_PASSWORD}
+      ZO_ROOT_USER_PASSWORD: ${OPENOBSERVE_ADMIN_PASSWORD}
     volumes:
       - openobserve_data:/data
     ports:

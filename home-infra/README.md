@@ -1,49 +1,92 @@
 # home-infra
 
-Infra base do homelab — services independentes do produto (iedora vai
-para `home-infra/iedora/` depois).
+Infra base do homelab — services independentes do produto. Iedora vive
+em `home-infra/iedora/` (próximo) e arranca **depois** destes.
 
 ## Convention
 
-Cada service tem:
-
 ```
 home-infra/<service>/
-  bin.sh              # entrypoint (sem flags; usa DOCKER_HOST para remote)
-  docker-compose.yml  # compose isolado, network `homelab-core` external
-  scripts/            # auxiliares idempotent
+  bin.sh              # idempotent, zero flags
+  .env                # COMMITTED — config hardcoded non-secret
+  docker-compose.yml  # referencia ${SECRET} (BWS) e ${CONFIG} (.env)
+  scripts/            # auxiliares idempotent (vazio por agora)
 ```
 
-`bin.sh` faz fetch de secrets do BWS para `.env` local, garante a
-network `homelab-core`, e corre `docker compose up -d`.
+`bin.sh` (idêntico em todos os services):
 
-Para remote: `DOCKER_HOST=ssh://root@<host> ./bin.sh`.
+```bash
+#!/usr/bin/env bash
+set -euo pipefail
+: "${BWS_ACCESS_TOKEN:?must be set}"
+docker network inspect homelab-core >/dev/null 2>&1 || docker network create homelab-core
+cd "$(dirname "${BASH_SOURCE[0]}")"
+exec bws run -- docker compose up -d
+```
+
+`docker compose` é o orquestrador; `bin.sh` só prepara network e chama
+`compose` via `bws run`.
+
+## Config vs Secret
+
+| | Onde | Visibilidade | Exemplo |
+|---|---|---|---|
+| **Config** (hardcoded) | `home-infra/<service>/.env` (committed) | público no repo | `ZO_ROOT_USER_EMAIL`, `GITEA_DOMAIN` |
+| **Secret** (sensível) | Bitwarden Secrets (BWS) | injectado em runtime via `bws run` | `OPENOBSERVE_ADMIN_PASSWORD`, `CLOUDFLARE_API_TOKEN` |
+
+Composes referenciam `${KEY}` — `compose` resolve via shell env (`bws
+run`-injected) + `.env` file (next to compose). Nome do `${KEY}` no
+compose == nome da key no BWS (para secrets) ou no `.env` (para config).
+
+## Boot order
+
+1. `home-infra/openobserve/bin.sh`
+2. `home-infra/gitea/bin.sh`
+3. *Depois*: `home-infra/iedora/bin.sh` (consumer)
+
+Ordem entre os dois primeiros é livre (não há `depends_on`
+cross-compose). Eu corro manualmente; sem orquestrador global.
+
+## Local vs remote
+
+```bash
+export BWS_ACCESS_TOKEN='...'
+
+# Local
+./home-infra/openobserve/bin.sh
+./home-infra/gitea/bin.sh
+
+# Remote (mesmos scripts)
+DOCKER_HOST=ssh://root@192.168.50.53 ./home-infra/openobserve/bin.sh
+DOCKER_HOST=ssh://root@192.168.50.53 ./home-infra/gitea/bin.sh
+```
 
 ## Services
 
-| Service | Conteúdo | Porta(s) |
-|---|---|---|
-| `openobserve/` | OpenObserve (logs/traces/metrics) | 5080 (UI/OTLP HTTP), 5081 (OTLP gRPC) |
-| `gitea/` | Gitea (git+UI+Actions+registry OCI) + Caddy (TLS git.iedora.com) + runner | 3030 (UI), 3022 (SSH), 4443 (HTTPS via Caddy) |
+| Service | Conteúdo | Portas | BWS keys consumidas |
+|---|---|---|---|
+| `openobserve/` | OpenObserve | 5080 (UI/OTLP HTTP), 5081 (OTLP gRPC) | `OPENOBSERVE_ADMIN_PASSWORD` |
+| `gitea/` | Gitea (git/UI/Actions/registry) + Caddy (TLS `git.iedora.com` via CF DNS-01) + Actions runner | 3030 (UI), 3022 (SSH), 4443 (HTTPS via Caddy) | `CLOUDFLARE_API_TOKEN` |
 
-## Ordem de boot
+## Volumes & migração
 
-Não há `depends_on` cross-compose. Para um homelab novo:
+Volumes referenciam os nomes da config anterior
+(`homelab-core-infra_*`) via `external: true` — preserva dados.
+
+Para um homelab **novo**: apagar os blocos `external: true`; compose
+cria volumes com o seu próprio prefix (`home-infra-gitea_*`).
+
+Para migrar da config antiga (`homelab-core-infra/docker-compose.yml`)
+para esta:
 
 ```bash
-DOCKER_HOST=ssh://root@<host> ./openobserve/bin.sh
-DOCKER_HOST=ssh://root@<host> ./gitea/bin.sh
+# Stop dos containers antigos (volumes mantêm-se):
+DOCKER_HOST=ssh://root@192.168.50.53 \
+  docker compose -f homelab-core-infra/docker-compose.yml --profile extras down
+
+# Boot da config nova:
+DOCKER_HOST=ssh://root@192.168.50.53 ./home-infra/openobserve/bin.sh
+DOCKER_HOST=ssh://root@192.168.50.53 ./home-infra/gitea/bin.sh
 ```
 
-Ou local:
-
-```bash
-./openobserve/bin.sh  # (compose up -d com docker local)
-./gitea/bin.sh
-```
-
-## Volumes
-
-Os volumes estão marcados `external: true` com os nomes existentes
-(`homelab-core-infra_*`) para preservar dados da config anterior.
-Para um homelab novo, remover `external: true` para criar de raiz.
+`homelab-core-infra/` desaparece quando a migração do iedora terminar.
