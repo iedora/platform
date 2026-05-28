@@ -41,8 +41,12 @@ if [ ! -d "/Applications/Bitwarden.app" ]; then
   brew install --cask bitwarden
 fi
 
-bold "→ A abrir Bitwarden Desktop..."
-open -a Bitwarden
+bold "→ A trazer Bitwarden Desktop ao foreground..."
+# `open -a` não força nova janela se a app já está em tray; -n força a
+# instância nova. Activate via osascript garante foco da janela.
+open -na "/Applications/Bitwarden.app" 2>/dev/null || open -a Bitwarden
+osascript -e 'tell application "Bitwarden" to activate' 2>/dev/null || true
+sleep 1
 
 cat <<'STEPS'
 
@@ -136,12 +140,14 @@ BW_SOCK="$HOME/Library/Containers/com.bitwarden.desktop/Data/.bitwarden-ssh-agen
 
 if ! grep -q "bitwarden-ssh-agent.sock" "$RC" 2>/dev/null; then
   bold "→ A appende SSH_AUTH_SOCK ao $RC..."
-  cat >> "$RC" <<EOF
+  cat >> "$RC" <<'EOF'
 
-# Bitwarden SSH Agent
-BW_SSH_SOCK="$BW_SOCK"
-[ -S "\$BW_SSH_SOCK" ] && export SSH_AUTH_SOCK="\$BW_SSH_SOCK"
-unset BW_SSH_SOCK
+# Bitwarden SSH Agent — testa ambos os paths (brew/.dmg e App Store)
+for s in "$HOME/.bitwarden-ssh-agent.sock" \
+         "$HOME/Library/Containers/com.bitwarden.desktop/Data/.bitwarden-ssh-agent.sock"; do
+  [ -S "$s" ] && { export SSH_AUTH_SOCK="$s"; break; }
+done
+unset s
 EOF
   green "✓ ~/.zshrc atualizado (faz 'source ~/.zshrc' ou abre novo terminal)"
 else
