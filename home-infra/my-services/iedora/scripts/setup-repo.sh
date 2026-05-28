@@ -83,7 +83,19 @@ REPO="$REPO" \
 SECRET_NAME=KAMAL_REGISTRY_PASSWORD \
 SECRET_VALUE="$PAT" \
   "$GITEA_UTILS/set-actions-secret.sh" >/dev/null
-echo "  ✓ Actions secret publicado"
+echo "  ✓ KAMAL_REGISTRY_PASSWORD publicado"
+
+# Publica BWS_ACCESS_TOKEN para o deploy workflow (que faz ssh-trigger
+# ao Beelink). O Kamal no Beelink lê secrets do BWS via `bws run` —
+# precisa do mesmo token que o operador usa.
+echo "  → Actions secret BWS_ACCESS_TOKEN em $REPO"
+GITEA_URL="$GITEA_URL" \
+GITEA_AUTH_TOKEN="$GITEA_ADMIN_PAT" \
+REPO="$REPO" \
+SECRET_NAME=BWS_ACCESS_TOKEN \
+SECRET_VALUE="$BWS_ACCESS_TOKEN" \
+  "$GITEA_UTILS/set-actions-secret.sh" >/dev/null
+echo "  ✓ BWS_ACCESS_TOKEN publicado"
 
 # 3. Beelink: .netrc + /etc/hosts override + git clone
 # shellcheck disable=SC2087  # vars expanded client-side, intencional
