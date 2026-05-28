@@ -50,3 +50,9 @@ bun run typecheck               # TS check em todos os workspaces
 bun run lint                    # ESLint em todos
 bun run test                    # Vitest em todos
 ```
+
+## Git & push
+
+Setup canonical (SSH auto + commit signing + Conventional Commits) em
+[git.md](git.md). Inclui instruções macOS/Linux **e Windows** (Git Bash
++ PowerShell).
