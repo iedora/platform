@@ -73,9 +73,11 @@ yarn-debug.log*
 .env.*.local
 !.env.test
 
-# Kamal secrets — populated locally, never committed.
-# Covers `.kamal/secrets`, `.kamal/secrets-common`, `.kamal/secrets.<destination>`.
-/.kamal/secrets*
+# Kamal secrets — só o default `.kamal/secrets` (plain-text) é
+# gitignored. Os ficheiros `secrets-common` e `secrets.<destination>`
+# são templates (invocam `kamal secrets fetch --adapter bitwarden-sm`
+# em runtime) e estão tracked para o CI poder fazer `kamal deploy`.
+/.kamal/secrets
 
 # homelab-core-infra .env (provider-side secrets for shared infra).
 /homelab-core-infra/.env
