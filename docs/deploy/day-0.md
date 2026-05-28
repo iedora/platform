@@ -35,7 +35,7 @@ Bucket `iedora-assets` + token S3 scoped. Grava
 ## 4. homelab-core-infra (OpenObserve)
 
 ```bash
-./homelab-core-infra/up.sh --host root@192.168.50.53 --key ~/.ssh/ci_ed25519
+./homelab-core-infra/up.sh --host ssh://root@192.168.50.53
 ```
 
 Boot OpenObserve no homelab. Credenciais admin de BWS.
@@ -46,7 +46,7 @@ Boot OpenObserve no homelab. Credenciais admin de BWS.
 bws secret list "$(bws project list -o json | jq -r '.[0].id')" -o json | jq -r '.[].key' | sort
 ```
 
-Devem existir: `GHCR_TOKEN`, `IEDORA_TUNNEL_TOKEN`,
+Devem existir: `GITEA_REGISTRY_TOKEN`, `IEDORA_TUNNEL_TOKEN`,
 `IEDORA_S3_ACCESS_KEY_ID`, `IEDORA_S3_SECRET_ACCESS_KEY`,
 `IEDORA_POSTGRES_PASSWORD`, `IEDORA_AUTH_SECRET`,
 `CLOUDFLARE_API_TOKEN`, `OPENOBSERVE_ADMIN_PASSWORD`.

@@ -16,7 +16,7 @@
 │   Kamal                      │  Day 1+ — deploys incrementais
 │   config/deploy.yml          │  Serviço: iedora-web (Next.js)
 │   config/deploy.production.yml│  Server: 192.168.50.53 (Beelink)
-│   .kamal/secrets-common      │  GHCR token (BWS)
+│   .kamal/secrets-common      │  Gitea registry token (BWS)
 │   .kamal/secrets.production  │  DB URLs, S3, tunnel, OTel (BWS)
 └──────────────────────────────┘
          │
@@ -87,7 +87,7 @@ ao OO via `host.docker.internal:5080`.
 
 Para remote (Beelink):
 ```bash
-./homelab-core-infra/up.sh --host root@192.168.50.53 --key ~/.ssh/ci_ed25519
+./homelab-core-infra/up.sh --host ssh://root@192.168.50.53
 ```
 
 ## Day 1 — Primeiro deploy
@@ -112,7 +112,7 @@ curl -sI https://iedora.com            # → 200
 3. Boot postgres (accessory) com init.sql que cria DBs `menu`, `core`,
    `imopush`
 4. Boot cloudflared (accessory) com o tunnel token de BWS
-5. Build + push da imagem (ou pull de `ghcr.io/eduvhc/web:latest`)
+5. Build + push da imagem (ou pull de `git.iedora.com/eduvhc/web:latest`)
 6. Boot kamal-proxy na porta 3001
 7. Boot iedora-web na porta 3000
 8. Healthcheck `/up`
@@ -159,7 +159,7 @@ ssh root@$HOST docker ps
 | Secret | Como rodar |
 |--------|------------|
 | BWS token | Regenerar no Bitwarden UI, atualizar `~/.secrets` |
-| GHCR PAT | Regenerar no GitHub, `bws secret edit GHCR_TOKEN --value <novo>` |
+| Gitea registry token | Regenerar no Gitea, `bws secret edit GITEA_REGISTRY_TOKEN --value <novo>` |
 | DB passwords | `bws secret edit IEDORA_POSTGRES_PASSWORD --value <novo>`, `kamal setup -d production` recria o postgres |
 | CF tunnel token | `./infra-bootstrap/cloudflare-tunnel.sh` re-grava |
 
@@ -173,19 +173,18 @@ ssh -t root@$HOST docker exec iedora-web node /app/products/menu/scripts/migrate
 
 ## CI
 
-O workflow `[apps:web] CI` (`.github/workflows/web.yml`) em push para
-main:
-1. Typecheck + lint + Trivy
-2. Build arm64 → `ghcr.io/eduvhc/web:<sha>` + `:latest`
-3. Invoca `[deploy] product` (reusable workflow) que corre
-   `bin/iedora-env bin/iedora deploy web` — **atenção: esta pipeline
-   Go está a ser substituída por Kamal**. Ver `docs/ci/README.md`.
+Push a main dispara `.gitea/workflows/deploy.yml`:
+1. Typecheck + lint + test (via `ci.yml`, que corre em PR/push)
+2. `kamal deploy -d production` — build remoto + push para Gitea OCI
+   registry + blue-green swap.
+
+Ver `docs/ci/README.md`.
 
 ## BWS keys usadas
 
 | Key | Onde é criada | Onde é lida |
 |-----|--------------|-------------|
-| `GHCR_TOKEN` | Operador (Bitwarden UI) | `.kamal/secrets-common` |
+| `GITEA_REGISTRY_TOKEN` | Operador (Bitwarden UI) | `.kamal/secrets-common` |
 | `IEDORA_TUNNEL_TOKEN` | `cloudflare-tunnel.sh` | `.kamal/secrets.production` |
 | `IEDORA_S3_ACCESS_KEY_ID` | `r2-bucket.sh` | `.kamal/secrets.production` |
 | `IEDORA_S3_SECRET_ACCESS_KEY` | `r2-bucket.sh` | `.kamal/secrets.production` |
@@ -203,7 +202,7 @@ config/
   deploy.production.yml     Production overlay (servers, add-host)
 
 .kamal/
-  secrets-common            GHCR token (shared entre destinations)
+  secrets-common            Gitea registry token (shared entre destinations)
   secrets.production        DB URLs, S3, tunnel, OTel
 
 infra-bootstrap/

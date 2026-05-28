@@ -51,21 +51,21 @@ ssh -L 5080:localhost:5080 root@192.168.50.53
 Para re-boot do OO:
 
 ```bash
-./homelab-core-infra/up.sh --host root@192.168.50.53 --key ~/.ssh/ci_ed25519
+./homelab-core-infra/up.sh --host ssh://root@192.168.50.53
 ```
 
 ## Secret rotation
 
 | Secret | Como rodar |
 |--------|------------|
-| GHCR PAT | GitHub → regenerate → `bws secret edit GHCR_TOKEN --value <novo>` |
+| Gitea registry token | Gitea → Settings → Applications → generate token → `bws secret edit GITEA_REGISTRY_TOKEN --value <novo>` |
 | Postgres password | `bws secret edit IEDORA_POSTGRES_PASSWORD --value <novo>` → `kamal setup -d production` recria postgres |
 | Auth secret | `bws secret edit IEDORA_AUTH_SECRET --value <novo>` → `kamal deploy -d production` |
 | CF tunnel token | `./infra-bootstrap/cloudflare-tunnel.sh` (idempotente) |
 | S3 creds | `./infra-bootstrap/r2-bucket.sh` (idempotente) |
 
-Rodar `GHCR_TOKEN` invalida o deploy em curso — próximo `kamal deploy`
-precisa do novo token.
+Rodar `GITEA_REGISTRY_TOKEN` invalida o deploy em curso — próximo
+`kamal deploy` precisa do novo token.
 
 ## Backup / restore
 

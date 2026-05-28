@@ -6,7 +6,7 @@
 |---------|-------|----------|
 | `kamal setup` / `deploy` falha com `SSH connection refused` | Beelink down ou IP mudou | Verificar `config/deploy.production.yml` + `ssh root@192.168.50.53` |
 | `Access denied for 'root'` no build remoto | `ci_ed25519` key não autorizada | `ssh-copy-id -i ~/.ssh/ci_ed25519 root@192.168.50.53` |
-| `unauthorized: Your request could not be authenticated by the registry` | GHCR PAT expirado | Regenerar no GitHub, `bws secret edit GHCR_TOKEN` |
+| `unauthorized: Your request could not be authenticated by the registry` | Gitea registry token expirado | Regenerar no Gitea, `bws secret edit GITEA_REGISTRY_TOKEN` |
 | `kamal setup` cria container mas site dá 502 | cloudflared sem token | `./infra-bootstrap/cloudflare-tunnel.sh` re-grava o token, depois `kamal accessory reboot cloudflared -d production` |
 | App crasha em boot | Migration falhou ou env em falta | `ssh docker logs iedora-web --tail 100` |
 | Hot-swap falha | Healthcheck não passa | `kamal deploy` não mata o container atual. `ssh docker logs iedora-web --tail 50` para ver o erro |
@@ -25,7 +25,7 @@
 | Sintoma | Causa | Recovery |
 |---------|-------|----------|
 | OTel spans não aparecem | OO não está a receber | `ssh root@... docker logs openobserve --tail 20` |
-| OO UI não abre | Container parado | `./homelab-core-infra/up.sh --host root@192.168.50.53 --key ~/.ssh/ci_ed25519` |
+| OO UI não abre | Container parado | `./homelab-core-infra/up.sh --host ssh://root@192.168.50.53` |
 | App não consegue conectar a OO | `host.docker.internal` não resolvido | Verificar `add-host: host.docker.internal:host-gateway` em `config/deploy.production.yml` |
 
 ### Postgres

@@ -17,11 +17,22 @@ networks:
     name: homelab-core
     driver: bridge
 
+configs:
+  # Nativo do Compose — materializa o file no container sem bind mount.
+  # Quando o cliente fala com um daemon remoto via DOCKER_HOST=ssh://...
+  # o file é enviado em-band, dispensando scp manual.
+  gitea-runner-config:
+    file: ./gitea-runner-config.yaml
+
 volumes:
   openobserve_data:
   gitea_data:
   gitea_config:
   gitea_runner_data:
+  # Volume efémero partilhado entre `gitea-runner-init` (escreve) e
+  # `gitea-runner` (lê). Mantém o token de registo fora do BWS — é um
+  # detalhe interno do compose, não atravessa boundary alguma.
+  gitea_runner_token:
 
 services:
   openobserve:
@@ -87,11 +98,47 @@ services:
       GITEA__service__REQUIRE_SIGNIN_VIEW: "false"
       GITEA__service__ENABLE_BASIC_AUTHENTICATION: "true"
       GITEA__actions__ENABLED: "true"
+    healthcheck:
+      # `service_healthy` no init container abaixo depende disto. Endpoint
+      # nativo, sem auth. Rootless image traz busybox wget.
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/api/healthz >/dev/null || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 30s
+    logging: { driver: json-file, options: { max-size: 10m } }
+
+  # ── Gitea runner registration token bootstrap ────────────────────────
+  # One-shot: corre no mesmo image do gitea, chama `gitea actions
+  # generate-runner-token` e escreve para um volume partilhado. O runner
+  # lê via GITEA_RUNNER_REGISTRATION_TOKEN_FILE. Em re-runs o runner
+  # ignora o token novo (já tem .runner persistido em gitea_runner_data),
+  # portanto é idempotente.
+  #
+  # Porque não BWS? Este token é puro detalhe interno entre dois
+  # containers no mesmo compose — não cruza host nem ambiente. BWS é
+  # para secrets que atravessam boundaries.
+  gitea-runner-init:
+    image: gitea/gitea:1.26.2-rootless
+    container_name: gitea-runner-init
+    profiles: [extras]
+    depends_on:
+      gitea:
+        condition: service_healthy
+    networks:
+      homelab-core:
+    entrypoint: ["sh", "-c", "gitea actions generate-runner-token > /token/runner-token"]
+    volumes:
+      - gitea_config:/etc/gitea:ro
+      - gitea_data:/var/lib/gitea
+      - gitea_runner_token:/token
+    restart: "no"
     logging: { driver: json-file, options: { max-size: 10m } }
 
   # ── Gitea Actions runner (act_runner) ────────────────────────────────
-  # Self-registers via GITEA_RUNNER_REGISTRATION_TOKEN na primeira boot,
-  # persiste config em gitea_runner_data; restarts subsequentes reusam-na.
+  # Self-registers via GITEA_RUNNER_REGISTRATION_TOKEN_FILE (token escrito
+  # pelo `gitea-runner-init` num volume partilhado), persiste config em
+  # gitea_runner_data; restarts subsequentes reusam-na.
   # Labels mapeados a Docker images (Gitea convention): qualquer
   # `runs-on: ubuntu-latest` resolve para node:24-bookworm, `bun-debian`
   # para oven/bun:1.3-debian (mais rápido para o nosso monorepo Bun).
@@ -102,20 +149,24 @@ services:
     restart: unless-stopped
     profiles: [extras]
     depends_on:
-      - gitea
+      gitea-runner-init:
+        condition: service_completed_successfully
     networks:
       homelab-core:
         aliases: [gitea-runner]
     environment:
       GITEA_INSTANCE_URL: "http://192.168.50.53:3030"
-      GITEA_RUNNER_REGISTRATION_TOKEN: ${GITEA_RUNNER_TOKEN}
+      GITEA_RUNNER_REGISTRATION_TOKEN_FILE: /token/runner-token
       GITEA_RUNNER_NAME: beelink-runner
       GITEA_RUNNER_LABELS: "ubuntu-latest:docker://node:24-bookworm,bun-debian:docker://oven/bun:1.3-debian"
       CONFIG_FILE: /config/config.yaml
+    configs:
+      - source: gitea-runner-config
+        target: /config/config.yaml
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - gitea_runner_data:/data
-      - ./gitea-runner-config.yaml:/config/config.yaml:ro
+      - gitea_runner_token:/token:ro
       # Buildx local cache — workflows mountam aqui via `volumes:` block
       # (whitelisted em runner config valid_volumes).
       - /var/cache/buildx:/var/cache/buildx

@@ -61,7 +61,7 @@ iedora/
     deploy.production.yml                Production overlay (servers, add-host)
     postgres/init.sql                    CREATE DATABASE menu / core / imopush
   .kamal/
-    secrets-common                       GHCR token (BWS)
+    secrets-common                       Gitea registry token (BWS)
     secrets.production                   DB URLs, S3, tunnel token, OTel (BWS)
 
   infra-bootstrap/
@@ -99,7 +99,7 @@ iedora/
 ```bash
 ./infra-bootstrap/cloudflare-tunnel.sh    # CF Tunnel + DNS
 ./infra-bootstrap/r2-bucket.sh            # R2 bucket + S3 creds
-./homelab-core-infra/up.sh --host root@192.168.50.53 --key ~/.ssh/ci_ed25519
+./homelab-core-infra/up.sh --host ssh://root@192.168.50.53
 ```
 
 ### Day 1+ — Kamal
@@ -130,11 +130,10 @@ docker exec -it iedora-web-postgres psql -U postgres
 
 ## CI
 
-Workflows under `.github/workflows/` — quality gates per product/package
-on PR, build+push on main. The legacy Go deploy pipeline
-(`bin/iedora-env`, `bin/iedora`, `infra/`) is referenced in `web.yml`
-→ `deploy.yml` but was removed from disk; deploys are manual via Kamal
-until CI is migrated.
+Gitea Actions workflows under `.gitea/workflows/` — quality gates on
+PR/push, build+deploy on main. See `.gitea/workflows/ci.yml` (typecheck
++ lint + test) and `.gitea/workflows/deploy.yml` (Kamal deploy via
+remote SSH builder).
 
 ## Where to look when unsure
 
@@ -148,7 +147,7 @@ until CI is migrated.
 
 ## MCP servers
 
-[`.mcp.json`](.mcp.json) — checked in. All `bunx`-launched except GitHub.
+[`.mcp.json`](.mcp.json) — checked in. All `bunx`-launched.
 
 | Server | Purpose | Needs |
 |--------|---------|-------|
@@ -157,4 +156,3 @@ until CI is migrated.
 | `bun` | Run Bun scripts/tests via MCP | — |
 | `next-devtools` | Next.js 16 devtools introspection | — |
 | `playwright` | Drive a browser for E2E exploration | — |
-| `github` | Issues/PRs/repo | `GITHUB_PERSONAL_ACCESS_TOKEN` |
