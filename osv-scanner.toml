@@ -15,16 +15,24 @@ esbuild 0.18.20 CORS bypass no dev server.
 Chain: drizzle-kit@0.31.10 → @esbuild-kit/esm-loader@2.6.5 →
 @esbuild-kit/core-utils@3.3.2 → esbuild@0.18.20.
 
-@esbuild-kit foi descontinuado pelos autores em 2024 (substituído por
-`tsx`), drizzle-kit ainda não migrou (open PR — drizzle-team/drizzle-orm#3001).
+@esbuild-kit foi descontinuado em 2024. drizzle-kit 1.0.0-rc.3 já
+dropou esta dep (substituiu por jiti) e elimina a CVE chain inteira.
+PORÉM: bumpar o nosso catalog para 1.0.0-rc.3 NÃO resolve, porque
+better-auth@1.6.11 declara peerDependency `drizzle-kit: ">=0.31.4"` —
+ranges sem -alpha/-rc cláusula excluem pre-releases por semver
+semantics. Bun acaba a instalar uma SEGUNDA cópia (0.31.10 stable)
+para satisfazer o peer da better-auth, mantendo a CVE.
 
-Risk: drizzle-kit é dev-only (CLI para gerar migrations + push); não
-corre esbuild dev server. A vuln só explora se um endpoint do esbuild
-dev server estiver exposto, o que nunca acontece — drizzle-kit usa
-esbuild como bundler do próprio CLI.
+Path forward (qualquer um destes destrava):
+- drizzle-kit 1.0.0 stable release
+- better-auth bump peerDeps para ">=0.31.4 || >=1.0.0-rc.0"
+- better-auth remove drizzle-kit dos peers (é CLI, não runtime)
 
-Action: monitor drizzle-kit releases; PR upstream tracked em
-drizzle-team/drizzle-orm#3001.
+Risk no nosso contexto: nulo. drizzle-kit é dev-only (CLI para gerar
+migrations + push); nunca corre esbuild dev server. A vuln só explora
+endpoints do dev-server, que não usamos.
+
+Action: monitor drizzle-kit milestones + better-auth peer ranges.
 """
 
 [[IgnoredVulns]]
