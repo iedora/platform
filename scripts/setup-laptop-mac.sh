@@ -14,8 +14,8 @@
 #   - Não configura commit signing (opcional, fica para outro flow)
 #   - Não toca em Bitwarden Desktop / SSH Agent
 #
-# Lembra-te de guardar o PAT no Bitwarden vault como Secure Note
-# `iedora-gitea-pat-<hostname>` para backup.
+# PATs são descartáveis: se perderes o keychain, corres este script
+# outra vez. Não há nada para fazer backup.
 
 set -euo pipefail
 
@@ -100,9 +100,6 @@ fi
 echo
 green "═══════════════════════════════════════════════════════════"
 green "  ✓ Setup completo. Próxima push é silenciosa (keychain serve)."
-green ""
-green "  Lembra-te de guardar o PAT no Bitwarden vault como"
-green "  Secure Note 'iedora-gitea-pat-$HOST_SHORT' para backup."
 green "═══════════════════════════════════════════════════════════"
 
 rm -f /tmp/.gitea-pat-resp

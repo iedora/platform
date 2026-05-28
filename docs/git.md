@@ -6,22 +6,19 @@ Setup HTTPS-only para empurrar para `git.iedora.com` (Gitea self-hosted)
 Stack:
 
 - **HTTPS via Cloudflare Tunnel** para o transporte git (passa qualquer rede)
-- **Personal Access Token (PAT) per-laptop** no keychain do OS — backup no Bitwarden vault como Secure Note
+- **Personal Access Token (PAT) per-laptop** no keychain do OS
 - **Hooks** (pre-commit + commit-msg) instalados pelo `bun install`
 
 ```
-┌─ Bitwarden vault (backup) ───────────┐
-│  iedora-gitea-pat-mac1                │
-│  iedora-gitea-pat-mac2  (Secure Note) │
-│  iedora-gitea-pat-mac3                │
-└───────────────────────────────────────┘
-       │ (manual copy 1ª vez)
-       ▼
-   OS keychain
-       │
-       ▼
-   git push gitea  (HTTPS via Cloudflare)
+                 OS keychain (per-laptop PAT)
+                         │
+                         ▼
+            git push gitea  (HTTPS via Cloudflare)
 ```
+
+PATs são descartáveis. Se perdes o keychain (Mac novo, reinstall),
+corres o script outra vez — gera PAT novo. Não há nada para fazer
+backup; só guardamos coisas insubstituíveis em vaults.
 
 > **Operator SSH key** (`~/.ssh/iedora-homelab-*` que faz `ssh root@homelab`
 > + Kamal) é **independente** deste fluxo. Não toca git, não precisa de
@@ -41,9 +38,6 @@ para HTTPS, smoke-test.
 Precisa de:
 - Username + password do Gitea
 - OTP 2FA (se tens 2FA ligada)
-
-No fim, guarda o PAT criado no Bitwarden vault como Secure Note
-`iedora-gitea-pat-<hostname>`.
 
 ---
 
@@ -67,11 +61,10 @@ git remote set-url gitea https://git.iedora.com/eduvhc/iedora.git
 
 1. Vai a https://git.iedora.com/user/settings/applications
 2. **Generate New Token**, scopes: `write:repository`
-3. Nome sugerido: `iedora-<os>-<hostname>-<YYYYMMDD>`
-4. Copia o token, **guarda no Bitwarden vault** como Secure Note
-   `iedora-gitea-pat-<hostname>`
-5. Primeira push pede `Username: eduvhc` e `Password: <PAT>` — o
-   keychain cacheia automaticamente
+3. Nome sugerido: `iedora-<os>-<hostname>-<YYYYMMDD-HHMM>`
+4. Primeira push pede `Username: eduvhc` e `Password: <PAT>` — o
+   keychain cacheia automaticamente. Não precisas de guardar o PAT
+   noutro sítio; se perdes, regeneras.
 
 ---
 
@@ -142,7 +135,7 @@ curl -X POST -H "Authorization: token $PAT" \
 2. Configura credential helper (§ 2 tabela)
 3. `git clone https://git.iedora.com/eduvhc/iedora.git`
 4. `cd iedora && bun install`   (instala hooks)
-5. Primeira push: cola PAT do vault na prompt (ou corre `bun run setup:mac` no macOS — automatiza tudo)
+5. Primeira push: cola PAT na prompt (ou corre `bun run setup:mac` no macOS — automatiza tudo)
 
 ---
 
@@ -152,7 +145,7 @@ A cada 6-12 meses:
 
 1. Vai a https://git.iedora.com/user/settings/applications
 2. Revoga o PAT antigo
-3. Gera novo, atualiza Secure Note no Bitwarden vault
+3. Gera novo
 4. Limpa cache local + cola o novo:
 
 ```bash
