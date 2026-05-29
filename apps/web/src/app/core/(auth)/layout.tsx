@@ -14,8 +14,8 @@ export default function CoreAuthLayout({
   children: React.ReactNode
 }) {
   return (
-    <main className="flex min-h-screen items-center justify-center bg-[var(--paper)] px-6 py-12">
-      <div className="w-full max-w-md space-y-8">
+    <main className="flex min-h-screen justify-center bg-[var(--paper)] px-6 pb-12 pt-[max(2rem,env(safe-area-inset-top))] sm:pt-16">
+      <div className="w-full max-w-md space-y-6 sm:space-y-8">
         <div className="flex justify-center">
           <Link
             href={BRAND_URL}

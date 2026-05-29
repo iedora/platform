@@ -65,9 +65,9 @@ export function MenuOnboardingPage({
       className="flex min-h-screen flex-col bg-[var(--paper)]"
       data-test-id="menu-onboarding-page"
     >
-      <main className="ds-shell flex flex-1 items-center justify-center py-12 sm:py-16">
-        <div className="w-full max-w-[680px] space-y-10">
-          <div className="flex flex-col items-center gap-4 text-center">
+      <main className="ds-shell flex flex-1 justify-center pb-12 pt-[max(2rem,env(safe-area-inset-top))] sm:pb-16 sm:pt-16">
+        <div className="w-full max-w-[680px] space-y-8 sm:space-y-10">
+          <div className="flex flex-col items-center gap-3 text-center sm:gap-4">
             <Link
               href="/"
               className="inline-flex items-baseline no-underline"
@@ -77,7 +77,7 @@ export function MenuOnboardingPage({
               <Wordmark
                 word="menu"
                 variant="display"
-                className="ds-wordmark--reveal"
+                className="ds-wordmark--reveal text-[44px] sm:text-[length:var(--t-display)]"
               />
             </Link>
             <span

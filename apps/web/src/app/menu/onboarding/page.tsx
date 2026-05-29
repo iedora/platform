@@ -50,9 +50,9 @@ export default async function OnboardingPage({
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-[var(--paper)] px-6 py-12 sm:py-16">
-      <div className="w-full max-w-[560px] space-y-10">
-        <div className="flex flex-col items-center gap-4 text-center">
+    <main className="flex justify-center bg-[var(--paper)] px-6 pb-12 pt-[max(2rem,env(safe-area-inset-top))] sm:pb-16 sm:pt-16">
+      <div className="w-full max-w-[560px] space-y-8 sm:space-y-10">
+        <div className="flex flex-col items-center gap-3 text-center sm:gap-4">
           <Link
             href="/"
             className="inline-flex items-baseline no-underline"
@@ -61,7 +61,7 @@ export default async function OnboardingPage({
             <Wordmark
               word="menu"
               variant="display"
-              className="ds-wordmark--reveal"
+              className="ds-wordmark--reveal text-[44px] sm:text-[length:var(--t-display)]"
             />
           </Link>
           <span
