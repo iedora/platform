@@ -113,7 +113,7 @@ apps/web/
                                      secret here), remote services (real S3,
                                      hosted DB), HMR DB URLs (localhost instead
                                      of Docker network hostnames).
-                                     See docs/dev.md § Environment files.
+                                     Tracked dev env is `dev/local.env` no root.
   package.json                       workspace deps to @iedora/core-auth, @iedora/design-system, @iedora/observability
   scripts/check-migrations.ts        dev-time guardrail
   tests/e2e/
@@ -126,12 +126,12 @@ apps/web/
                                      menu-build-and-publish, qr-to-public-view, plan-upgrade, …)
 ```
 
-Dev: `bun run dev:up` boots the local database/S3 containers. See [docs/dev.md](../../docs/dev.md) for details.
+Dev: `bun run dev:up && bun run dev:migrate && bun run dev` no root.
+Env lê de `dev/local.env` (tracked).
 
-Prod: job `deploy` de `.gitea/workflows/ci.yml` (gated por `needs:
-[ci, audit]`) corre `kamal deploy`, que faz build remoto no Beelink,
-push para Gitea OCI registry, corre migrations via pre-deploy hook, e
-faz blue-green swap.
+Prod: `.gitea/workflows/deploy.yml` dispara `ssh root@beelink kamal
+deploy` em push a main; Kamal corre migrations via pre-deploy hook +
+blue-green swap.
 
 ## Commands
 
@@ -144,7 +144,7 @@ faz blue-green swap.
 - `bun run db:migrate` — apply pending migrations.
 - `bun run db:push` — push schema directly (dev only).
 - `bun run db:studio` — Drizzle Studio.
-- `bun run dev:up` (from repo root) — boots the local Docker stack (postgres + s3mock). See [docs/dev.md](../../docs/dev.md).
+- `bun run dev:up` (from repo root) — boots the local Docker stack (postgres + s3mock).
 - `bunx shadcn@latest add <name>` — add a shadcn component.
 
 Deploy commands live at the repo root — see [`AGENTS.md`](../../AGENTS.md) § Commands.

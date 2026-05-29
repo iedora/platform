@@ -9,13 +9,11 @@ This version has breaking changes — APIs, conventions, and file structure may 
 > Bun-workspaces monorepo. One Next.js product (`apps/web/`)
 > serving `menu.iedora.com` (menu app), `core.iedora.com` (auth/sign-in),
 > and `iedora.com` (house landing) through a Host-based rewrite in
-> `src/proxy.ts`, plus workspace packages (`packages/auth/`,
+> `src/proxy.ts`, plus workspace packages (`packages/core-auth/`,
 > `packages/design-system/`, `packages/iedora-observability/`).
 > `bun install` runs ONCE at the repo root and resolves every workspace.
 >
 > Deploy: **Kamal** + **`home-infra/`**.
-> CI pipeline legada (Go + Tofu) ainda existe nos workflows mas foi
-> removida do disco. Ver `docs/deploy/README.md` e `docs/tech-debt.md`.
 
 ## What this is
 
@@ -23,14 +21,14 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - **Core** (core.iedora.com — `apps/web/`) — better-auth sign-in surface. Served by the same Next.js process; `src/proxy.ts` routes `/core/*` paths.
 - **House** (iedora.com — `apps/web/src/app/house/`) — brand landing page. One container, one image, three hostnames.
 
-**Identity is `@iedora/auth`.** A shared workspace package (`packages/auth/`) wrapping [better-auth](https://better-auth.com) — email+password, organization plugin, admin plugin. In-process, no separate IdP. Backed by a dedicated `core` Postgres database.
+**Identity is `@iedora/core-auth`.** A shared workspace package (`packages/core-auth/`) wrapping [better-auth](https://better-auth.com) — email+password, organization plugin, admin plugin. In-process, no separate IdP. Backed by a dedicated `core` Postgres database.
 
 ## Stack
 
 - **Next.js 16** (App Router, Turbopack default, Cache Components).
 - **TypeScript** strict, every workspace.
 - **Drizzle ORM** + `postgres-js`, **Postgres 18**.
-- **`better-auth`** via the shared **`@iedora/auth`** package.
+- **`better-auth`** via the shared **`@iedora/core-auth`** package.
 - **shadcn/ui** + Tailwind v4 — menu only. Editorial primitives from **`@iedora/design-system`**.
 - **@dnd-kit** — menu's drag-and-drop builder.
 - **Bun** — package manager, test runner, dev orchestrator. **Production runtime is Node** — `bun + next build` is unstable as of 2026 (oven-sh/bun#23944); `next start` runs under Node in the production container.
@@ -75,12 +73,16 @@ iedora/
 
   dev/
     docker-compose.yml                   Postgres + s3mock (local dev)
-    .env                                 Port vars
+    local.env                            Tracked single-source env for dev:up/dev:migrate/dev
 
   packages/
-    eslint-config/
-    auth/                                better-auth instance + Drizzle schema + AC taxonomy
+    brand/                               Brand strings, publicUrl(), isSameOriginPath()
+    core-auth/                           better-auth instance + Drizzle schema + AC taxonomy
+    core-billing/                        Billing primitives
+    core-tenancy/                        Tenancy primitives
+    db/                                  createDb + run-migrations
     design-system/                       CSS + React primitives
+    eslint-config/
     iedora-observability/                OTel wiring
 
   apps/
@@ -131,20 +133,20 @@ docker exec -it iedora-web-postgres psql -U postgres
 
 ## CI
 
-Gitea Actions workflow único em `.gitea/workflows/ci.yml` com 3 jobs:
-`ci` (typecheck + lint + test), `audit` (gitleaks + hadolint + osv),
-`deploy` (Kamal deploy via remote SSH builder, gated por `needs: [ci,
-audit]` em push a main).
+Gitea Actions, dois workflows: `.gitea/workflows/ci.yml` (`ci`
+typecheck/lint/test + `audit` gitleaks/hadolint/osv, em paralelo) e
+`.gitea/workflows/deploy.yml` (standalone — push a main com mudanças
+em source/Dockerfile/Kamal dispara ssh-trigger directo ao Beelink que
+faz `git fetch` + `kamal deploy`).
 
 ## Where to look when unsure
 
 1. `node_modules/next/dist/docs/` — bundled, version-matched Next.js docs.
 2. `node_modules/better-auth/` — auth instance, plugins, server APIs.
-3. `docs/deploy/README.md` — infra + deploy com Kamal.
-4. `docs/dev.md` — local dev.
-5. `products/menu/src/features/README.md` — slice inventory.
-6. `packages/<package>/README.md` — each package's surface.
-7. `apps/web/CLAUDE.md`, `products/<x>/CLAUDE.md` — scope-local rules.
+3. `docs/runbook.md` — dev + deploy.
+4. `products/menu/src/features/README.md` — slice inventory.
+5. `packages/<package>/README.md` — each package's surface.
+6. `apps/web/CLAUDE.md`, `products/<x>/CLAUDE.md` — scope-local rules.
 
 ## MCP servers
 

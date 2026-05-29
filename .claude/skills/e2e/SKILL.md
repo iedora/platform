@@ -16,8 +16,6 @@ Each product is a Playwright `project` (`menu`, `core`, `imopush`). Locally you 
 3. **Run the suite:** from `apps/web/`, run `bun run test:e2e`. Interactive: `bun run test:e2e:ui` or `bun run test:e2e:debug` (sets `PWDEBUG=1`). Playwright's `webServer` does the production build automatically locally — no separate `bun run dev`.
 4. **Scope to a project:** `bun run test:e2e -- --project=menu` (or `--project=core`, `--project=imopush`).
 
-Full architecture and decisions in [docs/testing/e2e-architecture.md](../../../docs/testing/e2e-architecture.md).
-
 ## When tests fail
 
 - Read the Playwright HTML report under `apps/web/playwright-report/`.

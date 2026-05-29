@@ -191,4 +191,3 @@ automatic too. There are no inter-product fetches today.
    [otel.vercel.sh/api/interfaces/Configuration.html](https://otel.vercel.sh/api/interfaces/Configuration.html)
 3. Next.js OTel guide:
    [nextjs.org/docs/app/guides/open-telemetry](https://nextjs.org/docs/app/guides/open-telemetry)
-4. iedora's [`docs/deploy/README.md`](../../docs/deploy/README.md) — quickstart, dashboards, query recipes.

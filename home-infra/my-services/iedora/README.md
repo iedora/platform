@@ -50,4 +50,4 @@ Faz:
 
 - Primeiro deploy: push a `main` (CI) ou `./bin/deploy` (Mac local).
 - Kamal corre no Beelink (em `/opt/iedora`); pull-target = mesmo
-  Beelink. Ver `docs/deploy/README.md` (a actualizar).
+  Beelink.

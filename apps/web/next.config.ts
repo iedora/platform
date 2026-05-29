@@ -38,8 +38,7 @@ const nextConfig: NextConfig = {
   // No `outputFileTracingIncludes` for migrate scripts — they're
   // bundled in apps/web/Dockerfile's `migrate-bundler` stage (single
   // ESM file each, all deps inlined). The Next standalone output is
-  // for the request-serving path only. Industry-standard pattern;
-  // refs are in DOCKER-1 in docs/tech-debt.md.
+  // for the request-serving path only.
   // Version skew protection — forces hard navigation when the client
   // holds assets from a previous deployment. Passed as
   // DEPLOYMENT_VERSION build-arg from CI (typically commit SHA).

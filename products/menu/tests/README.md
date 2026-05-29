@@ -207,7 +207,7 @@ bun run test:e2e:debug      # PWDEBUG=1
 
 ## CI integration
 
-One workflow per workspace. Each `paths:`-filtered. See [`docs/testing/e2e-architecture.md`](../../../docs/testing/e2e-architecture.md) for the cross-product E2E design and the shared composite action.
+One workflow per workspace. Each `paths:`-filtered.
 
 ```
 .gitea/

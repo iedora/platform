@@ -4,10 +4,10 @@ Monorepo — um container Next.js que serve três hostnames via
 host-based rewrites.
 
 - **Menu** (`menu.iedora.com`) — SaaS multi-tenant restaurant menu builder
-- **Core** (`core.iedora.com`) — better-auth sign-in via `@iedora/auth`
+- **Core** (`core.iedora.com`) — better-auth sign-in via `@iedora/core-auth`
 - **House** (`iedora.com`) — brand landing
 
-Deploy: **Kamal** + **`home-infra/`**. Ver `home-infra/README.md` e `docs/deploy/`.
+Deploy: **Kamal** + **`home-infra/`**. Ver `home-infra/README.md`.
 
 ## Quick start
 
@@ -28,5 +28,4 @@ kamal deploy -d production         # deploys seguintes
 ## Docs
 
 - [AGENTS.md](AGENTS.md) — stack, rules, conventions
-- [docs/dev.md](docs/dev.md) — dev local
-- [docs/deploy/README.md](docs/deploy/README.md) — infra + deploy
+- [docs/runbook.md](docs/runbook.md) — dev + deploy

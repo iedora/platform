@@ -99,6 +99,6 @@ Real tests live with the products: `bun run --cwd products/menu test` /
 
 ## Deployable artefact
 
-Job `deploy` em `.gitea/workflows/ci.yml` (gated por `needs: [ci,
-audit]`) builds + pushes `git.iedora.com/eduvhc/web:<sha>` via `kamal
-deploy`. See [`../../docs/deploy/README.md`](../../docs/deploy/README.md).
+Workflow `.gitea/workflows/deploy.yml` dispara `ssh root@beelink kamal
+deploy` em push a main; Kamal faz build remoto + push para
+`git.iedora.com/eduvhc/web:<sha>` + blue-green swap.
