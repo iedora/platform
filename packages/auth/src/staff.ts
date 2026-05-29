@@ -3,6 +3,8 @@ import { and, desc, eq, gt, ilike, isNotNull, isNull, or } from 'drizzle-orm'
 import { getCoreDb } from './db'
 import { schema } from './schema'
 import type { Scope } from './scopes'
+import { recordAudit } from './audit'
+import { CORE_AUDIT_EVENTS, type AuditActor } from './audit-events'
 
 /**
  * Cross-tenant (staff) authority primitives. Lives parallel to
@@ -58,12 +60,29 @@ export async function getUserScopes(userId: string): Promise<Scope[] | null> {
 export async function setUserScopes(
   userId: string,
   scopes: readonly Scope[] | null,
+  /** Actor performing the grant. Required — highest blast surface. */
+  actor: AuditActor,
 ): Promise<void> {
   const db = getCoreDb()
+  // Snapshot before so the audit row carries the delta.
+  const before = await db
+    .select({ scopes: user.scopes })
+    .from(user)
+    .where(eq(user.id, userId))
+    .limit(1)
+  const previous = before[0]?.scopes ?? null
+  const next = scopes === null ? null : [...scopes]
   await db
     .update(user)
-    .set({ scopes: scopes === null ? null : [...scopes], updatedAt: new Date() })
+    .set({ scopes: next, updatedAt: new Date() })
     .where(eq(user.id, userId))
+  await recordAudit({
+    event: CORE_AUDIT_EVENTS.USER_SCOPES_UPDATED,
+    outcome: 'success',
+    actor,
+    target: { userId },
+    meta: { from: previous, to: next },
+  })
 }
 
 /**
@@ -90,6 +109,8 @@ export async function banUser(input: {
   userId: string
   reason?: string
   expiresAt?: Date
+  /** Actor performing the ban — required for audit attribution. */
+  actor: AuditActor
 }): Promise<void> {
   const db = getCoreDb()
   await db
@@ -101,9 +122,23 @@ export async function banUser(input: {
       updatedAt: new Date(),
     })
     .where(eq(user.id, input.userId))
+  await recordAudit({
+    event: CORE_AUDIT_EVENTS.USER_BANNED,
+    outcome: 'success',
+    actor: input.actor,
+    target: { userId: input.userId },
+    meta: {
+      reason: input.reason ?? null,
+      expiresAt: input.expiresAt?.toISOString() ?? null,
+    },
+  })
 }
 
-export async function unbanUser(userId: string): Promise<void> {
+export async function unbanUser(
+  userId: string,
+  /** Actor performing the unban — required for audit attribution. */
+  actor: AuditActor,
+): Promise<void> {
   const db = getCoreDb()
   await db
     .update(user)
@@ -114,6 +149,12 @@ export async function unbanUser(userId: string): Promise<void> {
       updatedAt: new Date(),
     })
     .where(eq(user.id, userId))
+  await recordAudit({
+    event: CORE_AUDIT_EVENTS.USER_UNBANNED,
+    outcome: 'success',
+    actor,
+    target: { userId },
+  })
 }
 
 /**
@@ -149,6 +190,8 @@ export async function impersonateUser(input: {
   actorSessionId: string
   actorUserId: string
   targetUserId: string
+  /** Actor metadata for audit (email + role label). */
+  actor: AuditActor
 }): Promise<void> {
   const db = getCoreDb()
   await db
@@ -159,29 +202,49 @@ export async function impersonateUser(input: {
       updatedAt: new Date(),
     })
     .where(eq(session.id, input.actorSessionId))
+  await recordAudit({
+    event: CORE_AUDIT_EVENTS.USER_IMPERSONATED,
+    outcome: 'success',
+    actor: input.actor,
+    target: { userId: input.targetUserId, sessionId: input.actorSessionId },
+  })
 }
 
 /**
  * Stop impersonation — restore the session to the actor recorded in
  * `impersonatedBy`. No-op if the session wasn't impersonating.
  */
-export async function stopImpersonating(sessionId: string): Promise<void> {
+export async function stopImpersonating(
+  sessionId: string,
+  /** Actor stopping the impersonation — required for audit attribution. */
+  actor: AuditActor,
+): Promise<void> {
   const db = getCoreDb()
   const rows = await db
-    .select({ impersonatedBy: session.impersonatedBy })
+    .select({
+      impersonatedBy: session.impersonatedBy,
+      currentUserId: session.userId,
+    })
     .from(session)
     .where(eq(session.id, sessionId))
     .limit(1)
-  const actor = rows[0]?.impersonatedBy
-  if (!actor) return
+  const originalActor = rows[0]?.impersonatedBy
+  if (!originalActor) return
+  const impersonatedUserId = rows[0]?.currentUserId ?? null
   await db
     .update(session)
     .set({
-      userId: actor,
+      userId: originalActor,
       impersonatedBy: null,
       updatedAt: new Date(),
     })
     .where(eq(session.id, sessionId))
+  await recordAudit({
+    event: CORE_AUDIT_EVENTS.USER_IMPERSONATION_STOPPED,
+    outcome: 'success',
+    actor,
+    target: { userId: impersonatedUserId, sessionId },
+  })
 }
 
 // ─── User listing (was: better-auth admin plugin `listUsers`) ──────

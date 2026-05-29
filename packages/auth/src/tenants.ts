@@ -4,6 +4,8 @@ import { eq, inArray, sql } from 'drizzle-orm'
 import { getCoreDb } from './db'
 import { schema } from './schema'
 import type { Scope } from './scopes'
+import { recordAudit } from './audit'
+import { CORE_AUDIT_EVENTS, type AuditActor } from './audit-events'
 
 /**
  * Cross-product tenant primitives. The single source of truth for
@@ -37,25 +39,52 @@ export type Tenant = {
 export async function createTenant(input: {
   name: string
   founder: { userId: string; scopes: readonly Scope[] }
+  /**
+   * Actor performing the creation. In the onboarding flow the actor
+   * and the founder are the same user; in admin-driven provisioning
+   * (future) they differ. Required so the audit row attributes the
+   * change.
+   */
+  actor: AuditActor
 }): Promise<Tenant> {
   const db = getCoreDb()
-  return db.transaction(async (tx) => {
+  const founderScopes = [...input.founder.scopes]
+  const row = await db.transaction(async (tx) => {
     const id = randomUUID()
     const now = new Date()
-    const [row] = await tx
+    const [created] = await tx
       .insert(tenant)
       .values({ id, name: input.name, createdAt: now, updatedAt: now })
       .returning()
-    if (!row) throw new Error('[iedora/auth] tenant insert returned no row')
+    if (!created) throw new Error('[iedora/auth] tenant insert returned no row')
     await tx.insert(tenantMember).values({
       id: randomUUID(),
       tenantId: id,
       userId: input.founder.userId,
-      scopes: [...input.founder.scopes],
+      scopes: founderScopes,
       createdAt: now,
     })
-    return row
+    return created
   })
+  // Two audit rows: the tenant came into being, AND the founder
+  // membership was granted. Downstream tooling that filters on
+  // `tenant.member.added` sees the founder grant uniformly with
+  // every later invite, no special-case for "first member".
+  await recordAudit({
+    event: CORE_AUDIT_EVENTS.TENANT_CREATED,
+    outcome: 'success',
+    actor: input.actor,
+    target: { tenantId: row.id },
+    meta: { name: row.name },
+  })
+  await recordAudit({
+    event: CORE_AUDIT_EVENTS.TENANT_MEMBER_ADDED,
+    outcome: 'success',
+    actor: input.actor,
+    target: { tenantId: row.id, userId: input.founder.userId },
+    meta: { scopes: founderScopes, founder: true },
+  })
+  return row
 }
 
 /** Returns the tenant if it exists, otherwise null. */
