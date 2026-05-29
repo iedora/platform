@@ -6,6 +6,7 @@ import {
   detectStaffPreset,
   STAFF_ROLE_PRESETS,
   isStaffRole,
+  type AuditActor,
 } from '@iedora/auth'
 import {
   banUser as banUserCore,
@@ -30,10 +31,22 @@ import type {
  * `@iedora/auth/server` helpers (which work over the same schema
  * columns better-auth used to manage).
  *
- * Each method that authenticates as the caller reads `next/headers`
- * lazily so the gateway can be constructed once per request.
+ * `actor` is captured at construction so every mutation routed
+ * through this gateway carries it into the corresponding primitive's
+ * audit row. Pages that only need reads can omit it; mutation
+ * methods throw if a caller forgets it.
  */
-export function betterAuthAdminUsersGateway(): AdminUsersGateway {
+export function betterAuthAdminUsersGateway(
+  actor?: AuditActor,
+): AdminUsersGateway {
+  const requireActor = (op: string): AuditActor => {
+    if (!actor) {
+      throw new Error(
+        `[admin-users] ${op}: gateway built without actor; only reads are allowed`,
+      )
+    }
+    return actor
+  }
   return {
     async listUsers(input: ListUsersInput): Promise<ListUsersResult> {
       const offset = (input.page - 1) * input.pageSize
@@ -103,20 +116,24 @@ export function betterAuthAdminUsersGateway(): AdminUsersGateway {
         typeof expiresInSec === 'number'
           ? new Date(Date.now() + expiresInSec * 1000)
           : undefined
-      await banUserCore({ userId, reason, expiresAt })
+      await banUserCore({ userId, reason, expiresAt, actor: requireActor('banUser') })
     },
 
     async unbanUser({ userId }) {
-      await unbanUserCore(userId)
+      await unbanUserCore(userId, requireActor('unbanUser'))
     },
 
     async setRole({ userId, role }) {
       // Expand the named preset (or clear scopes to null) and persist
-      // directly onto `user.scopes`. The audit row tied to this change
-      // is left to the calling action — gateway is plumbing only.
+      // directly onto `user.scopes`. Audit row is emitted by
+      // `setUserScopes` itself — actor flows through the closure.
       const scopes =
         role && isStaffRole(role) ? STAFF_ROLE_PRESETS[role] : null
-      await setUserScopes(userId, scopes as readonly Scope[] | null)
+      await setUserScopes(
+        userId,
+        scopes as readonly Scope[] | null,
+        requireActor('setRole'),
+      )
     },
 
     async revokeUserSessions({ userId }) {
@@ -130,14 +147,15 @@ export function betterAuthAdminUsersGateway(): AdminUsersGateway {
     },
 
     async impersonateUser({ userId }) {
-      const actor = await getSession()
-      if (!actor?.user) {
+      const session = await getSession()
+      if (!session?.user) {
         throw new Error('[admin-users] impersonate: caller has no session')
       }
       await impersonateUserCore({
-        actorSessionId: actor.session.id,
-        actorUserId: actor.user.id,
+        actorSessionId: session.session.id,
+        actorUserId: session.user.id,
         targetUserId: userId,
+        actor: requireActor('impersonateUser'),
       })
     },
   }

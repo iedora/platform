@@ -131,6 +131,11 @@ async function createOrgAndFirstRestaurant(
         userId: session.user.id,
         scopes: TENANT_ROLE_PRESETS.owner,
       },
+      actor: {
+        userId: session.user.id,
+        email: session.user.email,
+        role: null,
+      },
     })
     tenantId = tenant.id
   } catch (err) {
@@ -162,6 +167,11 @@ async function createOrgAndFirstRestaurant(
     sessionId: session.session.id,
     userId: session.user.id,
     tenantId,
+    actor: {
+      userId: session.user.id,
+      email: session.user.email,
+      role: null,
+    },
   }).catch((err) => {
     console.error('[onboarding] setActiveTenant failed', err)
   })

@@ -36,7 +36,33 @@ function build() {
   return drizzle(client, { schema, casing: 'snake_case' })
 }
 
-export function getCoreDb() {
+export type CoreDb = ReturnType<typeof build>
+
+export function getCoreDb(): CoreDb {
+  if (override) return override
   if (!cached) cached = build()
   return cached
+}
+
+// ── Testing override ──────────────────────────────────────────────
+//
+// PGLite-backed tests in `@iedora/auth` swap the real Postgres pool
+// for a drizzle handle pointing at an in-memory database. Production
+// code never sets this; the override path is purely additive.
+
+let override: CoreDb | null = null
+
+/**
+ * Inject a drizzle handle (any flavour — pglite, postgres-js, neon —
+ * the schema typing is identical) to satisfy `getCoreDb()` for the
+ * lifetime of a test. Pass `null` to reset.
+ *
+ * Returns a teardown function for symmetry with other fixtures —
+ * the test can stash it in `afterEach`.
+ */
+export function setCoreDbForTesting(db: unknown | null): () => void {
+  override = db as CoreDb | null
+  return () => {
+    override = null
+  }
 }

@@ -55,6 +55,7 @@
         "zod": "catalog:",
       },
       "devDependencies": {
+        "@electric-sql/pglite": "^0.4.5",
         "@iedora/eslint-config": "workspace:*",
         "@types/node": "^22.19.19",
         "@types/react": "catalog:",

@@ -34,6 +34,11 @@ export { getCoreDb } from './db'
 
 export { recordAudit } from './audit'
 export type { AuditInput, AuditOutcome } from './audit'
+export {
+  CORE_AUDIT_EVENTS,
+  type CoreAuditEvent,
+  type AuditActor,
+} from './audit-events'
 
 // Tenancy primitives (cross-product). Replace the former better-auth
 // `organization` plugin surface.
