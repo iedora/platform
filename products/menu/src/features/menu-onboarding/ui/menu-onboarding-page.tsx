@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { Button, Wordmark } from '@iedora/design-system'
 import { MenuImportWizard } from '../../menu-import/ui/menu-import-wizard'
+import { OnboardingStepper } from './onboarding-stepper'
 
 /**
  * Onboarding step that lives just after the restaurant has been
@@ -67,7 +68,7 @@ export function MenuOnboardingPage({
     >
       <main className="ds-shell flex flex-1 items-center justify-center py-12 sm:py-16">
         <div className="w-full max-w-[680px] space-y-10">
-          <div className="flex flex-col items-center gap-2 text-center">
+          <div className="flex flex-col items-center gap-4 text-center">
             <Link
               href="/"
               className="inline-flex items-baseline no-underline"
@@ -87,6 +88,7 @@ export function MenuOnboardingPage({
             >
               {t('eyebrow')}
             </span>
+            <OnboardingStepper current="menu" />
           </div>
 
           <div className="space-y-3 text-center">

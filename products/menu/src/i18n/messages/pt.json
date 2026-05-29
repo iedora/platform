@@ -47,6 +47,12 @@
     "restaurantNamePlaceholder": "O Bom Garfo",
     "create": "Criar restaurante",
     "creating": "A criar…",
+    "steps": {
+      "label": "Progresso do onboarding",
+      "counter": "Passo {index} de {total}",
+      "name": "Nome",
+      "menu": "Montar menu"
+    },
     "menu": {
       "eyebrow": "segunda sala",
       "title": "Monta o teu menu",

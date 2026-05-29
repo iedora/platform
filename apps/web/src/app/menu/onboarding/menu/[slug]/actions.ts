@@ -3,7 +3,10 @@
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 import { requireRestaurantBySlug } from '@iedora/product-menu/features/auth'
-import { markRestaurantOnboardingComplete } from '@iedora/product-menu/features/menu-onboarding'
+import {
+  markRestaurantOnboardingComplete,
+  ONBOARDING_STEPS,
+} from '@iedora/product-menu/features/menu-onboarding'
 import { signInUrl } from '@iedora/product-core/url'
 import { publicUrl } from '@iedora/product-menu/shared/url'
 
@@ -28,6 +31,6 @@ export async function markMenuOnboardingComplete(input: {
     redirect(signInUrl(publicUrl('/menu/dashboard').toString()))
   }
   await markRestaurantOnboardingComplete(input.slug)
-  revalidatePath('/menu/onboarding')
+  revalidatePath(ONBOARDING_STEPS.name.path)
   revalidatePath('/menu/dashboard')
 }

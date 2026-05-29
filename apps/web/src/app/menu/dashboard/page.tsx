@@ -4,6 +4,7 @@ import { requireActiveOrganization } from '@iedora/product-menu/features/auth'
 import { listRestaurantsWithCounts } from '@iedora/product-menu/features/dashboard-home'
 import { getOrganizationMonthlyViews } from '@iedora/product-menu/features/metrics'
 import { canAddRestaurant, getOrganizationPlan } from '@iedora/product-menu/features/plans'
+import { addAnotherRestaurantHref } from '@iedora/product-menu/features/menu-onboarding'
 import { Card, CardDesc, CardTitle } from '@iedora/design-system'
 import { DashboardPage as PageShell } from '@iedora/product-menu/shared/ui/dashboard-page'
 import {
@@ -100,7 +101,7 @@ export default async function DashboardPage() {
 
   const actions = gate.ok ? (
     <Link
-      href="/menu/onboarding"
+      href={addAnotherRestaurantHref()}
       data-test-id="dashboard-new-restaurant"
       className="inline-flex items-center border border-[var(--ink)] bg-[var(--ink)] px-3.5 py-2 text-[13px] font-medium text-[var(--paper)] no-underline transition-colors hover:bg-[var(--paper)] hover:text-[var(--ink)]"
     >

@@ -9,5 +9,17 @@
  */
 
 export { MenuOnboardingPage } from './ui/menu-onboarding-page'
+export { OnboardingStepper } from './ui/onboarding-stepper'
 export { findPendingOnboardingRestaurant } from './use-cases/find-pending-restaurant'
 export { markRestaurantOnboardingComplete } from './use-cases/mark-complete'
+export { tenantHasRestaurant } from './use-cases/tenant-has-restaurant'
+export {
+  ONBOARDING_STEPS,
+  ONBOARDING_STEP_KEYS,
+  ONBOARDING_STEP_TOTAL,
+  ADD_ANOTHER_QUERY_KEY,
+  ADD_ANOTHER_QUERY_VALUE,
+  addAnotherRestaurantHref,
+  type OnboardingStep,
+  type OnboardingStepKey,
+} from './steps'

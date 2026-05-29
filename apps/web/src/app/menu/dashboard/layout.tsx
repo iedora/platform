@@ -14,6 +14,7 @@ import {
 } from '@iedora/design-system'
 import { signInUrl } from '@iedora/product-core/url'
 import { publicUrl } from '@iedora/product-menu/shared/url'
+import { ONBOARDING_STEPS } from '@iedora/product-menu/features/menu-onboarding'
 import {
   getEffectiveOrganizationId,
   getSession,
@@ -46,7 +47,7 @@ export default async function DashboardLayout({
   }
   const tenantId = await getEffectiveOrganizationId()
   if (!tenantId) {
-    redirect('/menu/onboarding')
+    redirect(ONBOARDING_STEPS.name.path)
   }
   // Sidebar restaurants section. Lists every restaurant in the active org
   // so the operator can hop between them without going back to /dashboard.

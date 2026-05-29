@@ -5,35 +5,49 @@ import {
   getEffectiveOrganizationId,
   getSession,
 } from '@iedora/product-menu/features/auth'
-import { findPendingOnboardingRestaurant } from '@iedora/product-menu/features/menu-onboarding'
+import {
+  ADD_ANOTHER_QUERY_KEY,
+  ADD_ANOTHER_QUERY_VALUE,
+  ONBOARDING_STEPS,
+  OnboardingStepper,
+  findPendingOnboardingRestaurant,
+  tenantHasRestaurant,
+} from '@iedora/product-menu/features/menu-onboarding'
 import { signInUrl } from '@iedora/product-core/url'
 import { publicUrl } from '@iedora/product-menu/shared/url'
 import { OnboardingForm } from './onboarding-form'
 
-export default async function OnboardingPage() {
-  const session = await getSession()
-  if (!session?.user) redirect(signInUrl(publicUrl('/menu/onboarding').toString()))
+type SearchParams = Promise<Record<string, string | string[] | undefined>>
 
-  // Resume gate: if the active tenant has any restaurant where the
-  // post-create wizard never finished (`onboarding_completed_at IS NULL`),
-  // bounce the operator back into it. Without this, a back-nav from
-  // step 2 lands them on this form and a second submit silently
-  // creates a duplicate restaurant row.
-  //
-  // No tenant pinned → first-time user; render the form (they're
-  // creating their first restaurant + tenant in one shot).
+export default async function OnboardingPage({
+  searchParams,
+}: {
+  searchParams?: SearchParams
+}) {
+  const session = await getSession()
+  if (!session?.user) redirect(signInUrl(publicUrl(ONBOARDING_STEPS.name.path).toString()))
+
+  const sp = (await searchParams) ?? {}
+  const addAnotherRaw = sp[ADD_ANOTHER_QUERY_KEY]
+  const addAnother =
+    (Array.isArray(addAnotherRaw) ? addAnotherRaw[0] : addAnotherRaw) ===
+    ADD_ANOTHER_QUERY_VALUE
+
+  // Tier the gate by the active tenant's state:
+  //   - no tenant pinned             → first-time user, render step 1
+  //   - tenant has a pending wizard  → resume into step 2 (back-nav protection)
+  //   - tenant has only completions  → no orphan entry: bounce to dashboard
+  //                                    unless the operator explicitly opted in
+  //                                    via the dashboard CTA (`?addAnother=1`)
   const tenantId = await getEffectiveOrganizationId()
   if (tenantId) {
     const pending = await findPendingOnboardingRestaurant(tenantId)
-    if (pending) redirect(`/menu/onboarding/menu/${pending.slug}`)
+    if (pending)
+      redirect(ONBOARDING_STEPS.menu.buildPath({ slug: pending.slug }))
+    if (!addAnother && (await tenantHasRestaurant(tenantId))) {
+      redirect('/menu/dashboard')
+    }
   }
-
-  // No pending wizard: /onboarding doubles as the "add another
-  // restaurant" form for existing users. The action
-  // (`completeOnboarding`) branches between creating a tenant + first
-  // restaurant vs. adding a restaurant under the existing tenant
-  // (with plan-limit check). The dashboard "+ new restaurant" link
-  // points here for that second case.
 
   return (
     <div className="flex min-h-screen flex-col bg-[var(--paper)]">
@@ -53,7 +67,7 @@ export default async function OnboardingPage() {
 
       <main className="ds-shell flex flex-1 items-center justify-center py-12 sm:py-16">
         <div className="w-full max-w-[560px]">
-          <div className="mb-10 flex flex-col items-center gap-2 text-center sm:mb-12">
+          <div className="mb-10 flex flex-col items-center gap-4 text-center sm:mb-12">
             <Link
               href="/"
               className="inline-flex items-baseline no-underline"
@@ -71,6 +85,7 @@ export default async function OnboardingPage() {
             >
               name the room
             </span>
+            <OnboardingStepper current="name" />
           </div>
           <OnboardingForm />
         </div>

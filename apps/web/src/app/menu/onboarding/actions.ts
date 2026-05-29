@@ -18,6 +18,7 @@ import { db } from '@iedora/product-menu/shared/db/client'
 import { menu, restaurant } from '@iedora/product-menu/shared/db/schema'
 import { canAddRestaurant } from '@iedora/product-menu/features/plans'
 import { enforceRateLimit } from '@iedora/product-menu/features/rate-limit'
+import { ONBOARDING_STEPS } from '@iedora/product-menu/features/menu-onboarding'
 
 const onboardingSchema = z.object({
   restaurantName: z.string().trim().min(2).max(80),
@@ -68,7 +69,7 @@ export async function completeOnboarding(
   const { restaurantName } = parsed.data
 
   const session = await getSession()
-  if (!session?.user) redirect(signInUrl(publicUrl('/menu/onboarding').toString()))
+  if (!session?.user) redirect(signInUrl(publicUrl(ONBOARDING_STEPS.name.path).toString()))
 
   const decision = await enforceRateLimit('onboarding', `user:${session.user.id}`)
   if (!decision.ok) {
@@ -111,7 +112,7 @@ async function addRestaurantToOrg(
   }
 
   revalidatePath('/menu/dashboard')
-  redirect(`/menu/onboarding/menu/${slug}`)
+  redirect(ONBOARDING_STEPS.menu.buildPath({ slug }))
 }
 
 async function createOrgAndFirstRestaurant(
@@ -119,7 +120,7 @@ async function createOrgAndFirstRestaurant(
   slug: string,
 ): Promise<OnboardingFormState> {
   const session = await getSession()
-  if (!session?.user) redirect(signInUrl(publicUrl('/menu/onboarding').toString()))
+  if (!session?.user) redirect(signInUrl(publicUrl(ONBOARDING_STEPS.name.path).toString()))
 
   let tenantId: string
   try {
@@ -187,5 +188,5 @@ async function createOrgAndFirstRestaurant(
   }
 
   revalidatePath('/menu/dashboard')
-  redirect(`/menu/onboarding/menu/${slug}`)
+  redirect(ONBOARDING_STEPS.menu.buildPath({ slug }))
 }
