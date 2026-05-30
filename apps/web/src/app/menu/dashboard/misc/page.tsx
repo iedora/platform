@@ -3,20 +3,32 @@ import { requireActiveOrganization } from '@iedora/product-menu/features/auth'
 import { canGenerateAiMenu, getOrganizationPlan } from '@iedora/product-menu/features/plans'
 import { DashboardPage } from '@iedora/product-menu/shared/ui/dashboard-page'
 
+// Cached per-locale — `Intl.*` constructors are expensive and the page
+// formats once per request, but the same locale repeats across requests.
+const RESET_FMT_CACHE = new Map<string, Intl.DateTimeFormat>()
 function formatReset(date: Date, locale: string) {
-  return new Intl.DateTimeFormat(locale, {
-    day: 'numeric',
-    month: 'short',
-    hour: 'numeric',
-    minute: '2-digit',
-  }).format(date)
+  let fmt = RESET_FMT_CACHE.get(locale)
+  if (!fmt) {
+    fmt = new Intl.DateTimeFormat(locale, {
+      day: 'numeric',
+      month: 'short',
+      hour: 'numeric',
+      minute: '2-digit',
+    })
+    RESET_FMT_CACHE.set(locale, fmt)
+  }
+  return fmt.format(date)
 }
 
 export default async function MiscPage() {
-  const { tenantId } = await requireActiveOrganization()
-  const t = await getTranslations('Misc')
-  const locale = await getLocale()
-
+  // i18n is independent of auth — fan out. `plan` and `ai` chain off
+  // the same cached org promise.
+  const orgPromise = requireActiveOrganization()
+  const [{ tenantId }, t, locale] = await Promise.all([
+    orgPromise,
+    getTranslations('Misc'),
+    getLocale(),
+  ])
   const [plan, ai] = await Promise.all([
     getOrganizationPlan(tenantId),
     canGenerateAiMenu(tenantId),

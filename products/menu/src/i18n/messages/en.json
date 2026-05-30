@@ -645,6 +645,7 @@
         "submitting": "Recording…",
         "filterMethod": "Method",
         "filterMethodAll": "All methods",
+        "filterCampaign": "Campaign filter",
         "filterCampaignPlaceholder": "Filter by campaign…",
         "searching": "Searching…",
         "deleteAction": "Delete",

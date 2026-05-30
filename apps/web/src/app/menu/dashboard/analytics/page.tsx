@@ -13,28 +13,53 @@ import { DashboardPage } from '@iedora/product-menu/shared/ui/dashboard-page'
 
 const DEFAULT_RANGE: AnalyticsRange = '30d'
 
+// Cached formatter pools — one Intl.* per locale instead of one per render.
+const NUMBER_FMT_CACHE = new Map<string, Intl.NumberFormat>()
+function numberFormat(locale: string) {
+  let fmt = NUMBER_FMT_CACHE.get(locale)
+  if (!fmt) {
+    fmt = new Intl.NumberFormat(locale)
+    NUMBER_FMT_CACHE.set(locale, fmt)
+  }
+  return fmt
+}
+
+const TIME_FMT_CACHE = new Map<string, Intl.DateTimeFormat>()
+function timeFormat(locale: string) {
+  let fmt = TIME_FMT_CACHE.get(locale)
+  if (!fmt) {
+    fmt = new Intl.DateTimeFormat(locale, { hour: '2-digit', minute: '2-digit' })
+    TIME_FMT_CACHE.set(locale, fmt)
+  }
+  return fmt
+}
+
 export default async function AnalyticsPage({
   searchParams,
 }: {
   searchParams: Promise<{ range?: string }>
 }) {
-  const { tenantId } = await requireActiveOrganization()
-  const plan = await getOrganizationPlan(tenantId)
+  // searchParams + i18n are independent of auth — fan out. `plan` chains
+  // off the same cached `requireActiveOrganization` promise.
+  const orgPromise = requireActiveOrganization()
+  const [{ tenantId }, plan, sp, t, tDash, locale] = await Promise.all([
+    orgPromise,
+    orgPromise.then((o) => getOrganizationPlan(o.tenantId)),
+    searchParams,
+    getTranslations('Analytics'),
+    getTranslations('Dashboard'),
+    getLocale(),
+  ])
 
   // Free plans hit billing — analytics is the headline upgrade hook for Casa,
   // so funneling there is the right next step rather than a half-empty page.
   if (!planHas(plan, 'analytics')) redirect('/menu/dashboard/billing')
 
-  const sp = await searchParams
-  const t = await getTranslations('Analytics')
-  const tDash = await getTranslations('Dashboard')
-  const locale = await getLocale()
-
   const range: AnalyticsRange =
     sp.range && isAnalyticsRange(sp.range) ? sp.range : DEFAULT_RANGE
 
   const analytics = await getOrganizationAnalytics(tenantId, range)
-  const numberFmt = new Intl.NumberFormat(locale)
+  const numberFmt = numberFormat(locale)
 
   const peakValue = analytics.dailyBreakdown.reduce(
     (m, p) => (p.count > m ? p.count : m),
@@ -102,10 +127,7 @@ export default async function AnalyticsPage({
             caption={
               analytics.dishes.lastAddedAt
                 ? tDash('analytics.dishesCaption', {
-                    time: new Intl.DateTimeFormat(locale, {
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    }).format(analytics.dishes.lastAddedAt),
+                    time: timeFormat(locale).format(analytics.dishes.lastAddedAt),
                   })
                 : tDash('analytics.dishesNone')
             }

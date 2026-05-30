@@ -121,6 +121,20 @@ export async function getTenantById(tenantId: string): Promise<Tenant | null> {
 }
 
 /**
+ * Batched lookup — single round-trip for N ids. Returns a Map keyed
+ * by id so callers can do O(1) lookup without re-indexing. Missing
+ * ids are simply absent from the map. Empty input short-circuits.
+ */
+export async function getTenantsByIds(
+  tenantIds: readonly string[],
+): Promise<Map<string, Tenant>> {
+  if (tenantIds.length === 0) return new Map()
+  const db = getCoreDb()
+  const rows = await db.select().from(tenant).where(inArray(tenant.id, tenantIds))
+  return new Map(rows.map((t) => [t.id, t]))
+}
+
+/**
  * Every tenant the user is a member of. Used by the core product
  * picker + by anywhere that needs to enumerate the user's tenancy.
  */

@@ -51,6 +51,7 @@ export {
 export {
   createTenant,
   getTenantById,
+  getTenantsByIds,
   listUserTenants,
   hasAnyTenant,
   searchTenants,

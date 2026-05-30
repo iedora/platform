@@ -14,16 +14,36 @@ import {
   type TenantOption,
 } from './actions'
 
+// Hoisted formatter — the card list re-renders this per row, every
+// re-render. Locale is fixed to the user's browser (toLocaleDateString
+// default), kept stable here.
+const DATE_FMT = new Intl.DateTimeFormat()
+
+// One currency formatter per ISO currency code, cached on first use.
+// Avoids `toFixed(2)` (which hardcodes "12.34 EUR" and ignores locale
+// conventions like "12,34 €").
+const CURRENCY_CACHE = new Map<string, Intl.NumberFormat>()
+function fmtCurrency(amountCents: number, currency: string): string {
+  let fmt = CURRENCY_CACHE.get(currency)
+  if (!fmt) {
+    fmt = new Intl.NumberFormat(undefined, { style: 'currency', currency })
+    CURRENCY_CACHE.set(currency, fmt)
+  }
+  return fmt.format(amountCents / 100)
+}
+
 /**
  * Client surface for the manual-payment ledger. Two stacked sections,
  * mobile-canonical: a card list of recent payments on top, an inline
  * "Record payment" form at the bottom (sticky toggle on phones, full
  * width on desktop). Search/filter live in a header row.
  */
+// Mirrors what the page actually renders. `product`, `createdByUserId`,
+// and `createdAt` are dropped on the server-client boundary — they were
+// in the wire payload but never rendered.
 type PaymentRow = {
   id: string
   tenantId: string
-  product: string
   planCode: string
   paidAt: string
   validMonths: number
@@ -32,8 +52,6 @@ type PaymentRow = {
   method: ManualPaymentMethod
   campaignTag: string | null
   notes: string | null
-  createdByUserId: string
-  createdAt: string
 }
 
 export function PaymentsAdmin({
@@ -48,6 +66,9 @@ export function PaymentsAdmin({
   planLabels: Record<string, string>
 }) {
   const t = useTranslations('Core.admin.payments')
+  // Children call useTranslations on the same namespace — no need to drill
+  // `t` as a prop. The hook itself is stable; passing it through props
+  // just adds prop noise.
   const [rows, setRows] = useState<PaymentRow[]>(initialPayments)
   const [names, setNames] = useState(tenantNames)
   const [filterMethod, setFilterMethod] = useState<ManualPaymentMethod | ''>('')
@@ -64,7 +85,6 @@ export function PaymentsAdmin({
       const normalised: PaymentRow[] = list.map((r) => ({
         id: r.id,
         tenantId: r.tenantId,
-        product: r.product as string,
         planCode: r.planCode,
         paidAt:
           r.paidAt instanceof Date ? r.paidAt.toISOString() : (r.paidAt as string),
@@ -74,11 +94,6 @@ export function PaymentsAdmin({
         method: r.method as ManualPaymentMethod,
         campaignTag: r.campaignTag,
         notes: r.notes,
-        createdByUserId: r.createdByUserId,
-        createdAt:
-          r.createdAt instanceof Date
-            ? r.createdAt.toISOString()
-            : (r.createdAt as string),
       }))
       setRows(normalised)
     })
@@ -96,7 +111,6 @@ export function PaymentsAdmin({
         onCampaign={setFilterCampaign}
         onCampaignSubmit={refresh}
         searching={isRefreshing}
-        t={t}
       />
 
       {rows.length === 0 ? (
@@ -115,7 +129,6 @@ export function PaymentsAdmin({
               tenantName={names[p.tenantId] ?? p.tenantId}
               planLabel={planLabels[p.planCode] ?? p.planCode}
               monthlyCents={planPrices[p.planCode] ?? 0}
-              t={t}
               onDeleted={refresh}
             />
           ))}
@@ -126,7 +139,6 @@ export function PaymentsAdmin({
         <RecordForm
           planLabels={planLabels}
           planPrices={planPrices}
-          t={t}
           onCancel={() => setShowForm(false)}
           onRecorded={(tenantId, tenantName) => {
             setShowForm(false)
@@ -136,8 +148,12 @@ export function PaymentsAdmin({
         />
       ) : null}
 
-      {/* Sticky bottom CTA — always reachable on a phone. */}
-      <div className="fixed inset-x-0 bottom-0 z-10 border-t border-[var(--ink-14)] bg-[var(--paper)]/95 px-4 py-3 backdrop-blur lg:left-72">
+      {/* Sticky bottom CTA — always reachable on a phone. Padding picks
+          up the iPhone home-indicator inset so the button isn't under it. */}
+      <div
+        className="fixed inset-x-0 bottom-0 z-10 border-t border-[var(--ink-14)] bg-[var(--paper)]/95 px-4 py-3 backdrop-blur lg:left-72"
+        style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom))' }}
+      >
         <button
           type="button"
           onClick={() => setShowForm((s) => !s)}
@@ -160,7 +176,6 @@ function FilterBar({
   onCampaign,
   onCampaignSubmit,
   searching,
-  t,
 }: {
   method: ManualPaymentMethod | ''
   onMethod: (m: ManualPaymentMethod | '') => void
@@ -168,14 +183,14 @@ function FilterBar({
   onCampaign: (v: string) => void
   onCampaignSubmit: () => void
   searching: boolean
-  t: ReturnType<typeof useTranslations>
 }) {
+  const t = useTranslations('Core.admin.payments')
   return (
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
       <select
         value={method}
         onChange={(e) => onMethod(e.target.value as ManualPaymentMethod | '')}
-        className="rounded border border-[var(--ink-14)] bg-transparent px-3 py-3 text-sm"
+        className="rounded border border-[var(--ink-14)] bg-[var(--paper)] text-[var(--ink)] px-3 py-3 text-sm"
         data-test-id="payments-filter-method"
         aria-label={t('filterMethod')}
       >
@@ -195,6 +210,8 @@ function FilterBar({
         <input
           type="search"
           placeholder={t('filterCampaignPlaceholder')}
+          aria-label={t('filterCampaign')}
+          spellCheck={false}
           value={campaign}
           onChange={(e) => onCampaign(e.target.value)}
           className="w-full rounded border border-[var(--ink-14)] bg-transparent px-3 py-3 text-sm"
@@ -215,16 +232,16 @@ function PaymentCard({
   tenantName,
   planLabel,
   monthlyCents,
-  t,
   onDeleted,
 }: {
   payment: PaymentRow
   tenantName: string
   planLabel: string
   monthlyCents: number
-  t: ReturnType<typeof useTranslations>
   onDeleted: () => void
 }) {
+  const t = useTranslations('Core.admin.payments')
+  const [deleteError, setDeleteError] = useState<string | null>(null)
   const expectedCents = monthlyCents * payment.validMonths
   const discountCents = expectedCents - payment.amountCents
   const discountPct =
@@ -237,11 +254,14 @@ function PaymentCard({
   const [pending, startTransition] = useTransition()
 
   function onDelete() {
+    // `confirm()` is the existing destructive-action gate. Worth replacing
+    // with a styled modal eventually; out of scope for this pass.
     if (!confirm(t('deleteConfirm'))) return
+    setDeleteError(null)
     startTransition(async () => {
       const res = await deletePaymentAction(payment.id)
       if (res.ok) onDeleted()
-      else alert(res.error)
+      else setDeleteError(res.error)
     })
   }
 
@@ -258,7 +278,7 @@ function PaymentCard({
           </p>
         </div>
         <p className="font-[family-name:var(--mono)] text-sm tabular-nums">
-          {(payment.amountCents / 100).toFixed(2)} {payment.currency}
+          {fmtCurrency(payment.amountCents, payment.currency)}
         </p>
       </header>
 
@@ -270,7 +290,7 @@ function PaymentCard({
           <span
             className={`rounded px-1.5 py-0.5 font-[family-name:var(--mono)] ${
               discountPct > 0
-                ? 'bg-[var(--ink-7)] text-[var(--ink)]'
+                ? 'bg-[var(--ink-08)] text-[var(--ink)]'
                 : 'text-[var(--ink-55)]'
             }`}
             data-test-id={`payment-discount-${payment.id}`}
@@ -298,6 +318,16 @@ function PaymentCard({
         </p>
       )}
 
+      {deleteError ? (
+        <p
+          role="alert"
+          className="rounded border border-[var(--cinnabar)] bg-[var(--cinnabar-15)] px-3 py-2 text-xs text-[var(--cinnabar)]"
+          data-test-id={`payment-delete-error-${payment.id}`}
+        >
+          {deleteError}
+        </p>
+      ) : null}
+
       <div className="flex justify-end">
         <button
           type="button"
@@ -318,16 +348,15 @@ function PaymentCard({
 function RecordForm({
   planLabels,
   planPrices,
-  t,
   onCancel,
   onRecorded,
 }: {
   planLabels: Record<string, string>
   planPrices: Record<string, number>
-  t: ReturnType<typeof useTranslations>
   onCancel: () => void
   onRecorded: (tenantId: string, tenantName?: string) => void
 }) {
+  const t = useTranslations('Core.admin.payments')
   // Every plan in the billing catalogue is selectable — the page
   // hydrates `planLabels` from `listProductPlans()`, so there are no
   // placeholder entries to filter out. Manual payments against the
@@ -410,6 +439,7 @@ function RecordForm({
           id="pf-tenant"
           type="search"
           autoComplete="off"
+          spellCheck={false}
           placeholder={t('tenantSearchPlaceholder')}
           value={tenant ? tenant.name : tenantQuery}
           onFocus={ensureTenants}
@@ -443,7 +473,7 @@ function RecordForm({
           id="pf-plan"
           value={planCode}
           onChange={(e) => setPlanCode(e.target.value)}
-          className="w-full rounded border border-[var(--ink-14)] bg-transparent px-3 py-3 text-sm"
+          className="w-full rounded border border-[var(--ink-14)] bg-[var(--paper)] text-[var(--ink)] px-3 py-3 text-sm"
           data-test-id="payments-form-plan"
         >
           {planCodes.map((c) => (
@@ -610,5 +640,5 @@ function isoDate(d: Date): string {
 }
 
 function fmtDate(iso: string): string {
-  return new Date(iso).toLocaleDateString()
+  return DATE_FMT.format(new Date(iso))
 }

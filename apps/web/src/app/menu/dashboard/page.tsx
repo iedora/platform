@@ -1,14 +1,14 @@
 import Link from 'next/link'
+import { redirect } from 'next/navigation'
 import { getLocale, getTranslations } from 'next-intl/server'
 import {
-  getEffectiveOrganizationId,
   getSession,
   IEDORA_ADMIN_ROLE,
   requireActiveOrganization,
 } from '@iedora/product-menu/features/auth'
 import { listRestaurantsWithCounts } from '@iedora/product-menu/features/dashboard-home'
 import { getOrganizationMonthlyViews } from '@iedora/product-menu/features/metrics'
-import { DEFAULT_PLAN, canAddRestaurant, getOrganizationPlan } from '@iedora/product-menu/features/plans'
+import { canAddRestaurant, getOrganizationPlan } from '@iedora/product-menu/features/plans'
 import { addAnotherRestaurantHref } from '@iedora/product-menu/features/menu-onboarding'
 import { Card, CardDesc, CardTitle } from '@iedora/design-system'
 import { DashboardPage as PageShell } from '@iedora/product-menu/shared/ui/dashboard-page'
@@ -22,33 +22,32 @@ import {
 const VIEW_NUDGE_RATIO = 0.8
 
 export default async function DashboardPage() {
-  // Staff (iedora-admin) can land here without an active tenant — they
-  // just see the empty restaurants list. Tenant users still get the
-  // onboarding redirect via requireActiveOrganization() below.
+  // Kick off i18n + locale immediately — they don't depend on session
+  // and overlap with the auth round-trip (which is cached but still I/O).
+  const tPromise = getTranslations('Dashboard')
+  const tBillingPromise = getTranslations('Billing')
+  const localePromise = getLocale()
+
+  // Admins manage everything via Admin → Restaurantes; the per-tenant
+  // home view (view-meter, restaurant cards) is meaningless for them.
+  // Short-circuit to the cross-tenant admin list before the tenant gate.
   const session = await getSession()
   const role = (session?.user as { role?: string | null } | undefined)?.role ?? null
-  const isStaff = role === IEDORA_ADMIN_ROLE
-  const activeTenantId = isStaff ? await getEffectiveOrganizationId() : null
-  const tenantId = isStaff && !activeTenantId
-    ? null
-    : (await requireActiveOrganization()).tenantId
-  const t = await getTranslations('Dashboard')
-  const tBilling = await getTranslations('Billing')
-  const locale = await getLocale()
+  if (role === IEDORA_ADMIN_ROLE) {
+    redirect('/menu/dashboard/admin/restaurants')
+  }
+  const { tenantId } = await requireActiveOrganization()
 
-  const [restaurants, gate, plan, viewCount] = tenantId
-    ? await Promise.all([
-        listRestaurantsWithCounts(tenantId),
-        canAddRestaurant(tenantId),
-        getOrganizationPlan(tenantId),
-        getOrganizationMonthlyViews(tenantId),
-      ])
-    : [
-        [] as Awaited<ReturnType<typeof listRestaurantsWithCounts>>,
-        { ok: false, reason: 'restaurant-limit', limit: 0, current: 0 } as Awaited<ReturnType<typeof canAddRestaurant>>,
-        DEFAULT_PLAN,
-        0,
-      ]
+  const [t, tBilling, locale, restaurants, gate, plan, viewCount] =
+    await Promise.all([
+      tPromise,
+      tBillingPromise,
+      localePromise,
+      listRestaurantsWithCounts(tenantId),
+      canAddRestaurant(tenantId),
+      getOrganizationPlan(tenantId),
+      getOrganizationMonthlyViews(tenantId),
+    ])
 
   const viewLimit = plan.limits.monthlyViews
   const isUnlimitedViews = !Number.isFinite(viewLimit)

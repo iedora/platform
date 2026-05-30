@@ -24,15 +24,17 @@ export default async function TransferPage({
   params: Promise<{ slug: string }>
 }) {
   const { slug } = await params
-  const { restaurant: r } = await requireRestaurantBySlug(slug)
-  const allowed = await hasScope(SCOPES.menu.staff.restaurants.transfer)
-  if (!allowed) notFound()
-
-  const [t, locale, context] = await Promise.all([
+  // Restaurant lookup, scope check, and i18n are independent — fan them
+  // out instead of awaiting in series.
+  const [{ restaurant: r }, allowed, t, locale] = await Promise.all([
+    requireRestaurantBySlug(slug),
+    hasScope(SCOPES.menu.staff.restaurants.transfer),
     getTranslations('RestaurantTransfer'),
     getLocale(),
-    getRestaurantTransferContext(r.id),
   ])
+  if (!allowed) notFound()
+  // Context needs r.id, so it chains after the restaurant resolves.
+  const context = await getRestaurantTransferContext(r.id)
 
   return (
     <DashboardPage

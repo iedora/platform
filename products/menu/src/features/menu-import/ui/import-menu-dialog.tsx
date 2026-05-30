@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import dynamic from 'next/dynamic'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import {
@@ -13,7 +14,14 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@iedora/design-system'
-import { MenuImportWizard } from './menu-import-wizard'
+
+// Wizard is 800+ LOC + AI / image-parse deps. Most restaurant pages
+// never trigger import (operators land on a populated menu). Pull it
+// out of the initial chunk; the radix `<Dialog>` unmounts children
+// when closed, so the bundle is only fetched on first open.
+const MenuImportWizard = dynamic(
+  () => import('./menu-import-wizard').then((m) => m.MenuImportWizard),
+)
 
 /**
  * Restaurant-page trigger + dialog around `<MenuImportWizard>`. The

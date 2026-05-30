@@ -21,13 +21,17 @@ type EditorData = PublicMenuData & {
 }
 
 async function loadEditorData(restaurantId: string): Promise<EditorData> {
-  const row: ThemeEditorRestaurantRow | null = await getThemeEditorData(restaurantId)
+  // Both calls keyed on the same restaurantId and independent — fan out
+  // instead of awaiting in series.
+  const [row, tree] = await Promise.all([
+    getThemeEditorData(restaurantId),
+    loadMenuTree({ restaurantId, activeOnly: true }),
+  ])
   if (!row) notFound()
 
   // Editor preview shows the default-language strings — the renderer doesn't
   // know about i18n maps. Localize-to-default reuses the same helper as the
   // public page so any future field change lives in one place.
-  const tree = await loadMenuTree({ restaurantId: row.id, activeOnly: true })
   const menus: PublicMenu[] = localizeTree(tree, row.defaultLanguage, row.defaultLanguage)
 
   return {
@@ -53,10 +57,11 @@ export default async function ThemePage({
   params: Promise<{ slug: string }>
 }) {
   const { slug } = await params
+  // i18n kicks off while the auth round-trip runs.
+  const tPromise = getTranslations('Restaurant')
   const { restaurant: r } = await requireRestaurantBySlug(slug)
-  const data = await loadEditorData(r.id)
+  const [data, t] = await Promise.all([loadEditorData(r.id), tPromise])
   const initialTheme = resolveTheme(data.rawTheme)
-  const t = await getTranslations('Restaurant')
 
   return (
     <DashboardPage

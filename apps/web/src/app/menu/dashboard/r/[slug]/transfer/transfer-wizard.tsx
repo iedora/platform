@@ -80,13 +80,12 @@ export function TransferWizard({
       className="space-y-10 pb-32"
       data-test-id="transfer-wizard"
     >
-      <TenantSection value={tenant} onChange={setTenant} t={t} />
-      <OwnerSection value={owner} onChange={setOwner} t={t} />
+      <TenantSection value={tenant} onChange={setTenant} />
+      <OwnerSection value={owner} onChange={setOwner} />
       <ConfirmSummary
         restaurantName={restaurantName}
         tenant={tenant}
         owner={owner}
-        t={t}
       />
 
       {error && (
@@ -99,8 +98,13 @@ export function TransferWizard({
         </p>
       )}
 
-      {/* Sticky CTA — sits above the mobile sidebar trigger via z-10. */}
-      <div className="fixed inset-x-0 bottom-0 z-10 border-t border-[var(--ink-14)] bg-[var(--paper)]/95 px-4 py-3 backdrop-blur lg:left-72">
+      {/* Sticky CTA — sits above the mobile sidebar trigger via z-10.
+          Padding picks up the iPhone home-indicator inset so the button
+          isn't under it. */}
+      <div
+        className="fixed inset-x-0 bottom-0 z-10 border-t border-[var(--ink-14)] bg-[var(--paper)]/95 px-4 py-3 backdrop-blur lg:left-72"
+        style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom))' }}
+      >
         <button
           type="button"
           onClick={onConfirm}
@@ -136,12 +140,11 @@ function ownerReady(o: TargetOwner): boolean {
 function TenantSection({
   value,
   onChange,
-  t,
 }: {
   value: TargetTenant
   onChange: (v: TargetTenant) => void
-  t: ReturnType<typeof useTranslations>
 }) {
+  const t = useTranslations('RestaurantTransfer')
   const [mode, setMode] = useState<'existing' | 'new'>(
     value?.kind === 'new' ? 'new' : 'existing',
   )
@@ -175,9 +178,9 @@ function TenantSection({
       />
 
       {mode === 'existing' ? (
-        <TenantPicker value={value} onChange={onChange} t={t} />
+        <TenantPicker value={value} onChange={onChange} />
       ) : (
-        <NewTenantInput value={value} onChange={onChange} t={t} />
+        <NewTenantInput value={value} onChange={onChange} />
       )}
     </section>
   )
@@ -186,12 +189,11 @@ function TenantSection({
 function TenantPicker({
   value,
   onChange,
-  t,
 }: {
   value: TargetTenant
   onChange: (v: TargetTenant) => void
-  t: ReturnType<typeof useTranslations>
 }) {
+  const t = useTranslations('RestaurantTransfer')
   const [query, setQuery] = useState('')
   const [options, setOptions] = useState<TenantOption[]>([])
   const [searching, startTransition] = useTransition()
@@ -219,6 +221,8 @@ function TenantPicker({
         type="search"
         inputMode="search"
         autoComplete="off"
+        spellCheck={false}
+        aria-label={t('tenantSearchPlaceholder')}
         placeholder={t('tenantSearchPlaceholder')}
         value={query}
         onChange={(e) => runSearch(e.target.value)}
@@ -247,7 +251,7 @@ function TenantPicker({
                 aria-pressed={active}
                 className={`flex w-full items-center justify-between px-3 py-3 text-left text-sm ${
                   active
-                    ? 'bg-[var(--ink-7)]'
+                    ? 'bg-[var(--ink-08)]'
                     : 'hover:bg-[var(--paper-2)]'
                 }`}
                 data-test-id={`transfer-tenant-option-${o.id}`}
@@ -270,12 +274,11 @@ function TenantPicker({
 function NewTenantInput({
   value,
   onChange,
-  t,
 }: {
   value: TargetTenant
   onChange: (v: TargetTenant) => void
-  t: ReturnType<typeof useTranslations>
 }) {
+  const t = useTranslations('RestaurantTransfer')
   const name = value?.kind === 'new' ? value.name : ''
   return (
     <div className="space-y-2">
@@ -306,12 +309,11 @@ function NewTenantInput({
 function OwnerSection({
   value,
   onChange,
-  t,
 }: {
   value: TargetOwner
   onChange: (v: TargetOwner) => void
-  t: ReturnType<typeof useTranslations>
 }) {
+  const t = useTranslations('RestaurantTransfer')
   const [mode, setMode] = useState<'existing' | 'new'>(
     value?.kind === 'new' ? 'new' : 'existing',
   )
@@ -345,9 +347,9 @@ function OwnerSection({
       />
 
       {mode === 'existing' ? (
-        <UserPicker value={value} onChange={onChange} t={t} />
+        <UserPicker value={value} onChange={onChange} />
       ) : (
-        <NewUserForm value={value} onChange={onChange} t={t} />
+        <NewUserForm value={value} onChange={onChange} />
       )}
     </section>
   )
@@ -356,12 +358,11 @@ function OwnerSection({
 function UserPicker({
   value,
   onChange,
-  t,
 }: {
   value: TargetOwner
   onChange: (v: TargetOwner) => void
-  t: ReturnType<typeof useTranslations>
 }) {
+  const t = useTranslations('RestaurantTransfer')
   const [query, setQuery] = useState('')
   const [options, setOptions] = useState<UserOption[]>([])
   const [searching, startTransition] = useTransition()
@@ -387,6 +388,8 @@ function UserPicker({
         type="search"
         inputMode="email"
         autoComplete="off"
+        spellCheck={false}
+        aria-label={t('userSearchPlaceholder')}
         placeholder={t('userSearchPlaceholder')}
         value={query}
         onChange={(e) => runSearch(e.target.value)}
@@ -415,7 +418,7 @@ function UserPicker({
                 aria-pressed={active}
                 className={`flex w-full items-center justify-between gap-3 px-3 py-3 text-left text-sm ${
                   active
-                    ? 'bg-[var(--ink-7)]'
+                    ? 'bg-[var(--ink-08)]'
                     : 'hover:bg-[var(--paper-2)]'
                 }`}
                 data-test-id={`transfer-owner-option-${o.id}`}
@@ -450,12 +453,11 @@ function UserPicker({
 function NewUserForm({
   value,
   onChange,
-  t,
 }: {
   value: TargetOwner
   onChange: (v: TargetOwner) => void
-  t: ReturnType<typeof useTranslations>
 }) {
+  const t = useTranslations('RestaurantTransfer')
   const v =
     value?.kind === 'new' ? value : { email: '', name: '', password: '' }
   function patch(p: Partial<{ email: string; name: string; password: string }>) {
@@ -475,6 +477,7 @@ function NewUserForm({
           type="email"
           inputMode="email"
           autoComplete="email"
+          spellCheck={false}
           value={v.email}
           onChange={(e) => patch({ email: e.target.value })}
           className="mt-2 w-full rounded border border-[var(--ink-14)] bg-transparent px-3 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-[var(--ink-40)]"
@@ -528,13 +531,12 @@ function ConfirmSummary({
   restaurantName,
   tenant,
   owner,
-  t,
 }: {
   restaurantName: string
   tenant: TargetTenant
   owner: TargetOwner
-  t: ReturnType<typeof useTranslations>
 }) {
+  const t = useTranslations('RestaurantTransfer')
   const tenantLabel =
     tenant?.kind === 'existing'
       ? tenant.option.name

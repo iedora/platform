@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import dynamic from 'next/dynamic'
 import { getLocale, getTranslations } from 'next-intl/server'
 import { hasScope } from '@iedora/auth/server'
 import { SCOPES } from '@iedora/auth/scopes'
@@ -9,11 +10,20 @@ import { formatEditedAt } from '@iedora/product-menu/shared/ui/editorial-list'
 import { CreateMenuDialog } from '@iedora/product-menu/features/menu-builder/ui/create-menu-dialog'
 import { SeedSampleButton } from '@iedora/product-menu/features/menu-builder/ui/seed-sample-button'
 import { ImportMenuDialog } from '@iedora/product-menu/features/menu-import/ui/import-menu-dialog'
-import { UpdateMenuDialog } from '@iedora/product-menu/features/menu-import/ui/update-menu-dialog'
 import type { PatchCurrentMenu } from '@iedora/product-menu/features/menu-import/ports'
 import { loadMenuTree } from '@iedora/product-menu/features/menu-publishing/use-cases/load-tree'
 import { AiTranslationDialog } from '@iedora/product-menu/features/menu-translation/ui/ai-translation-dialog'
 import { getLanguageConfig } from '@iedora/product-menu/features/restaurant-identity'
+
+// UpdateMenuDialog wraps the 800+ LOC MenuImportWizard (AI image parsing,
+// preview tree, patch editor). Most operators land on the restaurant
+// page and never open this dialog — pull it out of the initial chunk.
+const UpdateMenuDialog = dynamic(
+  () =>
+    import(
+      '@iedora/product-menu/features/menu-import/ui/update-menu-dialog'
+    ).then((m) => m.UpdateMenuDialog),
+)
 
 /**
  * Restaurant home — single column, mobile-canonical.
@@ -42,27 +52,43 @@ export default async function RestaurantPage({
   params: Promise<{ slug: string }>
 }) {
   const { slug } = await params
-  // Auth + tenant scoping. The cached snapshot below trusts that the
-  // slug is OK to read because this guard ran first.
+  // i18n + scope check are independent of the restaurant lookup — kick
+  // them off concurrently with the auth round-trip.
+  const canTransferPromise = hasScope(SCOPES.menu.staff.restaurants.transfer)
+  const tPromise = getTranslations('Restaurant')
+  const tDashPromise = getTranslations('Dashboard')
+  const localePromise = getLocale()
+  // Snapshot load is keyed by slug, not by r.id — also independent of
+  // the auth round-trip. The auth guard runs in parallel; we still
+  // await it before touching r.id (cached snapshot trusts that this
+  // ran first).
+  const snapPromise = loadRestaurantAdminMenus(slug)
   const { restaurant: r } = await requireRestaurantBySlug(slug)
-  const canTransfer = await hasScope(SCOPES.menu.staff.restaurants.transfer)
-  const t = await getTranslations('Restaurant')
-  const tDash = await getTranslations('Dashboard')
-  const locale = await getLocale()
 
-  const snap = await loadRestaurantAdminMenus(slug)
+  // Now that r.id is known, fan out the per-restaurant fetches alongside
+  // the still-pending top-level promises. `loadMenuTree` is speculative
+  // (only needed if `primaryMenu` exists, which is the common case) —
+  // the wasted call on empty restaurants is acceptable.
+  const [canTransfer, t, tDash, locale, snap, langConfig, trees] =
+    await Promise.all([
+      canTransferPromise,
+      tPromise,
+      tDashPromise,
+      localePromise,
+      snapPromise,
+      getLanguageConfig(r.id),
+      loadMenuTree({ restaurantId: r.id }),
+    ])
   const menus = snap?.menus ?? []
   const primaryMenu = menus[0] ?? null
 
-  // Language config drives the AI Translation card visibility.
-  const { defaultLanguage, supportedLanguages } = await getLanguageConfig(r.id)
+  const { defaultLanguage, supportedLanguages } = langConfig
   const canTranslate = supportedLanguages.length > 1
 
   // Compact menu snapshot for the PATCH-update wizard — only id + name
   // + priceCents per item so the client payload stays small.
   let patchCurrent: PatchCurrentMenu | null = null
   if (primaryMenu) {
-    const trees = await loadMenuTree({ restaurantId: r.id })
     const tree = trees.find((m) => m.id === primaryMenu.id)
     if (tree) {
       const firstItem = tree.categories

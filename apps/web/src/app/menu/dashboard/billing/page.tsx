@@ -14,19 +14,32 @@ import {
 import { PRODUCTS } from '@iedora/brand'
 import { UpgradeButton } from './upgrade-button'
 
+// Cached formatter pools — `Intl.*` constructors are expensive; the
+// page re-renders these inline many times per request (invoice list,
+// plan list, latest payment). One per (locale, currency) pair.
+const MONEY_FMT_CACHE = new Map<string, Intl.NumberFormat>()
 function formatMoney(amountCents: number, currency: string, locale: string) {
-  return new Intl.NumberFormat(locale, {
-    style: 'currency',
-    currency,
-  }).format(amountCents / 100)
+  const key = `${locale}|${currency}`
+  let fmt = MONEY_FMT_CACHE.get(key)
+  if (!fmt) {
+    fmt = new Intl.NumberFormat(locale, { style: 'currency', currency })
+    MONEY_FMT_CACHE.set(key, fmt)
+  }
+  return fmt.format(amountCents / 100)
 }
 
+const ISSUED_FMT_CACHE = new Map<string, Intl.DateTimeFormat>()
 function formatIssuedAt(date: Date, locale: string) {
-  return new Intl.DateTimeFormat(locale, {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  }).format(date)
+  let fmt = ISSUED_FMT_CACHE.get(locale)
+  if (!fmt) {
+    fmt = new Intl.DateTimeFormat(locale, {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    })
+    ISSUED_FMT_CACHE.set(locale, fmt)
+  }
+  return fmt.format(date)
 }
 
 /**
@@ -54,10 +67,14 @@ export default async function BillingPage({
 }: {
   searchParams: Promise<{ year?: string }>
 }) {
-  const { tenantId } = await requireActiveOrganization()
-  const sp = await searchParams
-  const t = await getTranslations('Billing')
-  const locale = await getLocale()
+  // searchParams / translations / locale are independent of auth — kick
+  // them off in parallel with `requireActiveOrganization`.
+  const [{ tenantId }, sp, t, locale] = await Promise.all([
+    requireActiveOrganization(),
+    searchParams,
+    getTranslations('Billing'),
+    getLocale(),
+  ])
 
   const [current, years, latestPayment] = await Promise.all([
     getOrganizationPlan(tenantId),

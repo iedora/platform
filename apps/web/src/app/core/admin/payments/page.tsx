@@ -2,10 +2,19 @@ import { getTranslations } from 'next-intl/server'
 import { requireScope } from '@iedora/product-core'
 import { SCOPES } from '@iedora/auth/scopes'
 import { listManualPayments, listProductPlans } from '@iedora/billing'
-import { getTenantById } from '@iedora/auth'
+import { getTenantsByIds } from '@iedora/auth'
 import { PRODUCTS } from '@iedora/brand'
 import { AdminPage } from '@iedora/product-core/shared/ui/admin-page'
 import { PaymentsAdmin } from './payments-admin'
+
+// Plan catalogue is static — derive once at module load, not per request.
+const PLAN_CATALOG = listProductPlans(PRODUCTS.menu)
+const PLAN_PRICES: Record<string, number> = Object.fromEntries(
+  PLAN_CATALOG.map((p) => [p.code, p.monthlyCents]),
+)
+const PLAN_LABELS: Record<string, string> = Object.fromEntries(
+  PLAN_CATALOG.map((p) => [p.code, p.name]),
+)
 
 /**
  * Cross-tenant ledger of admin-recorded offline payments. Gated by
@@ -14,42 +23,28 @@ import { PaymentsAdmin } from './payments-admin'
  * map; client owns the form + filter state.
  */
 export default async function PaymentsPage() {
-  await requireScope(SCOPES.core.staff.billing.manage)
-  const t = await getTranslations('Core.admin.payments')
+  // requireScope, i18n, and the payment ledger are independent — fan out.
+  // 200 fits the foreseeable manual-payment ledger size; cross that and
+  // we add pagination.
+  const [, t, initialRows] = await Promise.all([
+    requireScope(SCOPES.core.staff.billing.manage),
+    getTranslations('Core.admin.payments'),
+    listManualPayments({ limit: 200 }),
+  ])
 
-  // Initial unfiltered slice — the client can re-fetch as filters
-  // change. 200 fits the foreseeable manual-payment ledger size; if
-  // we cross that we add pagination.
-  const initialRows = await listManualPayments({ limit: 200 })
-
-  // Hydrate a tenant-name lookup for the page. The list shows tenant
-  // names, not raw ids — without this map the client would do N+1.
+  // Hydrate tenant names in a single cross-DB round-trip (was N round-trips
+  // via getTenantById in a Promise.all).
   const tenantIds = Array.from(new Set(initialRows.map((r) => r.tenantId)))
+  const tenants = await getTenantsByIds(tenantIds)
   const tenantNames: Record<string, string> = {}
-  await Promise.all(
-    tenantIds.map(async (id) => {
-      const tenant = await getTenantById(id)
-      if (tenant) tenantNames[id] = tenant.name
-    }),
-  )
+  for (const [id, tenant] of tenants) tenantNames[id] = tenant.name
 
-  // Plan list pricing — the form + list use it for discount math.
-  // Today only the `menu` product is commercialised; when imopush goes
-  // paid this turns into an iteration over PRODUCTS. Sent flat as
-  // `code → monthlyCents` so the client never imports server code.
-  const planPrices: Record<string, number> = {}
-  const planLabels: Record<string, string> = {}
-  for (const p of listProductPlans(PRODUCTS.menu)) {
-    planPrices[p.code] = p.monthlyCents
-    planLabels[p.code] = p.name
-  }
-
-  // Initial payload normalises Date → ISO string so the client/server
-  // boundary doesn't fight over JSON serialisation of Date.
+  // Initial payload normalises Date → ISO and drops fields the client
+  // doesn't render (`product`, `createdAt`, `createdByUserId`). At 200
+  // rows that's ~10 KB shaved off the RSC payload — small, but worth it.
   const initialPayments = initialRows.map((r) => ({
     id: r.id,
     tenantId: r.tenantId,
-    product: r.product,
     planCode: r.planCode,
     paidAt: r.paidAt.toISOString(),
     validMonths: r.validMonths,
@@ -58,11 +53,6 @@ export default async function PaymentsPage() {
     method: r.method,
     campaignTag: r.campaignTag,
     notes: r.notes,
-    createdByUserId: r.createdByUserId,
-    createdAt:
-      r.createdAt instanceof Date
-        ? r.createdAt.toISOString()
-        : new Date(r.createdAt).toISOString(),
   }))
 
   return (
@@ -75,8 +65,8 @@ export default async function PaymentsPage() {
       <PaymentsAdmin
         initialPayments={initialPayments}
         tenantNames={tenantNames}
-        planPrices={planPrices}
-        planLabels={planLabels}
+        planPrices={PLAN_PRICES}
+        planLabels={PLAN_LABELS}
       />
     </AdminPage>
   )
