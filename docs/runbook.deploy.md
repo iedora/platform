@@ -63,6 +63,13 @@ Conteúdo actual:
 | `CORE_DATABASE_URL`, `MENU_DATABASE_URL`, `IMOPUSH_DATABASE_URL` | Compostos a partir de `POSTGRES_PASSWORD` em `.kamal/secrets` |
 | `ZO_ROOT_USER_PASSWORD`, `OTEL_AUTH_HEADER` | Derivados de `OPENOBSERVE_ADMIN_PASSWORD` |
 
+**Ver tudo o que vai ao container** (env.clear + env.secret resolvido, mascarado por defeito):
+
+```bash
+bun run secrets:show               # mascarado
+bun run secrets:show --reveal      # plaintext
+```
+
 **Workflow — adicionar secret novo a prod (2 ficheiros):**
 
 ```bash

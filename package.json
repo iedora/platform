@@ -19,6 +19,7 @@
     "dev:migrate": "set -a && . apps/web/.env && [ -f apps/web/.env.local ] && . apps/web/.env.local; set +a && bun run --cwd packages/business/auth db:migrate && bun run --cwd products/menu db:migrate && bun run --cwd products/imopush db:migrate",
     "deploy": "./infra/live/deploy.sh",
     "kamal": "./infra/live/kamal/kamal-wrapper.sh",
+    "secrets:show": "bun run scripts/secrets-show.ts",
     "typecheck": "bun run scripts/run-parallel.mjs typecheck",
     "lint": "bun run scripts/run-parallel.mjs lint",
     "test": "bun run --workspaces test",
