@@ -11,9 +11,10 @@ Single-node homelab. Deploy é **`git push origin main`** → Coolify webhook
 - **Ingress**: Cloudflare tunnel `coolify-iedora` (HA, 8 conexões).
   Wildcard `*.iedora.com` → Traefik no runner → app pelo Host header.
 - **DB**: Postgres 18 como **Coolify Resource** (1 container, 3 DBs: core,
-  menu, imopush — criadas em `infra/live/coolify/init-databases.sql`).
-- **Object storage**: R2 bucket `iedora-assets` + token bucket-scoped
-  (credenciais como env vars no Coolify).
+  menu, imopush — criadas pelo Init Script no setup; ver passo 1 abaixo).
+- **Object storage**: R2 bucket `iedora-assets` + token bucket-scoped,
+  geridos por [`infra/tofu/r2/`](../infra/tofu/r2/). Outputs vão para
+  `apps/web/.env.prod` (sops) → Coolify UI.
 - **Registry**: nenhum — Coolify builda no runner a partir do GitHub clone,
   imagem fica no Docker local do runner.
 
@@ -29,7 +30,7 @@ UI Coolify → Project `iedora` → "+ New Resource" → "PostgreSQL 18":
 | Name | `iedora-pg` |
 | Postgres User | `postgres` |
 | Postgres DB | `postgres` (default; outras 3 criadas pelo init script abaixo) |
-| Init Script | conteúdo de [`infra/live/coolify/init-databases.sql`](../infra/live/coolify/init-databases.sql) |
+| Init Script | `CREATE DATABASE menu; CREATE DATABASE core; CREATE DATABASE imopush;` |
 | Backups | schedule = `0 3 * * *`, destination = R2 (mesmas creds que iac state), retention = 14d |
 
 Anota a password gerada — vai para o `DATABASE_URL`.
@@ -79,9 +80,9 @@ bun prod:env:updatekeys    # re-wrap DEK after editing .sops.yaml recipients
 
 This file holds: `S3_ENDPOINT`, `S3_BUCKET`, `S3_REGION`, `S3_ACCESS_KEY`,
 `S3_SECRET_KEY`, `CORE_SECRET`, `DEEPSEEK_API_KEY`, `MOONSHOT_API_KEY`.
-When you rotate the R2 token (in `iedora-iac/apps/iedora-web/` via tofu),
-update `S3_ACCESS_KEY` + `S3_SECRET_KEY` here and re-paste into Coolify.
-Mark every key from `.env.prod` as "Is Secret" ✓ in the Coolify UI.
+When rodas o tofu de R2 ([`infra/tofu/r2/`](../infra/tofu/r2/)) para
+criar/rotar o token, copia os 5 outputs para `.env.prod` e re-cola em
+Coolify. Marca cada key de `.env.prod` como "Is Secret" ✓ na Coolify UI.
 
 Recipients (who can decrypt) are listed in [`.sops.yaml`](../.sops.yaml).
 To onboard a new operator machine or revoke one, see the workflow in
@@ -152,9 +153,10 @@ Traefik routing. CF tunnel wildcard `*.iedora.com` já cobre subdominios
   Database → Backups tab → "Restore".
 - **App image**: rebuild via `git push` (idempotente — o Dockerfile é
   determinístico para o mesmo SHA).
-- **Env vars**: hoje só vivem na UI Coolify. Se Coolify morrer,
-  reconstrói-se do BWS (TODO: migrar env vars para BWS-driven via tofu no
-  `iedora-iac/iac/stacks/platform/`).
+- **Env vars**: source-of-truth está em `apps/web/.env.prod` (sops, neste
+  repo). Se Coolify morrer: `bun prod:env:show` em qualquer máquina com
+  age key autorizada (recipients em [`.sops.yaml`](../.sops.yaml)) →
+  re-cola na UI ao recriar a app.
 - **Uploads R2**: bucket sobrevive — versionamento + soft delete são
   feature do CF Dashboard (configurar se ainda não estiver).
 
@@ -162,12 +164,14 @@ Traefik routing. CF tunnel wildcard `*.iedora.com` já cobre subdominios
 
 ```
 iedora/
-  apps/web/Dockerfile                 Multi-stage, Node runtime
+  apps/web/
+    Dockerfile                        Multi-stage, Node runtime
+    .env.prod                         Runtime secrets (sops+age encrypted)
   infra/
     dev/docker-compose.yml            Postgres + s3mock (local dev)
-    live/coolify/
-      init-databases.sql              CREATE DATABASE core/menu/imopush
+    tofu/r2/                          CF R2 bucket + creds (outputs → .env.prod)
 ```
 
-Toda a infra (LXC, CF tunnel, DNS, Coolify install) vive em
-[`iedora-iac`](https://github.com/eduvhc/iedora-iac).
+Tudo o que é homelab (LXCs, CF tunnel, DNS, Coolify install) vive em
+[`iedora-iac`](https://github.com/eduvhc/iedora-iac). Tudo o que é
+app-específico (incluindo a sua infra externa) vive aqui.

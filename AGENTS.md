@@ -57,8 +57,7 @@ iedora/
   package.json                           workspaces: packages/business/* + packages/platform/* + products/* + apps/*
   infra/
     dev/docker-compose.yml               Postgres + s3mock (local dev)
-    live/
-      coolify/init-databases.sql         Postgres init: CREATE DATABASE core/menu/imopush
+    tofu/r2/                             OpenTofu: CF R2 bucket + creds para uploads
 
   packages/
     business/                            Business tier — product-facing primitives
