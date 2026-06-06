@@ -49,7 +49,7 @@
     "zod": "catalog:"
   },
   "peerDependencies": {
-    "next": "^16.2.6",
+    "next": "^16.2.7",
     "react": "^19.2.0"
   },
   "devDependencies": {
