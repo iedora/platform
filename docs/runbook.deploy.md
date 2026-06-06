@@ -72,8 +72,9 @@ LOG_LEVEL=info
 **Secrets — encrypted source of truth in `apps/web/.env.prod` (sops+age):**
 
 ```bash
-bun prod:env:show    # decrypt + print to stdout (pipe to clipboard, paste in UI)
-bun prod:env:edit    # open in $EDITOR (re-encrypts on save)
+bun prod:env:show          # decrypt + print to stdout (pipe to clipboard, paste in UI)
+bun prod:env:edit          # open in $EDITOR (re-encrypts on save)
+bun prod:env:updatekeys    # re-wrap DEK after editing .sops.yaml recipients
 ```
 
 This file holds: `S3_ENDPOINT`, `S3_BUCKET`, `S3_REGION`, `S3_ACCESS_KEY`,
@@ -81,6 +82,11 @@ This file holds: `S3_ENDPOINT`, `S3_BUCKET`, `S3_REGION`, `S3_ACCESS_KEY`,
 When you rotate the R2 token (in `iedora-iac/apps/iedora-web/` via tofu),
 update `S3_ACCESS_KEY` + `S3_SECRET_KEY` here and re-paste into Coolify.
 Mark every key from `.env.prod` as "Is Secret" ✓ in the Coolify UI.
+
+Recipients (who can decrypt) are listed in [`.sops.yaml`](../.sops.yaml).
+To onboard a new operator machine or revoke one, see the workflow in
+[`iedora-iac/docs/setup-from-scratch.md`](https://github.com/eduvhc/iedora-iac/blob/main/docs/setup-from-scratch.md#onboarding-a-new-machine-existing-operator-with-a-working-key-required)
+and remember to run `bun prod:env:updatekeys` here too.
 
 **Database URLs — Coolify UI only, tied to Coolify-managed Postgres:**
 
