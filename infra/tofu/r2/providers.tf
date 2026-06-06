@@ -5,7 +5,7 @@ terraform {
   # próprio para a app. O homelab é dono do bucket de state como infra
   # transversal; a app só lá grava o seu objecto.
   backend "s3" {
-    bucket                      = "iedora-iac-state"
+    bucket                      = "homelab-iac-state"
     key                         = "iedora-web/r2/terraform.tfstate"
     region                      = "auto"
     use_lockfile                = true

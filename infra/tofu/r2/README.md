@@ -25,7 +25,7 @@ A `.envrc` do homelab exporta:
 - `TF_VAR_r2_account_id` — identificador da conta CF
 - `AWS_*` — backend R2 para state (não AWS, é só convenção S3-compat)
 
-State backend: bucket `iedora-iac-state` (do homelab), key
+State backend: bucket `homelab-iac-state` (do homelab), key
 `iedora-web/r2/terraform.tfstate`. Bucket único de state partilhado
 mas com prefixo por consumidor — zero acoplamento de runtime.
 
