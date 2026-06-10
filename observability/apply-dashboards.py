@@ -62,10 +62,15 @@ def ensure_folder(name):
     return created.get("folderId") or created.get("folder_id")
 
 
-def existing_by_title():
-    """title -> (dashboard_id, hash, folder_id) for every existing dashboard."""
+def existing_by_title(folder_id):
+    """title -> (dashboard_id, hash, folder_id) for dashboards IN this folder.
+
+    The list endpoint is folder-scoped — passing the target folder is what makes
+    re-applies idempotent (otherwise titles are matched against the default
+    folder and every run creates duplicates in a custom folder).
+    """
     out = {}
-    for e in api("GET", f"/api/{ORG}/dashboards").get("dashboards", []):
+    for e in api("GET", f"/api/{ORG}/dashboards?folder={folder_id}").get("dashboards", []):
         if e.get("title"):
             out[e["title"]] = (e["dashboard_id"], e.get("hash"), e.get("folder_id"))
     return out
@@ -74,7 +79,7 @@ def existing_by_title():
 def main():
     src_dir, folder_name = sys.argv[1], sys.argv[2]
     folder_id = ensure_folder(folder_name)
-    existing = existing_by_title()
+    existing = existing_by_title(folder_id)
     files = sorted(glob.glob(os.path.join(src_dir, "*.json")))
     if not files:
         print(f"  (no dashboards in {src_dir})")
