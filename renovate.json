@@ -34,7 +34,7 @@
       "groupName": "tofu-providers"
     },
     {
-      "matchPackageNames": ["next", "react", "react-dom", "drizzle-orm", "drizzle-kit", "better-auth"],
+      "matchPackageNames": ["next", "react", "react-dom", "better-auth"],
       "matchUpdateTypes": ["major"],
       "dependencyDashboardApproval": true,
       "automerge": false,

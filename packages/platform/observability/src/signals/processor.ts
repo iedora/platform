@@ -16,7 +16,7 @@ import { tenantContext } from "../tenant/tenant-context";
  *
  * The point: most spans we care about are emitted by code that doesn't
  * know it's running inside a tenant context — Next 16's HTTP server
- * spans, @vercel/otel's outbound fetch spans, Drizzle adapter spans
+ * spans, @vercel/otel's outbound fetch spans, Go backend adapter spans
  * created via `tracer.startActiveSpan`. Threading `{ restaurantId }`
  * through every layer would be ugly and easy to forget. This processor
  * does it once at the source — the active context — so every descendant

@@ -102,7 +102,7 @@ per-process). Three ways to attribute:
 1. **`tenantContext.run({ restaurantId, organizationId }, fn)`** — set
    once at an entrypoint (typically the auth boundary,
    `requireRestaurantAccess`). Every span started inside `fn` — including
-   ones deep inside Drizzle adapters or `withTenantSpan` blocks that
+   ones deep inside adapters or `withTenantSpan` blocks that
    don't know what tenant they belong to — gets `tenant.restaurant_id`
    stamped on by `TenantContextSpanProcessor`. This is the canonical
    pattern, modeled on Trigger.dev's `DatasourceAttributeSpanProcessor`

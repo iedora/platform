@@ -79,7 +79,7 @@ describe("tenantContext", () => {
       return { restaurantId: "r_entered" };
     }
     async function downstream() {
-      // Simulates a Drizzle adapter call that has no idea it's in a
+      // Simulates an adapter call that has no idea it's in a
       // tenant scope. The span processor would stamp tenant.* on
       // spans started here.
       return tenantContext.get();

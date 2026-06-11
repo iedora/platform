@@ -33,9 +33,9 @@ const tenantStorage = new AsyncLocalStorage<TenantAttrs>();
 /**
  * Ergonomic facade for the common case: set tenant on the active scope
  * and run `fn` inside it. All spans created inside `fn` — including
- * ones deep inside Drizzle adapters that have no idea what tenant they
- * belong to — get `tenant.restaurant_id` / `tenant.organization_id`
- * stamped on by TenantContextSpanProcessor.
+ * ones deep inside adapters that have no idea what tenant they belong
+ * to — get `tenant.restaurant_id` / `tenant.organization_id` stamped
+ * on by TenantContextSpanProcessor.
  *
  *   // In requireRestaurantAccess, after the auth check:
  *   return tenantContext.run({ restaurantId, tenantId }, () =>

@@ -5,7 +5,7 @@
  *
  * `QrCodeListRow` is the Go `QRCode` DTO (shared/api.ts) normalised for
  * rendering: ISO-string dates, explicit nulls, and the bound restaurant
- * folded into a nested object like the old Drizzle join produced.
+ * folded into a nested object for rendering convenience.
  */
 
 export type QrCodeListRow = {
