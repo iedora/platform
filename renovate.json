@@ -20,6 +20,11 @@
   },
   "packageRules": [
     {
+      "description": "Supply-chain cooldown: no npm update lands until the release is 3 days old (post-Shai-Hulud posture; security PRs bypass this)",
+      "matchDatasources": ["npm"],
+      "minimumReleaseAge": "3 days"
+    },
+    {
       "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
       "automerge": true,
       "platformAutomerge": true
@@ -28,10 +33,6 @@
       "matchManagers": ["github-actions"],
       "groupName": "github-actions",
       "automerge": true
-    },
-    {
-      "matchManagers": ["terraform"],
-      "groupName": "tofu-providers"
     },
     {
       "matchPackageNames": ["next", "react", "react-dom"],

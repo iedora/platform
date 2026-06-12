@@ -1,0 +1,47 @@
+# GHCR retention. GitHub Packages has NO native lifecycle policy (the Actions
+# "retention days" setting governs workflow artifacts/logs only), so every
+# superseded manifest — plus the buildx provenance/SBOM manifests and cosign
+# signatures CI attaches — lives forever unless something deletes it.
+#
+# This uses a manifest-aware cleaner: it keeps the platform children and
+# attestation/signature referrers of every retained image and validates
+# integrity afterwards. Do NOT replace it with actions/delete-package-versions:
+# that action is not manifest-aware and its untagged cleanup deletes the child
+# manifests of index images, breaking pulls with "manifest unknown".
+#
+# Retention policy:
+#  - `latest` is never touched
+#  - the newest 15 sha-* tags are kept
+#  - everything older than 4 weeks beyond that is deleted, untagged orphans first
+name: ghcr-cleanup
+
+on:
+  schedule:
+    - cron: "37 3 * * *"
+  workflow_dispatch:
+    inputs:
+      dry-run:
+        description: Log what would be deleted without deleting anything
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      packages: write
+    steps:
+      - uses: dataaxiom/ghcr-cleanup-action@d52806a0dc70b430571a37da1fde39733ffd640f # v1.2.2
+        with:
+          package: frontend
+          delete-untagged: true
+          keep-n-tagged: 15
+          older-than: 4 weeks
+          use-regex: true
+          exclude-tags: "^latest$"
+          validate: true
+          dry-run: ${{ inputs.dry-run || false }}

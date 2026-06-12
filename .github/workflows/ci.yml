@@ -1,13 +1,20 @@
-# Pipeline — 4 jobs with path-based change detection.
+# Pipeline — 5 jobs with path-based change detection.
 #
 #   changes      → detects what changed (code / docker)
 #   correctness  → typecheck + lint + test (only if code changed)
 #   security     → gitleaks + hadolint + osv-scanner (always on PR/push/cron)
 #   image        → build + push to ghcr.io/iedora/frontend (push on main; PR only builds)
 #                  with GHA cache, provenance + SBOM, cosign signature + attestation.
+#                  Gated: runs only when code/docker actually changed, and only
+#                  after correctness + security pass — a red run can never push,
+#                  and a docs-only push to main no longer republishes the image.
+#   ci-ok        → fan-in gate; the ONLY job to mark as a required status check
+#                  (it always runs, tolerates legitimately skipped legs, fails
+#                  on any failure/cancellation).
 #
 # The weekly cron runs only `security` (changes/correctness/image skip via `if:`)
-# — catches new CVEs without needing a push.
+# — catches new CVEs without needing a push. workflow_dispatch force-publishes
+# regardless of change detection (escape hatch for cache/base-image rebuilds).
 #
 # Action pins (Node 24 runtime — Node 20 deprecation rolling 2026):
 #   actions/checkout@v6.0.3       (2026-01-09)
@@ -28,6 +35,7 @@ on:
     branches: [main]
   schedule:
     - cron: '0 6 * * 1'  # Monday 06:00 UTC
+  workflow_dispatch:  # manual image rebuild/publish, bypassing change detection
 
 permissions:
   contents: read
@@ -73,7 +81,9 @@ jobs:
     if: needs.changes.outputs.code == 'true'
     concurrency:
       group: correctness-${{ github.ref }}
-      cancel-in-progress: true
+      # Cancelling a main run mid-pipeline would block that commit's image job
+      # (its gate sees correctness as cancelled) — only supersede PR runs.
+      cancel-in-progress: ${{ github.event_name == 'pull_request' }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -95,7 +105,7 @@ jobs:
   security:
     concurrency:
       group: security-${{ github.ref }}
-      cancel-in-progress: true
+      cancel-in-progress: ${{ github.event_name == 'pull_request' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
@@ -134,12 +144,28 @@ jobs:
   # fallback — apps/web/.env is excluded by .dockerignore, so prod URLs
   # land in the bundle automatically. Consumed by iedora/infra's frontend role.
   # ─────────────────────────────────────────────────────────────────
+  # Gating rules (each clause closes a real publish-despite-failure hole):
+  #  - !cancelled() replaces the implicit success(), which would skip this job
+  #    whenever correctness is legitimately path-skipped (e.g. Dockerfile-only
+  #    change) — but we still check each dependency's result explicitly below.
+  #  - correctness must be success or skipped (skipped = no code changed);
+  #    failed or cancelled correctness blocks the image.
+  #  - security must be success, full stop.
+  #  - something relevant must actually have changed (code or docker filter) —
+  #    a docs-only push to main no longer rebuilds and republishes the image.
+  #    workflow_dispatch bypasses change detection as the manual escape hatch.
   image:
-    needs: changes
-    if: github.event_name == 'push' || needs.changes.outputs.code == 'true' || needs.changes.outputs.docker == 'true'
+    needs: [changes, correctness, security]
+    if: >-
+      ${{ !cancelled() &&
+          github.event_name != 'schedule' &&
+          (needs.changes.outputs.code == 'true' || needs.changes.outputs.docker == 'true' || github.event_name == 'workflow_dispatch') &&
+          (needs.correctness.result == 'success' || needs.correctness.result == 'skipped') &&
+          needs.security.result == 'success' }}
     concurrency:
       group: image-${{ github.ref }}
-      cancel-in-progress: true
+      # Never cancel a main publish mid-push (could strand a half-tagged image).
+      cancel-in-progress: ${{ github.event_name == 'pull_request' }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
@@ -155,7 +181,7 @@ jobs:
       - uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5 # v4.1.0
 
       - name: Log in to GHCR
-        if: github.event_name == 'push'
+        if: github.event_name != 'pull_request'
         uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
         with:
           registry: ghcr.io
@@ -177,7 +203,7 @@ jobs:
         with:
           context: .
           file: apps/web/Dockerfile
-          push: ${{ github.event_name == 'push' }}
+          push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
@@ -193,15 +219,34 @@ jobs:
       # attestation alone is verified differently and would not satisfy it.
       - uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
       - name: Sign image (keyless)
-        if: github.event_name == 'push'
+        if: github.event_name != 'pull_request'
         env:
           DIGEST: ${{ steps.build.outputs.digest }}
         run: cosign sign --yes "${IMAGE}@${DIGEST}"
 
       - name: Attest provenance
-        if: github.event_name == 'push'
+        if: github.event_name != 'pull_request'
         uses: actions/attest-build-provenance@a2bbfa25375fe432b6a289bc6b6cd05ecd0c4c32 # v4.1.0
         with:
           subject-name: ${{ env.IMAGE }}
           subject-digest: ${{ steps.build.outputs.digest }}
           push-to-registry: true
+
+  # ─────────────────────────────────────────────────────────────────
+  # Fan-in gate. Make THIS the only required status check: a job-level
+  # skip reports Success, but a workflow- or job-skip on an individually
+  # required check would leave PRs stuck on "Expected" forever. ci-ok
+  # always runs, treats "skipped" as legitimate (path filter said no),
+  # and fails on any failure or cancellation upstream.
+  # ─────────────────────────────────────────────────────────────────
+  ci-ok:
+    needs: [changes, correctness, security, image]
+    if: ${{ !cancelled() && github.event_name != 'schedule' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: All jobs green or legitimately skipped
+        env:
+          RESULTS: ${{ toJSON(needs) }}
+        run: |
+          echo "$RESULTS" | jq -e 'all(.[]; .result == "success" or .result == "skipped")'
