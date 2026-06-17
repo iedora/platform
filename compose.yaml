@@ -33,11 +33,16 @@ services:
   audit:
     image: oven/bun:1.3.3-alpine
     working_dir: /app
-    command: sh -c "bun install --frozen-lockfile && bun run --hot services/audit/src/index.ts"
+    command: sh -c "bun install --frozen-lockfile && bun run services/audit/src/migrate.ts && bun run --hot services/audit/src/index.ts"
     environment:
       DEPLOYMENT_ENV: development
       AUDIT_PORT: "8081"
       AUDIT_DATABASE_URL: postgres://iedora:iedora@postgres:5432/audit?sslmode=disable
+      # Verifies internal service tokens. DEV keypair shared with the Go stack
+      # (auth's API_JWT_PRIVATE_KEY) so tokens cross-verify during the migration.
+      SERVICE_JWT_PUBLIC_KEY: M+/u/gPyq9NyuwfMjS82Y7lOJeyvGq6jpeRxMqr1Ge4=
+      SERVICE_JWT_ISSUER: https://api.iedora.com
+      SERVICE_AUDIENCE: iedora-internal
     # Host 8181 (container 8081) to coexist with the legacy Go audit on 8081.
     ports:
       - "8181:8081"

@@ -7,7 +7,10 @@
   "exports": {
     ".": "./src/index.ts",
     "./env": "./src/env.ts",
-    "./boot": "./src/boot.ts"
+    "./boot": "./src/boot.ts",
+    "./db": "./src/db.ts",
+    "./migrate": "./src/migrate.ts",
+    "./serviceauth": "./src/serviceauth.ts"
   },
   "scripts": {
     "typecheck": "tsgo --noEmit",
@@ -16,6 +19,7 @@
   },
   "dependencies": {
     "hono": "catalog:",
+    "jose": "catalog:",
     "kysely": "catalog:",
     "kysely-postgres-js": "catalog:"
   },

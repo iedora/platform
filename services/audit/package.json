@@ -10,21 +10,23 @@
   "scripts": {
     "dev": "bun run --hot src/index.ts",
     "start": "bun run src/index.ts",
+    "migrate": "bun run src/migrate.ts",
     "typecheck": "tsgo --noEmit",
     "lint": "eslint src --cache --cache-location node_modules/.cache/.eslintcache",
-    "test": "vitest run --passWithNoTests"
+    "test": "bun test"
   },
   "dependencies": {
     "@iedora/contracts": "workspace:*",
     "@iedora/server-kit": "workspace:*",
-    "hono": "catalog:"
+    "hono": "catalog:",
+    "kysely": "catalog:"
   },
   "devDependencies": {
     "@iedora/eslint-config": "workspace:*",
     "@types/bun": "catalog:",
     "eslint": "catalog:",
+    "jose": "catalog:",
     "typescript": "catalog:",
-    "typescript-eslint": "catalog:",
-    "vitest": "catalog:"
+    "typescript-eslint": "catalog:"
   }
 }
