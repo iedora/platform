@@ -29,7 +29,10 @@
 ARG NODE_VERSION=24.16.0-bookworm-slim
 
 # ── Stage 1: dependencies (Bun) ───────────────────────────────────────────────
-FROM oven/bun:1.3-debian@sha256:9dba1a1b43ce28c9d7931bfc4eb00feb63b0114720a0277a8f939ae4dfc9db6f AS deps
+# Pinned to 1.3.3 to match the backend image (services/Dockerfile) and the
+# committed bun.lock — the floating 1.3 tag resolved to 1.3.14, which rejected
+# the 1.3.3-written lockfile under --frozen-lockfile. (Renovate re-pins the digest.)
+FROM oven/bun:1.3.3-debian AS deps
 WORKDIR /workspace
 
 # Copy lockfile + manifests first so the install layer caches independently of
