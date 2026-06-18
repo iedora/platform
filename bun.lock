@@ -253,6 +253,28 @@
         "typescript-eslint": "catalog:",
       },
     },
+    "services/billing": {
+      "name": "@iedora/service-billing",
+      "version": "0.1.0",
+      "dependencies": {
+        "@hono/zod-validator": "catalog:",
+        "@iedora/contracts": "workspace:*",
+        "@iedora/server-kit": "workspace:*",
+        "hono": "catalog:",
+        "kysely": "catalog:",
+        "zod": "catalog:",
+      },
+      "devDependencies": {
+        "@iedora/eslint-config": "workspace:*",
+        "@types/bun": "catalog:",
+        "eslint": "catalog:",
+        "jose": "catalog:",
+        "kysely-codegen": "catalog:",
+        "pg": "catalog:",
+        "typescript": "catalog:",
+        "typescript-eslint": "catalog:",
+      },
+    },
   },
   "trustedDependencies": [
     "sharp",
@@ -486,6 +508,8 @@
     "@iedora/service-audit": ["@iedora/service-audit@workspace:services/audit"],
 
     "@iedora/service-auth": ["@iedora/service-auth@workspace:services/auth"],
+
+    "@iedora/service-billing": ["@iedora/service-billing@workspace:services/billing"],
 
     "@iedora/web": ["@iedora/web@workspace:apps/web"],
 
