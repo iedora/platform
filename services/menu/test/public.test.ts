@@ -1,35 +1,25 @@
-import { Database } from "@iedora/server-kit";
-import { type ScratchDatabase, createScratchDatabase } from "@iedora/server-kit/testkit";
-import { afterAll, beforeAll, expect, test } from "bun:test";
+import { beforeAll, expect, test } from "bun:test";
 import { sql } from "kysely";
 
-import { buildApp } from "../src/app";
-import type { MenuConfig } from "../src/config";
-import { Limiter } from "../src/ratelimit";
-import type { MenuDB } from "../src/schema";
+import { seedRestaurant, useHarness } from "./harness";
 
-let scratch: ScratchDatabase;
-let db: Database<MenuDB>;
-let app: ReturnType<typeof buildApp>;
+// Public slice: the unauthenticated /public surface (localized rendering, QR
+// resolution, view beacon). Seeds a restaurant tree once per file.
+const h = useHarness("menu_public");
 
 const RID = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
-const TID = "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb";
 const MID = "cccccccc-cccc-cccc-cccc-cccccccccccc";
 const CID = "dddddddd-dddd-dddd-dddd-dddddddddddd";
 
 beforeAll(async () => {
-  scratch = await createScratchDatabase({
-    prefix: "menu_test",
-    migrationsDir: `${import.meta.dir}/../migrations`,
+  await seedRestaurant(h, {
+    id: RID,
+    slug: "tasca",
+    description: "Cozinha portuguesa",
+    defaultLanguage: "en",
+    supportedLanguages: ["en", "pt"],
   });
-  db = new Database<MenuDB>(scratch.url);
-  // rate limiter disabled here so the beacon path is deterministic.
-  const cfg: MenuConfig = { port: 0, menuDatabaseUrl: scratch.url, rateLimitDisabled: true };
-  app = buildApp({ db, limiter: new Limiter(db, true), cfg });
-
-  const k = db.root;
-  await sql`INSERT INTO restaurants (id, tenant_id, name, slug, description, default_language, supported_languages)
-            VALUES (${RID}, ${TID}, 'Tasca', 'tasca', 'Cozinha portuguesa', 'en', ARRAY['en','pt'])`.execute(k);
+  const k = h.db.root;
   await sql`INSERT INTO menus (id, restaurant_id, name, position, active) VALUES (${MID}, ${RID}, 'Lunch', 0, true)`.execute(k);
   // an inactive menu — must not appear publicly
   await sql`INSERT INTO menus (restaurant_id, name, position, active) VALUES (${RID}, 'Hidden', 1, false)`.execute(k);
@@ -44,13 +34,8 @@ beforeAll(async () => {
   await sql`INSERT INTO qr_codes (code, restaurant_id, bound_at) VALUES ('abc123', ${RID}, now())`.execute(k);
 });
 
-afterAll(async () => {
-  await db?.close();
-  await scratch?.drop();
-});
-
 test("public payload renders active menus, drops unavailable items, default language", async () => {
-  const res = await app.request("/public/r/tasca");
+  const res = await h.app.request("/public/r/tasca");
   expect(res.status).toBe(200);
   const body = (await res.json()) as {
     restaurant: { name: string; description?: string };
@@ -68,7 +53,7 @@ test("public payload renders active menus, drops unavailable items, default lang
 });
 
 test("?lang=pt applies the i18n override", async () => {
-  const res = await app.request("/public/r/tasca?lang=pt");
+  const res = await h.app.request("/public/r/tasca?lang=pt");
   const body = (await res.json()) as {
     currentLanguage: string;
     menus: { categories: { items: { name: string }[] }[] }[];
@@ -78,23 +63,23 @@ test("?lang=pt applies the i18n override", async () => {
 });
 
 test("Accept-Language negotiates to a supported base tag", async () => {
-  const res = await app.request("/public/r/tasca", { headers: { "accept-language": "pt-BR,en;q=0.8" } });
+  const res = await h.app.request("/public/r/tasca", { headers: { "accept-language": "pt-BR,en;q=0.8" } });
   expect(((await res.json()) as { currentLanguage: string }).currentLanguage).toBe("pt");
 });
 
 test("unknown slug is 404", async () => {
-  expect((await app.request("/public/r/nope")).status).toBe(404);
+  expect((await h.app.request("/public/r/nope")).status).toBe(404);
 });
 
 test("QR resolve returns the bound slug; unknown code is 404", async () => {
-  const ok = await app.request("/public/qr/abc123");
+  const ok = await h.app.request("/public/qr/abc123");
   expect(ok.status).toBe(200);
   expect(((await ok.json()) as { slug: string }).slug).toBe("tasca");
-  expect((await app.request("/public/qr/zzz999")).status).toBe(404);
+  expect((await h.app.request("/public/qr/zzz999")).status).toBe(404);
 });
 
 test("the view beacon serves a gif, sets a visitor cookie, and counts the view", async () => {
-  const res = await app.request("/public/track/tasca");
+  const res = await h.app.request("/public/track/tasca");
   expect(res.status).toBe(200);
   expect(res.headers.get("content-type")).toBe("image/gif");
   const cookie = res.headers.getSetCookie().find((c) => c.startsWith("mm_v="));
@@ -102,8 +87,8 @@ test("the view beacon serves a gif, sets a visitor cookie, and counts the view",
   const visitor = cookie!.slice("mm_v=".length).split(";")[0]!;
 
   // Replay with the same visitor in the same hour → deduped (no second count).
-  await app.request("/public/track/tasca", { headers: { cookie: `mm_v=${visitor}` } });
+  await h.app.request("/public/track/tasca", { headers: { cookie: `mm_v=${visitor}` } });
 
-  const r = await sql<{ count: string }>`SELECT coalesce(sum(count),0)::text AS count FROM daily_view WHERE restaurant_id=${RID}`.execute(db.root);
+  const r = await sql<{ count: string }>`SELECT coalesce(sum(count),0)::text AS count FROM daily_view WHERE restaurant_id=${RID}`.execute(h.db.root);
   expect(Number(r.rows[0]!.count)).toBe(1);
 });
