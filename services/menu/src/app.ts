@@ -7,6 +7,8 @@ import { builderRoutes } from "./features/builder/builder.routes";
 import { dashboardRoutes } from "./features/dashboard/dashboard.routes";
 import { publicRoutes } from "./features/public/public.routes";
 import { restaurantRoutes } from "./features/restaurant/restaurant.routes";
+import { staffRoutes } from "./features/staff/staff.routes";
+import { uploadsRoutes } from "./features/uploads/uploads.routes";
 import { type MenuEnv, requireTenant, scoped } from "./middleware";
 
 // Composition root: the unauthenticated /public surface + the authenticated /api
@@ -18,13 +20,21 @@ export function buildApp(deps: MenuDeps) {
   const scopedApp = new Hono<MenuEnv>()
     .use(scoped(deps))
     .route("/", restaurantRoutes(deps))
-    .route("/", builderRoutes(deps));
+    .route("/", builderRoutes(deps))
+    .route("/", uploadsRoutes(deps));
 
-  const api = new Hono<MenuEnv>()
-    .use(userAuth(deps.userVerifier))
+  // Tenant-scoped surface: requireTenant guards the dashboard + scoped subtree.
+  // The cross-tenant /staff surface is role-gated only (a staff token may carry
+  // no tenant), so it must NOT sit under requireTenant.
+  const tenantApp = new Hono<MenuEnv>()
     .use(requireTenant)
     .route("/", dashboardRoutes(deps))
     .route("/restaurants/:slug", scopedApp);
+
+  const api = new Hono<MenuEnv>()
+    .use(userAuth(deps.userVerifier))
+    .route("/staff", staffRoutes(deps))
+    .route("/", tenantApp);
 
   const app = createServiceApp<MenuEnv>()
     .get("/up", async (c) => {

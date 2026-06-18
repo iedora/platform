@@ -1,5 +1,7 @@
 import { env, requireEnv } from "@iedora/server-kit";
 
+import type { S3Config } from "./blob";
+
 export interface MenuConfig {
   port: number;
   menuDatabaseUrl: string;
@@ -17,6 +19,8 @@ export interface MenuConfig {
   billingBaseUrl: string;
   serviceClientId: string;
   serviceClientSecret: string;
+
+  s3: S3Config; // object storage for uploads (empty endpoint = uploads disabled)
 }
 
 // Mirrors the Go menu Config (internal/apps/menu/config.go). Var names match the
@@ -34,5 +38,14 @@ export function loadConfig(): MenuConfig {
     billingBaseUrl: env("BILLING_BASE_URL", "http://localhost:8083"),
     serviceClientId: requireEnv("SERVICE_CLIENT_ID"),
     serviceClientSecret: requireEnv("SERVICE_CLIENT_SECRET"),
+    s3: {
+      endpoint: env("S3_ENDPOINT", ""),
+      region: env("S3_REGION", "auto"),
+      bucket: env("S3_BUCKET", ""),
+      accessKey: env("S3_ACCESS_KEY", ""),
+      secretKey: env("S3_SECRET_KEY", ""),
+      publicUrl: env("S3_PUBLIC_URL", ""),
+      forcePathStyle: env("S3_FORCE_PATH_STYLE", "") !== "",
+    },
   };
 }

@@ -10,10 +10,12 @@ import {
 
 import { buildApp } from "./app";
 import { BillingClient, ServiceTokenSource } from "./billing";
+import { makeBlobClient } from "./blob";
 import { loadConfig } from "./config";
 import { Plans } from "./plans";
 import { Limiter } from "./ratelimit";
 import type { MenuDB } from "./schema";
+import { Uploads } from "./uploads";
 
 expandFileSecrets();
 const cfg = loadConfig();
@@ -30,12 +32,14 @@ const limiter = new Limiter(db, cfg.rateLimitDisabled);
 const auditor = new OutboxWriter(db, "menu");
 const tokens = new ServiceTokenSource(cfg.authBaseUrl, cfg.serviceClientId, cfg.serviceClientSecret);
 const plans = new Plans(new BillingClient(cfg.billingBaseUrl, tokens), db);
+const blob = makeBlobClient(cfg.s3); // null when S3 is unconfigured → uploads 503
+const uploads = blob ? new Uploads(db, blob) : null;
 
 // Drain this service's audit outbox into the audit DB in the background.
 const relay = new OutboxRelay(db, auditDb.root);
 relay.start();
 
-serve(buildApp({ db, limiter, userVerifier, auditor, plans, cfg }), {
+serve(buildApp({ db, limiter, userVerifier, auditor, plans, uploads, cfg }), {
   name: "iedora-menu",
   port: cfg.port,
   onShutdown: async () => {

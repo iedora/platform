@@ -23,6 +23,15 @@ export const requireTenant = createMiddleware<MenuEnv>(async (c, next) => {
   await next();
 });
 
+// requireRole gates a surface on the caller holding the given role. Ports Go
+// userauth.RequireRole. The cross-tenant /staff surface uses STAFF_ROLE.
+export function requireRole(role: string) {
+  return createMiddleware<MenuEnv>(async (c, next) => {
+    if (!hasRole(c.get("user"), role)) return c.json({ error: "forbidden" }, 403);
+    await next();
+  });
+}
+
 // scoped resolves {slug} to a restaurant and enforces tenancy: the caller's
 // tenant must own it, unless the caller is staff. Handlers read the loaded row
 // via c.get("restaurant"). Ports Go httpapi.scoped — a foreign id and a missing
