@@ -1,8 +1,8 @@
 import { redirect } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
-import { Card, CardDesc, CardTitle } from '@iedora/design-system'
 import { getSession } from '@iedora/api-client'
 import { isSameIedoraOrigin, PRODUCTS, productUrl } from '@iedora/brand'
+import { signInUrl } from '@iedora/product-menu/shared/auth-urls'
 import { SignUpForm } from './sign-up-form'
 
 type Props = {
@@ -20,10 +20,14 @@ export default async function SignUpPage({ searchParams }: Props) {
   }
 
   return (
-    <Card>
-      <CardTitle as="h2">{t('title')}</CardTitle>
-      <CardDesc>{t('subtitle')}</CardDesc>
-      <SignUpForm next={next} />
-    </Card>
+    <div>
+      <h1 className="font-[family-name:var(--display)] text-[28px] font-extrabold leading-[1.12] tracking-[-0.01em] text-foreground">
+        {t('title')}
+      </h1>
+      <p className="mt-2 text-[15px] leading-[1.5] text-muted-foreground">{t('subtitle')}</p>
+      <div className="mt-7">
+        <SignUpForm next={next} signInHref={signInUrl(next)} />
+      </div>
+    </div>
   )
 }

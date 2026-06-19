@@ -3,16 +3,14 @@
 import { useActionState } from 'react'
 import { useTranslations } from 'next-intl'
 import Link from 'next/link'
-import {
-  Button,
-  Field,
-  FieldInput,
-  FieldLabel,
-} from '@iedora/design-system'
+import { Button } from '@iedora/design-system'
 import { signUpAction, type AuthFormState } from '@iedora/product-menu/features/auth/actions'
-import { signInUrl } from '@iedora/product-menu/shared/auth-urls'
 
-export function SignUpForm({ next }: { next: string }) {
+const FIELD =
+  'w-full rounded-[12px] border border-border bg-card px-4 py-3 text-[16px] text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-[color-mix(in_srgb,var(--cinnabar)_22%,transparent)]'
+const LABEL = 'mb-1.5 block text-[14px] font-semibold text-foreground'
+
+export function SignUpForm({ next, signInHref }: { next: string; signInHref: string }) {
   const t = useTranslations('Auth.signUp')
   const [state, action, pending] = useActionState<AuthFormState, FormData>(
     signUpAction,
@@ -20,11 +18,11 @@ export function SignUpForm({ next }: { next: string }) {
   )
 
   return (
-    <form action={action} className="space-y-5">
+    <form action={action} className="flex flex-col gap-5">
       <input type="hidden" name="next" value={next} />
-      <Field>
-        <FieldLabel htmlFor="name">{t('nameLabel')}</FieldLabel>
-        <FieldInput
+      <div>
+        <label htmlFor="name" className={LABEL}>{t('nameLabel')}</label>
+        <input
           id="name"
           name="name"
           type="text"
@@ -34,24 +32,26 @@ export function SignUpForm({ next }: { next: string }) {
           maxLength={80}
           autoFocus
           placeholder={t('namePlaceholder')}
+          className={FIELD}
           data-test-id="sign-up-name"
         />
-      </Field>
-      <Field>
-        <FieldLabel htmlFor="email">{t('emailLabel')}</FieldLabel>
-        <FieldInput
+      </div>
+      <div>
+        <label htmlFor="email" className={LABEL}>{t('emailLabel')}</label>
+        <input
           id="email"
           name="email"
           type="email"
           autoComplete="email"
           required
           placeholder={t('emailPlaceholder')}
+          className={FIELD}
           data-test-id="sign-up-email"
         />
-      </Field>
-      <Field>
-        <FieldLabel htmlFor="password">{t('passwordLabel')}</FieldLabel>
-        <FieldInput
+      </div>
+      <div>
+        <label htmlFor="password" className={LABEL}>{t('passwordLabel')}</label>
+        <input
           id="password"
           name="password"
           type="password"
@@ -59,30 +59,29 @@ export function SignUpForm({ next }: { next: string }) {
           required
           minLength={12}
           maxLength={256}
+          className={FIELD}
           data-test-id="sign-up-password"
         />
-        <p className="text-xs text-muted-foreground">{t('passwordHint')}</p>
-      </Field>
+        <p className="mt-1.5 text-[13px] text-muted-foreground">{t('passwordHint')}</p>
+      </div>
       {state.error && (
-        <p className="text-sm text-destructive" role="alert">
+        <p className="text-[13px] text-[var(--danger)]" role="alert">
           {t('errorGeneric')}
         </p>
       )}
       <Button
         type="submit"
         variant="primary"
+        size="lg"
+        className="!w-full !justify-center"
         disabled={pending}
         data-test-id="sign-up-submit"
       >
         {pending ? t('submitting') : t('submit')}
       </Button>
-      <p className="text-sm text-muted-foreground">
+      <p className="text-center text-[14px] text-muted-foreground">
         {t('haveAccount')}{' '}
-        <Link
-          href={signInUrl(next)}
-          className="underline"
-          data-test-id="sign-up-sign-in-link"
-        >
+        <Link href={signInHref} className="font-semibold text-primary no-underline" data-test-id="sign-up-sign-in-link">
           {t('signInLink')}
         </Link>
       </p>
