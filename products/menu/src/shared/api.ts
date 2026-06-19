@@ -118,10 +118,6 @@ export function completeOnboarding(slug: string) {
   return apiJson<void>(`${r(slug)}/complete-onboarding`, { method: 'POST' })
 }
 
-export function seedSampleMenu(slug: string) {
-  return apiJson<{ menuId: string }>(`${r(slug)}/seed`, { method: 'POST' })
-}
-
 export function getMenuTree(slug: string) {
   return apiJson<{
     menus: MenuNode[]

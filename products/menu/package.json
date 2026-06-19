@@ -18,7 +18,6 @@
     "./features/menu-builder": "./src/features/menu-builder/index.ts",
     "./features/menu-builder/ui/builder": "./src/features/menu-builder/ui/builder.tsx",
     "./features/menu-builder/ui/create-menu-dialog": "./src/features/menu-builder/ui/create-menu-dialog.tsx",
-    "./features/menu-builder/ui/seed-sample-button": "./src/features/menu-builder/ui/seed-sample-button.tsx",
     "./features/menu-onboarding": "./src/features/menu-onboarding/index.ts",
     "./features/menu-publishing": "./src/features/menu-publishing/index.ts",
     "./features/menu-publishing/rsc/menu-renderer": "./src/features/menu-publishing/rsc/menu-renderer.tsx",

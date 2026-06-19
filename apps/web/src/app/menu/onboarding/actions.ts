@@ -16,6 +16,7 @@ import { getSession } from '@iedora/product-menu/features/auth'
 import {
   ONBOARDING_STEPS,
   createOnboardingRestaurant,
+  markRestaurantOnboardingComplete,
 } from '@iedora/product-menu/features/menu-onboarding'
 import { signInUrl } from '@iedora/product-menu/shared/auth-urls'
 import { publicUrl } from '@iedora/product-menu/shared/url'
@@ -105,22 +106,30 @@ export async function completeOnboarding(
     }
   }
 
-  // 3. Create the restaurant in the owner's chosen primary language.
-  //    Go owns the slug and the plan gate — a 422 over-limit surfaces
-  //    as the form error.
+  // 3. Create the restaurant (in the owner's chosen primary language)
+  //    plus one empty menu. The menu API owns slug derivation and the
+  //    plan gate — a 422 over-limit surfaces as the form error.
   let slug: string
+  let menuId: string
   try {
-    const restaurant = await createOnboardingRestaurant({
+    const created = await createOnboardingRestaurant({
       name: restaurantName,
       defaultLanguage: defaultLanguage ?? (await getLocale()),
     })
-    slug = restaurant.slug
+    slug = created.restaurant.slug
+    menuId = created.menuId
   } catch (err) {
     if (err instanceof ApiError) return { error: err.message }
     console.error('[onboarding] restaurant creation failed', err)
     return { error: 'Could not create restaurant. Please try again.' }
   }
 
-  // 4. Into step 2 of the wizard.
-  redirect(ONBOARDING_STEPS.menu.buildPath({ slug }))
+  // 4. Onboarding is a single step — mark it complete and drop the
+  //    owner straight into the menu editor to add their own dishes.
+  try {
+    await markRestaurantOnboardingComplete(slug)
+  } catch (err) {
+    console.error('[onboarding] markComplete failed', err)
+  }
+  redirect(`/menu/dashboard/r/${slug}/m/${menuId}`)
 }

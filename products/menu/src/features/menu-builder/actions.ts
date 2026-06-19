@@ -232,14 +232,3 @@ export async function deleteMenu(slug: string, menuId: string) {
   }
   revalidateRestaurantPages(slug)
 }
-
-export async function seedSampleMenu(slug: string) {
-  let menuId: string
-  try {
-    ;({ menuId } = await api.seedSampleMenu(slug))
-  } catch (err) {
-    return { error: errorMessage(err) }
-  }
-  revalidateRestaurantPages(slug)
-  return { ok: true as const, menuId }
-}

@@ -4,7 +4,6 @@ import { requireRestaurantBySlug } from '@iedora/product-menu/features/auth'
 import { DashboardPage } from '@iedora/product-menu/shared/ui/dashboard-page'
 import { formatEditedAt } from '@iedora/product-menu/shared/ui/editorial-list'
 import { CreateMenuDialog } from '@iedora/product-menu/features/menu-builder/ui/create-menu-dialog'
-import { SeedSampleButton } from '@iedora/product-menu/features/menu-builder/ui/seed-sample-button'
 
 /**
  * Restaurant home — single column, mobile-canonical.
@@ -186,10 +185,6 @@ export default async function RestaurantPage({
           <h2 className="restaurant-empty__title">{t('emptyTitle')}</h2>
           <p className="restaurant-empty__lede">{t('emptyLede')}</p>
           <div className="restaurant-empty__actions">
-            <SeedSampleButton slug={slug} />
-          </div>
-          <div className="restaurant-empty__or">
-            <span>{t('emptyOr')}</span>
             <CreateMenuDialog slug={slug} />
           </div>
         </section>

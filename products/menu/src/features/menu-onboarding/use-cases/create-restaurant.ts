@@ -1,30 +1,18 @@
 import 'server-only'
-import {
-  createRestaurant,
-  updateIdentity,
-  type Restaurant,
-} from '../../../shared/api'
+import { createMenu, createRestaurant, type Restaurant } from '../../../shared/api'
 
 /**
- * Step-1 write: provision the restaurant via the Go menu service
- * (which owns slug derivation, the plan gate — 422 on over-limit —
- * and auditing), then persist the optional tagline as the public
- * description. The tagline write is best-effort: a failure must not
- * strand the operator between steps, they can re-enter it later from
- * the identity settings.
+ * Onboarding write: provision the restaurant via the menu API (which
+ * owns slug derivation, the plan gate — 422 on over-limit — and
+ * auditing), then create one empty menu so the owner lands straight in
+ * the menu editor and starts adding their own dishes. Onboarding is a
+ * single step now; there's no sample-menu seeding.
  */
 export async function createOnboardingRestaurant(input: {
   name: string
   defaultLanguage: string
-  tagline?: string
-}): Promise<Restaurant> {
+}): Promise<{ restaurant: Restaurant; menuId: string }> {
   const restaurant = await createRestaurant(input.name, input.defaultLanguage)
-  if (input.tagline) {
-    try {
-      await updateIdentity(restaurant.slug, { description: input.tagline })
-    } catch (err) {
-      console.error('[menu-onboarding] tagline save failed', err)
-    }
-  }
-  return restaurant
+  const { id: menuId } = await createMenu(restaurant.slug, 'Menu')
+  return { restaurant, menuId }
 }

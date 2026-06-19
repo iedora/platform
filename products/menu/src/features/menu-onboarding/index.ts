@@ -8,7 +8,6 @@
  * whether to bounce the operator back into step 2.
  */
 
-export { MenuOnboardingPage } from './ui/menu-onboarding-page'
 export { createOnboardingRestaurant } from './use-cases/create-restaurant'
 export { findPendingOnboardingRestaurant } from './use-cases/find-pending-restaurant'
 export { markRestaurantOnboardingComplete } from './use-cases/mark-complete'

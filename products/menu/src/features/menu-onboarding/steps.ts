@@ -13,7 +13,7 @@
  * and server.
  */
 
-export const ONBOARDING_STEP_KEYS = ['name', 'menu'] as const
+export const ONBOARDING_STEP_KEYS = ['name'] as const
 export type OnboardingStepKey = (typeof ONBOARDING_STEP_KEYS)[number]
 
 /** Total step count — derived so the stepper indicator stays in sync. */
@@ -53,14 +53,6 @@ export const ONBOARDING_STEPS = {
     labelKey: 'Onboarding.steps.name',
     path: '/menu/onboarding',
     parameterised: false,
-  },
-  menu: {
-    key: 'menu',
-    index: 2,
-    labelKey: 'Onboarding.steps.menu',
-    buildPath: ({ slug }: { slug: string }) =>
-      `/menu/onboarding/menu/${slug}`,
-    parameterised: true,
   },
 } as const satisfies Record<OnboardingStepKey, OnboardingStep>
 
