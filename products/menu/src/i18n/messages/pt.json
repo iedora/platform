@@ -79,7 +79,17 @@
       "remembered": "Já se lembra?",
       "backToSignIn": "Voltar ao início de sessão"
     },
-    "support": "Precisa de ajuda? Ligue-nos"
+    "support": "Precisa de ajuda? Ligue-nos",
+    "fields": {
+      "emailRequired": "Introduza o seu email.",
+      "emailInvalid": "Introduza um email válido.",
+      "passwordRequired": "Introduza a sua palavra-passe.",
+      "passwordMin": "Use pelo menos {min} caracteres.",
+      "passwordMismatch": "As palavras-passe não coincidem.",
+      "nameRequired": "Introduza o seu nome.",
+      "showPassword": "Mostrar palavra-passe",
+      "hidePassword": "Ocultar palavra-passe"
+    }
   },
   "Onboarding": {
     "title": "Fale-nos do seu restaurante",

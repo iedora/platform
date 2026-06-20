@@ -1,14 +1,13 @@
 'use client'
 
-import { useActionState } from 'react'
+import * as React from 'react'
+import { useActionState, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import Link from 'next/link'
 import { Button } from '@iedora/design-system'
 import { signInAction, type AuthFormState } from '@iedora/product-menu/features/auth/actions'
-
-const FIELD =
-  'w-full rounded-[12px] border border-border bg-card px-4 py-3 text-[16px] text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-[color-mix(in_srgb,var(--cinnabar)_22%,transparent)]'
-const LABEL = 'mb-1.5 block text-[14px] font-semibold text-foreground'
+import { PasswordField, TextField } from '../../_components/form-fields'
+import { isEmail } from '../../_components/validation'
 
 export function SignInForm({
   next,
@@ -20,38 +19,47 @@ export function SignInForm({
   forgotHref: string
 }) {
   const t = useTranslations('Auth.signIn')
-  const [state, action, pending] = useActionState<AuthFormState, FormData>(
-    signInAction,
-    { error: null },
-  )
+  const tf = useTranslations('Auth.fields')
+  const [state, action, pending] = useActionState<AuthFormState, FormData>(signInAction, { error: null })
+  const [errors, setErrors] = useState<{ email?: string; password?: string }>({})
+
+  function validate(fd: FormData) {
+    const e: { email?: string; password?: string } = {}
+    const email = String(fd.get('email') ?? '').trim()
+    const password = String(fd.get('password') ?? '')
+    if (!email) e.email = tf('emailRequired')
+    else if (!isEmail(email)) e.email = tf('emailInvalid')
+    if (!password) e.password = tf('passwordRequired')
+    return e
+  }
+
+  function onSubmit(ev: React.FormEvent<HTMLFormElement>) {
+    const e = validate(new FormData(ev.currentTarget))
+    setErrors(e)
+    if (Object.keys(e).length > 0) ev.preventDefault()
+  }
 
   return (
-    <form action={action} className="flex flex-col gap-5">
+    <form action={action} onSubmit={onSubmit} noValidate className="flex flex-col gap-5">
       <input type="hidden" name="next" value={next} />
+      <TextField
+        label={t('emailLabel')}
+        name="email"
+        type="email"
+        autoComplete="email"
+        autoFocus
+        placeholder={t('emailPlaceholder')}
+        error={errors.email}
+        data-test-id="sign-in-email"
+      />
       <div>
-        <label htmlFor="email" className={LABEL}>{t('emailLabel')}</label>
-        <input
-          id="email"
-          name="email"
-          type="email"
-          autoComplete="email"
-          required
-          autoFocus
-          placeholder={t('emailPlaceholder')}
-          className={FIELD}
-          data-test-id="sign-in-email"
-        />
-      </div>
-      <div>
-        <label htmlFor="password" className={LABEL}>{t('passwordLabel')}</label>
-        <input
-          id="password"
+        <PasswordField
+          label={t('passwordLabel')}
           name="password"
-          type="password"
           autoComplete="current-password"
-          required
-          minLength={12}
-          className={FIELD}
+          error={errors.password}
+          showLabel={tf('showPassword')}
+          hideLabel={tf('hidePassword')}
           data-test-id="sign-in-password"
         />
         <div className="mt-1.5 text-right">
@@ -65,7 +73,7 @@ export function SignInForm({
         </div>
       </div>
       {state.error && (
-        <p className="text-[13px] text-[var(--danger)]" role="alert">
+        <p className="text-[13px] text-[#D92D20]" role="alert">
           {t('errorGeneric')}
         </p>
       )}

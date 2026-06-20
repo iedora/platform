@@ -1,10 +1,13 @@
 import { Phone } from 'lucide-react'
 
+const SUPPORT_PHONE = '+351 917 140 356'
+
 /**
- * Support line (Pencil "Support Line") — a rounded muted pill with a phone
- * icon, the help label, and the coral phone number. Shared by the auth and
- * onboarding chrome so there's one pill, not two hand-rolled copies. The
- * `label` is passed in (each caller owns its own i18n namespace).
+ * Support line (Pencil "Support Line v2") — a rounded muted pill, centered
+ * and stacked: the phone icon sits inline with the help label on the first
+ * line, the number on the second. Each line stays whole at any width — never
+ * the icon floating beside a wrapped block. Shared by the auth + onboarding
+ * chrome; `label` comes from the caller's i18n namespace.
  */
 export function SupportLine({
   label,
@@ -17,12 +20,15 @@ export function SupportLine({
 }) {
   return (
     <a
-      href="tel:+351917140356"
-      className={`flex items-center justify-center gap-2 rounded-full bg-muted px-5 py-4 text-[14px] text-muted-foreground no-underline ${className}`}
+      href={`tel:${SUPPORT_PHONE.replace(/\s/g, '')}`}
+      className={`flex flex-col items-center justify-center gap-1 rounded-[28px] bg-muted px-5 py-3.5 text-center no-underline ${className}`}
       data-test-id={testId}
     >
-      <Phone size={15} strokeWidth={2} aria-hidden="true" className="shrink-0" /> {label}{' '}
-      <span className="whitespace-nowrap font-semibold text-primary">+351 917 140 356</span>
+      <span className="flex items-center gap-2 text-[14px] text-muted-foreground">
+        <Phone size={15} strokeWidth={2} aria-hidden="true" />
+        {label}
+      </span>
+      <span className="text-[15px] font-semibold tracking-[0.01em] text-primary">{SUPPORT_PHONE}</span>
     </a>
   )
 }

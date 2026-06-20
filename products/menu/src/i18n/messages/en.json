@@ -79,7 +79,17 @@
       "remembered": "Remembered it?",
       "backToSignIn": "Back to sign in"
     },
-    "support": "Need help? Call us"
+    "support": "Need help? Call us",
+    "fields": {
+      "emailRequired": "Enter your email.",
+      "emailInvalid": "Enter a valid email address.",
+      "passwordRequired": "Enter your password.",
+      "passwordMin": "Use at least {min} characters.",
+      "passwordMismatch": "The passwords don't match.",
+      "nameRequired": "Enter your name.",
+      "showPassword": "Show password",
+      "hidePassword": "Hide password"
+    }
   },
   "Onboarding": {
     "title": "Tell us about your restaurant",

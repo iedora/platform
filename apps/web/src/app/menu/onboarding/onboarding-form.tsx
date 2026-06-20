@@ -1,11 +1,12 @@
 'use client'
 
-import { useActionState, useEffect, useRef, useState } from 'react'
+import { useActionState, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { Check } from 'lucide-react'
 import { Button } from '@iedora/design-system'
 import { completeOnboarding, type OnboardingFormState } from './actions'
 import { SupportLine } from '../_components/support-line'
+import { TextField } from '../_components/form-fields'
 
 /**
  * Step 1 form — the warm-light "Tell us about your restaurant" screen
@@ -43,11 +44,6 @@ export function OnboardingForm({ languages, locale }: { languages: Lang[]; local
   )
   const [name, setName] = useState('')
   const [offered, setOffered] = useState<string[]>([locale])
-  const nameRef = useRef<HTMLInputElement>(null)
-
-  useEffect(() => {
-    nameRef.current?.focus()
-  }, [])
 
   const slug = slugPreview(name)
   const nameError = state?.fieldErrors?.restaurantName
@@ -71,31 +67,18 @@ export function OnboardingForm({ languages, locale }: { languages: Lang[]; local
 
       <div className="mt-7 flex flex-col gap-5">
         {/* Restaurant name */}
-        <div>
-          <label htmlFor="restaurantName" className="mb-1.5 block text-[14px] font-semibold text-foreground">
-            {t('restaurantName')}
-          </label>
-          <input
-            ref={nameRef}
-            id="restaurantName"
-            name="restaurantName"
-            type="text"
-            required
-            minLength={2}
-            maxLength={80}
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder={t('restaurantNamePlaceholder')}
-            className="w-full rounded-[12px] border border-border bg-card px-4 py-3 text-[16px] text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-[color-mix(in_srgb,var(--cinnabar)_22%,transparent)]"
-            aria-invalid={Boolean(nameError) || undefined}
-            data-test-id="onboarding-restaurant-name"
-          />
-          {nameError && (
-            <p className="mt-1.5 text-[13px] text-[var(--danger)]" role="alert" data-test-id="onboarding-field-error-name">
-              {nameError}
-            </p>
-          )}
-        </div>
+        <TextField
+          label={t('restaurantName')}
+          name="restaurantName"
+          type="text"
+          autoFocus
+          maxLength={80}
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder={t('restaurantNamePlaceholder')}
+          error={nameError}
+          data-test-id="onboarding-restaurant-name"
+        />
 
         {/* Public URL — live preview of the derived slug */}
         <div>
