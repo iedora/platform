@@ -397,9 +397,17 @@
     "changePlanHint": "Para mudar de plano, contacta a equipa iedora."
   },
   "Misc": {
-    "title": "Outros",
+    "title": "Definições",
+    "subtitle": "A sua conta e preferências",
     "description": "Uso ligado ao plano que ainda não encaixa na Faturação.",
     "account": "Conta",
+    "signedIn": "Sessão iniciada",
+    "preferences": "Preferências",
+    "language": "Idioma",
+    "plan": "Plano",
+    "planHint": "O seu plano atual",
+    "manage": "Gerir",
+    "billing": "Faturação e recibos",
     "plans": {
       "menu_free": {
         "name": "Free"

@@ -136,7 +136,7 @@ export default async function DashboardLayout({
     // /menu/dashboard (the staff branch of requireActiveOrganization).
     Boolean(tenantId) && { kind: 'section', label: nav('account'), testId: 'dashboard-nav-account-section' },
     Boolean(tenantId) && { href: '/menu/dashboard/billing', label: nav('billing'), testId: 'dashboard-nav-billing' },
-    Boolean(tenantId) && { href: '/menu/dashboard/misc', label: nav('misc'), testId: 'dashboard-nav-misc' },
+    Boolean(tenantId) && { href: '/menu/dashboard/misc', label: nav('settings'), testId: 'dashboard-nav-misc' },
     hasAdminGroup && { kind: 'section', label: nav('admin'), testId: 'dashboard-nav-admin-section' },
     showAdminLink && { href: '/menu/dashboard/admin/restaurants', label: nav('restaurants'), testId: 'dashboard-nav-admin-restaurants' },
     showAdminLink && { href: '/menu/dashboard/admin/qr-codes', label: nav('qrCodes'), testId: 'dashboard-nav-admin' },

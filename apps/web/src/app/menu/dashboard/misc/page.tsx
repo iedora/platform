@@ -1,19 +1,19 @@
+import Link from 'next/link'
+import { ChevronRight } from 'lucide-react'
 import { getTranslations } from 'next-intl/server'
 import { getSession, requireActiveOrganization } from '@iedora/product-menu/features/auth'
 import { getOrganizationPlan } from '@iedora/product-menu/features/plans'
 import { DashboardPage } from '@iedora/product-menu/shared/ui/dashboard-page'
-import { LogoutButton } from '@iedora/product-menu/features/dashboard-home/ui/logout-button'
+import { SettingsLogout } from '@iedora/product-menu/features/dashboard-home/ui/settings-logout'
 import { UserLocaleSwitcher } from '@iedora/product-menu/features/dashboard-home/ui/user-locale-switcher'
 
 /**
- * Misc — account odds-and-ends + the account controls (language +
- * sign-out). On mobile the dashboard has no sidebar drawer, so this is
- * where the "Settings" bottom-nav tab lands and the only place the
- * account actions live below `lg`.
+ * Settings — account + preferences + plan (Pencil "App · Settings").
+ * Warm-light card sections. On mobile this is where the Settings
+ * bottom-nav tab lands and the only place the account actions
+ * (language + sign-out) live below `lg`.
  */
 export default async function MiscPage() {
-  // i18n is independent of auth — fan out. `plan` chains off the same
-  // cached org promise.
   const orgPromise = requireActiveOrganization()
   const [, t, plan, session] = await Promise.all([
     orgPromise,
@@ -22,29 +22,76 @@ export default async function MiscPage() {
     getSession(),
   ])
 
+  const email = session?.email ?? ''
+  const initial = (email.trim()[0] ?? '?').toUpperCase()
+  const planName = t(`plans.${plan.code}.name`)
+  const sectionLabel =
+    'px-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground'
+  const card = 'rounded-[18px] border border-border bg-card'
+
   return (
-    <DashboardPage
-      title={t('title')}
-      eyebrow={t(`plans.${plan.code}.name`)}
-      description={t('description')}
-      data-test-id="misc"
-    >
-      <section className="space-y-4" data-test-id="misc-account">
-        <div className="rounded-[18px] border border-border bg-card p-4">
-          <p className="text-[12px] font-semibold uppercase tracking-wide text-muted-foreground">
-            {t('account')}
+    <DashboardPage title={t('title')} chrome="none" data-test-id="misc">
+      <div className="space-y-6" data-test-id="settings">
+        <header className="space-y-1">
+          <p className="font-[family-name:var(--display)] text-[26px] font-bold leading-tight text-foreground">
+            {t('title')}
           </p>
-          {session?.email ? (
-            <p className="mt-0.5 truncate text-[15px] font-semibold text-foreground" title={session.email}>
-              {session.email}
-            </p>
-          ) : null}
-          <div className="mt-3 flex flex-wrap items-center gap-3">
-            <UserLocaleSwitcher />
-            <LogoutButton />
+          <p className="text-[15px] text-muted-foreground">{t('subtitle')}</p>
+        </header>
+
+        {/* Account */}
+        <section className="space-y-2" data-test-id="settings-account">
+          <p className={sectionLabel}>{t('account')}</p>
+          <div className={`${card} flex items-center gap-3 p-4`}>
+            <span className="grid size-11 shrink-0 place-items-center rounded-full bg-[var(--cinnabar-soft)] text-[18px] font-bold text-primary">
+              {initial}
+            </span>
+            <div className="min-w-0">
+              <p className="truncate text-[15px] font-semibold text-foreground" title={email}>
+                {email}
+              </p>
+              <p className="text-[13px] text-muted-foreground">{t('signedIn')}</p>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+
+        {/* Preferences */}
+        <section className="space-y-2" data-test-id="settings-preferences">
+          <p className={sectionLabel}>{t('preferences')}</p>
+          <div className={`${card} flex items-center justify-between gap-3 p-4`}>
+            <span className="text-[15px] text-foreground">{t('language')}</span>
+            <UserLocaleSwitcher />
+          </div>
+        </section>
+
+        {/* Plan */}
+        <section className="space-y-2" data-test-id="settings-plan">
+          <p className={sectionLabel}>{t('plan')}</p>
+          <div className={`${card} divide-y divide-border`}>
+            <div className="flex items-center justify-between gap-3 p-4">
+              <div className="min-w-0">
+                <p className="text-[15px] font-semibold text-foreground">{planName}</p>
+                <p className="text-[13px] text-muted-foreground">{t('planHint')}</p>
+              </div>
+              <Link
+                href="/dashboard/billing"
+                className="shrink-0 rounded-full bg-primary px-4 py-2 text-[13.5px] font-semibold text-white no-underline transition-colors hover:bg-[var(--cinnabar-deep)]"
+              >
+                {t('manage')}
+              </Link>
+            </div>
+            <Link
+              href="/dashboard/billing"
+              className="flex items-center justify-between gap-3 p-4 text-foreground no-underline transition-colors hover:bg-muted"
+            >
+              <span className="text-[15px]">{t('billing')}</span>
+              <ChevronRight size={18} className="shrink-0 text-muted-foreground" />
+            </Link>
+          </div>
+        </section>
+
+        <SettingsLogout />
+      </div>
     </DashboardPage>
   )
 }

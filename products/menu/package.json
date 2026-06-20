@@ -13,6 +13,7 @@
     "./features/dashboard-home/actions": "./src/features/dashboard-home/actions.ts",
     "./features/dashboard-home/ui/analytics-cards": "./src/features/dashboard-home/ui/analytics-cards.tsx",
     "./features/dashboard-home/ui/logout-button": "./src/features/dashboard-home/ui/logout-button.tsx",
+    "./features/dashboard-home/ui/settings-logout": "./src/features/dashboard-home/ui/settings-logout.tsx",
     "./features/dashboard-home/ui/user-locale-switcher": "./src/features/dashboard-home/ui/user-locale-switcher.tsx",
     "./features/i18n": "./src/features/i18n/index.ts",
     "./features/menu-builder": "./src/features/menu-builder/index.ts",

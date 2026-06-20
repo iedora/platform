@@ -397,9 +397,17 @@
     "changePlanHint": "To change your plan, contact the iedora team."
   },
   "Misc": {
-    "title": "Misc",
+    "title": "Settings",
+    "subtitle": "Your account and preferences",
     "description": "Plan-scoped usage that doesn't fit on Billing yet.",
     "account": "Account",
+    "signedIn": "Signed in",
+    "preferences": "Preferences",
+    "language": "Language",
+    "plan": "Plan",
+    "planHint": "Your current plan",
+    "manage": "Manage",
+    "billing": "Billing & invoices",
     "plans": {
       "menu_free": {
         "name": "Free"
