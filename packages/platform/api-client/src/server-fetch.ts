@@ -16,6 +16,15 @@ import { ApiError } from './error'
  */
 export async function serverFetch(path: string, init: RequestInit = {}): Promise<Response> {
   const url = path.startsWith('http') ? path : `${MENU_URL}${path}`
+  return authedFetch(url, init)
+}
+
+/**
+ * Core authed fetch against an ABSOLUTE url with the caller's Bearer
+ * token + the same one-shot 401-refresh retry as serverFetch. Shared
+ * with the Hono RPC client (`menu-rpc`), which builds full URLs itself.
+ */
+export async function authedFetch(url: string, init: RequestInit = {}): Promise<Response> {
   const store = await cookies()
 
   const doFetch = (token: string | undefined) =>
@@ -28,14 +37,12 @@ export async function serverFetch(path: string, init: RequestInit = {}): Promise
       },
     })
 
-  let token = store.get(ACCESS_COOKIE)?.value
-  let res = await doFetch(token)
+  let res = await doFetch(store.get(ACCESS_COOKIE)?.value)
 
   if (res.status === 401) {
     const refreshed = await tryRefresh()
     if (refreshed) {
-      token = refreshed
-      res = await doFetch(token)
+      res = await doFetch(refreshed)
     }
   }
   return res

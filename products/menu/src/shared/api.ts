@@ -1,5 +1,6 @@
 import 'server-only'
-import { apiJson, MENU_URL } from '@iedora/api-client'
+import { apiJson, ApiError, MENU_URL } from '@iedora/api-client'
+import { menu } from '@iedora/api-client/menu-rpc'
 import type {
   Analytics,
   CategoryUpdate,
@@ -78,8 +79,12 @@ export function getPlan() {
   return apiJson<PlanLimits>('/api/plan')
 }
 
-export function getAnalytics(range: string) {
-  return apiJson<Analytics>(`/api/analytics?range=${encodeURIComponent(range)}`)
+export async function getAnalytics(range: string): Promise<Analytics> {
+  // Typed Hono RPC call — path + query are checked against the menu
+  // service's route definitions (no hand-built URL).
+  const res = await menu.api.analytics.$get({ query: { range } })
+  if (!res.ok) throw new ApiError(res.status, res.statusText)
+  return (await res.json()) as Analytics
 }
 
 export function getMonthlyViews() {

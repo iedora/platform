@@ -42,6 +42,8 @@
       "version": "0.1.0",
       "dependencies": {
         "@iedora/contracts": "workspace:*",
+        "@iedora/service-menu": "workspace:*",
+        "hono": "catalog:",
       },
       "devDependencies": {
         "@iedora/eslint-config": "workspace:*",

@@ -6,7 +6,8 @@
   "description": "Server-only HTTP client for the Go backend (BFF-lite): auth cookie handling, access-token session decode, and a Bearer-attaching fetch with one-shot refresh. Edge-compatible — importable from Next middleware, RSCs, server actions, and route handlers. The browser never calls the Go services directly.",
   "exports": {
     ".": "./src/index.ts",
-    "./middleware": "./src/middleware.ts"
+    "./middleware": "./src/middleware.ts",
+    "./menu-rpc": "./src/menu-rpc.ts"
   },
   "scripts": {
     "typecheck": "tsgo --noEmit",
@@ -14,7 +15,9 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
-    "@iedora/contracts": "workspace:*"
+    "@iedora/contracts": "workspace:*",
+    "@iedora/service-menu": "workspace:*",
+    "hono": "catalog:"
   },
   "peerDependencies": {
     "next": "^16.2.6"
