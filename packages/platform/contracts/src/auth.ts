@@ -1,7 +1,7 @@
 import { z } from "zod";
 
-// Mirrors the Go auth service wire format. The token response shape matches what
-// the frontend's @iedora/api-client already decodes (TokenResponse), so the new
+// The auth service wire format. The token response shape matches what
+// the frontend's @iedora/api-client already decodes (TokenResponse), so the
 // Hono auth service stays drop-in compatible with the live frontend.
 
 export const tokenResponse = z.object({
@@ -51,6 +51,39 @@ export const tenant = z.object({
 });
 export type Tenant = z.infer<typeof tenant>;
 
+// A tenant joined to its owner user — the service-only read behind
+// GET /auth/tenants/:id, used by the admin BFF to name a restaurant's owner.
+export const ownerUser = z.object({
+  id: z.string(),
+  email: z.string(),
+  name: z.string().nullable(),
+});
+export type OwnerUser = z.infer<typeof ownerUser>;
+
+export const tenantWithOwner = z.object({
+  id: z.string(),
+  name: z.string(),
+  slug: z.string().nullable(),
+  owner: ownerUser,
+});
+export type TenantWithOwner = z.infer<typeof tenantWithOwner>;
+
+// Service-only list of tenants joined to their owners, behind
+// GET /auth/admin/tenants. Feeds the admin "assign to tenant" picker via the
+// menu BFF.
+export const tenantList = z.object({ tenants: z.array(tenantWithOwner) });
+export type TenantList = z.infer<typeof tenantList>;
+
+// Service-only admin create: provision a tenant owned by `ownerUserId`. Called
+// by the menu BFF when staff create or import a restaurant under a brand-new
+// tenant (the acting admin becomes the owner). Distinct from the user-authed
+// POST /auth/tenants, which owns the tenant by the caller.
+export const adminCreateTenantRequest = z.object({
+  name: z.string().trim().min(1).max(120),
+  ownerUserId: z.string().min(1),
+});
+export type AdminCreateTenantRequest = z.infer<typeof adminCreateTenantRequest>;
+
 export const whoamiResponse = z.object({
   userId: z.string(),
   tenantId: z.string().optional(),
@@ -66,7 +99,7 @@ export const serviceTokenResponse = z.object({
 });
 export type ServiceTokenResponse = z.infer<typeof serviceTokenResponse>;
 
-// Access-token claims (EdDSA), mirroring internal/auth/crypto/jwt.go Claims.
+// Access-token claims (EdDSA).
 export const accessClaims = z.object({
   sub: z.string(),
   tid: z.string().optional(),

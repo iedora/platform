@@ -23,24 +23,38 @@ export const viewport: Viewport = {
   themeColor: '#EFE7D7',
 }
 import {
+  BarChart3,
+  BookOpen,
+  LayoutDashboard,
+  QrCode,
+  Settings,
+  Store,
+  UtensilsCrossed,
+} from 'lucide-react'
+import {
   ActiveSidebarLinks,
   type ActiveSidebarItem,
   Sidebar,
   SidebarBrand,
-  SidebarClose,
-  SidebarFooter,
+  SidebarBrandMark,
   SidebarProvider,
-  Wordmark,
+  SidebarUserCard,
 } from '@iedora/design-system'
 import { signInUrl } from '@iedora/product-menu/shared/auth-urls'
 import { publicUrl } from '@iedora/product-menu/shared/url'
 import { ONBOARDING_STEPS } from '@iedora/product-menu/features/menu-onboarding'
 import { getSession, isStaff } from '@iedora/product-menu/features/auth'
 import { listRestaurantsWithCounts } from '@iedora/product-menu/features/dashboard-home'
-import { DEFAULT_PLAN, getOrganizationPlan, planHas } from '@iedora/product-menu/features/plans'
-import { LogoutButton } from '@iedora/product-menu/features/dashboard-home/ui/logout-button'
-import { UserLocaleSwitcher } from '@iedora/product-menu/features/dashboard-home/ui/user-locale-switcher'
+import { DEFAULT_PLAN, getOrganizationPlan, getPlanDisplay, planHas } from '@iedora/product-menu/features/plans'
+import { AccountMenu } from './_components/account-menu'
 import { BottomNav, type BottomTab } from './_components/bottom-nav'
+
+/** Two-letter initials for the account avatar — word-initials, else first two chars. */
+function initialsOf(label: string): string {
+  const words = label.trim().split(/\s+/).filter(Boolean)
+  if (words.length >= 2) return (words[0]![0]! + words[1]![0]!).toUpperCase()
+  return ((words[0] ?? '?').slice(0, 2) || '?').toUpperCase()
+}
 
 export default async function DashboardLayout({
   children,
@@ -71,19 +85,17 @@ export default async function DashboardLayout({
   // they don't need to belong to a tenant to land on the dashboard.
   const tenantId = session.tenantId
   const isStaffAdmin = isStaff(session)
-  const showAdminLink = isStaffAdmin
 
   if (!tenantId && !isStaffAdmin) {
     redirect(ONBOARDING_STEPS.name.path)
   }
-  // Sidebar restaurants section. Lists every restaurant in the active org
-  // so the operator can hop between them without going back to /dashboard.
-  // Empty when the org has no restaurants yet — the section header is
-  // suppressed in that case (see candidates below). Staff without a
-  // tenant get empty restaurants + the default plan.
-  const [t, nav, plan, restaurants] = await Promise.all([
+  // Staff without a tenant get empty restaurants + the default plan.
+  // Translations + session + data run concurrently; reads dedupe via
+  // React.cache.
+  const [t, nav, tBilling, plan, restaurants] = await Promise.all([
     tPromise,
     navPromise,
+    getTranslations('Billing'),
     tenantId ? getOrganizationPlan() : Promise.resolve(DEFAULT_PLAN),
     tenantId
       ? listRestaurantsWithCounts()
@@ -91,62 +103,47 @@ export default async function DashboardLayout({
           [] as Awaited<ReturnType<typeof listRestaurantsWithCounts>>,
         ),
   ])
-  const showAnalyticsLink = planHas(plan, 'analytics')
 
-  // Primary nav layout:
-  //   ── Restaurants ──            ← anchor of the sidebar. Listed by name
-  //   <restaurant 1>                so the operator can hop between them
-  //   <restaurant 2> …              from any nested page. Falls back to a
-  //                                 single "Restaurants" link to /dashboard
-  //                                 when the org has none yet — that page
-  //                                 is where the empty-state + onboarding
-  //                                 CTA live.
-  //   Analytics
-  //   ── Account ──                ← billing + AI usage live under here
-  //   Billing / Misc
-  //   ── Admin ──                  ← only for cross-tenant tools
-  //   QR Codes                       (sessions / users live in the admin BFF)
-  //
-  // No "Home" entry — the wordmark in the sidebar header already routes
-  // to /dashboard and the dashboard's own role is now the org overview,
-  // not a sibling of Restaurants. Restaurant links use prefix matching
-  // so the current restaurant stays highlighted while the operator is
-  // deep in its menus / theme / QR / billing pages.
-  const hasAdminGroup = showAdminLink
-  const hasRestaurants = restaurants.length > 0
-  // Staff manage every restaurant through Admin → Restaurantes, so we
-  // hide the tenant-level Restaurants section + per-restaurant links
-  // for them — keeps the sidebar focused on the admin surfaces.
-  const showRestaurantsGroup = !isStaffAdmin
-  const candidates: ReadonlyArray<ActiveSidebarItem | false> = [
-    showRestaurantsGroup &&
-      (hasRestaurants
-        ? { kind: 'section', label: nav('restaurants'), testId: 'dashboard-nav-restaurants-section' }
-        : { href: '/menu/dashboard', label: nav('restaurants'), testId: 'dashboard-nav-restaurants-empty', matchPrefix: false }),
-    ...(showRestaurantsGroup
-      ? restaurants.map((r) => ({
-          href: `/menu/dashboard/r/${r.slug}`,
-          label: r.name,
-          testId: `dashboard-nav-restaurant-${r.slug}`,
-        }))
-      : []),
-    showAnalyticsLink && { href: '/menu/dashboard/analytics', label: nav('analytics'), testId: 'dashboard-nav-analytics' },
-    // Account section (billing + misc) is per-tenant — hide for staff
-    // without a tenant pinned, otherwise the link redirects back to
-    // /menu/dashboard (the staff branch of requireActiveOrganization).
-    Boolean(tenantId) && { kind: 'section', label: nav('account'), testId: 'dashboard-nav-account-section' },
-    Boolean(tenantId) && { href: '/menu/dashboard/billing', label: nav('billing'), testId: 'dashboard-nav-billing' },
-    Boolean(tenantId) && { href: '/menu/dashboard/misc', label: nav('settings'), testId: 'dashboard-nav-misc' },
-    hasAdminGroup && { kind: 'section', label: nav('admin'), testId: 'dashboard-nav-admin-section' },
-    showAdminLink && { href: '/menu/dashboard/admin/restaurants', label: nav('restaurants'), testId: 'dashboard-nav-admin-restaurants' },
-    showAdminLink && { href: '/menu/dashboard/admin/qr-codes', label: nav('qrCodes'), testId: 'dashboard-nav-admin' },
-  ]
-  const navItems = candidates.filter((x): x is ActiveSidebarItem => Boolean(x))
+  // Warm-light icon nav (Pencil "App / Admin Sidebar"). Owners get a
+  // restaurant-scoped rail (Dashboard / Menu / Analytics / QR / Settings);
+  // Menu + QR target the primary restaurant (the common single-restaurant
+  // case). Staff get the cross-tenant admin rail. Account actions (billing,
+  // settings, language, logout) live in the bottom user-card popover, not
+  // the rail. The dashboard root uses `matchPrefix: false` so it only
+  // lights up on the overview itself, never on a nested restaurant page.
+  const icon = { size: 20, strokeWidth: 2 } as const
+  const primary = restaurants[0]
+  // Analytics is plan-gated: the page redirects free plans to billing, so
+  // the rail (and the mobile tab) hide the link rather than dead-end there.
+  const showAnalytics = planHas(plan, 'analytics')
+  const navItems: ActiveSidebarItem[] = isStaffAdmin
+    ? [
+        { href: '/menu/dashboard', label: nav('overview'), icon: <LayoutDashboard {...icon} />, matchPrefix: false, testId: 'dashboard-nav-overview' },
+        { href: '/menu/dashboard/admin/restaurants', label: nav('restaurants'), icon: <Store {...icon} />, testId: 'dashboard-nav-admin-restaurants' },
+        { href: '/menu/dashboard/admin/qr-codes', label: nav('qrCodes'), icon: <QrCode {...icon} />, testId: 'dashboard-nav-admin' },
+        ...(tenantId ? [{ href: '/menu/dashboard/misc', label: nav('settings'), icon: <Settings {...icon} />, testId: 'dashboard-nav-settings' }] : []),
+      ]
+    : [
+        { href: '/menu/dashboard', label: nav('dashboard'), icon: <LayoutDashboard {...icon} />, matchPrefix: false, testId: 'dashboard-nav-overview' },
+        ...(primary ? [{ href: `/menu/dashboard/r/${primary.slug}`, label: nav('menu'), icon: <BookOpen {...icon} />, testId: 'dashboard-nav-menu' }] : []),
+        ...(showAnalytics ? [{ href: '/menu/dashboard/analytics', label: nav('analytics'), icon: <BarChart3 {...icon} />, testId: 'dashboard-nav-analytics' }] : []),
+        ...(primary ? [{ href: `/menu/dashboard/r/${primary.slug}/qr`, label: nav('qrCodes'), icon: <QrCode {...icon} />, testId: 'dashboard-nav-qr' }] : []),
+        { href: '/menu/dashboard/misc', label: nav('settings'), icon: <Settings {...icon} />, testId: 'dashboard-nav-settings' },
+      ]
 
-  // Mobile bottom tab bar (Pencil has no top-right drawer below `lg`).
-  // Curated to the handful of top destinations per role; the sidebar
-  // rail still carries the full nav on desktop. Account actions
-  // (locale + logout) live on the Settings/More tab → /dashboard/misc.
+  // Bottom user-card identity. Owners: primary restaurant name + plan
+  // display name (i18n single source). Staff: "Admin" + email.
+  const planName = tBilling(`plans.${getPlanDisplay(plan.code).code}.name`)
+  const emailLocal = session.email?.split('@')[0] ?? ''
+  // `||` (not `??`) so an empty restaurant name / empty email-local falls
+  // through to the next option instead of rendering a blank card.
+  const accountName = isStaffAdmin ? nav('admin') : primary?.name || emailLocal || 'Account'
+  const accountSub = isStaffAdmin ? session.email ?? '' : planName
+
+  // Mobile bottom tab bar (Pencil has no top-right drawer below `lg`). The
+  // sidebar rail carries the full nav on desktop; this curates the top
+  // destinations per role. Account actions live behind the sidebar's user
+  // card on desktop and the Settings tab on mobile.
   const bottomCandidates: ReadonlyArray<BottomTab | false> = isStaffAdmin
     ? [
         { href: '/menu/dashboard', label: nav('overview'), icon: 'overview', exact: true },
@@ -155,9 +152,9 @@ export default async function DashboardLayout({
         Boolean(tenantId) && { href: '/menu/dashboard/misc', label: nav('settings'), icon: 'settings' },
       ]
     : [
-        { href: '/menu/dashboard', label: nav('home'), icon: 'home', exact: true },
-        showAnalyticsLink && { href: '/menu/dashboard/analytics', label: nav('analytics'), icon: 'stats' },
-        Boolean(tenantId) && { href: '/menu/dashboard/billing', label: nav('billing'), icon: 'billing' },
+        { href: '/menu/dashboard', label: nav('dashboard'), icon: 'home', exact: true },
+        primary ? { href: `/menu/dashboard/r/${primary.slug}`, label: nav('menu'), icon: 'menu' } : false,
+        showAnalytics && { href: '/menu/dashboard/analytics', label: nav('analytics'), icon: 'stats' },
         Boolean(tenantId) && { href: '/menu/dashboard/misc', label: nav('settings'), icon: 'settings' },
       ]
   const bottomTabs = bottomCandidates.filter((x): x is BottomTab => Boolean(x))
@@ -169,18 +166,16 @@ export default async function DashboardLayout({
             stays off-canvas and the BottomNav below carries navigation —
             no hamburger drawer, matching the Pencil mobile chrome. */}
         <Sidebar aria-label={nav('ariaLabel')} data-test-id="dashboard-chrome">
-          <SidebarClose
-            aria-label={t('closeNavigation')}
-            data-test-id="dashboard-sidebar-close"
-          />
           <SidebarBrand>
             <Link
               href="/menu/dashboard"
-              className="brand"
               aria-label={t('brandHome')}
               data-test-id="dashboard-home-link"
             >
-              <Wordmark word="menu" variant="inline" className="ds-wordmark--reveal" />
+              <SidebarBrandMark
+                glyph={<UtensilsCrossed size={18} strokeWidth={2.2} />}
+                badge={isStaffAdmin ? nav('admin') : undefined}
+              />
             </Link>
           </SidebarBrand>
 
@@ -191,17 +186,19 @@ export default async function DashboardLayout({
               cinnabar rail lights the right item. */}
           <ActiveSidebarLinks ariaLabel={nav('ariaLabel')} items={navItems} />
 
-          <SidebarFooter>
-            <UserLocaleSwitcher />
-            <span
-              className="min-w-0 truncate text-[10.5px] uppercase tracking-[0.18em] text-[var(--muted-foreground)]"
-              title={session.email ?? undefined}
-              data-test-id="dashboard-user-email"
-            >
-              {session.email}
-            </span>
-            <LogoutButton />
-          </SidebarFooter>
+          {/* Bottom account card — name + plan (owner) / email (staff)
+              with a popover for billing, settings, language, logout. */}
+          <SidebarUserCard
+            initials={initialsOf(accountName)}
+            name={accountName}
+            sub={accountSub}
+            menuLabel={t('accountMenu')}
+          >
+            <AccountMenu
+              showBilling={Boolean(tenantId)}
+              showSettings={Boolean(tenantId)}
+            />
+          </SidebarUserCard>
         </Sidebar>
 
         <main className="ds-shell flex-1 pt-5 pb-24 sm:pt-7 lg:pt-8 lg:pb-16">

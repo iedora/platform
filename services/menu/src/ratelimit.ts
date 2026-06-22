@@ -3,9 +3,9 @@ import { sql } from "kysely";
 
 import { RateLimitError } from "./errors";
 
-// Sliding-window rate limiter backed by Postgres — ports Go
-// internal/menu/ratelimit.go. Each check runs in one transaction under a
-// per-key advisory lock: prune expired events, count the window, insert this
+// Sliding-window rate limiter backed by Postgres. Each check runs in one
+// transaction under a per-key advisory lock: prune expired events, count the
+// window, insert this
 // one only when allowed (a denied request must not consume a slot). The table
 // self-prunes; no Redis, no vacuum job.
 
@@ -30,7 +30,16 @@ export const Policies: Record<string, Policy> = {
   beacon_rest: { name: "beacon_rest", limit: 5000, windowSeconds: HOUR, failClosed: false },
 };
 
+const SWEEP_INTERVAL_MS = 60_000;
+
 export class Limiter {
+  // In-process sliding windows for the cosmetic (failClosed:false) policies —
+  // beacon/identity/etc. are the highest-volume checks and don't need a Postgres
+  // transaction + advisory lock each. On a single instance an in-memory counter
+  // is exact; the security/cost-critical failClosed policies stay on Postgres.
+  private readonly windows = new Map<string, number[]>(); // key -> in-window timestamps (ms, ascending)
+  private lastSweep = 0;
+
   constructor(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     private readonly database: Database<any>,
@@ -44,6 +53,11 @@ export class Limiter {
     const p = Policies[policyName];
     if (!p) throw new Error(`menu: unknown rate-limit policy ${policyName}`);
     const key = `${p.name}:${scope}`;
+
+    if (!p.failClosed) {
+      this.allowInProcess(p, key);
+      return;
+    }
 
     let count = 0;
     let oldest = new Date();
@@ -77,6 +91,43 @@ export class Limiter {
     if (count >= p.limit) {
       const retryMs = oldest.getTime() + p.windowSeconds * 1000 - Date.now();
       throw new RateLimitError(Math.max(1, Math.ceil(retryMs / 1000)));
+    }
+  }
+
+  // In-memory sliding window: prune timestamps outside the window, then allow +
+  // record only when under the limit (a denied request must not consume a slot),
+  // mirroring the Postgres path's semantics and Retry-After.
+  private allowInProcess(p: Policy, key: string): void {
+    const now = Date.now();
+    const windowMs = p.windowSeconds * 1000;
+    const cutoff = now - windowMs;
+
+    let times = this.windows.get(key);
+    if (times) {
+      let drop = 0;
+      while (drop < times.length && times[drop]! <= cutoff) drop++;
+      if (drop > 0) times.splice(0, drop); // events are appended in order → expired ones are at the front
+    } else {
+      times = [];
+      this.windows.set(key, times);
+    }
+
+    if (times.length >= p.limit) {
+      const retryMs = times[0]! + windowMs - now;
+      throw new RateLimitError(Math.max(1, Math.ceil(retryMs / 1000)));
+    }
+    times.push(now);
+    this.sweep(now);
+  }
+
+  // Periodically drop keys idle past their own window so memory tracks only
+  // currently-active keys (the policy name is the key prefix before the first ':').
+  private sweep(now: number): void {
+    if (now - this.lastSweep < SWEEP_INTERVAL_MS) return;
+    this.lastSweep = now;
+    for (const [key, times] of this.windows) {
+      const windowMs = (Policies[key.slice(0, key.indexOf(":"))]?.windowSeconds ?? HOUR) * 1000;
+      if (times.length === 0 || times[times.length - 1]! <= now - windowMs) this.windows.delete(key);
     }
   }
 }

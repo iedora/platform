@@ -3,6 +3,7 @@ import {
   JwtIssuer,
   OutboxWriter,
   ServiceTokenIssuer,
+  newServiceVerifier,
   newUserVerifier,
   parseClients,
   parseEd25519Seed,
@@ -26,6 +27,7 @@ export interface Harness {
   db: Database<any>;
   sentResets: { to: string; url: string }[]; // captured by the test mailer
   sentChanged: string[];
+  serviceToken: string; // a valid service token (admin-bff) for service-authed routes
   close: () => Promise<void>;
 }
 
@@ -69,6 +71,7 @@ export async function createHarness(): Promise<Harness> {
     issuer: new JwtIssuer({ keys, kid: "k1", issuer: cfg.jwtIssuer, audience: cfg.jwtAudience, accessTtl: cfg.accessTtl }),
     userVerifier: newUserVerifier(keys.publicKey, cfg.jwtIssuer, cfg.jwtAudience),
     serviceIssuer: new ServiceTokenIssuer({ privateKey: keys.privateKey, kid: "k1", issuer: cfg.jwtIssuer, audience: cfg.serviceAudience, ttl: cfg.serviceTokenTtl }),
+    serviceVerifier: newServiceVerifier(keys.publicKey, cfg.jwtIssuer, cfg.serviceAudience),
     serviceClients: parseClients(cfg.serviceClients),
     auditor: new OutboxWriter(db, "auth"),
     resetMailer: {
@@ -81,16 +84,39 @@ export async function createHarness(): Promise<Harness> {
     },
     cfg,
   });
+  // Mint a real service token via the client-credentials flow (admin-bff).
+  const tokenRes = await app.request("/auth/token", {
+    method: "POST",
+    headers: { authorization: `Basic ${Buffer.from("admin-bff:dev-secret").toString("base64")}` },
+  });
+  const serviceToken = ((await tokenRes.json()) as { accessToken: string }).accessToken;
   return {
     app,
     db,
     sentResets,
     sentChanged,
+    serviceToken,
     close: async () => {
       await db.close();
       await scratch.drop();
     },
   };
+}
+
+/** Registers an owner user, creates a tenant owned by them, and returns ids. */
+export async function createTenantWithOwner(
+  h: Harness,
+  email: string,
+): Promise<{ userId: string; tenantId: string; tenantName: string }> {
+  const { access } = await registerUser(h, email);
+  const userId = (claims(access) as { sub?: string }).sub ?? "";
+  const res = await h.app.request("/auth/tenants", {
+    method: "POST",
+    headers: { authorization: `Bearer ${access}`, "content-type": "application/json" },
+    body: JSON.stringify({ name: `Tenant for ${email}` }),
+  });
+  const { id, name } = (await res.json()) as { id: string; name: string };
+  return { userId, tenantId: id, tenantName: name };
 }
 
 /** Registers the per-file lifecycle and returns a ctx populated before tests run. */

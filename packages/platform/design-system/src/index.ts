@@ -36,6 +36,7 @@ export {
 export {
   Sidebar,
   SidebarBrand,
+  SidebarBrandMark,
   SidebarLinks,
   SidebarLink,
   SidebarSectionLabel,
@@ -45,6 +46,10 @@ export {
   SidebarProvider,
   useSidebar,
 } from "./components/sidebar";
+export {
+  SidebarUserCard,
+  SidebarMenuItem,
+} from "./components/sidebar-user-card";
 export {
   ActiveSidebarLinks,
   type ActiveSidebarItem,

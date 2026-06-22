@@ -1,8 +1,8 @@
 import type { LocalizedText, Theme } from "@iedora/contracts";
 
-// The menu content model as read from the DB (i18n maps intact) — ports Go
-// internal/menu/domain.go. The public read path runs Node trees through
-// localize(); the admin builder (Stage B) consumes them raw.
+// The menu content model as read from the DB (i18n maps intact). The public
+// read path runs Node trees through localize(); the admin builder (Stage B)
+// consumes them raw.
 
 export type { LocalizedText, Theme };
 

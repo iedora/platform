@@ -1,16 +1,15 @@
 import type { PlanLimits } from '../../shared/api'
 
 /**
- * DISPLAY-ONLY plan metadata for the billing page. The Go menu service
- * owns the actual entitlements (`PlanRegistry` in
- * services/internal/menu/plans.go — `GET /api/plan` returns the
- * effective `PlanLimits`) and enforces every gate server-side; this
- * registry only carries what the UI needs to render plan cards:
- * labels live in i18n (`Billing.plans.<code>.*`), feature bullet
- * lists and the marketing recommendation live here.
+ * DISPLAY-ONLY plan metadata for the billing page. The billing service
+ * owns the actual entitlements (`GET /api/plan` returns the effective
+ * `PlanLimits`) and enforces every gate server-side; this registry only
+ * carries what the UI needs to render plan cards: labels live in i18n
+ * (`Billing.plans.<code>.*`), feature bullet lists and the marketing
+ * recommendation live here.
  *
- * Limits mirror the Go registry 1:1 (`-1` = unlimited) so the cards
- * can print capacity copy without an extra API call per plan.
+ * Limits mirror the entitlements contract 1:1 (`-1` = unlimited) so the
+ * cards can print capacity copy without an extra API call per plan.
  */
 
 export type PlanCode = 'menu_free' | 'menu_pro' | 'menu_agency'
@@ -20,9 +19,9 @@ export type PlanFeature = 'exportPdf' | 'customBranding' | 'analytics'
 
 export type PlanDisplay = {
   readonly code: PlanCode
-  /** English label, fallback when no locale-specific label exists. */
-  readonly englishName: string
-  /** Mirrors Go `PlanLimits` (-1 = unlimited). Display copy only. */
+  // Display NAMES are not stored here — they live in i18n (`Billing.plans.<code>.name`),
+  // the single source every surface (tenant billing page + admin) renders from.
+  /** Mirrors the `PlanLimits` contract (-1 = unlimited). Display copy only. */
   readonly restaurants: number
   readonly monthlyViews: number
   readonly features: ReadonlyArray<PlanFeature>
@@ -33,7 +32,6 @@ export type PlanDisplay = {
 export const REGISTRY = {
   menu_free: {
     code: 'menu_free',
-    englishName: 'Free',
     restaurants: 1,
     monthlyViews: 1000,
     features: [],
@@ -41,7 +39,6 @@ export const REGISTRY = {
   },
   menu_pro: {
     code: 'menu_pro',
-    englishName: 'Pro',
     restaurants: 3,
     monthlyViews: 20000,
     features: ['exportPdf', 'customBranding', 'analytics'],
@@ -50,7 +47,6 @@ export const REGISTRY = {
   },
   menu_agency: {
     code: 'menu_agency',
-    englishName: 'Agency',
     restaurants: -1,
     monthlyViews: -1,
     features: ['exportPdf', 'customBranding', 'analytics'],
@@ -64,7 +60,7 @@ export const PLANS: readonly PlanDisplay[] = Object.values(REGISTRY)
 
 /**
  * Default ENTITLEMENTS for callers without a tenant (staff browsing the
- * dashboard chrome). Mirrors Go's `DefaultPlan` (menu_free).
+ * dashboard chrome). Mirrors the billing service's default plan (menu_free).
  */
 export const DEFAULT_PLAN: PlanLimits = {
   code: 'menu_free',
@@ -83,7 +79,7 @@ export function getPlanDisplay(code: string): PlanDisplay {
 }
 
 /**
- * UI feature gate over the Go `PlanLimits` shape. Purely cosmetic
+ * UI feature gate over the `PlanLimits` shape. Purely cosmetic
  * (hide a nav link, pre-disable a button) — the service is the
  * authority on what the token may actually do.
  */

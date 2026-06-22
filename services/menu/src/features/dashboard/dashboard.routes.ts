@@ -9,12 +9,12 @@ import type { MenuEnv } from "../../middleware";
 import { createRestaurant } from "../../service";
 
 // Tenant-level dashboard slice: the caller's own restaurants, plan entitlements,
-// and analytics. Mounted under /api (userAuth + requireTenant). Ports the
-// tenant-level handlers of Go internal/menu/httpapi/admin.go.
+// and analytics. Mounted under /api (userAuth + requireTenant).
 export function dashboardRoutes(deps: MenuDeps) {
+  const db = () => deps.db.db;
   return new Hono<MenuEnv>()
     .get("/restaurants", async (c) =>
-      c.json({ restaurants: await listRestaurantsWithCounts(deps.db.db, c.get("user").tenantId!) }),
+      c.json({ restaurants: await listRestaurantsWithCounts(db(), c.get("user").tenantId!) }),
     )
     .post(
       "/restaurants",
@@ -29,9 +29,9 @@ export function dashboardRoutes(deps: MenuDeps) {
     )
     .get("/plan", async (c) => c.json(await deps.plans.plan(c.get("user").tenantId!)))
     .get("/analytics", async (c) =>
-      c.json(await analytics(deps.db.db, c.get("user").tenantId!, c.req.query("range") ?? "", new Date())),
+      c.json(await analytics(db(), c.get("user").tenantId!, c.req.query("range") ?? "", new Date())),
     )
     .get("/views/month", async (c) =>
-      c.json({ count: await monthlyViews(deps.db.db, c.get("user").tenantId!, new Date()) }),
+      c.json({ count: await monthlyViews(db(), c.get("user").tenantId!, new Date()) }),
     );
 }

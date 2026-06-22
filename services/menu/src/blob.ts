@@ -1,6 +1,6 @@
 import { S3Client } from "bun";
 
-// Minimal S3-compatible object-storage client — ports Go internal/blob. Covers
+// Minimal S3-compatible object-storage client. Covers
 // exactly what uploads need: presigned browser PUTs + server-side stat/delete.
 // Built on Bun's native S3Client (works against R2, MinIO, AWS S3). A null
 // client means "uploads disabled" (no S3_ENDPOINT configured).

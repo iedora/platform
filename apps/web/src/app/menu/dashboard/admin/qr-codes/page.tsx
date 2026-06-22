@@ -1,4 +1,5 @@
 import { headers } from 'next/headers'
+import { getTranslations } from 'next-intl/server'
 import { requireStaff } from '@iedora/product-menu/features/auth'
 import {
   listQrCodesForAdmin,
@@ -13,7 +14,7 @@ import { DashboardPage } from '@iedora/product-menu/shared/ui/dashboard-page'
  *
  * Gating order matters: `requireStaff` (session + role) FIRST, before
  * any service read — non-staff bounce to the dashboard without ever
- * seeing this surface. The Go menu service re-checks the staff role on
+ * seeing this surface. The menu service re-checks the staff role on
  * every call, so the guard here is UX, not the security boundary.
  *
  * The restaurant dropdown lists ALL restaurants across every tenant,
@@ -35,9 +36,10 @@ export default async function QrCodesAdminPage() {
 
   const stats = computeQrStats(rows)
   const snapshotAt = new Date().toISOString()
+  const t = await getTranslations('Admin')
 
   return (
-    <DashboardPage title="QR codes" data-test-id="qr-codes-admin">
+    <DashboardPage title={t('qrCodes.title')} data-test-id="qr-codes-admin">
       <QrCodesAdmin
         rows={rows}
         restaurants={restaurants}

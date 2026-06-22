@@ -26,13 +26,12 @@
 #
 # Node version is declared once via ARG (Next.js 16 official pattern); bump to
 # track LTS. The Bun base image is pinned by digest — it changes less often.
-ARG NODE_VERSION=24.16.0-bookworm-slim
+ARG NODE_VERSION=24.17.0-bookworm-slim
 
 # ── Stage 1: dependencies (Bun) ───────────────────────────────────────────────
-# Pinned to 1.3.3 to match the backend image (services/Dockerfile) and the
-# committed bun.lock — the floating 1.3 tag resolved to 1.3.14, which rejected
-# the 1.3.3-written lockfile under --frozen-lockfile. (Renovate re-pins the digest.)
-FROM oven/bun:1.3.3-debian AS deps
+# Pinned to match the backend image (services/Dockerfile) and the committed
+# bun.lock — the lockfile is regenerated with this Bun so --frozen-lockfile passes.
+FROM oven/bun:1.3.13-debian AS deps
 WORKDIR /workspace
 
 # Copy lockfile + manifests first so the install layer caches independently of

@@ -16,6 +16,11 @@
  * never a top-level wildcard.
  */
 @source "../../../../products/menu/src/features/menu-publishing/**/*.{ts,tsx}";
+@source "../../../../products/menu/src/features/menu-builder/**/*.{ts,tsx}";
+@source "../../../../products/menu/src/features/dashboard-home/**/*.{ts,tsx}";
+@source "../../../../products/menu/src/features/qr-codes/**/*.{ts,tsx}";
+@source "../../../../products/menu/src/features/upload/ui/**/*.{ts,tsx}";
+@source "../../../../products/menu/src/features/i18n/ui/**/*.{ts,tsx}";
 @source "../../../../products/menu/src/features/restaurant-import-json/**/*.{ts,tsx}";
 @source "../../../../products/menu/src/features/restaurant-identity/ui/**/*.{ts,tsx}";
 @source "../../../../products/menu/src/shared/ui/**/*.{ts,tsx}";
@@ -403,6 +408,36 @@
   font-weight: 400;
   font-style: italic;
   font-size: 13px;
+}
+
+/* Availability pill — the Pencil menu-editor row badge: green "Available",
+   muted "Hidden". Sits at the row's trailing edge after the price. */
+.menu-item-row__status {
+  flex-shrink: 0;
+  margin-left: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border-radius: var(--radius-pill, 999px);
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.menu-item-row__status::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: currentColor;
+}
+.menu-item-row__status--available {
+  color: var(--green);
+  background: var(--green-soft);
+}
+.menu-item-row__status--hidden {
+  color: var(--muted-foreground);
+  background: var(--muted);
 }
 .menu-item-row__variants {
   display: flex;

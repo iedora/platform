@@ -1,14 +1,18 @@
+import type { RestaurantRef } from "@iedora/contracts";
 import { type Kysely, sql } from "kysely";
 
 import type { MenuDB } from "../schema";
-import { notFound } from "../errors";
 import { normalizeQRCode } from "../qr";
-import { textArray } from "./sqlutil";
+import { changedOrNotFound, textArray } from "./sqlutil";
 
 type DB = Kysely<MenuDB>;
 
-// QR sticker administration (staff, cross-tenant) — ports the write half of Go
-// internal/menu/qr.go. resolveQRCode (the public scan path) lives in data/qr.ts.
+// Wire DTO re-exported so existing importers keep resolving; the shape is owned
+// by @iedora/contracts (single source of truth).
+export type { RestaurantRef };
+
+// QR sticker administration (staff, cross-tenant) — the write half.
+// resolveQRCode (the public scan path) lives in data/qr.ts.
 
 export interface QRCode {
   code: string;
@@ -37,23 +41,40 @@ export async function createQRCodes(
 }
 
 export async function bindQRCode(db: DB, code: string, restaurantId: string): Promise<void> {
-  const r = await sql`UPDATE qr_codes SET restaurant_id=${restaurantId}, bound_at=now() WHERE code=${normalizeQRCode(code)}`.execute(db);
-  if (Number(r.numAffectedRows ?? 0n) === 0) throw notFound();
+  changedOrNotFound(
+    await db
+      .updateTable("qr_codes")
+      .set({ restaurant_id: restaurantId, bound_at: sql`now()` })
+      .where("code", "=", normalizeQRCode(code))
+      .executeTakeFirst(),
+  );
 }
 
 export async function unbindQRCode(db: DB, code: string): Promise<void> {
-  const r = await sql`UPDATE qr_codes SET restaurant_id=NULL, bound_at=NULL WHERE code=${normalizeQRCode(code)}`.execute(db);
-  if (Number(r.numAffectedRows ?? 0n) === 0) throw notFound();
+  changedOrNotFound(
+    await db
+      .updateTable("qr_codes")
+      .set({ restaurant_id: null, bound_at: null })
+      .where("code", "=", normalizeQRCode(code))
+      .executeTakeFirst(),
+  );
 }
 
 export async function labelQRCode(db: DB, code: string, label: string): Promise<void> {
-  const r = await sql`UPDATE qr_codes SET label=nullif(${label}, '') WHERE code=${normalizeQRCode(code)}`.execute(db);
-  if (Number(r.numAffectedRows ?? 0n) === 0) throw notFound();
+  // label || null mirrors the old nullif(label, '') — an empty string clears it.
+  changedOrNotFound(
+    await db
+      .updateTable("qr_codes")
+      .set({ label: label || null })
+      .where("code", "=", normalizeQRCode(code))
+      .executeTakeFirst(),
+  );
 }
 
 export async function deleteQRCode(db: DB, code: string): Promise<void> {
-  const r = await sql`DELETE FROM qr_codes WHERE code=${normalizeQRCode(code)}`.execute(db);
-  if (Number(r.numAffectedRows ?? 0n) === 0) throw notFound();
+  changedOrNotFound(
+    await db.deleteFrom("qr_codes").where("code", "=", normalizeQRCode(code)).executeTakeFirst(),
+  );
 }
 
 // listQRCodes returns every sticker with its bound restaurant, newest binds first.
@@ -83,13 +104,6 @@ export async function listQRCodes(db: DB): Promise<QRCode[]> {
 }
 
 // listRestaurantRefs lists every restaurant across tenants (staff directory).
-export interface RestaurantRef {
-  id: string;
-  tenantId: string;
-  name: string;
-  slug: string;
-}
-
 export async function listRestaurantRefs(db: DB): Promise<RestaurantRef[]> {
   const rows = await sql<{ id: string; tenant_id: string; name: string; slug: string }>`
     SELECT id, tenant_id, name, slug FROM restaurants ORDER BY name`.execute(db);

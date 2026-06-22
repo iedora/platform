@@ -9,6 +9,7 @@
     "./i18n/messages/*.json": "./src/i18n/messages/*.json",
     "./features/auth": "./src/features/auth/index.ts",
     "./features/auth/actions": "./src/features/auth/actions.ts",
+    "./features/auth/schemas": "./src/features/auth/schemas.ts",
     "./features/dashboard-home": "./src/features/dashboard-home/index.ts",
     "./features/dashboard-home/actions": "./src/features/dashboard-home/actions.ts",
     "./features/dashboard-home/ui/analytics-cards": "./src/features/dashboard-home/ui/analytics-cards.tsx",
@@ -33,6 +34,9 @@
     "./features/qr-codes/stats": "./src/features/qr-codes/stats.ts",
     "./features/qr-codes/ui/qr-codes-admin": "./src/features/qr-codes/ui/qr-codes-admin.tsx",
     "./features/restaurant-identity": "./src/features/restaurant-identity/index.ts",
+    "./features/restaurant-identity/actions": "./src/features/restaurant-identity/actions.ts",
+    "./features/restaurant-identity/ui/admin-qr-card": "./src/features/restaurant-identity/ui/admin-qr-card.tsx",
+    "./features/restaurant-identity/ui/admin-rename-form": "./src/features/restaurant-identity/ui/admin-rename-form.tsx",
     "./features/restaurant-identity/ui/restaurant-qr-shelf": "./src/features/restaurant-identity/ui/restaurant-qr-shelf.tsx",
     "./features/restaurant-identity/ui/theme-editor": "./src/features/restaurant-identity/ui/theme-editor.tsx",
     "./features/restaurant-slug": "./src/features/restaurant-slug/index.ts",
@@ -50,6 +54,8 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@conform-to/dom": "^1.19.4",
+    "@conform-to/zod": "^1.19.4",
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",

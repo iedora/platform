@@ -1,13 +1,4 @@
-import { env, requireEnv } from "@iedora/server-kit";
-
-// Parses a Go-style duration ("30d", "720h", "15m") into milliseconds.
-function durationMs(s: string, fallbackMs: number): number {
-  const m = /^(\d+)(ms|s|m|h|d)$/.exec(s.trim());
-  if (!m) return fallbackMs;
-  const n = Number(m[1]);
-  const unit: Record<string, number> = { ms: 1, s: 1e3, m: 6e4, h: 36e5, d: 864e5 };
-  return n * unit[m[2]!]!;
-}
+import { durationMs, env, requireEnv } from "@iedora/server-kit";
 
 export interface BillingConfig {
   port: number;
@@ -19,8 +10,8 @@ export interface BillingConfig {
   periodMs: number; // billing period length (default 30d)
 }
 
-// Mirrors the Go billing Config (internal/apps/billing/config.go). Var names
-// match the existing prod env/secrets so they carry over unchanged at cutover.
+// Var names match the deployed env/secrets, so the prod config maps over
+// unchanged.
 export function loadConfig(): BillingConfig {
   return {
     port: Number(env("BILLING_PORT", "8083")),

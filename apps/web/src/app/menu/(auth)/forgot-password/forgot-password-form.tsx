@@ -1,29 +1,33 @@
 'use client'
 
-import * as React from 'react'
 import { useActionState, useState } from 'react'
+import { useForm, getFormProps, getInputProps } from '@conform-to/react'
+import { getZodConstraint, parseWithZod } from '@conform-to/zod/v4'
 import { useTranslations } from 'next-intl'
 import Link from 'next/link'
 import { Button } from '@iedora/design-system'
-import { forgotPasswordAction, type ForgotFormState } from '@iedora/product-menu/features/auth/actions'
+import { forgotPasswordAction } from '@iedora/product-menu/features/auth/actions'
+import { forgotPasswordSchema } from '@iedora/product-menu/features/auth/schemas'
 import { TextField } from '../../_components/form-fields'
-import { isEmail } from '../../_components/validation'
 
 export function ForgotPasswordForm({ signInHref }: { signInHref: string }) {
   const t = useTranslations('Auth.forgotPassword')
   const tf = useTranslations('Auth.fields')
-  const [state, action, pending] = useActionState<ForgotFormState, FormData>(forgotPasswordAction, { sent: false })
-  const [error, setError] = useState<string | undefined>()
+  const [lastResult, action, pending] = useActionState(forgotPasswordAction, undefined)
+  const [form, fields] = useForm({
+    lastResult,
+    constraint: getZodConstraint(forgotPasswordSchema),
+    shouldValidate: 'onBlur',
+    shouldRevalidate: 'onInput',
+    onValidate: ({ formData }) => parseWithZod(formData, { schema: forgotPasswordSchema }),
+  })
+  // Controlled so the email survives React 19's post-action form reset.
+  const [email, setEmail] = useState('')
 
-  function onSubmit(ev: React.FormEvent<HTMLFormElement>) {
-    const email = String(new FormData(ev.currentTarget).get('email') ?? '').trim()
-    const e = !email ? tf('emailRequired') : !isEmail(email) ? tf('emailInvalid') : undefined
-    setError(e)
-    if (e) ev.preventDefault()
-  }
+  const msg = (errs?: string[]) => (errs?.[0] ? tf(errs[0]) : undefined)
 
   // Neutral confirmation — never reveals whether the address has an account.
-  if (state.sent) {
+  if (lastResult?.status === 'success') {
     return (
       <div className="flex flex-col gap-5" data-test-id="forgot-sent">
         <p className="rounded-[12px] border border-[var(--green)] bg-[var(--green-soft)] px-4 py-3 text-[14px] leading-[1.5] text-[var(--green)]">
@@ -40,16 +44,21 @@ export function ForgotPasswordForm({ signInHref }: { signInHref: string }) {
     )
   }
 
+  const { key: emailKey, ...emailProps } = getInputProps(fields.email, { type: 'email', value: false, ariaAttributes: false })
+
   return (
-    <form action={action} onSubmit={onSubmit} noValidate className="flex flex-col gap-5">
+    <form {...getFormProps(form)} action={action} className="flex flex-col gap-5">
       <TextField
+        key={emailKey}
+        {...emailProps}
         label={t('emailLabel')}
-        name="email"
-        type="email"
         autoComplete="email"
         autoFocus
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
         placeholder={t('emailPlaceholder')}
-        error={error}
+        hint={fields.email.errors ? undefined : t('emailHint')}
+        error={msg(fields.email.errors)}
         data-test-id="forgot-email"
       />
       <Button

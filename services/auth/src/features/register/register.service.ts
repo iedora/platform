@@ -9,7 +9,7 @@ import { isUniqueViolation } from "../../errors";
 import { buildSession, mintTokens, type RequestMeta, type Tokens } from "../../session";
 
 // Register creates a user (+ its audit event, atomically) then auto-logs them in
-// with a fresh session. Ports Go auth service.Register.
+// with a fresh session.
 export async function register(
   deps: AuthDeps,
   input: { email: string; password: string; name: string },

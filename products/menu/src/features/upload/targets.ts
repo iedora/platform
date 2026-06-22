@@ -4,8 +4,8 @@ const IMAGE_MIME = ['image/jpeg', 'image/png', 'image/webp'] as const
 
 /**
  * Client-side constraint hints per target. Mirrors the menu service's
- * upload policy (services/internal/menu) — the server re-validates on
- * presign, so drift here only costs an extra round-trip, never a hole.
+ * upload policy — the server re-validates on presign, so drift here only
+ * costs an extra round-trip, never a hole.
  */
 export const TARGET_CONSTRAINTS: Record<AssetTargetKind, UploadConstraints> = {
   'restaurant-logo': {

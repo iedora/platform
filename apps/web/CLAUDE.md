@@ -18,7 +18,7 @@ Repo-level conventions: [`../../AGENTS.md`](../../AGENTS.md).
   from `@iedora/product-menu` and other workspace packages.
 - **It is not** where slices, typed API clients, or backend logic
   live. UI slices belong to their workspace package
-  (`products/menu/src/features/`); backend logic belongs to the Go
+  (`products/menu/src/features/`); backend logic belongs to the
   services (`services/`). Never reintroduce databases, ORMs, S3
   clients or AI SDKs here.
 
@@ -37,7 +37,7 @@ Repo-level conventions: [`../../AGENTS.md`](../../AGENTS.md).
 2. **`src/proxy.ts` owns host dispatch + the auth gate.** It is the
    ONE place that refreshes an expired access token for page loads
    (via `@iedora/api-client/middleware`), so RSCs always read a valid
-   `iedora_access` cookie. Authorization proper stays with the Go
+   `iedora_access` cookie. Authorization proper stays with the
    services — every API call is verified there.
 
 3. **`src/app/layout.tsx` + `globals.css` are the only shared chrome.**
@@ -73,8 +73,8 @@ apps/web/
         _components/landing/         landing components
         dashboard/**                 operator surface (menu slices)
         onboarding/**                tenant + first-restaurant flow
-        r/**                         public menu pages (SSR from Go)
-        q/**                         QR sticker entry (redirect via Go)
+        r/**                         public menu pages (SSR from the menu service)
+        q/**                         QR sticker entry (redirect via the menu service)
         showcase/**                  public marketing surface
       page.tsx                     dev surface index (only rendered on
                                    bare http://localhost:3000/ — every
@@ -98,8 +98,8 @@ apps/web/
 - `bun run typecheck` — TS check without emit.
 - `bun run lint` — ESLint (`next` recommended).
 
-Real tests live with the products and the Go module:
-`bun run --cwd products/menu test`, `cd services && make test-all`.
+Real tests live with the products and the services:
+`bun run --cwd products/menu test`, `cd services && bun test`.
 
 ## Deployable artefact
 

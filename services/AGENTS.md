@@ -1,10 +1,8 @@
 # Backend services (Bun + Hono) — conventions
 
-The iedora backend services live here, ported from Go during the strangler
-migration (see `/.claude/plans/…` or the migration commits). They run on **Bun**
-with **Hono**, **Kysely** (on Bun's native `SQL`), **jose**, and share runtime
-infrastructure via `@iedora/server-kit` and payload contracts via
-`@iedora/contracts`.
+The iedora backend services live here. They run on **Bun** with **Hono**,
+**Kysely** (on Bun's native `SQL`), **jose**, and share runtime infrastructure
+via `@iedora/server-kit` and payload contracts via `@iedora/contracts`.
 
 ## Vertical slice architecture
 
@@ -20,7 +18,7 @@ services/<svc>/src/
   deps.ts                       # cross-slice deps (DB handle, verifiers) wired at boot
   schema.ts                     # Kysely DB types for this service's database
   migrate.ts                    # one-shot migration CLI
-  migrations/*.sql              # the goose SQL (applied verbatim by server-kit/migrate)
+  migrations/*.sql              # plain SQL migrations (applied verbatim by server-kit/migrate)
   features/
     <slice>/
       <slice>.routes.ts         # Hono routes for this feature (exported factory)
@@ -48,12 +46,12 @@ Rules:
 
 - One `Database<DB>` per service (server-kit), on Bun's native `SQL` via
   `kysely-postgres-js`. Transactions: `database.runInTx(...)`; reads/writes use
-  `database.db` (the active tx or the pool — AsyncLocalStorage, ports Go `pgtx`).
+  `database.db` (the active tx or the pool — AsyncLocalStorage-scoped).
 - **DB types are generated**, not hand-written: `bun run db:codegen` runs
   `kysely-codegen` against the service DB → `src/db.generated.ts` (committed).
   Regenerate after every migration; `schema.ts` just aliases the generated `DB`.
 - Hand-written SQL stays first-class via Kysely's `sql` tag (keyset comparisons,
-  `ON CONFLICT`, etc.). Migrations are the existing goose `.sql`, applied by
+  `ON CONFLICT`, etc.). Migrations are plain `.sql` files, applied by
   server-kit's advisory-locked runner.
 
 ## Testing

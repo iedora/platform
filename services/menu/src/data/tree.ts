@@ -1,27 +1,13 @@
 import type { LocalizedText } from "@iedora/contracts";
-import type { Kysely } from "kysely";
+import { type Kysely, sql } from "kysely";
 
 import type { CategoryNode, ItemNode, Node, Snapshot, Variant } from "../domain";
 import type { MenuDB } from "../schema";
 import { restaurantBySlug } from "./restaurants";
+import { parseJson } from "./sqlutil";
 
 // Loads the content hierarchy with three indexed queries (menus, categories,
 // items) and assembles it in memory — no N+1, no joins multiplying i18n blobs.
-// Ports Go internal/menu/store_tree.go.
-
-// Bun's SQL returns jsonb columns as raw strings; parse them (tolerating an
-// already-parsed value, should the driver ever change).
-function parseJson<T>(v: unknown): T | null {
-  if (v == null) return null;
-  if (typeof v === "string") {
-    try {
-      return JSON.parse(v) as T;
-    } catch {
-      return null;
-    }
-  }
-  return v as T;
-}
 
 const i18n = (v: unknown): LocalizedText | null => parseJson<LocalizedText>(v);
 
@@ -141,4 +127,20 @@ export async function snapshotBySlug(
   if (!restaurant) return undefined;
   const menus = await menuTree(db, restaurant.id, activeOnly);
   return { restaurant, menus };
+}
+
+// Cheap content version for the public-menu cache: the newest updated_at across
+// the restaurant's menu tree, as a sortable string. Backed by the
+// (restaurant_id, updated_at DESC) indexes, so it's an index-only one-row probe
+// per table — far cheaper than re-reading + localizing the whole tree. Any menu
+// write bumps an updated_at, which changes this string and invalidates the cache.
+export async function menuContentVersion(db: Kysely<MenuDB>, restaurantId: string): Promise<string> {
+  const res = await sql<{ v: string | null }>`
+    SELECT to_char(greatest(
+      coalesce((SELECT max(updated_at) FROM menus      WHERE restaurant_id = ${restaurantId}), 'epoch'::timestamptz),
+      coalesce((SELECT max(updated_at) FROM categories WHERE restaurant_id = ${restaurantId}), 'epoch'::timestamptz),
+      coalesce((SELECT max(updated_at) FROM items      WHERE restaurant_id = ${restaurantId}), 'epoch'::timestamptz)
+    ), 'YYYYMMDDHH24MISSUS') AS v
+  `.execute(db);
+  return res.rows[0]?.v ?? "";
 }

@@ -2,10 +2,9 @@ import { createPrivateKey, createPublicKey, type KeyObject } from "node:crypto";
 
 import { SignJWT } from "jose";
 
-// EdDSA (Ed25519) access-token issuer + JWKS, porting Go internal/auth/crypto.
-// Keys are parsed from the same base64 32-byte seed the Go service uses in
-// API_JWT_PRIVATE_KEY, so issued tokens verify against the existing JWKS
-// consumers (frontend, menu, admin) unchanged.
+// EdDSA (Ed25519) access-token issuer + JWKS.
+// Keys are parsed from a base64 32-byte seed in API_JWT_PRIVATE_KEY, so issued
+// tokens verify against the existing JWKS consumers (frontend, menu, admin).
 
 // DER PKCS#8 prefix for an Ed25519 private key; the 32-byte seed follows.
 const ED25519_PKCS8_PREFIX = Buffer.from("302e020100300506032b657004220420", "hex");
@@ -53,9 +52,8 @@ export interface Jwk {
   kid: string;
 }
 
-// JwtIssuer mints access tokens and serves the JWKS — a port of
-// internal/auth/crypto.JWTIssuer. Claims: sub, tid, sid, roles, email,
-// typ="access" (the replay guard), plus iss/aud/iat/exp.
+// JwtIssuer mints access tokens and serves the JWKS. Claims: sub, tid, sid,
+// roles, email, typ="access" (the replay guard), plus iss/aud/iat/exp.
 export class JwtIssuer {
   constructor(private readonly cfg: JwtIssuerConfig) {}
 

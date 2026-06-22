@@ -13,7 +13,7 @@ import { TextField } from '../_components/form-fields'
  * (Pencil `iedora.pen` → "App · Onboarding 1"). Mobile-first, big tap
  * targets, plain words for 50+ owners. Fields:
  *   - restaurantName (required) → `restaurant.name`
- *   - Public URL — a live preview of the slug Go derives from the name
+ *   - Public URL — a live preview of the slug the server derives from the name
  *     (display only; an independently editable slug + live availability
  *     check needs a backend endpoint — future).
  *   - Languages — pick the menu's languages; the first becomes
@@ -76,6 +76,7 @@ export function OnboardingForm({ languages, locale }: { languages: Lang[]; local
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder={t('restaurantNamePlaceholder')}
+          hint={t('restaurantNameHint')}
           error={nameError}
           data-test-id="onboarding-restaurant-name"
         />

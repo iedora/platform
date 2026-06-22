@@ -56,7 +56,7 @@ export async function refreshTokens(refreshToken: string): Promise<AuthResult | 
   }
 }
 
-/** Revokes the session family; idempotent on the Go side. */
+/** Revokes the session family; idempotent server-side. */
 export async function logout(refreshToken: string): Promise<void> {
   await fetch(`${AUTH_URL}/auth/logout`, {
     method: 'POST',

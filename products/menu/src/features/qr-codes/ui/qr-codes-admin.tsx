@@ -3,6 +3,7 @@
 import * as React from 'react'
 import { useState, useTransition } from 'react'
 import Link from 'next/link'
+import { useTranslations } from 'next-intl'
 import {
   bindCodeAction,
   bulkGenerateAction,
@@ -83,6 +84,7 @@ function RestaurantSelect({
   onChange: (v: string | null) => void
   disabled?: boolean
 }) {
+  const t = useTranslations('Admin')
   return (
     <select
       id={id}
@@ -92,7 +94,7 @@ function RestaurantSelect({
       disabled={disabled}
       className={INPUT}
     >
-      <option value="">— unbound —</option>
+      <option value="">{t('qrCodes.unboundOption')}</option>
       {restaurants.map((r) => (
         <option key={r.id} value={r.id}>
           {r.name}
@@ -124,11 +126,12 @@ export function QrCodesAdmin({
 }
 
 function StatStrip({ stats }: { stats: QrStats }) {
+  const t = useTranslations('Admin')
   const items: { label: string; value: number }[] = [
-    { label: 'Codes', value: stats.total },
-    { label: 'Bound', value: stats.bound },
-    { label: 'Unbound', value: stats.unbound },
-    { label: 'New 24h', value: stats.created24h },
+    { label: t('qrCodes.statCodes'), value: stats.total },
+    { label: t('qrCodes.statBound'), value: stats.bound },
+    { label: t('qrCodes.statUnbound'), value: stats.unbound },
+    { label: t('qrCodes.statNew24h'), value: stats.created24h },
   ]
   return (
     <div className={`${CARD} grid grid-cols-2 sm:grid-cols-4`} data-test-id="qr-codes-stats">
@@ -148,10 +151,11 @@ function StatStrip({ stats }: { stats: QrStats }) {
 }
 
 function CreatePanel({ restaurants }: { restaurants: RestaurantOption[] }) {
+  const t = useTranslations('Admin')
   return (
     <section className="space-y-2" data-test-id="qr-codes-create-panel">
       <p className="px-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-        Create codes
+        {t('qrCodes.createCodes')}
       </p>
       <div className={`${CARD} space-y-4 p-4`}>
         <CreateOneForm restaurants={restaurants} />
@@ -163,6 +167,7 @@ function CreatePanel({ restaurants }: { restaurants: RestaurantOption[] }) {
 }
 
 function CreateOneForm({ restaurants }: { restaurants: RestaurantOption[] }) {
+  const t = useTranslations('Admin')
   const [code, setCode] = useState('')
   const [restaurantId, setRestaurantId] = useState('')
   const [label, setLabel] = useState('')
@@ -184,24 +189,24 @@ function CreateOneForm({ restaurants }: { restaurants: RestaurantOption[] }) {
         setError(res.error)
         return
       }
-      setSuccess(`Created ${res.data.code}`)
+      setSuccess(t('qrCodes.created', { code: res.data.code }))
       setCode('')
       setLabel('')
     })
   }
 
   return (
-    <form onSubmit={onSubmit} className="space-y-3" data-test-id="qr-codes-create-one-form" aria-label="Create one QR code">
+    <form onSubmit={onSubmit} className="space-y-3" data-test-id="qr-codes-create-one-form" aria-label={t('qrCodes.createOneAria')}>
       <div className="grid gap-3 sm:grid-cols-3">
         <div>
-          <label htmlFor="qr-code" className={LABEL}>Code</label>
+          <label htmlFor="qr-code" className={LABEL}>{t('qrCodes.code')}</label>
           <input
             id="qr-code"
             data-test-id="qr-codes-create-one-code"
             name="code"
             value={code}
             onChange={(e) => setCode(e.target.value)}
-            placeholder="auto"
+            placeholder={t('qrCodes.codePlaceholder')}
             maxLength={64}
             aria-invalid={Boolean(error)}
             aria-describedby={error ? 'qr-codes-create-one-error' : undefined}
@@ -209,7 +214,7 @@ function CreateOneForm({ restaurants }: { restaurants: RestaurantOption[] }) {
           />
         </div>
         <div>
-          <label htmlFor="qr-restaurant" className={LABEL}>Bind to</label>
+          <label htmlFor="qr-restaurant" className={LABEL}>{t('qrCodes.bindTo')}</label>
           <RestaurantSelect
             id="qr-restaurant"
             testId="qr-codes-create-one-restaurant"
@@ -219,13 +224,13 @@ function CreateOneForm({ restaurants }: { restaurants: RestaurantOption[] }) {
           />
         </div>
         <div>
-          <label htmlFor="qr-label" className={LABEL}>Label</label>
+          <label htmlFor="qr-label" className={LABEL}>{t('qrCodes.label')}</label>
           <input
             id="qr-label"
             data-test-id="qr-codes-create-one-label"
             value={label}
             onChange={(e) => setLabel(e.target.value)}
-            placeholder="e.g. Box A"
+            placeholder={t('qrCodes.labelPlaceholder')}
             maxLength={200}
             className={INPUT}
           />
@@ -235,7 +240,7 @@ function CreateOneForm({ restaurants }: { restaurants: RestaurantOption[] }) {
         {error && <p id="qr-codes-create-one-error" role="alert" className="text-[13px] text-[#D92D20]" data-test-id="qr-codes-create-one-error">{error}</p>}
         {success && <p className="text-[13px] text-muted-foreground" data-test-id="qr-codes-create-one-success">{success}</p>}
         <button type="submit" disabled={pending} className={BTN_PRIMARY} data-test-id="qr-codes-create-one-submit">
-          {pending ? 'Creating…' : 'Create code'}
+          {pending ? t('qrCodes.creating') : t('qrCodes.createCode')}
         </button>
       </div>
     </form>
@@ -243,6 +248,7 @@ function CreateOneForm({ restaurants }: { restaurants: RestaurantOption[] }) {
 }
 
 function BulkGenerateForm() {
+  const t = useTranslations('Admin')
   const [count, setCount] = useState(10)
   const [error, setError] = useState<string | null>(null)
   const [generatedCount, setGeneratedCount] = useState<number | null>(null)
@@ -263,8 +269,8 @@ function BulkGenerateForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="space-y-2" data-test-id="qr-codes-bulk-form" aria-label="Bulk generate QR codes">
-      <label htmlFor="qr-bulk-count" className={LABEL}>Bulk batch — 1–500 unbound codes</label>
+    <form onSubmit={onSubmit} className="space-y-2" data-test-id="qr-codes-bulk-form" aria-label={t('qrCodes.bulkAria')}>
+      <label htmlFor="qr-bulk-count" className={LABEL}>{t('qrCodes.bulkLabel')}</label>
       <div className="flex items-center gap-2">
         <input
           id="qr-bulk-count"
@@ -279,13 +285,13 @@ function BulkGenerateForm() {
           className={`${INPUT} w-24 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none`}
         />
         <button type="submit" disabled={pending} className={BTN_PRIMARY} data-test-id="qr-codes-bulk-submit">
-          {pending ? 'Generating…' : 'Generate batch'}
+          {pending ? t('qrCodes.generating') : t('qrCodes.generateBatch')}
         </button>
       </div>
       {error && <p id="qr-codes-bulk-error" role="alert" className="text-[13px] text-[#D92D20]" data-test-id="qr-codes-bulk-error">{error}</p>}
       {generatedCount !== null && (
         <p className="text-[13px] text-muted-foreground" data-test-id="qr-codes-bulk-success">
-          Generated {generatedCount} code{generatedCount === 1 ? '' : 's'} · see registry below
+          {t('qrCodes.generated', { count: generatedCount })}
         </p>
       )}
     </form>
@@ -301,14 +307,15 @@ function Registry({
   restaurants: RestaurantOption[]
   publicOrigin: string
 }) {
+  const t = useTranslations('Admin')
   return (
     <section className="space-y-2" data-test-id="qr-codes-registry">
       <p className="px-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-        Registry ({rows.length})
+        {t('qrCodes.registryCount', { count: rows.length })}
       </p>
       {rows.length === 0 ? (
         <p className={`${CARD} px-4 py-8 text-center text-[14px] text-muted-foreground`} data-test-id="qr-codes-registry-empty">
-          No codes yet.
+          {t('qrCodes.noCodes')}
         </p>
       ) : (
         <ul className="flex flex-col gap-3" data-test-id="qr-codes-registry-list">
@@ -330,11 +337,12 @@ function CodeRow({
   restaurants: RestaurantOption[]
   publicOrigin: string
 }) {
+  const t = useTranslations('Admin')
   const [pending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
   const [printOpen, setPrintOpen] = useState(false)
   const stickerUrl = `${publicOrigin}/q/${row.code}`
-  const createdAgo = formatRelative(row.createdAt)
+  const createdAgo = formatRelative(row.createdAt, t)
   const bound = Boolean(row.restaurant)
 
   function onBindChange(next: string | null) {
@@ -348,7 +356,7 @@ function CodeRow({
   }
 
   function onDelete() {
-    if (!confirm(`Delete code ${row.code}? This cannot be undone.`)) return
+    if (!confirm(t('qrCodes.deleteConfirm', { code: row.code }))) return
     setError(null)
     startTransition(async () => {
       const res = await deleteCodeAction(row.code)
@@ -367,14 +375,14 @@ function CodeRow({
                 bound ? 'bg-[var(--green-soft)] text-[var(--green)]' : 'bg-muted text-muted-foreground'
               }`}
             >
-              {bound ? 'Bound' : 'Unbound'}
+              {bound ? t('qrCodes.bound') : t('qrCodes.unbound')}
             </span>
           </div>
           <Link
             href={`/q/${row.code}`}
             target="_blank"
             rel="noopener noreferrer"
-            title="Printed on the QR sticker"
+            title={t('qrCodes.printedOnSticker')}
             data-test-id={`qr-codes-row-sticker-${row.code}`}
             className="mt-1 inline-flex max-w-full items-center gap-1 text-[12px] text-muted-foreground no-underline transition-colors hover:text-primary"
           >
@@ -393,7 +401,7 @@ function CodeRow({
 
       <div className="mt-3 grid gap-3 sm:grid-cols-2">
         <div>
-          <label htmlFor={`qr-row-bind-${row.code}`} className={LABEL}>Bind to</label>
+          <label htmlFor={`qr-row-bind-${row.code}`} className={LABEL}>{t('qrCodes.bindTo')}</label>
           <RestaurantSelect
             id={`qr-row-bind-${row.code}`}
             testId={`qr-codes-row-bind-${row.code}`}
@@ -408,7 +416,7 @@ function CodeRow({
 
       <div className="mt-3 flex gap-2">
         <button type="button" onClick={() => setPrintOpen(true)} disabled={pending} className={BTN_GHOST} data-test-id={`qr-codes-row-print-${row.code}`}>
-          <PrinterIcon size={15} /> Print
+          <PrinterIcon size={15} /> {t('qrCodes.print')}
         </button>
         <button
           type="button"
@@ -417,7 +425,7 @@ function CodeRow({
           className={`${BTN_GHOST} text-[#D92D20] hover:border-[#D92D20]`}
           data-test-id={`qr-codes-row-delete-${row.code}`}
         >
-          <TrashIcon size={15} /> Delete
+          <TrashIcon size={15} /> {t('qrCodes.delete')}
         </button>
       </div>
 
@@ -437,6 +445,7 @@ function InlineLabelField({
   disabled: boolean
   onError: (msg: string | null) => void
 }) {
+  const t = useTranslations('Admin')
   const [value, setValue] = useState(row.label ?? '')
   const [pending, startTransition] = useTransition()
 
@@ -465,7 +474,7 @@ function InlineLabelField({
 
   return (
     <div>
-      <label htmlFor={`qr-row-label-${row.code}`} className={LABEL}>Label</label>
+      <label htmlFor={`qr-row-label-${row.code}`} className={LABEL}>{t('qrCodes.label')}</label>
       <input
         id={`qr-row-label-${row.code}`}
         data-test-id={`qr-codes-row-label-${row.code}`}
@@ -480,20 +489,23 @@ function InlineLabelField({
         }}
         disabled={disabled || pending}
         maxLength={200}
-        placeholder="— none —"
+        placeholder={t('qrCodes.rowLabelPlaceholder')}
         className={INPUT}
       />
     </div>
   )
 }
 
-function formatRelative(input: string): string {
+function formatRelative(
+  input: string,
+  t: (key: string, values?: Record<string, string | number>) => string,
+): string {
   const d = new Date(input)
   const ms = Date.now() - d.getTime()
   const day = 24 * 60 * 60 * 1000
-  if (ms < day) return 'today'
-  if (ms < 2 * day) return 'yesterday'
+  if (ms < day) return t('qrCodes.relativeToday')
+  if (ms < 2 * day) return t('qrCodes.relativeYesterday')
   const days = Math.floor(ms / day)
-  if (days < 7) return `${days}d ago`
+  if (days < 7) return t('qrCodes.relativeDaysAgo', { days })
   return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })
 }

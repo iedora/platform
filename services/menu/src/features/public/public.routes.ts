@@ -4,15 +4,15 @@ import { getConnInfo } from "hono/bun";
 import { getCookie, setCookie } from "hono/cookie";
 
 import { resolveQRCode } from "../../data/qr";
-import { snapshotBySlug } from "../../data/tree";
-import { recordItemView, recordSession, recordView } from "../../data/views";
+import { restaurantBySlug } from "../../data/restaurants";
+import { menuContentVersion, menuTree } from "../../data/tree";
+import { recordItemViews, recordSession, recordView } from "../../data/views";
 import type { MenuDeps } from "../../deps";
 import { notFound } from "../../errors";
 import { localize, pick, pickLanguage } from "../../i18n";
 
 // Public surface: unauthenticated, slug-addressed, read-only (plus the
 // fire-and-forget view beacon). The React app renders straight from these.
-// Ports Go internal/menu/httpapi/public.go.
 
 // A 1x1 transparent GIF; the beacon always answers with it (and 200) so a guest
 // page never sees tracking errors.
@@ -49,18 +49,42 @@ function clientIP(c: Context): string {
 }
 
 export function publicRoutes(deps: MenuDeps) {
+  const db = () => deps.db.db;
+
+  // Per-process cache of the LOCALIZED menu tree, keyed by restaurant+language and
+  // versioned by the menu's newest updated_at. The hot guest path then skips the
+  // 3 tree queries + JSON-parse + localize on a hit; the cheap version probe makes
+  // any menu write invalidate the entry automatically (no stale menus). Restaurant
+  // identity is still loaded fresh each request, so renames/theme changes show at
+  // once. Bounded; oldest entry evicted on overflow.
+  const PUBLIC_MENU_CACHE_MAX = 300;
+  const menuCache = new Map<string, { version: string; menus: PublicPayload["menus"] }>();
+
   return new Hono()
     // publicMenu renders one restaurant's active menus in the negotiated language.
     .get("/r/:slug", async (c) => {
-      const snap = await snapshotBySlug(deps.db.db, c.req.param("slug"), true);
-      if (!snap) throw notFound();
-      const rest = snap.restaurant;
+      const rest = await restaurantBySlug(db(), c.req.param("slug"));
+      if (!rest) throw notFound();
       const lang = pickLanguage(
         c.req.query("lang") ?? "",
         c.req.header("accept-language") ?? "",
         rest.supportedLanguages,
         rest.defaultLanguage,
       );
+
+      const version = await menuContentVersion(db(), rest.id);
+      const key = `${rest.id}:${lang}`;
+      let entry = menuCache.get(key);
+      if (!entry || entry.version !== version) {
+        const tree = await menuTree(db(), rest.id, true);
+        entry = { version, menus: localize(tree, lang) };
+        if (menuCache.size >= PUBLIC_MENU_CACHE_MAX) {
+          const oldest = menuCache.keys().next().value; // insertion order → evict oldest
+          if (oldest !== undefined) menuCache.delete(oldest);
+        }
+        menuCache.set(key, entry);
+      }
+
       const payload: PublicPayload = {
         restaurant: {
           name: rest.name,
@@ -70,7 +94,7 @@ export function publicRoutes(deps: MenuDeps) {
           bannerUrl: rest.bannerUrl || undefined,
           theme: rest.theme ?? undefined,
         },
-        menus: localize(snap.menus, lang),
+        menus: entry.menus,
         defaultLanguage: rest.defaultLanguage,
         supportedLanguages: rest.supportedLanguages,
         currentLanguage: lang,
@@ -79,7 +103,7 @@ export function publicRoutes(deps: MenuDeps) {
     })
     // resolveQR maps a sticker code to its restaurant slug — the scan hot path.
     .get("/qr/:code", async (c) => {
-      const slug = await resolveQRCode(deps.db.db, c.req.param("code"));
+      const slug = await resolveQRCode(db(),c.req.param("code"));
       if (slug === undefined) throw notFound();
       return c.json({ slug });
     })
@@ -96,7 +120,7 @@ export function publicRoutes(deps: MenuDeps) {
       if (isBot(c.req.header("user-agent") ?? "")) return servePixel();
       try {
         await deps.limiter.allow("beacon", `ip:${clientIP(c)}`);
-        const rest = await snapshotBySlug(deps.db.db, c.req.param("slug"), true).then((s) => s?.restaurant);
+        const rest = await restaurantBySlug(db(), c.req.param("slug")); // beacon needs only the restaurant, not the menu tree
         if (!rest) return servePixel();
         // Bound inflation per restaurant — defeats IP/cookie rotation.
         await deps.limiter.allow("beacon_rest", `rest:${rest.id}`);
@@ -117,7 +141,7 @@ export function publicRoutes(deps: MenuDeps) {
           rest.supportedLanguages,
           rest.defaultLanguage,
         );
-        await recordView(deps.db.db, rest, visitor, lang, new Date());
+        await recordView(db(),rest, visitor, lang, new Date());
       } catch {
         // fire-and-forget: any rate-limit/db error still serves the pixel
       }
@@ -129,7 +153,7 @@ export function publicRoutes(deps: MenuDeps) {
     .post("/track/:slug/session", async (c) => {
       try {
         await deps.limiter.allow("beacon", `ip:${clientIP(c)}`);
-        const rest = await snapshotBySlug(deps.db.db, c.req.param("slug"), true).then((s) => s?.restaurant);
+        const rest = await restaurantBySlug(db(), c.req.param("slug")); // beacon needs only the restaurant, not the menu tree
         if (!rest) return c.body(null, 204);
         await deps.limiter.allow("beacon_rest", `rest:${rest.id}`);
         const visitor = getCookie(c, VISITOR_COOKIE) ?? "";
@@ -139,14 +163,13 @@ export function publicRoutes(deps: MenuDeps) {
         };
         const now = new Date();
         if (typeof body.durationSeconds === "number" && body.durationSeconds > 0) {
-          await recordSession(deps.db.db, rest, body.durationSeconds, now);
+          await recordSession(db(),rest, body.durationSeconds, now);
         }
         if (visitor && Array.isArray(body.items)) {
-          for (const itemId of body.items.slice(0, 100)) {
-            if (typeof itemId === "string" && itemId) {
-              await recordItemView(deps.db.db, rest, itemId, visitor, now);
-            }
-          }
+          const itemIds = body.items
+            .filter((x): x is string => typeof x === "string" && x.length > 0)
+            .slice(0, 100);
+          if (itemIds.length) await recordItemViews(db(), rest, itemIds, visitor, now);
         }
       } catch {
         // fire-and-forget

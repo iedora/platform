@@ -1,4 +1,5 @@
-import { Database, OutboxWriter, newUserVerifier } from "@iedora/server-kit";
+import type { AuditRecord, Invoice, Subscription, TenantWithOwner } from "@iedora/contracts";
+import { Database, OutboxWriter, ServiceClientError, newUserVerifier } from "@iedora/server-kit";
 import { createScratchDatabase } from "@iedora/server-kit/testkit";
 import { afterAll, beforeAll } from "bun:test";
 import { type CryptoKey, SignJWT, generateKeyPair } from "jose";
@@ -27,6 +28,20 @@ export interface Harness {
   db: Database<MenuDB>;
   privateKey: CryptoKey;
   planStub: { code: string }; // mutable so a test can flip the tenant's effective plan
+  /** Mutable billing/audit/tenant fakes for the staff aggregation endpoint. */
+  billingStub: { subscriptions: Subscription[]; invoices: Invoice[] };
+  auditStub: { events: AuditRecord[] };
+  /** Tenant reader/admin fake. `value`/`fail` drive `tenant()` (existence +
+   * best-effort path); `list` drives the picker; `createError`/`newTenantId`
+   * drive new-tenant provisioning, and `createdNames` records the calls. */
+  tenantStub: {
+    value: TenantWithOwner | null;
+    fail: boolean;
+    list: TenantWithOwner[];
+    createError: number | null;
+    newTenantId: string;
+    createdNames: string[];
+  };
   /** In-memory object store, present only when the harness was built with
    * `withUploads` — lets upload tests assert what landed / was deleted. */
   blob: FakeBlob | null;
@@ -93,6 +108,19 @@ export async function createHarness(
   const db = new Database<MenuDB>(scratch.url);
   const kp = await generateKeyPair("EdDSA");
   const planStub = { code: "menu_pro" };
+  const billingStub: { subscriptions: Subscription[]; invoices: Invoice[] } = {
+    subscriptions: [],
+    invoices: [],
+  };
+  const auditStub: { events: AuditRecord[] } = { events: [] };
+  const tenantStub: Harness["tenantStub"] = {
+    value: null,
+    fail: false,
+    list: [],
+    createError: null,
+    newTenantId: "99999999-9999-9999-9999-999999999999",
+    createdNames: [],
+  };
   const rateLimitDisabled = opts.rateLimitDisabled ?? true;
   let blob: FakeBlob | null = null;
   let uploads: Uploads | null = null;
@@ -106,6 +134,25 @@ export async function createHarness(
     userVerifier: newUserVerifier(kp.publicKey, ISS, AUD),
     auditor: new OutboxWriter(db, "menu"),
     plans: new Plans({ planCode: async () => planStub.code }, db),
+    billing: {
+      subscriptions: async () => billingStub.subscriptions,
+      invoices: async () => billingStub.invoices,
+    },
+    audit: { forTarget: async () => auditStub.events },
+    tenant: {
+      tenant: async () => {
+        if (tenantStub.fail) throw new Error("auth unavailable");
+        return tenantStub.value;
+      },
+      listTenants: async () => tenantStub.list,
+      createTenant: async (name: string) => {
+        tenantStub.createdNames.push(name);
+        if (tenantStub.createError !== null) {
+          throw new ServiceClientError("auth", "/auth/admin/tenants", tenantStub.createError);
+        }
+        return { id: tenantStub.newTenantId, name };
+      },
+    },
     uploads, // null → upload routes answer 503; FakeBlob-backed when withUploads
     cfg: { rateLimitDisabled } as MenuConfig,
   });
@@ -114,6 +161,9 @@ export async function createHarness(
     db,
     privateKey: kp.privateKey,
     planStub,
+    billingStub,
+    auditStub,
+    tenantStub,
     blob,
     close: async () => {
       await db.close();

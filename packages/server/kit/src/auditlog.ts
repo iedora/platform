@@ -2,10 +2,10 @@ import { type Kysely, sql } from "kysely";
 
 import type { AuditEnvelope } from "./audit";
 
-// The single idempotent writer of the append-only audit_log — ports Go
-// internal/auditlog. Written via the kysely `sql` tag (the audit DB's Kysely
-// types aren't known here), parameterized; a duplicate (message_id, at) is a
-// no-op. Used by the outbox relay (and any direct ingester).
+// The single idempotent writer of the append-only audit_log.
+// Written via the kysely `sql` tag (the audit DB's Kysely types aren't known
+// here), parameterized; a duplicate (message_id, at) is a no-op. Used by the
+// outbox relay (and any direct ingester).
 export async function insertAuditLog(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   db: Kysely<any>,

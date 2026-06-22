@@ -21,7 +21,7 @@ export default async function RestaurantPage({
 }) {
   const { slug } = await params
   // i18n is independent of the restaurant lookup — kick it off
-  // concurrently with the auth round-trip. The guard's single Go call
+  // concurrently with the auth round-trip. The guard's single API call
   // already returns the menu summaries alongside the restaurant.
   const tPromise = getTranslations('Restaurant')
   const tDashPromise = getTranslations('Dashboard')
@@ -176,7 +176,7 @@ export default async function RestaurantPage({
       ) : (
         // ── Empty state ────────────────────────────────────────────
         // Primary: seed a sample menu. Secondary: blank menu from
-        // scratch. (The AI photo-import flow is gone until the Go
+        // scratch. (The AI photo-import flow is gone until the
         // backend grows an import endpoint.)
         <section
           className="restaurant-empty"

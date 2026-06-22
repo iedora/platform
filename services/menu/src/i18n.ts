@@ -2,7 +2,7 @@ import type { LocalizedText, PublicMenu } from "@iedora/contracts";
 
 import type { Node } from "./domain";
 
-// Localization — ports Go internal/menu/i18n.go. The i18n model stores the
+// Localization. The i18n model stores the
 // restaurant's default language in plain columns and non-default overrides in
 // *_i18n jsonb maps; readers apply the requested → default → empty fallback.
 
@@ -39,7 +39,7 @@ export function pickLanguage(
 }
 
 // localize collapses a raw tree to a single language, dropping unavailable
-// items (guests never see them). Ports Go menu.Localize.
+// items (guests never see them).
 export function localize(menus: Node[], lang: string): PublicMenu[] {
   return menus.map((m) => ({
     id: m.id,

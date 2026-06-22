@@ -3,8 +3,12 @@ import { apiJson, ApiError, MENU_URL } from '@iedora/api-client'
 import { menu } from '@iedora/api-client/menu-rpc'
 import type {
   Analytics,
+  AuditRecord,
   CategoryUpdate,
+  DailyPoint,
   IdentityPatch,
+  ImportPayload,
+  Invoice,
   ItemWrite,
   MenuNode,
   MenuSummary,
@@ -17,6 +21,8 @@ import type {
   RestaurantRef,
   RestaurantSummary,
   StaffRestaurantRow,
+  Subscription,
+  TenantWithOwner,
   UploadTarget,
 } from '@iedora/contracts'
 
@@ -31,9 +37,13 @@ import type {
 // definitions now live in @iedora/contracts (single source of truth).
 export type {
   Analytics,
+  AuditRecord,
   CategoryNode,
   CategoryUpdate,
   DailyPoint,
+  Invoice,
+  Subscription,
+  TenantWithOwner,
   IdentityPatch,
   ItemNode,
   ItemWrite,
@@ -236,6 +246,60 @@ export function resolveQRCode(code: string) {
 export function staffDirectory(q?: string) {
   const qs = q ? `?q=${encodeURIComponent(q)}` : ''
   return apiJson<{ restaurants: StaffRestaurantRow[] }>(`/api/staff/directory${qs}`)
+}
+
+/** Aggregated detail for the admin restaurant pages: the record + menus +
+ * 14-day trend, the tenant's billing (subscriptions + invoices), and the
+ * restaurant's audit trail. Billing/audit are best-effort on the service. */
+export type StaffRestaurantFull = {
+  restaurant: StaffRestaurantRow
+  menus: MenuSummary[]
+  trend: DailyPoint[]
+  billing: { subscriptions: Subscription[]; invoices: Invoice[] }
+  audit: AuditRecord[]
+  tenant: TenantWithOwner | null // tenant + owner user (null if the auth read failed/absent)
+}
+
+export function staffRestaurantDetail(id: string) {
+  return apiJson<StaffRestaurantFull>(`/api/staff/restaurants/${encodeURIComponent(id)}`)
+}
+
+/** Staff identity override — a privileged rename of a restaurant's friendly name,
+ * cross-tenant by id (the service gates STAFF_ROLE + audits it). */
+export function staffUpdateRestaurant(id: string, patch: { name: string }) {
+  return apiJson<{ restaurant: Restaurant }>(`/api/staff/restaurants/${encodeURIComponent(id)}`, {
+    method: 'PATCH',
+    ...json(patch),
+  })
+}
+
+/** Tenants (with owners) for the admin "assign to tenant" picker. */
+export function staffListTenants() {
+  return apiJson<{ tenants: TenantWithOwner[] }>('/api/staff/tenants')
+}
+
+/** Provision a restaurant under an existing tenant (`tenantId`) or a brand-new
+ * one (`newTenantName`, owned by the acting admin). Always lands on the free plan. */
+export function staffCreateRestaurant(input: {
+  name: string
+  defaultLanguage?: string
+  tenantId?: string
+  newTenantName?: string
+}) {
+  return apiJson<{ restaurant: Restaurant }>('/api/staff/restaurants', {
+    method: 'POST',
+    ...json(input),
+  })
+}
+
+/** Provision a restaurant + its full menu from a pasted JSON document. The
+ * payload's optional `tenant` name creates a new tenant; otherwise `tenantId`
+ * (an existing tenant) is used. */
+export function staffImportRestaurant(input: { tenantId?: string; payload: ImportPayload }) {
+  return apiJson<{ restaurant: Restaurant }>('/api/staff/restaurants/import', {
+    method: 'POST',
+    ...json(input),
+  })
 }
 
 export function listQRCodes() {

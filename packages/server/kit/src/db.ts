@@ -4,11 +4,10 @@ import { SQL } from "bun";
 import { Kysely, sql, type Transaction } from "kysely";
 import { PostgresJSDialect } from "kysely-postgres-js";
 
-// Transaction-in-context, ported from the Go internal/pgtx package: the active
-// transaction is carried implicitly so repositories transparently join the
-// caller's unit of work (pgtx.With/Or) and nested runInTx reuses it. Stored as
-// Kysely<any> because Kysely is invariant in its DB param — each Database casts
-// back to its own DB type on read.
+// Transaction-in-context: the active transaction is carried implicitly so
+// repositories transparently join the caller's unit of work and nested runInTx
+// reuses it. Stored as Kysely<any> because Kysely is invariant in its DB param
+// — each Database casts back to its own DB type on read.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const txCtx = new AsyncLocalStorage<Kysely<any>>();
 
@@ -32,7 +31,10 @@ export class Database<DB> {
     this.root = new Kysely<DB>({
       dialect: new PostgresJSDialect({
         postgres: new SQL(url, {
-          max: opts.poolMax ?? 10,
+          // Modest pool: short-lived OLTP queries don't need a deep pool, and on
+          // the shared single box every idle backend costs Postgres RAM. Several
+          // service pools must stay well under Postgres max_connections.
+          max: opts.poolMax ?? 5,
           idleTimeout: 30, // seconds
           maxLifetime: 600, // seconds
         }),

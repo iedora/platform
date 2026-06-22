@@ -1,9 +1,8 @@
 import type { Context } from "hono";
 import { HTTPException } from "hono/http-exception";
 
-// The menu error vocabulary — ports the Go respond() chokepoint
-// (internal/menu/httpapi/httpapi.go). A foreign id and a missing id look
-// identical (both 404), never a 500.
+// The menu error vocabulary — the single response chokepoint. A foreign id and
+// a missing id look identical (both 404), never a 500.
 
 /** 404 — entity absent within the caller's scope (or a malformed id). */
 export const notFound = (): HTTPException => new HTTPException(404, { message: "not found" });
@@ -11,7 +10,7 @@ export const notFound = (): HTTPException => new HTTPException(404, { message: "
 /** 409 — restaurant slug already in use. */
 export const slugTaken = (): HTTPException => new HTTPException(409, { message: "slug taken" });
 
-/** 422 — user-correctable input problem (ports menu.ValidationError). */
+/** 422 — user-correctable input problem. */
 export const invalid = (message: string): HTTPException => new HTTPException(422, { message });
 
 // 429 — rate-limit deny, carrying Retry-After. A subclass so the centralized
@@ -43,7 +42,7 @@ export function isUniqueViolation(err: unknown): boolean {
 
 // onErrorBody is the menu services' shared error handler: HTTPException renders
 // itself; a malformed-uuid surfaces as 404 (same as missing); anything else is
-// a logged 500. Mirrors the Go respond() mapping for the cases the store raises
+// a logged 500. This mapping covers the cases the store raises
 // as raw Postgres errors rather than domain errors.
 export function handleError(err: Error, c: Context): Response {
   if (err instanceof HTTPException) return err.getResponse();

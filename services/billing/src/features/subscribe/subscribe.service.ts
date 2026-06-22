@@ -8,8 +8,7 @@ import { getPlan } from "../../plans";
 
 // subscribe activates (or changes) a tenant's plan and issues an invoice for
 // paid plans — subscription upsert + invoice + audit all commit together (so an
-// event is durable exactly when the change lands). Ports Go billing
-// service.Subscribe.
+// event is durable exactly when the change lands).
 export async function subscribe(
   deps: BillingDeps,
   input: { tenantId: string; planCode: string },

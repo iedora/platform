@@ -1,4 +1,4 @@
-import { createServiceApp, userAuth } from "@iedora/server-kit";
+import { createServiceApp, healthRoutes, userAuth } from "@iedora/server-kit";
 import { Hono } from "hono";
 
 import type { MenuDeps } from "./deps";
@@ -37,14 +37,7 @@ export function buildApp(deps: MenuDeps) {
     .route("/", tenantApp);
 
   const app = createServiceApp<MenuEnv>()
-    .get("/up", async (c) => {
-      try {
-        await deps.db.ping();
-        return c.json({ ok: true });
-      } catch {
-        return c.json({ ok: false }, 503);
-      }
-    })
+    .route("/", healthRoutes(() => deps.db.ping()))
     .route("/public", publicRoutes(deps))
     .route("/api", api);
 

@@ -16,10 +16,10 @@
 # Node version is declared once via ARG at the top (Next.js 16 official
 # pattern). Bump the ARG value periodically to track the latest LTS.
 # Bun base image is pinned by digest — it changes less often.
-ARG NODE_VERSION=24.16.0-bookworm-slim
+ARG NODE_VERSION=24.17.0-bookworm-slim
 
 # ── Stage 1: dependencies ─────────────────────────────────────────────────────
-FROM oven/bun:1.3-debian@sha256:9dba1a1b43ce28c9d7931bfc4eb00feb63b0114720a0277a8f939ae4dfc9db6f AS deps
+FROM oven/bun:1.3.13-debian AS deps
 WORKDIR /workspace
 
 # Workspace root manifest + lock + shared tsconfig that every per-package
@@ -128,7 +128,7 @@ COPY --from=builder --chown=nextjs:nextjs /workspace/apps/web/.next/standalone .
 COPY --from=builder --chown=nextjs:nextjs /workspace/apps/web/.next/static ./apps/web/.next/static
 COPY --from=builder --chown=nextjs:nextjs /workspace/apps/web/public ./apps/web/public
 
-# No database client and no migrations ship in this image — the Go
+# No database client and no migrations ship in this image — the backend
 # services (services/) own every schema; each one migrates itself via
 # its `<svc> migrate` one-shot. This image only serves the UI.
 

@@ -4,7 +4,7 @@ import { getAnalytics, getMonthlyViews } from '../../shared/api'
 import type { AnalyticsRange } from './range'
 
 /**
- * Public API of the metrics slice — thin read loaders over the Go menu
+ * Public API of the metrics slice — thin read loaders over the menu
  * service. The Bearer token scopes both calls to the active tenant, so
  * no tenantId parameter is needed. Wrapped in React's `cache()` so
  * repeated calls during a single render hit the API once.

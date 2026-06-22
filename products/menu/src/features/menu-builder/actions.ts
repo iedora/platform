@@ -6,7 +6,7 @@ import type { LocalizedText } from '../i18n'
 import * as api from '../../shared/api'
 
 /**
- * Server action shells — thin wrappers over the menu API. The Go
+ * Server action shells — thin wrappers over the menu API. The
  * service owns ALL validation, tenancy and ownership checks (the
  * Bearer token scopes every call); these only translate errors to the
  * `{ error }` shape the dialogs render, then revalidate the dashboard

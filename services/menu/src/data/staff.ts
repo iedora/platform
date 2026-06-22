@@ -4,10 +4,10 @@ import type { MenuDB } from "../schema";
 import type { DailyPoint } from "./analytics";
 import { notFound } from "../errors";
 import { type MenuSummary, menusWithCounts } from "./restaurants.write";
+import { addDays, dayString } from "./sqlutil";
 
-// Cross-tenant read models for the staff admin console — ports Go
-// internal/menu/store_staff.go. Every query spans all tenants by design (staff
-// oversight); pure reads, no writes.
+// Cross-tenant read models for the staff admin console. Every query spans all
+// tenants by design (staff oversight); pure reads, no writes.
 
 type DB = Kysely<MenuDB>;
 
@@ -45,15 +45,6 @@ export interface StaffAlerts {
   unboundQr: number;
 }
 
-function dayString(t: Date): string {
-  return t.toISOString().slice(0, 10);
-}
-
-function addDays(t: Date, n: number): Date {
-  const d = new Date(t);
-  d.setUTCDate(d.getUTCDate() + n);
-  return d;
-}
 
 // window30 is the inclusive UTC start-of-day 29 days before now (30 days incl. today).
 function window30(now: Date): string {

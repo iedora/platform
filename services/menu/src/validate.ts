@@ -4,9 +4,8 @@ import type { Variant } from "./domain";
 import { invalid } from "./errors";
 import { isLanguage } from "./i18n";
 
-// Validation limits — the single source of truth for field constraints, matching
-// the Go service (internal/menu/validate.go) and the original TS product so
-// existing content stays valid.
+// Validation limits — the single source of truth for field constraints. The
+// limits match the values existing content was created under, so it stays valid.
 const MAX_SHORT_NAME = 80; // menu + category names
 const MAX_ITEM_NAME = 120; // item names + variant labels
 const MAX_DESCRIPTION = 1000; // all descriptions + i18n values
@@ -38,7 +37,7 @@ export function validPrice(field: string, cents: number): void {
 }
 
 // prune drops empty values and unknown locales, returning null when nothing
-// remains (empty maps stored as NULL). Ports LocalizedText.Prune.
+// remains (empty maps stored as NULL).
 function prune(t: LocalizedText): LocalizedText | null {
   const out: LocalizedText = {};
   for (const [code, raw] of Object.entries(t)) {

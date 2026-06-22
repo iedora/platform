@@ -40,7 +40,7 @@ export const DEFAULT_THEME: ResolvedTheme = {
 }
 
 // Coerce the stored blob (possibly null/partial/legacy — or the untyped
-// `Record<string, unknown>` the Go public payload carries) into a fully
+// `Record<string, unknown>` the public payload carries) into a fully
 // populated theme. Unknown layout/font values fall back to defaults rather
 // than throw, so old rows or hand-edited JSON never crash the public page.
 export function resolveTheme(

@@ -1,4 +1,4 @@
-import { localizedText } from "@iedora/contracts";
+import { categoryUpdate, itemWrite, menuUpdate } from "@iedora/contracts";
 import { zValidator } from "@hono/zod-validator";
 import { Hono } from "hono";
 import { z } from "zod";
@@ -19,34 +19,15 @@ import {
   updateMenu,
 } from "../../service";
 
+// Local-only payloads with no contract equivalent. The menu/category/item write
+// schemas (menuUpdate/categoryUpdate/itemWrite) come from @iedora/contracts — the
+// single source the React client is typed against — so the route can't drift.
 const nameInput = z.object({ name: z.string() });
 const orderInput = z.object({ orderedIds: z.array(z.string()) });
-const textFields = {
-  name: z.string(),
-  nameI18n: localizedText.optional(),
-  description: z.string().optional(),
-  descriptionI18n: localizedText.optional(),
-};
-const menuUpdate = z.object({ ...textFields, active: z.boolean() });
-const categoryUpdate = z.object(textFields);
-const variant = z.object({
-  label: z.string(),
-  labelI18n: localizedText.optional(),
-  priceCents: z.number().int(),
-});
-const itemWrite = z.object({
-  ...textFields,
-  priceCents: z.number().int(),
-  currency: z.string().optional(),
-  available: z.boolean().optional(),
-  tags: z.array(z.string()).optional(),
-  variants: z.array(variant).optional(),
-});
 
 // Scoped builder slice: the menu→category→item CRUD + reorder under
 // /restaurants/{slug}. Relies on the parent `scoped` middleware; reads the
-// restaurant (id + default language) from context. Ports the builder handlers of
-// Go internal/menu/httpapi/admin.go.
+// restaurant (id + default language) from context.
 export function builderRoutes(deps: MenuDeps) {
   const rid = (c: { get: (k: "restaurant") => { id: string; defaultLanguage: string } }) =>
     c.get("restaurant");

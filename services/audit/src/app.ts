@@ -1,4 +1,4 @@
-import { createServiceApp } from "@iedora/server-kit";
+import { createServiceApp, healthRoutes } from "@iedora/server-kit";
 
 import type { AuditDeps } from "./deps";
 import { eventsRoutes } from "./features/events/events.routes";
@@ -8,14 +8,7 @@ import { eventsRoutes } from "./features/events/events.routes";
 // Business logic lives in features/<slice>/, never here.
 export function buildApp(deps: AuditDeps) {
   return createServiceApp()
-    .get("/up", async (c) => {
-      try {
-        await deps.database.ping();
-        return c.json({ ok: true });
-      } catch {
-        return c.json({ ok: false }, 503);
-      }
-    })
+    .route("/", healthRoutes(() => deps.database.ping()))
     .route("/obs", eventsRoutes(deps));
 }
 

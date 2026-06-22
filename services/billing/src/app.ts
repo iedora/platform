@@ -1,4 +1,4 @@
-import { createServiceApp } from "@iedora/server-kit";
+import { createServiceApp, healthRoutes } from "@iedora/server-kit";
 import { Hono } from "hono";
 
 import type { BillingDeps } from "./deps";
@@ -18,14 +18,7 @@ export function buildApp(deps: BillingDeps) {
     .route("/", invoicesRoutes(deps));
 
   return createServiceApp()
-    .get("/up", async (c) => {
-      try {
-        await deps.db.ping();
-        return c.json({ ok: true });
-      } catch {
-        return c.json({ ok: false }, 503);
-      }
-    })
+    .route("/", healthRoutes(() => deps.db.ping()))
     .route("/billing", billing);
 }
 

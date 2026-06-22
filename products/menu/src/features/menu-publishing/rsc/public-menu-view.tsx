@@ -11,7 +11,7 @@ import { PublicMenuView, type PublicMenuLoaded } from './public-menu-view-ui'
  * surfaces (admin import IDE live preview) can mount the exact same
  * component.
  *
- * The Go menu service owns language negotiation (`?lang=` beats
+ * The menu service owns language negotiation (`?lang=` beats
  * `Accept-Language` beats the restaurant default) and returns the tree
  * already localized — no client-side i18n fallback happens here.
  */

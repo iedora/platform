@@ -1,4 +1,4 @@
-import { hashPassword, verifyPassword } from "@iedora/server-kit";
+import { type AuditEvent, hashPassword, verifyPassword } from "@iedora/server-kit";
 import { HTTPException } from "hono/http-exception";
 
 import { grantedRole } from "../../config";
@@ -9,50 +9,48 @@ import { unauthorized } from "../../errors";
 import { buildSession, mintTokens, type RequestMeta, type Tokens } from "../../session";
 
 // A real argon2 hash, verified against on the no-such-user path to equalize
-// timing and deny an account-enumeration oracle (ports Go service dummyHash).
+// timing and deny an account-enumeration oracle.
 const DUMMY_HASH = await hashPassword("timing-equalizer-placeholder");
 
-// Login verifies credentials and opens a new session family. Ports Go service.Login.
+// Login verifies credentials and opens a new session family.
 export async function login(
   deps: AuthDeps,
   input: { email: string; password: string },
   meta: RequestMeta,
 ): Promise<Tokens> {
+  // Every login emit carries the request's user-agent + ip hash; close over them
+  // so each call site states only what differs (action/outcome/actor/meta).
   const ua = meta.userAgent ?? undefined;
   const ip = meta.ipHash ?? undefined;
+  const audit = (e: AuditEvent) => deps.auditor.record({ userAgent: ua, ipHash: ip, ...e });
+  const auditSync = (e: AuditEvent) => deps.auditor.recordSync({ userAgent: ua, ipHash: ip, ...e });
 
   const user = await findUserByEmail(deps.db.db, input.email);
   if (!user) {
     await verifyPassword(DUMMY_HASH, input.password).catch(() => false);
-    void deps.auditor.record({
+    void audit({
       action: "auth.session.login",
       outcome: "failure",
-      userAgent: ua,
-      ipHash: ip,
       meta: { email: input.email, reason: "no_user" },
     });
     throw unauthorized();
   }
 
   if (!(await verifyPassword(user.password_hash, input.password))) {
-    void deps.auditor.record({
+    void audit({
       action: "auth.session.login",
       outcome: "failure",
       actor: { type: "user", id: user.id },
-      userAgent: ua,
-      ipHash: ip,
       meta: { reason: "bad_password" },
     });
     throw unauthorized();
   }
 
   if (isBanned(user, new Date())) {
-    void deps.auditor.record({
+    void audit({
       action: "auth.session.login",
       outcome: "failure",
       actor: { type: "user", id: user.id },
-      userAgent: ua,
-      ipHash: ip,
       meta: { reason: "banned" },
     });
     throw new HTTPException(403, { message: "account banned" });
@@ -72,25 +70,21 @@ export async function login(
     await insertSession(deps.db.db, session);
     if (promote) {
       await setRole(deps.db.db, user.id, role);
-      await deps.auditor.recordSync({
+      await auditSync({
         action: "auth.user.role_granted",
         actor: { type: "user", id: user.id },
         tenantId: tenantId ?? undefined,
         targetType: "user",
         targetId: user.id,
-        userAgent: ua,
-        ipHash: ip,
         meta: { role, reason: "role_grant" },
       });
     }
-    await deps.auditor.recordSync({
+    await auditSync({
       action: "auth.session.login",
       actor: { type: "user", id: user.id },
       tenantId: tenantId ?? undefined,
       targetType: "user",
       targetId: user.id,
-      userAgent: ua,
-      ipHash: ip,
     });
   });
   if (promote) user.role = role;

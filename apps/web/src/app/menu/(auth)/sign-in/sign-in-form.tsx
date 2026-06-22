@@ -1,13 +1,14 @@
 'use client'
 
-import * as React from 'react'
 import { useActionState, useState } from 'react'
+import { useForm, getFormProps, getInputProps } from '@conform-to/react'
+import { getZodConstraint, parseWithZod } from '@conform-to/zod/v4'
 import { useTranslations } from 'next-intl'
 import Link from 'next/link'
 import { Button } from '@iedora/design-system'
-import { signInAction, type AuthFormState } from '@iedora/product-menu/features/auth/actions'
+import { signInAction } from '@iedora/product-menu/features/auth/actions'
+import { signInSchema } from '@iedora/product-menu/features/auth/schemas'
 import { PasswordField, TextField } from '../../_components/form-fields'
-import { isEmail } from '../../_components/validation'
 
 export function SignInForm({
   next,
@@ -20,44 +21,51 @@ export function SignInForm({
 }) {
   const t = useTranslations('Auth.signIn')
   const tf = useTranslations('Auth.fields')
-  const [state, action, pending] = useActionState<AuthFormState, FormData>(signInAction, { error: null })
-  const [errors, setErrors] = useState<{ email?: string; password?: string }>({})
+  const [lastResult, action, pending] = useActionState(signInAction, undefined)
+  const [form, fields] = useForm({
+    lastResult,
+    constraint: getZodConstraint(signInSchema),
+    shouldValidate: 'onBlur',
+    shouldRevalidate: 'onInput',
+    onValidate: ({ formData }) => parseWithZod(formData, { schema: signInSchema }),
+  })
 
-  function validate(fd: FormData) {
-    const e: { email?: string; password?: string } = {}
-    const email = String(fd.get('email') ?? '').trim()
-    const password = String(fd.get('password') ?? '')
-    if (!email) e.email = tf('emailRequired')
-    else if (!isEmail(email)) e.email = tf('emailInvalid')
-    if (!password) e.password = tf('passwordRequired')
-    return e
-  }
+  // Controlled inputs so a failed sign-in keeps the email + password the user
+  // typed (React 19 resets the form action otherwise). See the sign-up form
+  // for the full rationale.
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
 
-  function onSubmit(ev: React.FormEvent<HTMLFormElement>) {
-    const e = validate(new FormData(ev.currentTarget))
-    setErrors(e)
-    if (Object.keys(e).length > 0) ev.preventDefault()
-  }
+  const msg = (errs?: string[]) => (errs?.[0] ? tf(errs[0]) : undefined)
+
+  const { key: emailKey, ...emailProps } = getInputProps(fields.email, { type: 'email', value: false, ariaAttributes: false })
+  const { key: pwKey, ...pwProps } = getInputProps(fields.password, { type: 'password', value: false, ariaAttributes: false })
 
   return (
-    <form action={action} onSubmit={onSubmit} noValidate className="flex flex-col gap-5">
+    <form {...getFormProps(form)} action={action} className="flex flex-col gap-5">
       <input type="hidden" name="next" value={next} />
       <TextField
+        key={emailKey}
+        {...emailProps}
         label={t('emailLabel')}
-        name="email"
-        type="email"
         autoComplete="email"
         autoFocus
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
         placeholder={t('emailPlaceholder')}
-        error={errors.email}
+        hint={fields.email.errors ? undefined : tf('emailHint')}
+        error={msg(fields.email.errors)}
         data-test-id="sign-in-email"
       />
       <div>
         <PasswordField
+          key={pwKey}
+          {...pwProps}
           label={t('passwordLabel')}
-          name="password"
           autoComplete="current-password"
-          error={errors.password}
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          error={msg(fields.password.errors)}
           showLabel={tf('showPassword')}
           hideLabel={tf('hidePassword')}
           data-test-id="sign-in-password"
@@ -72,9 +80,9 @@ export function SignInForm({
           </Link>
         </div>
       </div>
-      {state.error && (
+      {form.errors && (
         <p className="text-[13px] text-[#D92D20]" role="alert">
-          {t('errorGeneric')}
+          {msg(form.errors)}
         </p>
       )}
       <Button

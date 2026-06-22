@@ -15,7 +15,7 @@ import type { PublicMenuData } from './types'
  * source of truth, no fork).
  *
  * Lives in a separate file from `public-menu-view.tsx` because the
- * latter pulls the Go-API loader (server-only); we want this rendering
+ * latter pulls the API loader (server-only); we want this rendering
  * code importable from client surfaces too.
  *
  * Two optional knobs for non-default consumers (e.g. the import IDE):
@@ -23,7 +23,7 @@ import type { PublicMenuData } from './types'
  *     that call back instead of `<Link>`-navigating. Lets the preview
  *     swap languages in-place without changing the URL.
  *   - `showBeacon`: defaults to true. The preview turns it off so we
- *     don't hammer the Go track endpoint with preview renders.
+ *     don't hammer the track endpoint with preview renders.
  */
 
 export type PublicMenuLoaded = PublicMenuData & {
@@ -102,7 +102,7 @@ export function PublicMenuView({
       />
       {showBeacon && (
         // Pixel beacon — `/track/:slug` is rewritten by next.config.ts to the
-        // Go menu service's `GET /public/track/:slug` 1×1 gif. Survives any
+        // menu service's `GET /public/track/:slug` 1×1 gif. Survives any
         // future edge cache layer in front of the page: the CDN may serve the
         // HTML from cache, but the browser still loads this image from the
         // origin, so the view is counted on every real visit.

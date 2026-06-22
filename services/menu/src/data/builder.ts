@@ -4,13 +4,20 @@ import { type Kysely, sql } from "kysely";
 import type { Variant } from "../domain";
 import type { MenuDB } from "../schema";
 import { invalid, notFound } from "../errors";
-import { jsonbOrNull, textArray, uuidArray } from "./sqlutil";
+import {
+  affectedOrNotFound,
+  changedOrNotFound,
+  jsonbOrNull,
+  returnedOrNotFound,
+  textArray,
+  uuidArray,
+} from "./sqlutil";
 
-// Builder mutations — ports Go internal/menu/store_builder.go. Parent ownership
+// Builder mutations. Parent ownership
 // is enforced inside each statement (INSERT … SELECT FROM parent / UPDATE …
 // WHERE restaurant_id), so a forged or cross-tenant id mutates zero rows and
-// surfaces as notFound. Written as raw SQL (the tenancy-guarded INSERT…SELECT
-// and jsonb rewrites map 1:1 from the Go).
+// surfaces as notFound. Written as raw SQL for the tenancy-guarded INSERT…SELECT
+// and jsonb rewrites.
 
 type DB = Kysely<MenuDB>;
 
@@ -37,8 +44,7 @@ export async function createMenu(db: DB, restaurantId: string, name: string): Pr
     SELECT r.id, ${name}, coalesce((SELECT max(position)+1 FROM menus WHERE restaurant_id=r.id), 0)
     FROM restaurants r WHERE r.id = ${restaurantId}
     RETURNING id`.execute(db);
-  if (r.rows.length === 0) throw notFound();
-  return r.rows[0]!.id;
+  return returnedOrNotFound(r).id;
 }
 
 export async function updateMenu(
@@ -56,12 +62,17 @@ export async function updateMenu(
       name_i18n=${jsonbOrNull(nameI18n)}, description_i18n=${jsonbOrNull(descI18n)},
       active=${active}, updated_at=now()
     WHERE id=${menuId} AND restaurant_id=${restaurantId}`.execute(db);
-  if (Number(r.numAffectedRows ?? 0n) === 0) throw notFound();
+  affectedOrNotFound(r);
 }
 
 export async function deleteMenu(db: DB, menuId: string, restaurantId: string): Promise<void> {
-  const r = await sql`DELETE FROM menus WHERE id=${menuId} AND restaurant_id=${restaurantId}`.execute(db);
-  if (Number(r.numAffectedRows ?? 0n) === 0) throw notFound();
+  changedOrNotFound(
+    await db
+      .deleteFrom("menus")
+      .where("id", "=", menuId)
+      .where("restaurant_id", "=", restaurantId)
+      .executeTakeFirst(),
+  );
 }
 
 // --- categories ---
@@ -78,8 +89,7 @@ export async function createCategory(
       coalesce((SELECT max(position)+1 FROM categories WHERE menu_id=m.id), 0)
     FROM menus m WHERE m.id=${menuId} AND m.restaurant_id=${restaurantId}
     RETURNING id`.execute(db);
-  if (r.rows.length === 0) throw notFound();
-  return r.rows[0]!.id;
+  return returnedOrNotFound(r).id;
 }
 
 export async function updateCategory(
@@ -95,12 +105,17 @@ export async function updateCategory(
     UPDATE categories SET name=${name}, description=${textOrNull(description)},
       name_i18n=${jsonbOrNull(nameI18n)}, description_i18n=${jsonbOrNull(descI18n)}, updated_at=now()
     WHERE id=${categoryId} AND restaurant_id=${restaurantId} RETURNING menu_id`.execute(db);
-  if (r.rows.length === 0) throw notFound();
+  returnedOrNotFound(r);
 }
 
 export async function deleteCategory(db: DB, categoryId: string, restaurantId: string): Promise<void> {
-  const r = await sql`DELETE FROM categories WHERE id=${categoryId} AND restaurant_id=${restaurantId}`.execute(db);
-  if (Number(r.numAffectedRows ?? 0n) === 0) throw notFound();
+  changedOrNotFound(
+    await db
+      .deleteFrom("categories")
+      .where("id", "=", categoryId)
+      .where("restaurant_id", "=", restaurantId)
+      .executeTakeFirst(),
+  );
 }
 
 // --- items ---
@@ -120,8 +135,7 @@ export async function createItem(
       coalesce((SELECT max(position)+1 FROM items WHERE category_id=c.id), 0)
     FROM categories c WHERE c.id=${categoryId} AND c.restaurant_id=${restaurantId}
     RETURNING id`.execute(db);
-  if (r.rows.length === 0) throw notFound();
-  return r.rows[0]!.id;
+  return returnedOrNotFound(r).id;
 }
 
 // updateItem replaces an item's fields. replaceVariants distinguishes "leave the
@@ -142,12 +156,17 @@ export async function updateItem(
       variants = CASE WHEN ${replaceVariants} THEN ${jsonbOrNull(variantsParam(inp.variants))} ELSE variants END,
       updated_at=now()
     WHERE id=${itemId} AND restaurant_id=${restaurantId}`.execute(db);
-  if (Number(r.numAffectedRows ?? 0n) === 0) throw notFound();
+  affectedOrNotFound(r);
 }
 
 export async function deleteItem(db: DB, itemId: string, restaurantId: string): Promise<void> {
-  const r = await sql`DELETE FROM items WHERE id=${itemId} AND restaurant_id=${restaurantId}`.execute(db);
-  if (Number(r.numAffectedRows ?? 0n) === 0) throw notFound();
+  changedOrNotFound(
+    await db
+      .deleteFrom("items")
+      .where("id", "=", itemId)
+      .where("restaurant_id", "=", restaurantId)
+      .executeTakeFirst(),
+  );
 }
 
 // --- reordering ---

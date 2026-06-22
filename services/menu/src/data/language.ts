@@ -6,8 +6,7 @@ import type { MenuDB } from "../schema";
 // changes from `from` to `to`: every plain column (which by invariant holds the
 // default language) moves into the i18n map under `from`, and the `to` override
 // — when present — is promoted into the plain column. Runs on the caller's
-// transaction so it commits atomically with the identity update. Ports Go
-// internal/menu/store_language.go.
+// transaction so it commits atomically with the identity update.
 export async function promoteDefaultLanguage(
   db: Kysely<MenuDB>,
   restaurantId: string,

@@ -172,7 +172,7 @@ export function QrPrintSheetDialog({
             />
           </DialogBody>
           <DialogFooter>
-            <Button variant="ghost" type="button" onClick={() => onOpenChange(false)}>
+            <Button variant="secondary" type="button" onClick={() => onOpenChange(false)}>
               Close
             </Button>
             <Button

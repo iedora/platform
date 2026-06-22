@@ -5,7 +5,7 @@ import { countRestaurants } from "./data/restaurants.write";
 import { invalid } from "./errors";
 import type { MenuDB } from "./schema";
 
-// Plan entitlements — ports Go internal/menu/plans.go. The DB stores raw billing
+// Plan entitlements. The DB stores raw billing
 // codes; this registry interprets them, so renaming plans never breaks gates.
 // Lookups fail open to the default plan: billing being down must not block menu
 // edits, only cap them at free-tier limits.

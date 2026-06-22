@@ -1,4 +1,3 @@
--- +goose Up
 -- 0003_outbox_dlq.sql — see auth/0005: poison / dead-letter columns for the
 -- Postgres-native audit relay (attempts/last_error/failed_at) + a claim index
 -- that excludes dead-lettered rows.

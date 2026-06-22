@@ -71,7 +71,7 @@ export const listRestaurantsForBinding = cache(async () => {
 })
 
 /**
- * Bound stickers for one restaurant (tenant dashboard QR page). The Go
+ * Bound stickers for one restaurant (tenant dashboard QR page). The
  * service has no per-restaurant QR endpoint — only the staff-wide list
  * — so we filter that list by restaurantId. Tenant operators don't hold
  * the staff role and get a 403 from the service; we surface that as an

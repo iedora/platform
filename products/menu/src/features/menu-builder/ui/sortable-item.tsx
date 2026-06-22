@@ -13,6 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
   Field,
+  FieldHint,
   FieldInput,
   FieldLabel,
   FieldTextarea,
@@ -258,6 +259,16 @@ export function SortableItem({
         >
           {formattedPrice ?? t('noPrice')}
         </span>
+        <span
+          className={
+            item.available
+              ? 'menu-item-row__status menu-item-row__status--available'
+              : 'menu-item-row__status menu-item-row__status--hidden'
+          }
+          data-test-id={`menu-item-status-${item.id}`}
+        >
+          {item.available ? t('itemAvailable') : t('itemHidden')}
+        </span>
       </button>
 
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -290,10 +301,16 @@ export function SortableItem({
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   maxLength={120}
+                  placeholder={t('itemName')}
                   error={errorField === 'name'}
-                  aria-describedby={errorField === 'name' ? errId : undefined}
+                  aria-describedby={
+                    errorField === 'name' ? errId : `item-name-${item.id}-hint`
+                  }
                   data-test-id={`menu-item-name-input-${item.id}`}
                 />
+                <FieldHint id={`item-name-${item.id}-hint`}>
+                  {t('itemNameHint')}
+                </FieldHint>
               </Field>
               <Field>
                 <FieldLabel htmlFor={`item-desc-${item.id}`}>
@@ -304,8 +321,13 @@ export function SortableItem({
                   rows={3}
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
+                  placeholder={t('itemDescriptionPlaceholder')}
+                  aria-describedby={`item-desc-${item.id}-hint`}
                   data-test-id={`menu-item-desc-input-${item.id}`}
                 />
+                <FieldHint id={`item-desc-${item.id}-hint`}>
+                  {t('itemDescriptionHint')}
+                </FieldHint>
               </Field>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <Field>
@@ -319,9 +341,14 @@ export function SortableItem({
                     value={priceText}
                     onChange={(e) => setPriceText(e.target.value)}
                     error={errorField === 'price'}
-                    aria-describedby={errorField === 'price' ? errId : undefined}
+                    aria-describedby={
+                      errorField === 'price' ? errId : `item-price-${item.id}-hint`
+                    }
                     data-test-id={`menu-item-price-input-${item.id}`}
                   />
+                  <FieldHint id={`item-price-${item.id}-hint`}>
+                    {t('itemPriceHint')}
+                  </FieldHint>
                 </Field>
                 <div className="flex items-end pb-1">
                   <Checkbox
@@ -461,7 +488,7 @@ export function SortableItem({
             <DialogFooter>
               <Button
                 type="button"
-                variant="ghost"
+                variant="secondary"
                 onClick={() => onOpenChange(false)}
                 disabled={pending}
                 data-test-id={`menu-item-cancel-${item.id}`}

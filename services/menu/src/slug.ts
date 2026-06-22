@@ -1,4 +1,4 @@
-// Slug rules — ports Go internal/menu/slug.go. 2–40 chars, lowercase
+// Slug rules — 2–40 chars, lowercase
 // alphanumerics and single dashes, starting and ending alphanumeric. Globally
 // unique across restaurants.
 const MIN_SLUG_LEN = 2;

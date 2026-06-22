@@ -5,7 +5,7 @@ import { normalizeQRCode, validQRCode } from "../qr";
 
 // resolveQRCode returns the slug a bound code points at — the sticker-scan hot
 // path: one indexed join, no auth. Returns undefined for unknown/unbound/
-// malformed codes (all indistinguishable on purpose). Ports Go ResolveQRCode.
+// malformed codes (all indistinguishable on purpose).
 export async function resolveQRCode(db: Kysely<MenuDB>, code: string): Promise<string | undefined> {
   const norm = normalizeQRCode(code);
   if (!validQRCode(norm)) return undefined; // cheap early exit, same shape as unknown

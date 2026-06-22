@@ -3,7 +3,7 @@ import { jwtVerify } from "jose";
 
 import { JwtIssuer, hashPassword, parseEd25519Seed, verifyPassword } from "../src";
 
-// The Go dev keypair (auth's API_JWT_PRIVATE_KEY seed + its public key).
+// The dev keypair (auth's API_JWT_PRIVATE_KEY seed + its public key).
 const SEED = "4qiWAUBUtlk6abEM+o0urqz3tGcSVjg8f/NyRa5wWeI=";
 const PUB_B64URL = Buffer.from("M+/u/gPyq9NyuwfMjS82Y7lOJeyvGq6jpeRxMqr1Ge4=", "base64").toString(
   "base64url",
@@ -42,7 +42,7 @@ test("JwtIssuer mints an EdDSA access token verifiable via its JWKS", async () =
   expect(payload.tid).toBe("t-1");
   expect(payload.roles).toEqual(["staff"]);
 
-  // JWKS is well-formed and its key matches the Go dev public key (cross-verify).
+  // JWKS is well-formed and its key matches the dev public key (cross-verify).
   const jwk = issuer.jwks().keys[0]!;
   expect(jwk.kty).toBe("OKP");
   expect(jwk.crv).toBe("Ed25519");

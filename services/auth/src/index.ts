@@ -1,15 +1,14 @@
 import {
   Database,
   JwtIssuer,
-  OutboxRelay,
-  OutboxWriter,
   ServiceTokenIssuer,
   expandFileSecrets,
   isProd,
+  newServiceVerifier,
   newUserVerifier,
   parseClients,
   parseEd25519Seed,
-  serve,
+  runRelayService,
 } from "@iedora/server-kit";
 
 import { buildApp } from "./app";
@@ -21,7 +20,6 @@ expandFileSecrets();
 const cfg = loadConfig();
 
 const db = new Database<AuthDB>(cfg.authDatabaseUrl);
-const auditDb = new Database(cfg.auditDatabaseUrl, { poolMax: 4 }); // relay is low-volume
 
 const keys = parseEd25519Seed(cfg.jwtSeed);
 const issuer = new JwtIssuer({
@@ -39,21 +37,18 @@ const serviceIssuer = new ServiceTokenIssuer({
   audience: cfg.serviceAudience,
   ttl: cfg.serviceTokenTtl,
 });
-const auditor = new OutboxWriter(db, "auth");
+const serviceVerifier = newServiceVerifier(keys.publicKey, cfg.jwtIssuer, cfg.serviceAudience);
 // No email transport is wired yet: prod drops the message (the reset is still
 // recorded as an audit event), dev logs the link so the flow is testable.
 const resetMailer = isProd() ? noopResetMailer : loggingResetMailer;
 
-// Drain this service's audit outbox into the audit DB in the background.
-const relay = new OutboxRelay(db, auditDb.root);
-relay.start();
-
-serve(buildApp({ db, issuer, userVerifier, serviceIssuer, serviceClients: parseClients(cfg.serviceClients), auditor, resetMailer, cfg }), {
+// runRelayService owns the audit DB + outbox writer/relay + graceful shutdown.
+runRelayService({
   name: "iedora-auth",
   port: cfg.port,
-  onShutdown: async () => {
-    await relay.stop();
-    await db.close();
-    await auditDb.close();
-  },
+  source: "auth",
+  db,
+  auditDatabaseUrl: cfg.auditDatabaseUrl,
+  build: ({ auditor }) =>
+    buildApp({ db, issuer, userVerifier, serviceIssuer, serviceVerifier, serviceClients: parseClients(cfg.serviceClients), auditor, resetMailer, cfg }),
 });

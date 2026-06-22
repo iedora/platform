@@ -19,7 +19,7 @@ test("subscribe to a paid plan creates a subscription + an invoice + an audit ev
 
   const { invoices } = await listInvoices(h, "tenant=" + TENANT);
   expect(invoices.length).toBe(1);
-  expect(invoices[0]!.amountCents).toBe(1900);
+  expect(invoices[0]!.amountCents).toBe(1200); // Kasa = €12/year
   expect(invoices[0]!.planCode).toBe("menu_pro");
 
   // The audit event committed in the same tx → exactly one new outbox row.

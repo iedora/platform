@@ -4,6 +4,7 @@ import type { Kysely, Selectable } from "kysely";
 import type { Restaurant } from "../domain";
 import type { MenuDB } from "../schema";
 import type { Restaurants } from "../db.generated";
+import { parseJson } from "./sqlutil";
 
 // Restaurant reads shared by the public path and (Stage B) the scoping
 // middleware. Mutations live in data/restaurants.write.ts (Stage B).
@@ -23,20 +24,6 @@ export const RESTAURANT_COLS = [
   "onboarding_completed_at",
   "updated_at",
 ] as const;
-
-// Bun's SQL returns jsonb columns as raw strings; parse them (tolerating an
-// already-parsed value).
-function parseJson<T>(v: unknown): T | null {
-  if (v == null) return null;
-  if (typeof v === "string") {
-    try {
-      return JSON.parse(v) as T;
-    } catch {
-      return null;
-    }
-  }
-  return v as T;
-}
 
 type RestaurantRow = Pick<Selectable<Restaurants>, (typeof RESTAURANT_COLS)[number]>;
 
@@ -58,17 +45,29 @@ export function toRestaurant(r: RestaurantRow): Restaurant {
   };
 }
 
-// restaurantBySlug loads a restaurant without tenant scoping — the public read
-// path and the scoping middleware (which enforces tenancy itself) share it.
-// Returns undefined when none matches.
-export async function restaurantBySlug(
+// Single-column lookup without tenant scoping (callers that need tenancy enforce
+// it themselves). Returns undefined when no row matches.
+function restaurantBy(
   db: Kysely<MenuDB>,
-  slug: string,
+  col: "slug" | "id",
+  value: string,
 ): Promise<Restaurant | undefined> {
-  const row = await db
+  return db
     .selectFrom("restaurants")
     .select([...RESTAURANT_COLS])
-    .where("slug", "=", slug)
-    .executeTakeFirst();
-  return row ? toRestaurant(row) : undefined;
+    .where(col, "=", value)
+    .executeTakeFirst()
+    .then((row) => (row ? toRestaurant(row) : undefined));
+}
+
+// By slug — the public read path + the scoping middleware (which enforces
+// tenancy itself) share it.
+export function restaurantBySlug(db: Kysely<MenuDB>, slug: string): Promise<Restaurant | undefined> {
+  return restaurantBy(db, "slug", slug);
+}
+
+// By id — the staff admin surface addresses restaurants cross-tenant by id (a
+// malformed-uuid lookup raises, so callers 404 on undefined).
+export function restaurantById(db: Kysely<MenuDB>, id: string): Promise<Restaurant | undefined> {
+  return restaurantBy(db, "id", id);
 }

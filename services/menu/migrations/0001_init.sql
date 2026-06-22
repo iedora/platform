@@ -1,5 +1,4 @@
--- +goose Up
--- 0001_init.sql — menu service schema (Go rewrite of products/menu).
+-- 0001_init.sql — menu service schema.
 --
 -- Redesigned from the drizzle original, same 9-table shape: the content
 -- hierarchy (restaurant → menu → category → item), public-view metrics

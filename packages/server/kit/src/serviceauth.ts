@@ -5,20 +5,19 @@ import { type CryptoKey, importJWK, jwtVerify, SignJWT } from "jose";
 
 import type { ServiceEnv } from "./http";
 
-// Verifies the internal service tokens minted by the auth service (EdDSA),
-// porting Go internal/serviceauth.Verifier + Middleware: algorithm pinned to
-// EdDSA (algorithm-confusion defense), issuer + audience checked, and the
-// `typ=="service"` guard so a user token can't be replayed here.
+// Verifies the internal service tokens minted by the auth service (EdDSA):
+// algorithm pinned to EdDSA (algorithm-confusion defense), issuer + audience
+// checked, and the `typ=="service"` guard so a user token can't be replayed here.
 
 export interface ServiceVerifier {
-  key: CryptoKey | Uint8Array;
+  key: CryptoKey | Uint8Array | KeyObject;
   issuer: string;
   audience: string;
 }
 
 /**
- * Imports the shared Ed25519 public key. Accepts the same base64 (std) raw
- * 32-byte key the Go services use in SERVICE_JWT_PUBLIC_KEY.
+ * Imports the shared Ed25519 public key. Accepts the base64 (std) raw
+ * 32-byte key in SERVICE_JWT_PUBLIC_KEY.
  */
 export async function parseEd25519PublicKey(base64Std: string): Promise<CryptoKey | Uint8Array> {
   const raw = Buffer.from(base64Std, "base64");
@@ -27,7 +26,7 @@ export async function parseEd25519PublicKey(base64Std: string): Promise<CryptoKe
 }
 
 export function newServiceVerifier(
-  key: CryptoKey | Uint8Array,
+  key: CryptoKey | Uint8Array | KeyObject,
   issuer: string,
   audience: string,
 ): ServiceVerifier {
@@ -55,7 +54,7 @@ export interface ServiceIssuerConfig {
 }
 
 // Mints internal service tokens (EdDSA, typ="service") for the client-
-// credentials grant — ports Go internal/serviceauth.Issuer.
+// credentials grant.
 export class ServiceTokenIssuer {
   constructor(private readonly cfg: ServiceIssuerConfig) {}
 

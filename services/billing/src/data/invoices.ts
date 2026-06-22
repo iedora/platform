@@ -2,6 +2,7 @@ import type { Invoice } from "@iedora/contracts";
 import type { Kysely } from "kysely";
 
 import type { BillingDB } from "../schema";
+import { iso } from "./dates";
 
 const DEFAULT_LIMIT = 50;
 const MAX_LIMIT = 200;
@@ -16,10 +17,6 @@ const COLUMNS = [
   "status",
   "created_at",
 ] as const;
-
-function iso(v: unknown): string {
-  return v instanceof Date ? v.toISOString() : String(v);
-}
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function toInvoice(r: any): Invoice {
@@ -43,8 +40,7 @@ export interface NewInvoice {
   currency: string;
 }
 
-// insert persists an invoice (status defaults to 'issued' in the schema). Ports
-// Go store InvoiceRepo.Insert.
+// insert persists an invoice (status defaults to 'issued' in the schema).
 export async function insert(db: Kysely<BillingDB>, i: NewInvoice): Promise<Invoice> {
   const row = await db
     .insertInto("invoices")
@@ -73,8 +69,7 @@ export async function listByTenant(db: Kysely<BillingDB>, tenantId: string): Pro
 }
 
 // listRecent returns the most recent invoices across all tenants, newest first;
-// limit is clamped to 50 when out of the (0, 200] range. Ports Go store
-// InvoiceRepo.ListRecent.
+// limit is clamped to 50 when out of the (0, 200] range.
 export async function listRecent(db: Kysely<BillingDB>, limit: number): Promise<Invoice[]> {
   const n = limit > 0 && limit <= MAX_LIMIT ? limit : DEFAULT_LIMIT;
   const rows = await db

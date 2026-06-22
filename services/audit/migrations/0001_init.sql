@@ -1,10 +1,7 @@
--- +goose Up
 -- 0001_init.sql — generic, append-only audit log shared by every product slice
 -- (auth, menu, admin). Schema follows the actor/action/target/context/outcome
--- model common to CADF, CloudTrail, and Elastic Common Schema. Copied verbatim
--- from the Go backend (migrations/audit/0001_init.sql) — the schema is unchanged
--- by the TS migration; only the runner differs. goose annotations are SQL
--- comments, so this file applies cleanly via the Bun runner or psql.
+-- model common to CADF, CloudTrail, and Elastic Common Schema. Applies cleanly
+-- via the Bun migration runner or psql.
 --
 -- Partitioned by month so retention is a metadata-only DROP PARTITION. In prod,
 -- let pg_partman create future partitions; the DEFAULT partition below keeps
@@ -45,13 +42,11 @@ CREATE INDEX IF NOT EXISTS audit_log_action_idx    ON audit_log (tenant_id, acti
 
 -- Append-only enforcement (Layer 1). Belt-and-suspenders to the DB grants:
 -- even a misconfigured grant cannot mutate history.
--- +goose StatementBegin
 CREATE OR REPLACE FUNCTION audit_log_append_only() RETURNS trigger AS $$
 BEGIN
     RAISE EXCEPTION 'audit_log is append-only (% blocked)', TG_OP;
 END;
 $$ LANGUAGE plpgsql;
--- +goose StatementEnd
 
 DROP TRIGGER IF EXISTS audit_log_no_mutate ON audit_log;
 CREATE TRIGGER audit_log_no_mutate

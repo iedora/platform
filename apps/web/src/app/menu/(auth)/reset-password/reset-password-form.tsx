@@ -1,36 +1,34 @@
 'use client'
 
-import * as React from 'react'
 import { useActionState, useState } from 'react'
+import { useForm, getFormProps, getInputProps } from '@conform-to/react'
+import { getZodConstraint, parseWithZod } from '@conform-to/zod/v4'
 import { useTranslations } from 'next-intl'
 import Link from 'next/link'
+import { resetPasswordAction } from '@iedora/product-menu/features/auth/actions'
+import { PASSWORD_MIN, resetPasswordSchema } from '@iedora/product-menu/features/auth/schemas'
 import { Button } from '@iedora/design-system'
-import { resetPasswordAction, type ResetFormState } from '@iedora/product-menu/features/auth/actions'
 import { PasswordField } from '../../_components/form-fields'
-import { PASSWORD_MIN } from '../../_components/validation'
 
 export function ResetPasswordForm({ token, signInHref }: { token: string; signInHref: string }) {
   const t = useTranslations('Auth.resetPassword')
   const tf = useTranslations('Auth.fields')
-  const [state, action, pending] = useActionState<ResetFormState, FormData>(resetPasswordAction, {
-    error: null,
-    done: false,
+  const [lastResult, action, pending] = useActionState(resetPasswordAction, undefined)
+  const [form, fields] = useForm({
+    lastResult,
+    constraint: getZodConstraint(resetPasswordSchema),
+    shouldValidate: 'onBlur',
+    shouldRevalidate: 'onInput',
+    onValidate: ({ formData }) => parseWithZod(formData, { schema: resetPasswordSchema }),
   })
-  const [errors, setErrors] = useState<{ password?: string; confirm?: string }>({})
+  // Controlled so a server error (bad/expired token) keeps both fields.
+  const [password, setPassword] = useState('')
+  const [confirm, setConfirm] = useState('')
 
-  function onSubmit(ev: React.FormEvent<HTMLFormElement>) {
-    const fd = new FormData(ev.currentTarget)
-    const password = String(fd.get('password') ?? '')
-    const confirm = String(fd.get('confirm') ?? '')
-    const e: { password?: string; confirm?: string } = {}
-    if (password.length < PASSWORD_MIN) e.password = tf('passwordMin', { min: PASSWORD_MIN })
-    if (confirm !== password) e.confirm = tf('passwordMismatch')
-    setErrors(e)
-    if (Object.keys(e).length > 0) ev.preventDefault()
-  }
+  const msg = (errs?: string[]) => (errs?.[0] ? tf(errs[0], { min: PASSWORD_MIN }) : undefined)
 
   // Success — no auto-login, so route the user to sign in with the new password.
-  if (state.done) {
+  if (lastResult?.status === 'success') {
     return (
       <div className="flex flex-col gap-5" data-test-id="reset-done">
         <p className="rounded-[12px] border border-[var(--green)] bg-[var(--green-soft)] px-4 py-3 text-[14px] leading-[1.5] text-[var(--green)]">
@@ -47,35 +45,45 @@ export function ResetPasswordForm({ token, signInHref }: { token: string; signIn
     )
   }
 
+  const { key: pwKey, ...pwProps } = getInputProps(fields.password, { type: 'password', value: false, ariaAttributes: false })
+  const { key: confirmKey, ...confirmProps } = getInputProps(fields.confirm, { type: 'password', value: false, ariaAttributes: false })
+
   return (
-    <form action={action} onSubmit={onSubmit} noValidate className="flex flex-col gap-5">
+    <form {...getFormProps(form)} action={action} className="flex flex-col gap-5">
       <input type="hidden" name="token" value={token} />
       <PasswordField
+        key={pwKey}
+        {...pwProps}
         label={t('passwordLabel')}
-        name="password"
         autoComplete="new-password"
         autoFocus
         maxLength={256}
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
         placeholder={t('passwordPlaceholder')}
-        error={errors.password}
+        hint={fields.password.errors ? undefined : t('passwordHint')}
+        error={msg(fields.password.errors)}
         showLabel={tf('showPassword')}
         hideLabel={tf('hidePassword')}
         data-test-id="reset-password"
       />
       <PasswordField
+        key={confirmKey}
+        {...confirmProps}
         label={t('confirmLabel')}
-        name="confirm"
         autoComplete="new-password"
         maxLength={256}
-        error={errors.confirm}
+        value={confirm}
+        onChange={(e) => setConfirm(e.target.value)}
+        hint={fields.confirm.errors ? undefined : t('confirmHint')}
+        error={msg(fields.confirm.errors)}
         showLabel={tf('showPassword')}
         hideLabel={tf('hidePassword')}
         data-test-id="reset-confirm"
       />
-      {/* Server-side guard (bad/expired token, or a mismatch that slipped past). */}
-      {state.error && (
+      {form.errors && (
         <p className="text-[13px] text-[#D92D20]" role="alert" data-test-id="reset-error">
-          {t(state.error === 'mismatch' ? 'errorMismatch' : 'errorInvalid')}
+          {msg(form.errors)}
         </p>
       )}
       <Button

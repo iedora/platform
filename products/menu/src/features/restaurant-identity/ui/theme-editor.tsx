@@ -378,9 +378,11 @@ function IdentitySection({
           onChange={(e) => patch('name', e.target.value)}
           maxLength={120}
           required
+          placeholder={t('namePlaceholder')}
           error={Boolean(error) || (dirty && !nameValid)}
-          aria-describedby={error ? 'identity-name-msg' : undefined}
+          aria-describedby={error ? 'identity-name-msg' : 'identity-name-hint'}
         />
+        <FieldHint id="identity-name-hint">{t('nameHint')}</FieldHint>
       </Field>
 
       {supportedLanguages.length > 1 ? (
@@ -414,7 +416,9 @@ function IdentitySection({
             maxLength={500}
             rows={3}
             placeholder={t('descriptionPlaceholder')}
+            aria-describedby="identity-description-hint"
           />
+          <FieldHint id="identity-description-hint">{t('descriptionHint')}</FieldHint>
         </Field>
       )}
 

@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Shared backend runtime for the iedora Hono services (Bun): env loading with the _FILE secret convention, graceful Bun.serve bootstrap, and the Kysely connection + transaction-in-context plumbing. Ports the Go internal/{config,boot,db,pgtx} packages.",
+  "description": "Shared backend runtime for the iedora Hono services (Bun): env loading with the _FILE secret convention, graceful Bun.serve bootstrap, and the Kysely connection + transaction-in-context plumbing.",
   "exports": {
     ".": "./src/index.ts",
     "./env": "./src/env.ts",

@@ -100,11 +100,13 @@ export function PasswordField({
       <div className={`${boxClass(!!error)} gap-1 pr-1.5`}>
         <input
           id={fieldId}
-          type={show ? 'text' : 'password'}
           aria-invalid={error ? true : undefined}
           aria-describedby={error || hint ? msgId : undefined}
           className="min-w-0 flex-1 bg-transparent px-4 py-3 text-[16px] text-foreground outline-none placeholder:text-muted-foreground"
           {...rest}
+          // After {...rest} so the show/hide toggle always owns the type,
+          // even when a spread (e.g. Conform's getInputProps) passes one.
+          type={show ? 'text' : 'password'}
         />
         <button
           type="button"

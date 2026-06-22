@@ -8,8 +8,8 @@ const AUDIT_SUBJECT = "audit.events";
 const MAX_ATTEMPTS = 5;
 
 // OutboxWriter records audit events into the producer's own outbox table within
-// the caller's transaction (Database.db = active tx or pool) — ports Go
-// outbox.Writer. The event is durable exactly when the business change commits.
+// the caller's transaction (Database.db = active tx or pool). The event is
+// durable exactly when the business change commits.
 export class OutboxWriter<DB> implements Auditor {
   constructor(
     private readonly database: Database<DB>,
@@ -50,7 +50,7 @@ interface ClaimedRow {
 }
 
 // OutboxRelay drains the producer's outbox straight into the audit database and
-// marks rows published — ports the Postgres-only Go outbox.Relay. Rows are
+// marks rows published (Postgres-only). Rows are
 // processed independently (a poison row can't fail the batch); a deterministic
 // failure dead-letters after MAX_ATTEMPTS, a transient one (audit DB down)
 // retries forever without counting an attempt.

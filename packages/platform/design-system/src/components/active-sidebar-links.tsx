@@ -44,6 +44,8 @@ type LinkItem = {
   kind?: "link";
   href: string;
   label: React.ReactNode;
+  /** Leading glyph (lucide icon) rendered inside the pill before the label. */
+  icon?: React.ReactNode;
   testId?: string;
   /**
    * When false, only an exact `pathname === href` counts as active.
@@ -72,6 +74,11 @@ export function ActiveSidebarLinks({
 }: ActiveSidebarLinksProps) {
   const pathname = usePathname() ?? "/";
   const { setOpen } = useSidebar();
+  // Resolve the single best (most-specific) active link up front so
+  // nested routes don't light up two items: e.g. `/r/x/qr` matches both
+  // the "Menu" link (`/r/x`) and the "QR" link (`/r/x/qr`) by prefix —
+  // the longer href wins. Exact matches always win outright.
+  const activeHref = pickActiveHref(pathname, items);
 
   return (
     <SidebarLinks aria-label={ariaLabel}>
@@ -86,7 +93,7 @@ export function ActiveSidebarLinks({
             </SidebarSectionLabel>
           );
         }
-        const active = isActive(pathname, item);
+        const active = item.href === activeHref;
         return (
           <SidebarLink
             key={item.href}
@@ -95,7 +102,14 @@ export function ActiveSidebarLinks({
             data-test-id={item.testId}
             onClick={() => setOpen(false)}
           >
-            <Link href={item.href}>{item.label}</Link>
+            <Link href={item.href}>
+              {item.icon ? (
+                <span className="ds-sidebar__link-icon" aria-hidden="true">
+                  {item.icon}
+                </span>
+              ) : null}
+              <span className="ds-sidebar__link-label">{item.label}</span>
+            </Link>
           </SidebarLink>
         );
       })}
@@ -103,8 +117,27 @@ export function ActiveSidebarLinks({
   );
 }
 
-function isActive(pathname: string, item: LinkItem): boolean {
-  if (pathname === item.href) return true;
-  if (item.matchPrefix === false) return false;
-  return pathname.startsWith(item.href + "/");
+/**
+ * Picks the single most-specific link to mark active for the current
+ * pathname. Exact `pathname === href` wins outright; otherwise the
+ * longest href that is a path-prefix of the pathname wins (so a child
+ * route highlights the child link, not also its parent). Links with
+ * `matchPrefix: false` only ever match exactly.
+ */
+function pickActiveHref(
+  pathname: string,
+  items: ReadonlyArray<ActiveSidebarItem>,
+): string | null {
+  let best: string | null = null;
+  let bestLen = -1;
+  for (const item of items) {
+    if (item.kind === "section") continue;
+    if (pathname === item.href) return item.href;
+    if (item.matchPrefix === false) continue;
+    if (pathname.startsWith(item.href + "/") && item.href.length > bestLen) {
+      best = item.href;
+      bestLen = item.href.length;
+    }
+  }
+  return best;
 }

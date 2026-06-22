@@ -3,7 +3,7 @@ import { cache } from 'react'
 import { getPlan as fetchPlan, listRestaurants } from '../../shared/api'
 
 /**
- * Public API of the plans slice — thin loaders over the Go menu
+ * Public API of the plans slice — thin loaders over the menu
  * service. The Bearer token scopes both calls; the service is the
  * authority on entitlements AND enforces them (POST /api/restaurants
  * 422s when the plan cap is hit). What's left here is display data

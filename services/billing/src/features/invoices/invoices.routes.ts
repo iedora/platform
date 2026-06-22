@@ -8,7 +8,7 @@ import type { BillingDeps } from "../../deps";
 
 // Vertical slice: the invoice ledger. With `tenant` → that tenant's invoices;
 // without → the recent cross-tenant feed (admin), `limit` clamped server-side.
-// Read-only. Ports Go billing httpapi.listInvoices. Mounted at /billing.
+// Read-only. Mounted at /billing.
 export function invoicesRoutes(deps: BillingDeps) {
   return new Hono<ServiceEnv>().get(
     "/invoices",

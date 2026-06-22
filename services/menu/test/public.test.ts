@@ -126,3 +126,22 @@ test("the session beacon records dwell time + per-visitor/day-deduped dish views
   // Unknown slug is a quiet 204 (fire-and-forget), never a 404.
   expect((await beacon("nope", { durationSeconds: 10, items: [] }, "mm_v=v1")).status).toBe(204);
 });
+
+// Runs last: it renames an item, so it must not perturb the earlier assertions.
+test("the public menu cache invalidates when the menu content changes", async () => {
+  const read = async () =>
+    (
+      (await (await h.app.request("/public/r/tasca")).json()) as {
+        menus: { categories: { items: { name: string }[] }[] }[];
+      }
+    ).menus[0]!.categories[0]!.items[0]!.name;
+
+  expect(await read()).toBe("Bacalhau"); // primes the cache
+
+  // Edit the dish; bumping updated_at changes the content version → the cached
+  // localized tree is recomputed on the next read (no stale menu).
+  await sql`UPDATE items SET name='Bacalhau Renamed', updated_at=now() WHERE restaurant_id=${RID} AND name='Bacalhau'`.execute(
+    h.db.root,
+  );
+  expect(await read()).toBe("Bacalhau Renamed");
+});

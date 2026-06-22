@@ -13,7 +13,7 @@ export default async function ThemePage({
   params: Promise<{ slug: string }>
 }) {
   const { slug } = await params
-  // i18n kicks off while the auth round-trip runs. The guard's Go
+  // i18n kicks off while the auth round-trip runs. The guard's
   // Restaurant DTO already carries everything the editor needs
   // (identity, theme, languages); only the preview menus need a
   // second call.
@@ -29,7 +29,7 @@ export default async function ThemePage({
     bannerUrl: r.bannerUrl,
   }
 
-  // The Go DTO's theme is an opaque JSON map; resolveTheme coerces
+  // The restaurant DTO's theme is an opaque JSON map; resolveTheme coerces
   // partial / legacy shapes into a fully populated theme.
   const initialTheme = resolveTheme(r.theme as Parameters<typeof resolveTheme>[0])
 

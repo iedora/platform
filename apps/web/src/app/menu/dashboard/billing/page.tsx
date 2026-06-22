@@ -38,7 +38,12 @@ export default async function BillingPage() {
         data-test-id="billing-plan-section"
         aria-label={t('currentPlanTitle')}
       >
-        {PLANS.map((plan) => {
+        {/* The product sells two plans: On Us (free) and Kasa. Agency is a
+            legacy/internal tier — keep it out of the ladder, but still render
+            it when a tenant is actually on it so their plan isn't hidden. */}
+        {PLANS.filter(
+          (plan) => plan.code !== 'menu_agency' || plan.code === current.code,
+        ).map((plan) => {
           const isCurrent = plan.code === current.code
           const isRecommended = Boolean(plan.isRecommended)
           const restaurantsCopy =

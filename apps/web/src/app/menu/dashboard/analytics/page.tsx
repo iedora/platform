@@ -51,7 +51,7 @@ export default async function AnalyticsPage({
     getLocale(),
   ])
 
-  // Free plans hit billing — analytics is the headline upgrade hook for Casa,
+  // On Us plans hit billing — analytics is the headline upgrade hook for Kasa,
   // so funneling there is the right next step rather than a half-empty page.
   if (!planHas(plan, 'analytics')) redirect('/menu/dashboard/billing')
 

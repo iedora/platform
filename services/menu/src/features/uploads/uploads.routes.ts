@@ -14,7 +14,7 @@ const uploadInput = z.object({
 
 // Upload slice (scoped, under /restaurants/{slug}): presign → commit → clear.
 // 503 when storage is unconfigured (deps.uploads === null). Each handler is
-// rate-limited by its policy. Ports the upload handlers of Go admin.go.
+// rate-limited by its policy.
 export function uploadsRoutes(deps: MenuDeps) {
   // Returns a 503 Response when storage is unconfigured, else applies the
   // surface's rate-limit policy and returns null (proceed).

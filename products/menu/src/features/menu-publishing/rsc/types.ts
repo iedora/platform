@@ -8,7 +8,7 @@ import type {
 import type { ResolvedTheme } from './theme'
 
 /**
- * Render shapes for the public-menu templates. These are the Go menu
+ * Render shapes for the public-menu templates. These are the menu
  * service's public read model (`GET /public/r/{slug}`) — already
  * localized server-side, so no i18n fallback logic lives in the
  * renderer. Type-only re-exports keep this module client-safe (the

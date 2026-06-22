@@ -33,7 +33,16 @@ const nextConfig: NextConfig = {
         pathname: '/**',
       },
     ],
+    // Cap the optimizer's work on a single self-hosted box: one quality level
+    // (Next 16 requires `qualities` to be declared) and WebP only — fewer
+    // variants to encode (CPU) and store (disk cache).
+    qualities: [75],
+    formats: ['image/webp'],
+    minimumCacheTTL: 31536000, // 1y — logos/marketing photography rarely change
   },
+  // Self-hosted single node: shed Next's in-memory ISR page cache (~50MB) and
+  // lean on the persistent on-disk cache instead.
+  cacheMaxMemorySize: 0,
   // Public-menu tracking beacons → menu service. `/track/:slug` is the 1×1
   // view pixel; `/track/:slug/session` is the session-end beacon (dwell time +
   // viewed dishes). Catch-all so both (and any future beacon) proxy through.

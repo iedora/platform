@@ -29,9 +29,8 @@ import {
 } from "./validate";
 
 // Menu use-cases — input validation, orchestration over the data layer, and
-// audit on restaurant lifecycle events. Ports Go internal/menu/service.go +
-// service_builder.go. Builder edits are too noisy to audit; lifecycle changes
-// are the security-relevant ones.
+// audit on restaurant lifecycle events. Builder edits are too noisy to audit;
+// lifecycle changes are the security-relevant ones.
 
 async function record(
   deps: MenuDeps,
@@ -59,10 +58,13 @@ export async function createRestaurant(
   actorId: string,
   name: string,
   defaultLanguage: string,
+  supportedLanguages?: string[],
 ): Promise<Restaurant> {
   name = trimmed("name", name, MAX_SHORT_NAME);
   if (defaultLanguage === "") defaultLanguage = Languages[0];
-  validLanguages(defaultLanguage, [defaultLanguage]);
+  // The default is always part of the supported set (dedup, default first).
+  const supported = Array.from(new Set([defaultLanguage, ...(supportedLanguages ?? [])]));
+  validLanguages(defaultLanguage, supported);
   const base = slugify(name) || "restaurant";
 
   let created: Restaurant | undefined;
@@ -77,7 +79,7 @@ export async function createRestaurant(
           name,
           slug,
           defaultLanguage,
-          supportedLanguages: [defaultLanguage],
+          supportedLanguages: supported,
         });
         created = {
           id,
@@ -90,7 +92,7 @@ export async function createRestaurant(
           bannerUrl: "",
           theme: null,
           defaultLanguage,
-          supportedLanguages: [defaultLanguage],
+          supportedLanguages: supported,
           onboardingCompletedAt: null,
           updatedAt: new Date(),
         };
@@ -157,6 +159,22 @@ export async function renameSlug(
   if (!validSlug(slug)) throw invalid("slug must be 2-40 lowercase letters, digits or dashes");
   await renameSlugRow(deps.db.db, r.id, slug);
   await record(deps, actorId, "menu.restaurant.slug_renamed", { ...r, slug });
+}
+
+// staffSetName is the staff-only identity override: a privileged rename of the
+// friendly name from the admin surface (cross-tenant), distinct from the
+// owner-scoped updateIdentity. Audited so the change shows in the restaurant's
+// own trail with the staff actor.
+export async function staffSetName(
+  deps: MenuDeps,
+  r: Restaurant,
+  actorId: string,
+  name: string,
+): Promise<Restaurant> {
+  const next: Restaurant = { ...r, name: trimmed("name", name, MAX_SHORT_NAME) };
+  const updated = await updateIdentityRow(deps.db.db, next, false);
+  await record(deps, actorId, "menu.restaurant.renamed", updated);
+  return updated;
 }
 
 export function completeOnboarding(deps: MenuDeps, r: Restaurant): Promise<void> {

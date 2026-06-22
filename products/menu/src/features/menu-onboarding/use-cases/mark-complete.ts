@@ -2,7 +2,7 @@ import 'server-only'
 import { completeOnboarding } from '../../../shared/api'
 
 /**
- * Flip the restaurant's onboarding-completed flag via the Go menu
+ * Flip the restaurant's onboarding-completed flag via the menu
  * service. Idempotent — re-running on an already-completed restaurant
  * simply re-stamps the timestamp, which is harmless. Tenancy and
  * ownership are enforced by the service through the caller's

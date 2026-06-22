@@ -3,7 +3,7 @@ import { getRestaurant, listRestaurants } from '../../../shared/api'
 
 /**
  * Locate a restaurant of the caller's tenant whose post-create wizard
- * never finished (`onboardingCompletedAt` unset on the Go side).
+ * never finished (`onboardingCompletedAt` unset server-side).
  *
  * Used by `/menu/onboarding` to bounce a back-navigation back into
  * step 2 instead of letting the operator silently create a duplicate

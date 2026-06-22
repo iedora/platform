@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Shared zod schemas + inferred types for iedora backend payloads — the single source of truth consumed by both the Hono services (request/response validation) and the Next.js frontend (typed client). Replaces the hand-mirrored Go types.",
+  "description": "Shared zod schemas + inferred types for iedora backend payloads — the single source of truth consumed by both the Hono services (request/response validation) and the Next.js frontend (typed client).",
   "exports": {
     ".": "./src/index.ts",
     "./audit": "./src/audit.ts",

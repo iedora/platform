@@ -1,4 +1,3 @@
--- +goose Up
 -- 0002_inbox.sql — consumer-side idempotency guard (inbox pattern).
 -- See auth/0004_inbox.sql for the full design rationale.
 

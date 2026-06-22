@@ -10,6 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
   Field,
+  FieldHint,
   FieldInput,
   FieldLabel,
 } from '@iedora/design-system'
@@ -95,9 +96,10 @@ export function AddSectionDialog({
               onChange={(e) => setName(e.target.value)}
               placeholder={t('addSectionPlaceholder')}
               error={Boolean(error)}
-              aria-describedby={error ? `${nameInputId}-msg` : undefined}
+              aria-describedby={error ? `${nameInputId}-msg` : `${nameInputId}-hint`}
               data-test-id="menu-add-section-name-input"
             />
+            <FieldHint id={`${nameInputId}-hint`}>{t('addSectionHint')}</FieldHint>
             {error && (
               <p
                 id={`${nameInputId}-msg`}
@@ -112,7 +114,7 @@ export function AddSectionDialog({
           <DialogFooter>
             <Button
               type="button"
-              variant="ghost"
+              variant="secondary"
               onClick={() => handleOpenChange(false)}
               disabled={pending}
               data-test-id="menu-add-section-close"

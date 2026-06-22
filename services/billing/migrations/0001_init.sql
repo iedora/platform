@@ -1,7 +1,5 @@
--- +goose Up
--- 0001_init.sql — billing service schema. Copied verbatim from the Go backend
--- (migrations/billing/0001_init.sql); idempotent (IF NOT EXISTS), so it also
--- applies cleanly against the existing prod billing DB at cutover.
+-- 0001_init.sql — billing service schema. Idempotent (IF NOT EXISTS), so it
+-- applies cleanly against an existing prod billing DB.
 
 -- One subscription row per (tenant, product).
 CREATE TABLE IF NOT EXISTS subscriptions (

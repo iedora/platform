@@ -12,8 +12,7 @@ const ASSET_COLUMNS: Record<string, string> = {
 };
 
 // setRestaurantAsset writes (or clears, with "") an asset URL and returns the
-// previous value so the caller can delete the orphaned object. Ports Go
-// Store.SetRestaurantAsset.
+// previous value so the caller can delete the orphaned object.
 export async function setRestaurantAsset(
   db: DB,
   id: string,

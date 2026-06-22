@@ -2,6 +2,7 @@ import type { Subscription } from "@iedora/contracts";
 import { type Kysely, sql } from "kysely";
 
 import type { BillingDB } from "../schema";
+import { iso, isoOpt } from "./dates";
 
 const COLUMNS = [
   "id",
@@ -14,14 +15,6 @@ const COLUMNS = [
   "created_at",
   "updated_at",
 ] as const;
-
-function iso(v: unknown): string {
-  return v instanceof Date ? v.toISOString() : String(v);
-}
-
-function isoOpt(v: unknown): string | undefined {
-  return v == null ? undefined : iso(v);
-}
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function toSubscription(r: any): Subscription {
@@ -46,8 +39,7 @@ export interface UpsertSubscription {
 }
 
 // upsert creates or replaces the (tenant, product) subscription, reactivating a
-// previously canceled one (status→active, canceled_at→NULL). Ports Go store
-// SubscriptionRepo.Upsert.
+// previously canceled one (status→active, canceled_at→NULL).
 export async function upsert(db: Kysely<BillingDB>, s: UpsertSubscription): Promise<Subscription> {
   const row = await db
     .insertInto("subscriptions")
@@ -73,8 +65,7 @@ export async function upsert(db: Kysely<BillingDB>, s: UpsertSubscription): Prom
 }
 
 // cancel marks the tenant's active subscription for a product canceled. Returns
-// false when none was active (the caller turns that into 404). Ports Go
-// store SubscriptionRepo.Cancel.
+// false when none was active (the caller turns that into 404).
 export async function cancel(
   db: Kysely<BillingDB>,
   tenantId: string,

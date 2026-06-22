@@ -50,9 +50,8 @@ coverage/
 *.sql.gz
 *.bak
 
-# Go build artefacts from `go build ./...` at the repo root. Each binary
-# is 5-15 MB; they inflate the build context but are never used by the
-# Node.js image.
+# Stray compiled binaries at the repo root: they inflate the build context
+# but are never used by the image.
 /bws-sync
 /bws-upsert
 /iedora

@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 
-// The shared audit contract — ports Go internal/audit. Emitters construct an
+// The shared audit contract. Emitters construct an
 // AuditEvent; buildEnvelope enriches it into the wire/storage Envelope (stable
 // id = the dedup key, occurred-at, source, defaults). The Envelope is what the
 // outbox stores and the relay inserts into audit_log.

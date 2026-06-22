@@ -70,14 +70,21 @@ export const bearer = (h: Harness) => ({ headers: { authorization: `Bearer ${h.t
 /** Inserts an audit_log row directly into the scratch DB (oldest -> newest by age). */
 export async function seedEvents(
   h: Harness,
-  rows: { source: string; action: string; ageSeconds?: number; outcome?: string; actorType?: string }[],
+  rows: {
+    source: string;
+    action: string;
+    ageSeconds?: number;
+    outcome?: string;
+    actorType?: string;
+    targetId?: string;
+  }[],
 ): Promise<void> {
   const sql = new SQL(h.url);
   for (const r of rows) {
     await sql.unsafe(
-      `INSERT INTO audit_log (message_id, at, source, action, outcome, actor_type)
-       VALUES (gen_random_uuid(), now() - ($1 || ' seconds')::interval, $2, $3, $4, $5)`,
-      [String(r.ageSeconds ?? 0), r.source, r.action, r.outcome ?? "success", r.actorType ?? "user"],
+      `INSERT INTO audit_log (message_id, at, source, action, outcome, actor_type, target_id)
+       VALUES (gen_random_uuid(), now() - ($1 || ' seconds')::interval, $2, $3, $4, $5, $6)`,
+      [String(r.ageSeconds ?? 0), r.source, r.action, r.outcome ?? "success", r.actorType ?? "user", r.targetId ?? null],
     );
   }
   await sql.end();

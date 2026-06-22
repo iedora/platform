@@ -43,7 +43,7 @@ export function findByTokenHash(db: Kysely<AuthDB>, hash: Buffer): Promise<Sessi
 // ONLY if the old row is still un-rotated (replaced_by IS NULL, revoked_at IS
 // NULL) — the conditional update is the double-spend guard. Returns ok=false
 // when the old row was already rotated (the loser of a refresh race / reuse),
-// which the caller turns into reuse detection. Ports Go store rotate().
+// which the caller turns into reuse detection.
 export async function rotate(
   db: Kysely<AuthDB>,
   oldId: string,

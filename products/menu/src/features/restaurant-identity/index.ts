@@ -10,13 +10,13 @@ import type { PublicMenu } from '../menu-publishing/rsc/types'
  * 'use server' rules don't traverse barrels reliably). The client UI lives
  * at `@/features/restaurant-identity/ui/*` and is imported directly.
  *
- * Identity reads come straight off `requireRestaurantBySlug` (the Go
+ * Identity reads come straight off `requireRestaurantBySlug` (the
  * Restaurant DTO carries theme, languages and description i18n) — the
  * old per-field loaders are gone. What remains here are the two
  * cross-cutting read loaders the dashboard pages need.
  */
 
-export type { StaffRestaurantRow } from '../../shared/api'
+export type { StaffRestaurantRow, StaffRestaurantFull } from '../../shared/api'
 
 /**
  * Staff-only cross-tenant restaurant directory (admin restaurants
@@ -26,6 +26,24 @@ export type { StaffRestaurantRow } from '../../shared/api'
 export const listRestaurantsDirectory = cache(async (q?: string) => {
   const { restaurants } = await api.staffDirectory(q)
   return restaurants
+})
+
+/**
+ * Tenants (with owners) for the admin "New restaurant" tenant picker. Staff-role
+ * enforced by the service; the page gates with `requireStaff` first.
+ */
+export const listTenantsDirectory = cache(async () => {
+  const { tenants } = await api.staffListTenants()
+  return tenants
+})
+
+/**
+ * Aggregated detail for one restaurant (admin detail / payments / edit
+ * pages): record + menus + trend + the tenant's billing + the audit
+ * trail. Staff-role enforced by the service; pages gate with `requireStaff`.
+ */
+export const loadRestaurantDetail = cache(async (id: string) => {
+  return api.staffRestaurantDetail(id)
 })
 
 /**

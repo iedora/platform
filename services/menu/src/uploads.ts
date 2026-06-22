@@ -6,8 +6,8 @@ import type { Restaurant } from "./domain";
 import { invalid } from "./errors";
 import type { MenuDB } from "./schema";
 
-// Presigned browser PUTs to S3-compatible storage — ports Go internal/menu/
-// uploads.go. Flow: presign → client PUT → commit (verify the object landed,
+// Presigned browser PUTs to S3-compatible storage.
+// Flow: presign → client PUT → commit (verify the object landed,
 // persist the URL, delete the replaced object). Every key lives under
 // r/{restaurantID}/ — checked when building AND when committing.
 

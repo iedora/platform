@@ -6,7 +6,7 @@ import type { MenuDeps } from "./deps";
 import type { Restaurant } from "./domain";
 import { notFound } from "./errors";
 
-// Staff role — ports Go authz.StaffRole. A staff caller may reach any tenant's
+// Staff role. A staff caller may reach any tenant's
 // restaurant (the scoped check below) and the cross-tenant /staff surface.
 export const STAFF_ROLE = "iedora-admin";
 
@@ -17,14 +17,14 @@ export interface MenuEnv {
 }
 
 // requireTenant rejects a tenant-less token up front: every dashboard route reads
-// the caller's tenant. Ports Go userauth.RequireTenant.
+// the caller's tenant.
 export const requireTenant = createMiddleware<MenuEnv>(async (c, next) => {
   if (!c.get("user").tenantId) return c.json({ error: "tenant required" }, 403);
   await next();
 });
 
-// requireRole gates a surface on the caller holding the given role. Ports Go
-// userauth.RequireRole. The cross-tenant /staff surface uses STAFF_ROLE.
+// requireRole gates a surface on the caller holding the given role.
+// The cross-tenant /staff surface uses STAFF_ROLE.
 export function requireRole(role: string) {
   return createMiddleware<MenuEnv>(async (c, next) => {
     if (!hasRole(c.get("user"), role)) return c.json({ error: "forbidden" }, 403);
@@ -34,7 +34,7 @@ export function requireRole(role: string) {
 
 // scoped resolves {slug} to a restaurant and enforces tenancy: the caller's
 // tenant must own it, unless the caller is staff. Handlers read the loaded row
-// via c.get("restaurant"). Ports Go httpapi.scoped — a foreign id and a missing
+// via c.get("restaurant"). A foreign id and a missing
 // id look identical (both 404).
 export function scoped(deps: MenuDeps) {
   return createMiddleware<MenuEnv>(async (c, next) => {

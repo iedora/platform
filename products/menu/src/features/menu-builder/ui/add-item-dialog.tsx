@@ -10,6 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
   Field,
+  FieldHint,
   FieldInput,
   FieldLabel,
 } from '@iedora/design-system'
@@ -154,10 +155,14 @@ export function AddItemDialog({
               maxLength={120}
               value={name}
               onChange={(e) => setName(e.target.value)}
+              placeholder={t('addItemNamePlaceholder')}
               error={errorField === 'name'}
-              aria-describedby={errorField === 'name' ? errId : undefined}
+              aria-describedby={
+                errorField === 'name' ? errId : `${nameInputId}-hint`
+              }
               data-test-id={`menu-add-item-name-input-${categoryId}`}
             />
+            <FieldHint id={`${nameInputId}-hint`}>{t('addItemNameHint')}</FieldHint>
           </Field>
           <Field>
             <FieldLabel htmlFor={`add-item-price-${categoryId}`}>
@@ -170,9 +175,14 @@ export function AddItemDialog({
               value={priceText}
               onChange={(e) => setPriceText(e.target.value)}
               error={errorField === 'price'}
-              aria-describedby={errorField === 'price' ? errId : undefined}
+              aria-describedby={
+                errorField === 'price' ? errId : `add-item-price-${categoryId}-hint`
+              }
               data-test-id={`menu-add-item-price-input-${categoryId}`}
             />
+            <FieldHint id={`add-item-price-${categoryId}-hint`}>
+              {t('addItemPriceHint')}
+            </FieldHint>
           </Field>
           <VariantsEditor
             value={variants}
@@ -193,7 +203,7 @@ export function AddItemDialog({
           <DialogFooter>
             <Button
               type="button"
-              variant="ghost"
+              variant="secondary"
               onClick={() => handleOpenChange(false)}
               disabled={pending}
               data-test-id={`menu-add-item-close-${categoryId}`}

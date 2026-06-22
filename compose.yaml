@@ -4,9 +4,6 @@
 # node_modules lives in a NAMED volume, not the host bind mount: dependencies are
 # installed INSIDE the linux container so native modules (e.g. @node-rs/argon2,
 # arriving with the auth service) match the runtime, never the host's macOS build.
-#
-# This is the Bun side of the strangler migration; the legacy Go stack still runs
-# from ../backend/docker-compose.yml (the `dev:*` scripts) until each role cuts over.
 name: iedora-api
 
 services:
@@ -18,8 +15,8 @@ services:
       POSTGRES_DB: postgres # per-service DBs are created by the migrate step
     volumes:
       - pgdata:/var/lib/postgresql
-    # 55433 (not 55432) so this coexists with the legacy Go dev stack during the
-    # strangler migration. Services reach Postgres over the compose network.
+    # 55433 (not the default 55432) to avoid colliding with a local Postgres on
+    # the host. Services reach Postgres over the compose network.
     ports:
       - "55433:5432"
     healthcheck:
@@ -38,12 +35,12 @@ services:
       DEPLOYMENT_ENV: development
       AUDIT_PORT: "8081"
       AUDIT_DATABASE_URL: postgres://iedora:iedora@postgres:5432/audit?sslmode=disable
-      # Verifies internal service tokens. DEV keypair shared with the Go stack
-      # (auth's API_JWT_PRIVATE_KEY) so tokens cross-verify during the migration.
+      # Verifies internal service tokens. DEV keypair, shared across the stack
+      # (auth's API_JWT_PRIVATE_KEY) so tokens cross-verify between services.
       SERVICE_JWT_PUBLIC_KEY: M+/u/gPyq9NyuwfMjS82Y7lOJeyvGq6jpeRxMqr1Ge4=
       SERVICE_JWT_ISSUER: https://api.iedora.com
       SERVICE_AUDIENCE: iedora-internal
-    # Host 8181 (container 8081) to coexist with the legacy Go audit on 8081.
+    # Host 8181 (container 8081) to avoid colliding with a local service on 8081.
     ports:
       - "8181:8081"
     volumes:
@@ -63,13 +60,16 @@ services:
       AUTH_PORT: "8080"
       AUTH_DATABASE_URL: postgres://iedora:iedora@postgres:5432/auth?sslmode=disable
       AUDIT_DATABASE_URL: postgres://iedora:iedora@postgres:5432/audit?sslmode=disable
-      # DEV keypair — shared with the Go stack so tokens cross-verify during migration.
+      # DEV keypair — shared across the stack so tokens cross-verify between services.
       API_JWT_PRIVATE_KEY: 4qiWAUBUtlk6abEM+o0urqz3tGcSVjg8f/NyRa5wWeI=
       API_JWT_ISSUER: https://api.iedora.com
       API_JWT_AUDIENCE: iedora-api
       SERVICE_CLIENTS: admin-bff:dev-secret,menu:dev-secret
       SERVICE_AUDIENCE: iedora-internal
-    # Host 8180 (container 8080) to coexist with the legacy Go auth on 8080.
+      # Dev role grants: this email is promoted to iedora-admin (the staff role)
+      # on its next login/register. Format: "role=id,@domain; role2=id2".
+      ROLE_GRANTS: iedora-admin=eduardoferdcarvalho@gmail.com
+    # Host 8180 (container 8080) to avoid colliding with a local service on 8080.
     ports:
       - "8180:8080"
     volumes:
@@ -89,12 +89,12 @@ services:
       BILLING_PORT: "8083"
       BILLING_DATABASE_URL: postgres://iedora:iedora@postgres:5432/billing?sslmode=disable
       AUDIT_DATABASE_URL: postgres://iedora:iedora@postgres:5432/audit?sslmode=disable
-      # Verifies internal service tokens. DEV keypair shared with the Go stack
-      # (auth's API_JWT_PRIVATE_KEY) so tokens cross-verify during the migration.
+      # Verifies internal service tokens. DEV keypair, shared across the stack
+      # (auth's API_JWT_PRIVATE_KEY) so tokens cross-verify between services.
       SERVICE_JWT_PUBLIC_KEY: M+/u/gPyq9NyuwfMjS82Y7lOJeyvGq6jpeRxMqr1Ge4=
       SERVICE_JWT_ISSUER: https://api.iedora.com
       SERVICE_AUDIENCE: iedora-internal
-    # Host 8183 (container 8083) to coexist with the legacy Go billing on 8083.
+    # Host 8183 (container 8083) to avoid colliding with a local service on 8083.
     ports:
       - "8183:8083"
     volumes:
@@ -115,16 +115,18 @@ services:
       MENU_DATABASE_URL: postgres://iedora:iedora@postgres:5432/menu?sslmode=disable
       AUDIT_DATABASE_URL: postgres://iedora:iedora@postgres:5432/audit?sslmode=disable
       # Verifies dashboard USER tokens (public half of auth's signing key — the
-      # DEV keypair shared across the stack so tokens cross-verify during migration).
+      # DEV keypair shared across the stack so tokens cross-verify between services).
       API_JWT_PUBLIC_KEY: M+/u/gPyq9NyuwfMjS82Y7lOJeyvGq6jpeRxMqr1Ge4=
       API_JWT_ISSUER: https://api.iedora.com
       API_JWT_AUDIENCE: iedora-api
       # Plan gate: mint a service token via auth, read the subscription from billing.
+      # Admin aggregation also reads the audit trail (audit) + tenant owner (auth).
       AUTH_BASE_URL: http://auth:8080
       BILLING_BASE_URL: http://billing:8083
+      AUDIT_BASE_URL: http://audit:8081
       SERVICE_CLIENT_ID: menu
       SERVICE_CLIENT_SECRET: dev-secret
-    # Host 8184 (container 8084) to coexist with the legacy Go menu on 8084.
+    # Host 8184 (container 8084) to avoid colliding with a local service on 8084.
     ports:
       - "8184:8084"
     volumes:

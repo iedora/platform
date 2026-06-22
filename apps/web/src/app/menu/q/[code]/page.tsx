@@ -3,7 +3,7 @@ import { ApiError } from '@iedora/api-client'
 import { resolveQRCode } from '@iedora/product-menu/features/menu-publishing'
 
 /**
- * Sticker URL for the public menu. Scans land here; the Go menu
+ * Sticker URL for the public menu. Scans land here; the menu
  * service resolves the code to its bound restaurant and we redirect
  * to the branded `/menu/r/[slug]` page (the canonical URL search
  * engines index). Unknown / unbound codes 404.

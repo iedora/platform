@@ -1,22 +1,11 @@
-import { env, requireEnv } from "@iedora/server-kit";
+import { env, requireEnv, siblingUrl } from "@iedora/server-kit";
 
 import type { S3Config } from "./blob";
 
-// Kamal runs each role as `<service>-<role>-<version>` on the shared `kamal`
-// docker network and provides NO stable role alias — only the versioned
-// container name resolves. All roles deploy at the same version, and Kamal
-// injects KAMAL_VERSION + KAMAL_CONTAINER_NAME, so we address a sibling role by
-// reconstructing its versioned name. Falls back to localhost off-Kamal (and an
-// explicit AUTH_BASE_URL/BILLING_BASE_URL env always wins — compose sets those).
-function siblingUrl(role: string, port: number): string {
-  const version = process.env.KAMAL_VERSION;
-  const self = process.env.KAMAL_CONTAINER_NAME; // <service>-<thisRole>-<version>
-  if (version && self?.endsWith(`-menu-${version}`)) {
-    const service = self.slice(0, -`-menu-${version}`.length); // <service> (e.g. iedora-backend)
-    return `http://${service}-${role}-${version}:${port}`;
-  }
-  return `http://localhost:${port}`;
-}
+// This service's Kamal role (the suffix in its container name); server-kit's
+// siblingUrl reconstructs a sibling role's versioned URL from it. An explicit
+// *_BASE_URL env always wins over the reconstructed name — compose sets those.
+const SELF_ROLE = "menu";
 
 export interface MenuConfig {
   port: number;
@@ -30,17 +19,18 @@ export interface MenuConfig {
   apiJwtIssuer: string;
   apiJwtAudience: string;
 
-  // Billing lookup for plan gates (client-credentials service token via auth).
+  // Service reads via client-credentials service token (minted from auth):
+  // billing (plan gate + admin invoices), auth (tenant owner), audit (trail).
   authBaseUrl: string;
   billingBaseUrl: string;
+  auditBaseUrl: string;
   serviceClientId: string;
   serviceClientSecret: string;
 
   s3: S3Config; // object storage for uploads (empty endpoint = uploads disabled)
 }
 
-// Mirrors the Go menu Config (internal/apps/menu/config.go). Var names match the
-// existing prod env/secrets so they carry over unchanged at cutover.
+// Var names match the deployed env/secrets.
 export function loadConfig(): MenuConfig {
   return {
     port: Number(env("MENU_PORT", "8084")),
@@ -50,8 +40,9 @@ export function loadConfig(): MenuConfig {
     apiJwtPublicKey: requireEnv("API_JWT_PUBLIC_KEY"),
     apiJwtIssuer: requireEnv("API_JWT_ISSUER"),
     apiJwtAudience: env("API_JWT_AUDIENCE", "iedora-api"),
-    authBaseUrl: env("AUTH_BASE_URL", "") || siblingUrl("web", 8080), // auth runs in the `web` role
-    billingBaseUrl: env("BILLING_BASE_URL", "") || siblingUrl("billing", 8083),
+    authBaseUrl: env("AUTH_BASE_URL", "") || siblingUrl("web", 8080, SELF_ROLE), // auth runs in the `web` role
+    billingBaseUrl: env("BILLING_BASE_URL", "") || siblingUrl("billing", 8083, SELF_ROLE),
+    auditBaseUrl: env("AUDIT_BASE_URL", "") || siblingUrl("audit", 8081, SELF_ROLE),
     serviceClientId: requireEnv("SERVICE_CLIENT_ID"),
     serviceClientSecret: requireEnv("SERVICE_CLIENT_SECRET"),
     s3: {

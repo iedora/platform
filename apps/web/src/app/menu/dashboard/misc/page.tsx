@@ -15,16 +15,19 @@ import { UserLocaleSwitcher } from '@iedora/product-menu/features/dashboard-home
  */
 export default async function MiscPage() {
   const orgPromise = requireActiveOrganization()
-  const [, t, plan, session] = await Promise.all([
+  const [, t, tBilling, plan, session] = await Promise.all([
     orgPromise,
     getTranslations('Misc'),
+    getTranslations('Billing'),
     orgPromise.then(() => getOrganizationPlan()),
     getSession(),
   ])
 
   const email = session?.email ?? ''
   const initial = (email.trim()[0] ?? '?').toUpperCase()
-  const planName = t(`plans.${plan.code}.name`)
+  // Plan name comes from Billing.plans — the single source the billing page and
+  // admin also render — so the settings card can't drift from it.
+  const planName = tBilling(`plans.${plan.code}.name`)
   const sectionLabel =
     'px-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground'
   const card = 'rounded-[18px] border border-border bg-card'

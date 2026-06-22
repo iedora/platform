@@ -2,14 +2,11 @@ import { type Kysely, sql } from "kysely";
 
 import type { Restaurant } from "../domain";
 import type { MenuDB } from "../schema";
+import { dayString } from "./sqlutil";
 
-// Public-view metrics, two-table atomic pattern — ports Go internal/menu/
-// views.go. view_seen dedups one count per visitor/restaurant/hour; daily_view
+// Public-view metrics, two-table atomic pattern. view_seen dedups one count per
+// visitor/restaurant/hour; daily_view
 // accumulates per-day-per-language counters. All bucketing is UTC.
-
-function dayString(t: Date): string {
-  return t.toISOString().slice(0, 10); // YYYY-MM-DD (UTC)
-}
 
 function hourBucket(t: Date): string {
   return `${dayString(t)}-${String(t.getUTCHours()).padStart(2, "0")}`; // YYYY-MM-DD-HH
@@ -37,27 +34,37 @@ export async function recordView(
   `.execute(db);
 }
 
-// recordItemView counts one per-item view, same two-table dedup pattern as
-// recordView but bucketed per visitor/item/DAY (a diner browsing the menu
-// shouldn't inflate a dish by scrolling past it twice). The item must belong
-// to the restaurant — enforced by the caller (public route resolves the slug).
-export async function recordItemView(
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+// recordItemViews counts a whole batch of per-item views in ONE statement (the
+// session-end beacon carries the set of dish ids that scrolled into view). Same
+// per-visitor/item/DAY dedup as before, but set-based: filter ids to ones owned
+// by the restaurant, dedup-insert the seen rows, and increment only the winners.
+// Replaces the old per-item N+1 loop (up to 100 round-trips). Ids are validated
+// to UUID shape in JS so the `::uuid[]` cast can't fail on a malformed id and
+// abort the whole batch.
+export async function recordItemViews(
   db: Kysely<MenuDB>,
   r: Restaurant,
-  itemId: string,
+  itemIds: string[],
   visitorId: string,
   now: Date,
 ): Promise<void> {
+  const ids = Array.from(new Set(itemIds.filter((id) => UUID_RE.test(id))));
+  if (ids.length === 0) return;
+  const day = dayString(now);
+  const idList = sql.join(ids.map((id) => sql`${id}`)); // $1, $2, … — each id its own param
   await sql`
-    WITH won AS (
+    WITH owned AS (
+      SELECT i.id AS item_id FROM items i
+      WHERE i.restaurant_id = ${r.id} AND i.id IN (${idList})),
+    won AS (
       INSERT INTO item_view_seen (visitor_id, item_id, day)
-      VALUES (${visitorId}, ${itemId}, ${dayString(now)}) ON CONFLICT DO NOTHING
-      RETURNING 1),
-    owned AS (
-      SELECT id FROM items WHERE id = ${itemId} AND restaurant_id = ${r.id})
+      SELECT ${visitorId}, owned.item_id, ${day} FROM owned
+      ON CONFLICT DO NOTHING
+      RETURNING item_id)
     INSERT INTO item_view (restaurant_id, tenant_id, item_id, day, count)
-    SELECT ${r.id}, ${r.tenantId}, ${itemId}, ${dayString(now)}, 1
-    FROM won CROSS JOIN owned
+    SELECT ${r.id}, ${r.tenantId}, won.item_id, ${day}, 1 FROM won
     ON CONFLICT (item_id, day) DO UPDATE SET count = item_view.count + 1
   `.execute(db);
 }

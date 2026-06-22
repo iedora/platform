@@ -5,7 +5,7 @@ import { signOutAction } from '@iedora/product-menu/features/auth/actions'
 
 /**
  * Fires once on mount: runs the sign-out server action (which revokes
- * the Go session and clears the auth cookies, then redirects to
+ * the session and clears the auth cookies, then redirects to
  * `next`). The StrictMode double-invocation in dev is gated by the
  * `done` ref so we don't double-sign-out.
  */

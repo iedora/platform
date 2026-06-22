@@ -1,75 +1,93 @@
 'use client'
 
-import * as React from 'react'
 import { useActionState, useState } from 'react'
+import { useForm, getFormProps, getInputProps } from '@conform-to/react'
+import { getZodConstraint, parseWithZod } from '@conform-to/zod/v4'
 import { useTranslations } from 'next-intl'
 import Link from 'next/link'
 import { Button } from '@iedora/design-system'
-import { signUpAction, type AuthFormState } from '@iedora/product-menu/features/auth/actions'
+import { signUpAction } from '@iedora/product-menu/features/auth/actions'
+import { PASSWORD_MIN, signUpSchema } from '@iedora/product-menu/features/auth/schemas'
 import { PasswordField, TextField } from '../../_components/form-fields'
-import { PASSWORD_MIN, isEmail } from '../../_components/validation'
 
 export function SignUpForm({ next, signInHref }: { next: string; signInHref: string }) {
   const t = useTranslations('Auth.signUp')
   const tf = useTranslations('Auth.fields')
-  const [state, action, pending] = useActionState<AuthFormState, FormData>(signUpAction, { error: null })
-  const [errors, setErrors] = useState<{ name?: string; email?: string; password?: string }>({})
+  const [lastResult, action, pending] = useActionState(signUpAction, undefined)
+  // Conform runs the SAME Zod schema on the client (onValidate) and the server
+  // (the action), and maps the action's field/form errors back here — no
+  // hand-rolled validate(), no client/server drift.
+  const [form, fields] = useForm({
+    lastResult,
+    constraint: getZodConstraint(signUpSchema),
+    shouldValidate: 'onBlur',
+    shouldRevalidate: 'onInput',
+    onValidate: ({ formData }) => parseWithZod(formData, { schema: signUpSchema }),
+  })
 
-  function validate(fd: FormData) {
-    const e: { name?: string; email?: string; password?: string } = {}
-    const name = String(fd.get('name') ?? '').trim()
-    const email = String(fd.get('email') ?? '').trim()
-    const password = String(fd.get('password') ?? '')
-    if (!name) e.name = tf('nameRequired')
-    if (!email) e.email = tf('emailRequired')
-    else if (!isEmail(email)) e.email = tf('emailInvalid')
-    if (password.length < PASSWORD_MIN) e.password = tf('passwordMin', { min: PASSWORD_MIN })
-    return e
-  }
+  // Controlled inputs (state, not Conform's uncontrolled defaultValue): React
+  // 19 resets a `<form action>` after the action returns, which wipes
+  // uncontrolled fields — backing them with state keeps what the user typed
+  // when sign-up fails. `getInputProps({ value: false })` omits Conform's
+  // defaultValue so it doesn't fight the controlled value.
+  const [name, setName] = useState('')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
 
-  function onSubmit(ev: React.FormEvent<HTMLFormElement>) {
-    const e = validate(new FormData(ev.currentTarget))
-    setErrors(e)
-    if (Object.keys(e).length > 0) ev.preventDefault()
-  }
+  // Resolve a field/form error KEY through next-intl (Auth.fields.<key>).
+  // `min` is passed for the `passwordMin` message; harmless for the rest.
+  const msg = (errs?: string[]) => (errs?.[0] ? tf(errs[0], { min: PASSWORD_MIN }) : undefined)
+
+  const { key: nameKey, ...nameProps } = getInputProps(fields.name, { type: 'text', value: false, ariaAttributes: false })
+  const { key: emailKey, ...emailProps } = getInputProps(fields.email, { type: 'email', value: false, ariaAttributes: false })
+  const { key: pwKey, ...pwProps } = getInputProps(fields.password, { type: 'password', value: false, ariaAttributes: false })
 
   return (
-    <form action={action} onSubmit={onSubmit} noValidate className="flex flex-col gap-5">
+    <form {...getFormProps(form)} action={action} className="flex flex-col gap-5">
       <input type="hidden" name="next" value={next} />
       <TextField
+        key={nameKey}
+        {...nameProps}
         label={t('nameLabel')}
-        name="name"
-        type="text"
         autoComplete="name"
         autoFocus
         maxLength={80}
+        value={name}
+        onChange={(e) => setName(e.target.value)}
         placeholder={t('namePlaceholder')}
-        error={errors.name}
+        hint={fields.name.errors ? undefined : t('nameHint')}
+        error={msg(fields.name.errors)}
         data-test-id="sign-up-name"
       />
       <TextField
+        key={emailKey}
+        {...emailProps}
         label={t('emailLabel')}
-        name="email"
-        type="email"
         autoComplete="email"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
         placeholder={t('emailPlaceholder')}
-        error={errors.email}
+        hint={fields.email.errors ? undefined : t('emailHint')}
+        error={msg(fields.email.errors)}
         data-test-id="sign-up-email"
       />
       <PasswordField
+        key={pwKey}
+        {...pwProps}
         label={t('passwordLabel')}
-        name="password"
         autoComplete="new-password"
         maxLength={256}
-        hint={errors.password ? undefined : t('passwordHint')}
-        error={errors.password}
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        hint={fields.password.errors ? undefined : t('passwordHint')}
+        error={msg(fields.password.errors)}
         showLabel={tf('showPassword')}
         hideLabel={tf('hidePassword')}
         data-test-id="sign-up-password"
       />
-      {state.error && (
+      {form.errors && (
         <p className="text-[13px] text-[#D92D20]" role="alert">
-          {t('errorGeneric')}
+          {msg(form.errors)}
         </p>
       )}
       <Button

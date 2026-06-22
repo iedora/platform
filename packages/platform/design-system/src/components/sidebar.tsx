@@ -143,6 +143,41 @@ export function SidebarBrand({
   return <div {...rest} className={cn("ds-sidebar__brand", className)} />;
 }
 
+type SidebarBrandMarkProps = {
+  /** Glyph inside the cinnabar square — pass a lucide icon, kept ~18px. */
+  glyph: React.ReactNode;
+  /** Wordmark text. Defaults to the product brand. */
+  word?: string;
+  /** Optional mono-caps pill after the wordmark (e.g. "ADMIN"). */
+  badge?: string;
+  className?: string;
+};
+
+/**
+ * Brand lockup for the warm-light sidebar (Pencil "App/Admin Sidebar"
+ * logo): a cinnabar rounded square holding the brand glyph, the `iedora`
+ * wordmark, and an optional context badge. Icon-agnostic — the consumer
+ * passes the glyph so the design-system stays free of an icon dependency.
+ */
+export function SidebarBrandMark({
+  glyph,
+  word = "iedora",
+  badge,
+  className,
+}: SidebarBrandMarkProps) {
+  return (
+    <span className={cn("ds-sidebar__brand-mark", className)}>
+      <span className="ds-sidebar__brand-square" aria-hidden="true">
+        {glyph}
+      </span>
+      <span className="ds-sidebar__brand-word">{word}</span>
+      {badge ? (
+        <span className="ds-sidebar__brand-badge">{badge}</span>
+      ) : null}
+    </span>
+  );
+}
+
 type SidebarLinksProps = Omit<
   React.HTMLAttributes<HTMLElement>,
   "aria-label"

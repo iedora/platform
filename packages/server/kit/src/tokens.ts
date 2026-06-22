@@ -1,7 +1,6 @@
 import { createHash, randomBytes } from "node:crypto";
 
-// Opaque refresh tokens — ports Go internal/auth/crypto/tokens.go EXACTLY so a
-// token issued by either service verifies in the other during cutover:
+// Opaque refresh tokens:
 // token = base64url(32 random bytes) (no padding); stored form = raw sha256(token)
 // bytes (the sessions.token_hash bytea column), never an encoded string.
 const REFRESH_TOKEN_BYTES = 32;

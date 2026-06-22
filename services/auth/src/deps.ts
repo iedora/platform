@@ -3,6 +3,7 @@ import type {
   Database,
   JwtIssuer,
   ServiceTokenIssuer,
+  ServiceVerifier,
   UserVerifier,
 } from "@iedora/server-kit";
 
@@ -17,6 +18,7 @@ export interface AuthDeps {
   issuer: JwtIssuer; // mints user access tokens
   userVerifier: UserVerifier; // verifies our own access tokens on authed routes
   serviceIssuer: ServiceTokenIssuer; // client-credentials → service tokens
+  serviceVerifier: ServiceVerifier; // verifies inbound service tokens (admin reads)
   serviceClients: Map<string, string>; // clientId → secret
   auditor: Auditor; // OutboxWriter — records into the auth DB's outbox
   resetMailer: ResetMailer; // delivers password-reset + change-notice emails

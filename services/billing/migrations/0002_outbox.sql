@@ -1,10 +1,9 @@
--- +goose Up
 -- 0002_outbox.sql — transactional outbox for audit events (the Postgres-native
 -- design: server-kit's relay drains this straight into the audit DB).
 --
 -- Idempotent against EITHER a fresh DB or the existing prod outbox table. Prod's
--- table predates the dead-letter columns (the Go NATS-removal/DLQ migration was
--- never deployed), and CREATE TABLE IF NOT EXISTS won't add columns to a table
+-- table predates the dead-letter columns (an earlier DLQ migration was never
+-- deployed), and CREATE TABLE IF NOT EXISTS won't add columns to a table
 -- that already exists — so the evolved columns are added with ALTER … IF NOT
 -- EXISTS, and the partial index (which references failed_at) is (re)created last.
 

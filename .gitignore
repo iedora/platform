@@ -44,11 +44,7 @@ service-references/
 # Operator env (home-infra/.env) é coberto pela rule `.env` global mais
 # abaixo. Shape em home-infra/.env.example.
 
-# Go build artefacts from `go build ./...` invoked at the repo root.
-# The binaries land in the cwd named after their `cmd/<name>/`
-# directory. We always run via `go run` (through bin/ shims for the
-# live binaries), never from a pre-built binary, so any compiled
-# binary at the repo root is stray.
+# Stray compiled binaries at the repo root — never committed.
 /bws-sync
 /bws-upsert
 /iedora

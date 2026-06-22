@@ -15,7 +15,7 @@ function iso(v: unknown): string {
 }
 
 // queryAudit returns audit records newest-first using keyset pagination on
-// (at, id) — a verbatim port of the Go internal/auditserver/store.go Query.
+// (at, id).
 export async function queryAudit(db: Kysely<AuditDB>, f: AuditFilter): Promise<AuditQueryResponse> {
   const limit = clampLimit(f.limit);
 
@@ -42,6 +42,7 @@ export async function queryAudit(db: Kysely<AuditDB>, f: AuditFilter): Promise<A
   if (f.action) q = q.where("action", "like", `${f.action}%`); // prefix match
   if (f.outcome) q = q.where("outcome", "=", f.outcome);
   if (f.source) q = q.where("source", "=", f.source);
+  if (f.target) q = q.where("target_id", "=", f.target);
   if (f.before_at && f.before_id) {
     q = q.where(sql<boolean>`(at, id) < (${f.before_at}::timestamptz, ${f.before_id}::uuid)`);
   }

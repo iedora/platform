@@ -35,6 +35,19 @@ test("filters by action prefix", async () => {
   expect(body.events.every((e) => e.action.startsWith("f.auth."))).toBe(true);
 });
 
+test("filters by target id (a restaurant's audit trail)", async () => {
+  await seedEvents(h, [
+    { source: "menu", action: "t.menu.restaurant.created", targetId: "rest-A" },
+    { source: "menu", action: "t.menu.restaurant.slug_renamed", targetId: "rest-A", ageSeconds: 1 },
+    { source: "menu", action: "t.menu.restaurant.created", targetId: "rest-B", ageSeconds: 2 },
+  ]);
+  const res = await h.app.request("/obs/events?target=rest-A", bearer(h));
+  expect(res.status).toBe(200);
+  const body = (await res.json()) as { events: { targetId?: string }[] };
+  expect(body.events.length).toBe(2);
+  expect(body.events.every((e) => e.targetId === "rest-A")).toBe(true);
+});
+
 test("keyset pagination walks newest-first without overlap", async () => {
   await seedEvents(h, [
     { source: "auth", action: "p.auth.session.login", ageSeconds: 0 },

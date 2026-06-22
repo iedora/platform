@@ -1,7 +1,7 @@
 /**
  * The two auth cookies the Next server owns, both HttpOnly:
  *
- *  - `iedora_access`  — the Go access JWT (15 min), mirrored out of the
+ *  - `iedora_access`  — the access JWT (15 min), mirrored out of the
  *    auth-service JSON response so middleware/RSCs can read it.
  *  - `iedora_refresh` — the opaque refresh token. The service sets it
  *    with `Path=/auth` (its own surface); we terminate the browser
@@ -42,7 +42,7 @@ const baseOptions = {
 /**
  * Builds the cookie writes for a successful auth response: the access
  * token (expiring with the JWT) and the refresh token extracted from
- * the Go `Set-Cookie` header (keeping its expiry, swapping the path).
+ * the auth-service `Set-Cookie` header (keeping its expiry, swapping the path).
  */
 export function authCookies(tokens: TokenResponse, setCookieHeaders: string[]): CookieWrite[] {
   const writes: CookieWrite[] = [
@@ -72,7 +72,7 @@ export function clearedAuthCookies(): CookieWrite[] {
   }))
 }
 
-/** Pulls the refresh token value + expiry out of Go's Set-Cookie headers. */
+/** Pulls the refresh token value + expiry out of the auth-service Set-Cookie headers. */
 function parseRefreshCookie(headers: string[]): { value: string; expires?: Date } | null {
   for (const header of headers) {
     const [pair, ...attrs] = header.split(';')

@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import {
-  Geist,
   Geist_Mono,
   Inter,
   Lora,
@@ -20,7 +19,6 @@ import "./globals.css";
 //   --mono      Geist Mono             labels + step counter + meta
 // Loaded once at the root so every product surface shares the same
 // glyph cache. Variable-font CSS vars carry the next/font handle.
-const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 const playfair = Playfair_Display({
   variable: "--font-playfair",
@@ -76,7 +74,7 @@ export default async function RootLayout({
   return (
     <html
       lang={locale}
-      className={`${geistSans.variable} ${geistMono.variable} ${playfair.variable} ${lora.variable} ${inter.variable} ${plusJakarta.variable} ${spaceGrotesk.variable} h-full antialiased`}
+      className={`${geistMono.variable} ${playfair.variable} ${lora.variable} ${inter.variable} ${plusJakarta.variable} ${spaceGrotesk.variable} h-full antialiased`}
       style={{
         ["--display" as string]:
           "var(--font-plus-jakarta), 'Helvetica Neue', Helvetica, Arial, sans-serif",

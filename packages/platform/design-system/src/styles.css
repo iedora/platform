@@ -2269,11 +2269,11 @@
   z-index: 50;
   display: flex;
   flex-direction: column;
-  width: min(86vw, 340px);
-  padding: max(24px, env(safe-area-inset-top)) 22px max(24px, env(safe-area-inset-bottom));
-  gap: 28px;
-  background: var(--paper);
-  border-right: 1px solid var(--ink-14);
+  width: min(86vw, 320px);
+  padding: max(20px, env(safe-area-inset-top)) 16px max(20px, env(safe-area-inset-bottom));
+  gap: 8px;
+  background: var(--card);
+  border-right: 1px solid var(--rule);
   overflow-y: auto;
   overscroll-behavior: contain;
   transform: translateX(-100%);
@@ -2302,41 +2302,89 @@
 .ds-sidebar__brand {
   display: flex;
   align-items: center;
-  min-height: 32px;
+  padding: 8px 8px 20px;
+}
+.ds-sidebar__brand a {
+  display: inline-flex;
+  text-decoration: none;
+}
+.ds-sidebar__brand-mark {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+}
+.ds-sidebar__brand-square {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: var(--cinnabar);
+  color: #fff;
+}
+.ds-sidebar__brand-word {
+  font-family: var(--display);
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+.ds-sidebar__brand-badge {
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: var(--cinnabar-soft);
+  color: var(--cinnabar);
+  font-family: var(--display);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
 }
 
 .ds-sidebar__links {
   display: flex;
   flex-direction: column;
-  flex: 1;
-  gap: 2px;
+  gap: 4px;
   min-height: 0;
 }
 
 .ds-sidebar__link {
   display: flex;
   align-items: center;
-  min-height: 44px;
-  padding: 12px 14px;
-  font-family: var(--mono);
-  font-size: 12px;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--ink-55);
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-family: var(--sans);
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--foreground);
   text-decoration: none;
-  border-left: 2px solid transparent;
   transition:
     color var(--d-2) var(--ease),
-    background-color var(--d-2) var(--ease),
-    border-color var(--d-2) var(--ease);
+    background-color var(--d-2) var(--ease);
+}
+.ds-sidebar__link-icon {
+  display: inline-flex;
+  flex-shrink: 0;
+  color: var(--muted-foreground);
+}
+.ds-sidebar__link-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .ds-sidebar__link:hover {
-  color: var(--ink);
   background: var(--ink-04);
 }
 .ds-sidebar__link[data-active="true"] {
-  color: var(--ink);
-  border-left-color: var(--cinnabar);
+  background: var(--cinnabar-soft);
+  color: var(--cinnabar);
+  font-weight: 600;
+}
+.ds-sidebar__link[data-active="true"] .ds-sidebar__link-icon {
+  color: currentColor;
 }
 .ds-sidebar__link:focus-visible {
   outline: 2px solid var(--cinnabar);
@@ -2353,6 +2401,9 @@
   color: var(--ink-40);
 }
 .ds-sidebar__section-label:first-child { margin-top: 0; }
+
+/* Pushes the user card to the bottom of the rail. */
+.ds-sidebar__spacer { flex: 1 1 auto; min-height: 8px; }
 
 /* In-drawer close — absolute top-right, mobile-only. The sidebar is
    `position: fixed` below `lg`, so absolute anchors to it. At `lg+`
@@ -2392,6 +2443,128 @@
   gap: 12px;
   padding-top: 16px;
   border-top: 1px solid var(--ink-14);
+}
+
+/* Bottom account card + its popover (SidebarUserCard). */
+.ds-sidebar__user {
+  position: relative;
+  margin-top: auto;
+}
+.ds-sidebar__user-card {
+  appearance: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 8px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color var(--d-2) var(--ease);
+}
+.ds-sidebar__user-card:hover { background: var(--ink-04); }
+.ds-sidebar__user-card:focus-visible {
+  outline: 2px solid var(--cinnabar);
+  outline-offset: 2px;
+}
+.ds-sidebar__avatar {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 999px;
+  background: var(--cinnabar-soft);
+  color: var(--cinnabar);
+  font-family: var(--display);
+  font-size: 14px;
+  font-weight: 700;
+}
+.ds-sidebar__user-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  flex: 1;
+}
+.ds-sidebar__user-name {
+  font-family: var(--display);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ds-sidebar__user-sub {
+  font-family: var(--sans);
+  font-size: 12px;
+  color: var(--muted-foreground);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ds-sidebar__user-chevron {
+  flex-shrink: 0;
+  color: var(--muted-foreground);
+}
+.ds-sidebar__user-menu {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px;
+  background: var(--card);
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(26, 24, 21, 0.14);
+}
+.ds-sidebar__menu-item {
+  appearance: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  font-family: var(--sans);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--foreground);
+  text-decoration: none;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    color var(--d-2) var(--ease),
+    background-color var(--d-2) var(--ease);
+}
+.ds-sidebar__menu-item:hover { background: var(--ink-04); color: var(--ink); }
+.ds-sidebar__menu-item:focus-visible {
+  outline: 2px solid var(--cinnabar);
+  outline-offset: -2px;
+}
+.ds-sidebar__menu-icon {
+  display: inline-flex;
+  flex-shrink: 0;
+  color: var(--muted-foreground);
+}
+/* A row that hosts inline controls (e.g. the locale switcher). */
+.ds-sidebar__menu-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 10px;
 }
 
 /* Floating trigger — mobile-only. Sits in the top-RIGHT corner above
@@ -2434,9 +2607,9 @@
     position: sticky;
     top: 0;
     height: 100dvh;
-    width: 240px;
+    width: 264px;
     transform: none;
-    border-right: 1px solid var(--ink-14);
+    border-right: 1px solid var(--rule);
   }
   .ds-sidebar__overlay,
   .ds-sidebar-trigger,

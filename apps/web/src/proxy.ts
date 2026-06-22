@@ -25,7 +25,7 @@ const protectedPrefixes = ['/menu/dashboard', '/menu/onboarding']
  *      access token for page loads: RSCs can't mutate cookies, so the
  *      refresh happens here and the request's Cookie header is
  *      rewritten so downstream server components always read a valid
- *      `iedora_access` cookie. Authorization proper stays with the Go
+ *      `iedora_access` cookie. Authorization proper stays with the
  *      services — every API call is verified there.
  */
 export default async function proxy(req: NextRequest) {

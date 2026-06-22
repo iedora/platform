@@ -1,13 +1,4 @@
-import { env, isProd, requireEnv } from "@iedora/server-kit";
-
-// Parses a Go-style duration ("15m", "720h", "30d") into milliseconds.
-function durationMs(s: string, fallbackMs: number): number {
-  const m = /^(\d+)(ms|s|m|h|d)$/.exec(s.trim());
-  if (!m) return fallbackMs;
-  const n = Number(m[1]);
-  const unit: Record<string, number> = { ms: 1, s: 1e3, m: 6e4, h: 36e5, d: 864e5 };
-  return n * unit[m[2]!]!;
-}
+import { durationMs, env, isProd, requireEnv } from "@iedora/server-kit";
 
 export interface AuthConfig {
   port: number;
@@ -89,8 +80,8 @@ function parseRoleGrants(raw: string): RoleGrant[] {
   return grants;
 }
 
-// Mirrors the Go auth Config (internal/apps/auth/config.go). All vars match the
-// existing names so the prod env/secrets carry over unchanged at cutover.
+// Var names match the deployed env/secrets, so the prod config maps over
+// unchanged.
 export function loadConfig(): AuthConfig {
   return {
     port: Number(env("AUTH_PORT", "8080")),

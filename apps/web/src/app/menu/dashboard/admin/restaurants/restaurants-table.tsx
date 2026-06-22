@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { useDeferredValue, useMemo, useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { QrCode } from 'lucide-react'
 
 export type AdminRestaurantRow = {
@@ -19,14 +20,27 @@ type SortKey = 'updatedAt' | 'views30d' | 'name'
 
 const PT_COLLATOR = new Intl.Collator('pt-PT')
 
-const SORTS: { key: SortKey; label: string }[] = [
-  { key: 'updatedAt', label: 'Recent' },
-  { key: 'views30d', label: 'Most viewed' },
-  { key: 'name', label: 'A–Z' },
+const SORTS: { key: SortKey; labelKey: 'sortRecent' | 'sortMostViewed' | 'sortAZ' }[] = [
+  { key: 'updatedAt', labelKey: 'sortRecent' },
+  { key: 'views30d', labelKey: 'sortMostViewed' },
+  { key: 'name', labelKey: 'sortAZ' },
 ]
+
+// One column template shared by the header row and every data row — this is
+// what guarantees cells line up under their headers (the misalignment fix).
+// Columns: Restaurant · Tenant · Menus · Items · Views 30d · Status · Actions
+// (Pencil "Admin · Restaurants" U4kxT).
+const GRID_COLS =
+  'grid grid-cols-[minmax(170px,1fr)_116px_72px_72px_92px_88px_124px] items-center gap-3'
+
+/** Short, copy-stable tenant id for the pill — full value lives in `title`. */
+function shortTenant(tenantId: string): string {
+  return tenantId.length > 8 ? tenantId.slice(0, 8) : tenantId
+}
 
 /** Warm-light cross-tenant restaurants list (Pencil "Admin · Restaurants"). */
 export function RestaurantsTable({ rows }: { rows: AdminRestaurantRow[] }) {
+  const t = useTranslations('Admin')
   const [query, setQuery] = useState('')
   const [sortKey, setSortKey] = useState<SortKey>('updatedAt')
   const deferredQuery = useDeferredValue(query)
@@ -62,8 +76,8 @@ export function RestaurantsTable({ rows }: { rows: AdminRestaurantRow[] }) {
           type="search"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search restaurants…"
-          aria-label="Search restaurants"
+          placeholder={t('restaurants.searchPlaceholder')}
+          aria-label={t('restaurants.searchAria')}
           spellCheck={false}
           className="w-full rounded-[12px] border border-border bg-card px-4 py-2.5 text-[15px] text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-[color-mix(in_srgb,var(--cinnabar)_22%,transparent)]"
           data-test-id="admin-restaurants-search"
@@ -75,7 +89,7 @@ export function RestaurantsTable({ rows }: { rows: AdminRestaurantRow[] }) {
             className="shrink-0 rounded-[10px] border border-border px-3 py-2.5 text-[13px] font-medium text-muted-foreground transition-colors hover:text-foreground"
             data-test-id="admin-restaurants-clear-filters"
           >
-            Clear
+            {t('restaurants.clear')}
           </button>
         ) : null}
       </div>
@@ -96,70 +110,106 @@ export function RestaurantsTable({ rows }: { rows: AdminRestaurantRow[] }) {
               }`}
               data-test-id={`admin-restaurants-sort-${s.key}`}
             >
-              {s.label}
+              {t(`restaurants.${s.labelKey}`)}
             </button>
           ))}
         </div>
         <p className="text-[13px] text-muted-foreground" data-test-id="admin-restaurants-count">
-          {filtered.length} of {rows.length}
+          {t('restaurants.count', { shown: filtered.length, total: rows.length })}
         </p>
       </div>
 
       {/* Cards */}
       {filtered.length === 0 ? (
         <p className="rounded-[18px] border border-border bg-card px-4 py-10 text-center text-[14px] text-muted-foreground" data-test-id="admin-restaurants-empty">
-          {hasFilters ? 'No restaurant matches your search.' : 'No restaurants on the platform yet.'}
+          {hasFilters ? t('restaurants.emptyNoMatch') : t('restaurants.emptyNone')}
         </p>
       ) : (
-        <ul className="flex flex-col gap-3">
-          {filtered.map((r) => {
-            const live = r.dishCount > 0
-            return (
-              <li
-                key={r.id}
-                className="rounded-[18px] border border-border bg-card p-4"
-                data-test-id={`admin-restaurants-row-${r.slug}`}
-              >
-                <div className="flex items-start gap-3">
-                  <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-[var(--cinnabar-soft)] text-[18px] font-bold text-primary">
-                    {r.name.charAt(0).toUpperCase()}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <h3 className="truncate font-[family-name:var(--display)] text-[16px] font-bold text-foreground">{r.name}</h3>
-                      <span
-                        className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold ${
-                          live ? 'bg-[var(--green-soft)] text-[var(--green)]' : 'bg-muted text-muted-foreground'
-                        }`}
+        <div
+          className="overflow-x-auto rounded-[18px] border border-border bg-card"
+          data-test-id="admin-restaurants-list"
+        >
+          {/* Header + every row share GRID_COLS so columns always line up. */}
+          <div role="table" className="min-w-[860px]">
+            <div
+              role="row"
+              className={`${GRID_COLS} border-b border-border bg-muted px-4 py-2.5 text-[11.5px] font-semibold uppercase tracking-[0.05em] text-muted-foreground`}
+            >
+              <span role="columnheader">{t('restaurants.colRestaurant')}</span>
+              <span role="columnheader">{t('restaurants.colTenant')}</span>
+              <span role="columnheader" className="text-right">{t('restaurants.colMenus')}</span>
+              <span role="columnheader" className="text-right">{t('restaurants.colItems')}</span>
+              <span role="columnheader" className="text-right">{t('restaurants.colViews30d')}</span>
+              <span role="columnheader">{t('restaurants.colStatus')}</span>
+              <span role="columnheader" className="text-right">{t('restaurants.colActions')}</span>
+            </div>
+            {filtered.map((r) => {
+              const live = r.dishCount > 0
+              return (
+                <div
+                  role="row"
+                  key={r.id}
+                  className={`${GRID_COLS} border-b border-border px-4 py-3 transition-colors last:border-b-0 hover:bg-muted`}
+                  data-test-id={`admin-restaurants-row-${r.slug}`}
+                >
+                  <div className="flex min-w-0 items-center gap-3">
+                    <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-[var(--cinnabar-soft)] text-[14px] font-bold text-primary">
+                      {r.name.charAt(0).toUpperCase()}
+                    </span>
+                    <div className="min-w-0">
+                      <Link
+                        href={`/menu/dashboard/admin/restaurants/${r.id}`}
+                        className="block truncate text-[14.5px] font-semibold text-foreground no-underline transition-colors hover:text-primary"
                       >
-                        {live ? 'Live' : 'Draft'}
-                      </span>
+                        {r.name}
+                      </Link>
+                      <p className="truncate font-mono text-[11.5px] text-muted-foreground">/m/{r.slug}</p>
                     </div>
-                    <p className="truncate text-[13px] text-muted-foreground">iedora.com/m/{r.slug}</p>
-                    <p className="mt-0.5 text-[12.5px] text-muted-foreground">
-                      {r.menuCount} menu{r.menuCount === 1 ? '' : 's'} · {r.dishCount} dish{r.dishCount === 1 ? '' : 'es'} ·{' '}
-                      {r.views30d.toLocaleString()} views
-                    </p>
                   </div>
+                  <span>
+                    <span
+                      className="inline-flex max-w-full items-center truncate rounded-full bg-[var(--paper-2)] px-2.5 py-1 font-mono text-[11.5px] text-muted-foreground"
+                      title={r.tenantId}
+                      data-test-id={`admin-restaurants-tenant-${r.slug}`}
+                    >
+                      {shortTenant(r.tenantId)}
+                    </span>
+                  </span>
+                  <span className="text-right text-[14px] tabular-nums text-foreground">{r.menuCount}</span>
+                  <span className="text-right text-[14px] tabular-nums text-foreground">{r.dishCount}</span>
+                  <span className="text-right text-[14px] tabular-nums text-foreground">
+                    {r.views30d.toLocaleString()}
+                  </span>
+                  <span>
+                    <span
+                      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[12px] font-semibold ${
+                        live ? 'bg-[var(--green-soft)] text-[var(--green)]' : 'bg-muted text-muted-foreground'
+                      }`}
+                    >
+                      <span className="size-1.5 rounded-full bg-current" />
+                      {live ? t('restaurants.statusLive') : t('restaurants.statusDraft')}
+                    </span>
+                  </span>
+                  <span className="flex items-center justify-end gap-2">
+                    <Link
+                      href="/menu/dashboard/admin/qr-codes"
+                      aria-label={t('restaurants.qrAria')}
+                      className="grid size-8 shrink-0 place-items-center rounded-[8px] border border-border text-muted-foreground transition-colors hover:border-primary hover:text-primary"
+                    >
+                      <QrCode size={15} strokeWidth={2.2} />
+                    </Link>
+                    <Link
+                      href={`/menu/dashboard/admin/restaurants/${r.id}`}
+                      className="inline-flex items-center rounded-[8px] bg-primary px-3 py-1.5 text-[13px] font-semibold text-white no-underline transition-colors hover:bg-[var(--cinnabar-deep)]"
+                    >
+                      {t('restaurants.open')}
+                    </Link>
+                  </span>
                 </div>
-                <div className="mt-3 flex gap-2">
-                  <Link
-                    href={`/dashboard/r/${r.slug}/qr`}
-                    className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-[10px] border border-border bg-card px-3 py-2 text-[13.5px] font-semibold text-foreground no-underline transition-colors hover:border-[color-mix(in_srgb,var(--cinnabar)_40%,transparent)]"
-                  >
-                    <QrCode size={15} strokeWidth={2.2} /> QR code
-                  </Link>
-                  <Link
-                    href={`/dashboard/r/${r.slug}`}
-                    className="inline-flex flex-1 items-center justify-center rounded-[10px] bg-primary px-3 py-2 text-[13.5px] font-semibold text-white no-underline transition-colors hover:bg-[var(--cinnabar-deep)]"
-                  >
-                    Manage
-                  </Link>
-                </div>
-              </li>
-            )
-          })}
-        </ul>
+              )
+            })}
+          </div>
+        </div>
       )}
     </div>
   )

@@ -15,7 +15,7 @@ import { getRestaurant, type MenuSummary, type Restaurant } from '../../shared/a
  * tenant-less visitor; they never query data.
  */
 
-/** Operator roles minted by the auth service (internal/authz). */
+/** Operator roles minted by the auth service. */
 const STAFF_ROLES = ['iedora-admin', 'iedora-support'] as const
 
 export type { Session }

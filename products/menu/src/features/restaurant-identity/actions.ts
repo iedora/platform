@@ -2,8 +2,10 @@
 
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
+import type { ImportPayload } from '@iedora/contracts'
 import { ApiError } from '@iedora/api-client'
 import * as api from '../../shared/api'
+import { requireStaff } from '../auth'
 import { LANGUAGE_CODES, type LanguageCode } from '../i18n'
 import { localizedSchema, pruneLocalized } from '../i18n/server'
 import { revalidateRestaurant } from '../menu-publishing'
@@ -159,4 +161,104 @@ export async function updateSlug(
   revalidateIdentityPages(next)
 
   return { ok: true, slug: next }
+}
+
+// --- staff provisioning (admin "New restaurant") ---
+
+// On success the action returns the new restaurant id so the client can route to
+// its detail page; on failure it returns an i18n key the form resolves.
+type ProvisionResult = { ok: true; id: string } | { ok: false; error: string }
+
+function provisionErrorKey(err: unknown): string {
+  if (err instanceof ApiError) return err.status === 422 ? 'invalidInput' : 'failed'
+  return 'failed'
+}
+
+// A restaurant is provisioned under an existing tenant (`tenantId`) or a new one
+// (`newTenantName`) — exactly one. The service re-validates; this keeps obvious
+// garbage off the wire so the form shows a friendly message instead of a 422.
+const StaffCreateInput = z
+  .object({
+    name: z.string().trim().min(1, 'nameRequired').max(120),
+    defaultLanguage: z.string().trim().min(2).max(10).optional(),
+    tenantId: z.string().trim().min(1).optional(),
+    newTenantName: z.string().trim().min(1).max(120).optional(),
+  })
+  .refine((d) => Boolean(d.tenantId) !== Boolean(d.newTenantName), {
+    message: 'tenantRequired',
+    path: ['tenantId'],
+  })
+
+export async function staffCreateRestaurantAction(input: unknown): Promise<ProvisionResult> {
+  await requireStaff()
+  const parsed = StaffCreateInput.safeParse(input)
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? 'invalidInput' }
+  try {
+    const { restaurant } = await api.staffCreateRestaurant(parsed.data)
+    revalidatePath('/menu/dashboard/admin/restaurants')
+    return { ok: true, id: restaurant.id }
+  } catch (err) {
+    return { ok: false, error: provisionErrorKey(err) }
+  }
+}
+
+// Import mode: the admin pastes a JSON document. We parse it here (so malformed
+// JSON gets a clean message, not a 500) and hand the structure to the service,
+// which owns the real validation + the menu-tree write.
+export async function staffImportRestaurantAction(input: {
+  tenantId?: string
+  newTenantName?: string
+  payloadText: string
+}): Promise<ProvisionResult> {
+  await requireStaff()
+  let payload: unknown
+  try {
+    payload = JSON.parse(input.payloadText)
+  } catch {
+    return { ok: false, error: 'invalidJson' }
+  }
+  if (typeof payload !== 'object' || payload === null || Array.isArray(payload)) {
+    return { ok: false, error: 'invalidJson' }
+  }
+  // The shared tenant picker drives both modes: a "new tenant" choice maps onto
+  // the payload's `tenant` name, unless the JSON already names one (which wins).
+  const doc = payload as ImportPayload & { tenant?: string }
+  const newTenantName = input.newTenantName?.trim()
+  if (newTenantName && !doc.tenant) doc.tenant = newTenantName
+  try {
+    const { restaurant } = await api.staffImportRestaurant({
+      tenantId: newTenantName || doc.tenant ? undefined : input.tenantId?.trim() || undefined,
+      payload: doc,
+    })
+    revalidatePath('/menu/dashboard/admin/restaurants')
+    return { ok: true, id: restaurant.id }
+  } catch (err) {
+    return { ok: false, error: provisionErrorKey(err) }
+  }
+}
+
+const StaffNameInput = z.object({ name: z.string().trim().min(1, 'Enter a name.').max(80) })
+
+/**
+ * Staff identity override — a privileged rename of a restaurant's friendly name
+ * from the admin surface, addressed cross-tenant by id. `requireStaff` gates the
+ * action (the menu service re-checks STAFF_ROLE and audits the change); the
+ * admin pages are revalidated so the new name shows immediately.
+ */
+export async function staffRenameRestaurant(id: string, input: unknown): Promise<ActionResult> {
+  await requireStaff()
+  const parsed = StaffNameInput.safeParse(input)
+  if (!parsed.success) {
+    return { ok: false, error: parsed.error.issues[0]?.message ?? 'Invalid name' }
+  }
+  try {
+    await api.staffUpdateRestaurant(id, { name: parsed.data.name })
+  } catch (err) {
+    return { ok: false, error: errorMessage(err) }
+  }
+  const base = `/menu/dashboard/admin/restaurants/${id}`
+  revalidatePath(base)
+  revalidatePath(`${base}/edit`)
+  revalidatePath(`${base}/payments`)
+  return { ok: true }
 }

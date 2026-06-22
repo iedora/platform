@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
   BarChart3,
+  BookOpen,
   CreditCard,
   Home,
   LayoutGrid,
@@ -15,6 +16,7 @@ import {
 const ICONS = {
   overview: LayoutGrid,
   home: Home,
+  menu: BookOpen,
   restaurants: Store,
   qr: QrCode,
   settings: Settings,

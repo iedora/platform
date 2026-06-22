@@ -3,12 +3,11 @@ import { join } from "node:path";
 
 import { SQL } from "bun";
 
-// Ports the Go internal/migrate package: ensure the database exists, take a
+// Ensure the database exists, take a
 // Postgres advisory lock so concurrent deploys serialize, then apply each
 // *.sql file (in filename order) that hasn't run yet, recording it in
-// schema_migrations. The existing goose-annotated SQL files apply verbatim —
-// goose's `-- +goose` lines are SQL comments, and Bun's SQL.unsafe(text) runs
-// the whole multi-statement file (dollar-quoted bodies included) in one go.
+// schema_migrations. Each *.sql file applies verbatim: Bun's SQL.unsafe(text)
+// runs the whole multi-statement file (dollar-quoted bodies included) in one call.
 
 const LOCK_KEY = 4_021_977; // stable, single-purpose migration advisory lock
 

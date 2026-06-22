@@ -13,6 +13,7 @@ import {
   DialogTrigger,
   Field,
   FieldError,
+  FieldHint,
   FieldInput,
   FieldLabel,
 } from '@iedora/design-system'
@@ -60,9 +61,13 @@ export function CreateMenuDialog({ slug }: { slug: string }) {
               required
               maxLength={80}
               autoFocus
+              placeholder="e.g. Lunch, Dinner, Drinks"
               error={Boolean(error)}
-              aria-describedby={error ? 'menu-name-msg' : undefined}
+              aria-describedby={error ? 'menu-name-msg' : 'menu-name-hint'}
             />
+            <FieldHint id="menu-name-hint">
+              A menu holds your sections — most restaurants need just one.
+            </FieldHint>
             {error && <FieldError id="menu-name-msg">{error}</FieldError>}
           </Field>
           <DialogFooter>

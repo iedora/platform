@@ -133,7 +133,7 @@ export function registerIedoraOtelNode(opts: RegisterNodeOptions): void {
   });
   trace.setGlobalTracerProvider(tp);
 
-  // Propagator — make traceparent/tracestate work both ways. The Go
+  // Propagator — make traceparent/tracestate work both ways. The
   // orchestrator sets TRACEPARENT in the migrate container's env; the
   // first span we open extracts it as the parent so the trace
   // stitches across the docker run boundary.

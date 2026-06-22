@@ -3,21 +3,11 @@ import { type Kysely, sql } from "kysely";
 import type { MenuDB } from "../schema";
 import { invalid } from "../errors";
 import { Languages } from "../i18n";
+import { addDays, dayString } from "./sqlutil";
 
-// Dashboard analytics + the AI-quota ledger — ports Go internal/menu/views.go
-// (the analytics half) + the ai_generations counters in store.go.
+// Dashboard analytics + the AI-quota ledger.
 
 type DB = Kysely<MenuDB>;
-
-function dayString(t: Date): string {
-  return t.toISOString().slice(0, 10); // YYYY-MM-DD (UTC)
-}
-
-function addDays(t: Date, n: number): Date {
-  const d = new Date(t);
-  d.setUTCDate(d.getUTCDate() + n);
-  return d;
-}
 
 // MonthlyViews sums the tenant's views for the current calendar month (UTC).
 export async function monthlyViews(db: DB, tenantId: string, now: Date): Promise<number> {

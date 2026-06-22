@@ -1,7 +1,5 @@
--- +goose Up
--- 0001_init.sql — authentication schema. Copied verbatim from the Go backend
--- (migrations/auth/0001_init.sql); idempotent (IF NOT EXISTS), so it also
--- applies cleanly against the existing prod auth DB at cutover.
+-- 0001_init.sql — authentication schema. Idempotent (IF NOT EXISTS), so it
+-- applies cleanly against an existing prod auth DB.
 
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS citext;

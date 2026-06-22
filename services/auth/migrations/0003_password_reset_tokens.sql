@@ -1,4 +1,3 @@
--- +goose Up
 -- 0003_password_reset_tokens.sql — single-use, hashed, expiring password-reset
 -- tokens (OWASP Forgot Password Cheat Sheet).
 --

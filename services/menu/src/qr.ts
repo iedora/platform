@@ -1,4 +1,4 @@
-// Physical QR sticker code helpers — ports Go internal/menu/qr.go. Codes are a
+// Physical QR sticker code helpers. Codes are a
 // cross-tenant registry; the store side (resolve/admin) lives in data/qr.ts.
 
 // Crockford-flavoured base32 minus lookalikes (0/O, 1/I/L, U): codes survive

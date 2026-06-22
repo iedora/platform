@@ -1,14 +1,18 @@
-import type { LocalizedText, Theme } from "@iedora/contracts";
+import type { LocalizedText, RestaurantSummary, Theme } from "@iedora/contracts";
 import { type Kysely, sql } from "kysely";
 
 import type { Restaurant } from "../domain";
 import type { MenuDB } from "../schema";
 import { isUniqueViolation, notFound, slugTaken } from "../errors";
 import { RESTAURANT_COLS, toRestaurant } from "./restaurants";
-import { jsonbOrNull, textArray } from "./sqlutil";
+import { changedOrNotFound, jsonbOrNull, textArray } from "./sqlutil";
 
-// Restaurant mutations + dashboard aggregates — ports Go store.go (the write
-// half). Reads + the shared column list live in data/restaurants.ts.
+// Wire DTO re-exported so existing importers (service.ts) keep resolving; the
+// shape is owned by @iedora/contracts (single source of truth).
+export type { RestaurantSummary };
+
+// Restaurant mutations + dashboard aggregates — the write half. Reads + the
+// shared column list live in data/restaurants.ts.
 
 type DB = Kysely<MenuDB>;
 
@@ -58,8 +62,13 @@ export async function updateIdentityRow(db: DB, r: Restaurant, promoting: boolea
 // renameSlug changes the public URL of a restaurant.
 export async function renameSlug(db: DB, id: string, slug: string): Promise<void> {
   try {
-    const r = await sql`UPDATE restaurants SET slug=${slug}, updated_at=now() WHERE id=${id}`.execute(db);
-    if (Number(r.numAffectedRows ?? 0n) === 0) throw notFound();
+    changedOrNotFound(
+      await db
+        .updateTable("restaurants")
+        .set({ slug, updated_at: sql`now()` })
+        .where("id", "=", id)
+        .executeTakeFirst(),
+    );
   } catch (err) {
     if (isUniqueViolation(err)) throw slugTaken();
     throw err;
@@ -68,16 +77,24 @@ export async function renameSlug(db: DB, id: string, slug: string): Promise<void
 
 // completeOnboarding stamps the wizard as finished (idempotent).
 export async function completeOnboarding(db: DB, id: string): Promise<void> {
-  const r = await sql`
-    UPDATE restaurants SET onboarding_completed_at = coalesce(onboarding_completed_at, now())
-    WHERE id=${id}`.execute(db);
-  if (Number(r.numAffectedRows ?? 0n) === 0) throw notFound();
+  changedOrNotFound(
+    await db
+      .updateTable("restaurants")
+      .set({ onboarding_completed_at: sql`coalesce(onboarding_completed_at, now())` })
+      .where("id", "=", id)
+      .executeTakeFirst(),
+  );
 }
 
 // deleteRestaurant removes a restaurant and (via FK cascade) its entire tree.
 export async function deleteRestaurant(db: DB, id: string, tenantId: string): Promise<void> {
-  const r = await sql`DELETE FROM restaurants WHERE id=${id} AND tenant_id=${tenantId}`.execute(db);
-  if (Number(r.numAffectedRows ?? 0n) === 0) throw notFound();
+  changedOrNotFound(
+    await db
+      .deleteFrom("restaurants")
+      .where("id", "=", id)
+      .where("tenant_id", "=", tenantId)
+      .executeTakeFirst(),
+  );
 }
 
 // countRestaurants counts a tenant's restaurants (plan gate input).
@@ -87,15 +104,6 @@ export async function countRestaurants(db: DB, tenantId: string): Promise<number
 }
 
 // --- dashboard aggregates ---
-
-export interface RestaurantSummary {
-  id: string;
-  name: string;
-  slug: string;
-  updatedAt: string;
-  menuCount: number;
-  dishCount: number;
-}
 
 export async function listRestaurantsWithCounts(db: DB, tenantId: string): Promise<RestaurantSummary[]> {
   const rows = await sql<{

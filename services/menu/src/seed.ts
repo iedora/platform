@@ -4,9 +4,9 @@ import * as builder from "./data/builder";
 import type { MenuDeps } from "./deps";
 import type { Restaurant, Variant } from "./domain";
 
-// Sample content seeded for new restaurants so the builder never starts blank —
-// ports Go internal/menu/seed.go. At seed time the restaurant's default language
-// is picked into the plain column; the rest become i18n overrides. Built on the
+// Sample content seeded for new restaurants so the builder never starts blank.
+// At seed time the restaurant's default language is picked into the plain
+// column; the rest become i18n overrides. Built on the
 // same single-statement store ops as the builder, so seeded content obeys every
 // invariant (positions, NULL-variants, i18n).
 

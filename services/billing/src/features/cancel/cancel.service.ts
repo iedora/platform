@@ -3,8 +3,7 @@ import type { BillingDeps } from "../../deps";
 import { noSubscription } from "../../errors";
 
 // cancel ends a tenant's subscription for a product — the cancel + its audit
-// event commit together. Throws when no active subscription matched. Ports Go
-// billing service.Cancel.
+// event commit together. Throws when no active subscription matched.
 export async function cancel(
   deps: BillingDeps,
   input: { tenantId: string; product: string },

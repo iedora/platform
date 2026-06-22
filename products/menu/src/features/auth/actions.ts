@@ -2,7 +2,10 @@
 
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
+import { parseWithZod } from '@conform-to/zod/v4'
+import type { SubmissionResult } from '@conform-to/dom'
 import {
+  ApiError,
   REFRESH_COOKIE,
   authCookies,
   clearedAuthCookies,
@@ -14,89 +17,98 @@ import {
   type AuthResult,
 } from '@iedora/api-client'
 import { brandUrl, isSameIedoraOrigin } from '@iedora/brand'
+import { forgotPasswordSchema, resetPasswordSchema, signInSchema, signUpSchema } from './schemas'
 
 /**
  * Auth server actions — the only code that exchanges credentials with
- * the auth service and writes the auth cookies. Forms submit here
- * via useActionState; on success the action redirects to the validated
- * `next` target, on failure it returns a state the form translates.
+ * the auth service and writes the auth cookies. The sign-in / sign-up
+ * forms submit here via Conform + useActionState: the action validates
+ * with the SAME Zod schema the form uses (no drift), returns a Conform
+ * `submission.reply()` on failure (field/form error keys the form
+ * translates), and redirects to the validated `next` target on success.
  */
 
-export type AuthFormState = {
-  error: 'invalid' | 'generic' | null
-}
-
-export async function signInAction(_prev: AuthFormState, formData: FormData): Promise<AuthFormState> {
-  const email = String(formData.get('email') ?? '')
-  const password = String(formData.get('password') ?? '')
+export async function signInAction(
+  _prev: unknown,
+  formData: FormData,
+): Promise<SubmissionResult> {
+  const submission = parseWithZod(formData, { schema: signInSchema })
+  if (submission.status !== 'success') return submission.reply()
   let result: AuthResult
   try {
-    result = await login(email, password)
+    result = await login(submission.value.email, submission.value.password)
   } catch {
-    return { error: 'invalid' }
+    // Wrong email/password (or any auth failure) — never leak which.
+    return submission.reply({ formErrors: ['invalidCredentials'] })
   }
   await persistAuth(result)
   redirect(safeNext(formData))
 }
 
-export async function signUpAction(_prev: AuthFormState, formData: FormData): Promise<AuthFormState> {
-  const name = String(formData.get('name') ?? '')
-  const email = String(formData.get('email') ?? '')
-  const password = String(formData.get('password') ?? '')
+export async function signUpAction(
+  _prev: unknown,
+  formData: FormData,
+): Promise<SubmissionResult> {
+  const submission = parseWithZod(formData, { schema: signUpSchema })
+  if (submission.status !== 'success') return submission.reply()
   let result: AuthResult
   try {
-    result = await register(email, password, name)
-  } catch {
-    return { error: 'generic' }
+    result = await register(submission.value.email, submission.value.password, submission.value.name)
+  } catch (err) {
+    // A 409 means the email is taken — surface it on the email field;
+    // anything else is a generic, form-level failure.
+    if (err instanceof ApiError && err.status === 409) {
+      return submission.reply({ fieldErrors: { email: ['emailTaken'] } })
+    }
+    return submission.reply({ formErrors: ['signupFailed'] })
   }
   await persistAuth(result)
   redirect(safeNext(formData))
 }
-
-export type ForgotFormState = { sent: boolean }
-export type ResetFormState = { error: 'mismatch' | 'invalid' | null; done: boolean }
 
 /**
  * Forgot-password: kicks off a reset email. The auth service never
- * reveals whether the address exists, so this ALWAYS reports "sent" and
- * swallows errors — the form shows a neutral "check your inbox".
+ * reveals whether the address exists, so on a valid email this ALWAYS
+ * reports success (swallowing errors) — the form reads the success status
+ * and shows a neutral "check your inbox" screen.
  */
 export async function forgotPasswordAction(
-  _prev: ForgotFormState,
+  _prev: unknown,
   formData: FormData,
-): Promise<ForgotFormState> {
-  const email = String(formData.get('email') ?? '')
+): Promise<SubmissionResult> {
+  const submission = parseWithZod(formData, { schema: forgotPasswordSchema })
+  if (submission.status !== 'success') return submission.reply()
   try {
-    await forgotPassword(email)
+    await forgotPassword(submission.value.email)
   } catch {
     // no enumeration, no error surface — still report success
   }
-  return { sent: true }
+  return submission.reply() // status 'success' → form shows the "sent" screen
 }
 
 /**
- * Reset-password: sets a new password from the emailed token. Validates
- * the confirmation match locally, then calls the auth service (which
- * rejects a bad / expired token). No auto-login — the form sends the
- * user to sign in afterwards.
+ * Reset-password: sets a new password from the emailed token. The schema
+ * validates the password policy + confirmation match (client + server);
+ * the auth service rejects a bad / expired token (surfaced as a form
+ * error). No auto-login — the form's success screen sends the user to
+ * sign in afterwards.
  */
 export async function resetPasswordAction(
-  _prev: ResetFormState,
+  _prev: unknown,
   formData: FormData,
-): Promise<ResetFormState> {
+): Promise<SubmissionResult> {
+  const submission = parseWithZod(formData, { schema: resetPasswordSchema })
+  if (submission.status !== 'success') return submission.reply()
   const token = String(formData.get('token') ?? '')
-  const password = String(formData.get('password') ?? '')
-  const confirm = String(formData.get('confirm') ?? '')
-  if (password !== confirm) return { error: 'mismatch', done: false }
   try {
-    await resetPassword(token, password)
+    await resetPassword(token, submission.value.password)
   } catch {
-    return { error: 'invalid', done: false }
+    return submission.reply({ formErrors: ['resetLinkInvalid'] })
   }
-  return { error: null, done: true }
+  return submission.reply() // status 'success' → form shows the "done" screen
 }
 
-/** Revokes the session on the Go side and clears both auth cookies. */
+/** Revokes the session server-side and clears both auth cookies. */
 export async function signOutAction(next?: string): Promise<void> {
   const store = await cookies()
   const refreshToken = store.get(REFRESH_COOKIE)?.value

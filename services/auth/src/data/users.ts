@@ -4,12 +4,17 @@ import type { AuthDB } from "../schema";
 
 export type User = Selectable<AuthDB["users"]>;
 
+// Single-column user lookup (the two public loaders differ only by the column).
+function findUserBy(db: Kysely<AuthDB>, col: "email" | "id", value: string): Promise<User | undefined> {
+  return db.selectFrom("users").selectAll().where(col, "=", value).executeTakeFirst();
+}
+
 export function findUserByEmail(db: Kysely<AuthDB>, email: string): Promise<User | undefined> {
-  return db.selectFrom("users").selectAll().where("email", "=", email).executeTakeFirst();
+  return findUserBy(db, "email", email);
 }
 
 export function findUserById(db: Kysely<AuthDB>, id: string): Promise<User | undefined> {
-  return db.selectFrom("users").selectAll().where("id", "=", id).executeTakeFirst();
+  return findUserBy(db, "id", id);
 }
 
 export function createUser(

@@ -1,8 +1,8 @@
 import { z } from "zod";
 
-// Mirrors the Go menu service wire format (internal/menu/*). The menu service
-// validates its requests/responses against these; the public React page and the
-// dashboard consume the inferred types (Phase 4 swaps products/menu onto them).
+// The menu service wire format. The menu service validates its
+// requests/responses against these; the public React page and the dashboard
+// consume the inferred types (Phase 4 swaps products/menu onto them).
 
 // --- shared scalars ---
 
@@ -304,3 +304,82 @@ export const identityPatch = z.object({
   supportedLanguages: z.array(z.string()).optional(),
 });
 export type IdentityPatch = z.infer<typeof identityPatch>;
+
+// --- staff provisioning (admin "New restaurant") ---
+
+// A restaurant is always provisioned under a tenant. Staff either pick an
+// existing tenant (`tenantId`) or name a brand-new one (`newTenantName`); the
+// service provisions the new tenant first (owned by the acting admin). Exactly
+// one of the two must be present.
+export const staffCreateRestaurant = z
+  .object({
+    tenantId: z.string().min(1).optional(),
+    newTenantName: z.string().trim().min(1).max(120).optional(),
+    name: z.string().trim().min(1).max(120),
+    defaultLanguage: z.string().trim().min(2).max(10).optional(),
+  })
+  .refine((d) => Boolean(d.tenantId) !== Boolean(d.newTenantName), {
+    message: "provide exactly one of tenantId or newTenantName",
+    path: ["tenantId"],
+  });
+export type StaffCreateRestaurant = z.infer<typeof staffCreateRestaurant>;
+
+// Bounds on a single JSON import — a runaway payload must fail fast (422), not
+// stream thousands of rows into one transaction.
+export const IMPORT_LIMITS = {
+  menus: 20,
+  categoriesPerMenu: 60,
+  itemsPerCategory: 300,
+  totalItems: 2000,
+} as const;
+
+export const importItem = z.object({
+  name: z.string().trim().min(1).max(160),
+  // Per-language overrides of name/description, keyed by language code. Entries
+  // for the default language are ignored (the top-level fields are the default).
+  nameI18n: localizedText.optional(),
+  description: z.string().trim().max(1000).optional(),
+  descriptionI18n: localizedText.optional(),
+  priceCents: z.number().int().min(0).max(100_000_000),
+  currency: z.string().trim().length(3).optional(),
+  available: z.boolean().optional(),
+  tags: z.array(z.string().trim().min(1)).max(20).optional(),
+});
+export type ImportItem = z.infer<typeof importItem>;
+
+export const importCategory = z.object({
+  name: z.string().trim().min(1).max(120),
+  items: z.array(importItem).max(IMPORT_LIMITS.itemsPerCategory).optional(),
+});
+export type ImportCategory = z.infer<typeof importCategory>;
+
+export const importMenu = z.object({
+  name: z.string().trim().min(1).max(120),
+  categories: z.array(importCategory).max(IMPORT_LIMITS.categoriesPerMenu).optional(),
+});
+export type ImportMenu = z.infer<typeof importMenu>;
+
+// The JSON document an admin pastes in "Import JSON" mode. `tenant` is the
+// optional NEW tenant name — when present the service creates that tenant and
+// ignores the request-level tenantId; when absent the request must carry an
+// existing tenantId.
+export const importPayload = z.object({
+  tenant: z.string().trim().min(1).max(120).optional(),
+  restaurant: z.object({
+    name: z.string().trim().min(1).max(120),
+    defaultLanguage: z.string().trim().min(2).max(10).optional(),
+    // The languages the menu is offered in. The default is always included even
+    // if omitted here. Item translations must use codes from this set.
+    supportedLanguages: z.array(z.string().trim().min(2).max(10)).max(20).optional(),
+  }),
+  menus: z.array(importMenu).min(1).max(IMPORT_LIMITS.menus),
+});
+export type ImportPayload = z.infer<typeof importPayload>;
+
+export const staffImportRestaurant = z.object({
+  // Existing tenant from the picker. Required only when `payload.tenant`
+  // (a new tenant name) is absent — the service enforces that rule.
+  tenantId: z.string().min(1).optional(),
+  payload: importPayload,
+});
+export type StaffImportRestaurant = z.infer<typeof staffImportRestaurant>;

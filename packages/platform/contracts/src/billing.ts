@@ -1,8 +1,8 @@
 import { z } from "zod";
 
-// Mirrors the Go billing service wire format (internal/billing/domain.go +
-// httpapi.go). The billing service validates its requests/responses against
-// these; the admin BFF + any reader consume the inferred types.
+// The billing service wire format. The billing service validates its
+// requests/responses against these; the admin BFF + any reader consume the
+// inferred types.
 
 // A purchasable plan (code-defined registry, snapshotted onto invoices).
 export const plan = z.object({

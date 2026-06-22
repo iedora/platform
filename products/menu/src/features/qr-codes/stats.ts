@@ -3,7 +3,7 @@
  * (which is `server-only`) so the client admin UI can import the types
  * and the stats math without dragging server modules into the bundle.
  *
- * `QrCodeListRow` is the Go `QRCode` DTO (shared/api.ts) normalised for
+ * `QrCodeListRow` is the `QRCode` DTO (shared/api.ts) normalised for
  * rendering: ISO-string dates, explicit nulls, and the bound restaurant
  * folded into a nested object for rendering convenience.
  */
