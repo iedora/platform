@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { ChevronRight } from 'lucide-react'
+import { CaretRightIcon } from '@phosphor-icons/react/ssr'
 import { getTranslations } from 'next-intl/server'
 import { getSession, requireActiveOrganization } from '@iedora/product-menu/features/auth'
 import { getOrganizationPlan } from '@iedora/product-menu/features/plans'
@@ -36,7 +36,7 @@ export default async function MiscPage() {
     <DashboardPage title={t('title')} chrome="none" data-test-id="misc">
       <div className="space-y-6" data-test-id="settings">
         <header className="space-y-1">
-          <p className="font-[family-name:var(--display)] text-[26px] font-bold leading-tight text-foreground">
+          <p className="font-heading text-[26px] font-bold leading-tight text-foreground">
             {t('title')}
           </p>
           <p className="text-[15px] text-muted-foreground">{t('subtitle')}</p>
@@ -46,7 +46,7 @@ export default async function MiscPage() {
         <section className="space-y-2" data-test-id="settings-account">
           <p className={sectionLabel}>{t('account')}</p>
           <div className={`${card} flex items-center gap-3 p-4`}>
-            <span className="grid size-11 shrink-0 place-items-center rounded-full bg-[var(--cinnabar-soft)] text-[18px] font-bold text-primary">
+            <span className="grid size-11 shrink-0 place-items-center rounded-full bg-primary/10 text-[18px] font-bold text-primary">
               {initial}
             </span>
             <div className="min-w-0">
@@ -78,7 +78,7 @@ export default async function MiscPage() {
               </div>
               <Link
                 href="/dashboard/billing"
-                className="shrink-0 rounded-full bg-primary px-4 py-2 text-[13.5px] font-semibold text-white no-underline transition-colors hover:bg-[var(--cinnabar-deep)]"
+                className="shrink-0 rounded-full bg-primary px-4 py-2 text-[13.5px] font-semibold text-white no-underline transition-colors hover:bg-primary/90"
               >
                 {t('manage')}
               </Link>
@@ -88,7 +88,7 @@ export default async function MiscPage() {
               className="flex items-center justify-between gap-3 p-4 text-foreground no-underline transition-colors hover:bg-muted"
             >
               <span className="text-[15px]">{t('billing')}</span>
-              <ChevronRight size={18} className="shrink-0 text-muted-foreground" />
+              <CaretRightIcon size={18} className="shrink-0 text-muted-foreground" />
             </Link>
           </div>
         </section>

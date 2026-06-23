@@ -3,7 +3,9 @@
 import { useEffect, useState } from 'react'
 import QRCode from 'qrcode'
 import { useTranslations } from 'next-intl'
-import { Badge, Button, SectionHeader } from '@iedora/design-system'
+import { Badge } from '@iedora/ui/components/ui/badge'
+import { Button } from '@iedora/ui/components/ui/button'
+import { SectionHeader } from '@iedora/ui/components/section-header'
 import { QrViewer } from './qr-viewer'
 
 /**
@@ -196,7 +198,7 @@ function StickerCard({
           {stickerUrl.replace(/^https?:\/\//, '')}
         </span>
       </div>
-      {error && <p className="text-[10px] text-[var(--cinnabar)]">{error}</p>}
+      {error && <p className="text-[10px] text-primary">{error}</p>}
       <Button
         type="button"
         variant="ghost"

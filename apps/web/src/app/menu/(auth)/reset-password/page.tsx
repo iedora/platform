@@ -20,7 +20,7 @@ export default async function ResetPasswordPage({ searchParams }: Props) {
 
   return (
     <div>
-      <h1 className="font-[family-name:var(--display)] text-[28px] font-extrabold leading-[1.12] tracking-[-0.01em] text-foreground">
+      <h1 className="font-heading text-[28px] font-extrabold leading-[1.12] tracking-[-0.01em] text-foreground">
         {t('title')}
       </h1>
       <p className="mt-2 text-[15px] leading-[1.5] text-muted-foreground">
@@ -32,7 +32,7 @@ export default async function ResetPasswordPage({ searchParams }: Props) {
         ) : (
           <Link
             href={signInHref}
-            className="inline-flex w-full items-center justify-center rounded-[12px] bg-primary px-4 py-3 text-[16px] font-semibold text-white no-underline transition-colors hover:bg-[var(--cinnabar-deep)]"
+            className="inline-flex w-full items-center justify-center rounded-[12px] bg-primary px-4 py-3 text-[16px] font-semibold text-white no-underline transition-colors hover:bg-primary/90"
             data-test-id="reset-back-link"
           >
             {t('backToSignIn')}

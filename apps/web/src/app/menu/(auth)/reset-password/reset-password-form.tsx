@@ -7,8 +7,8 @@ import { useTranslations } from 'next-intl'
 import Link from 'next/link'
 import { resetPasswordAction } from '@iedora/product-menu/features/auth/actions'
 import { PASSWORD_MIN, resetPasswordSchema } from '@iedora/product-menu/features/auth/schemas'
-import { Button } from '@iedora/design-system'
-import { PasswordField } from '../../_components/form-fields'
+import { Button } from '@iedora/ui/components/ui/button'
+import { PasswordField } from '@iedora/ui/components/field'
 
 export function ResetPasswordForm({ token, signInHref }: { token: string; signInHref: string }) {
   const t = useTranslations('Auth.resetPassword')
@@ -31,12 +31,12 @@ export function ResetPasswordForm({ token, signInHref }: { token: string; signIn
   if (lastResult?.status === 'success') {
     return (
       <div className="flex flex-col gap-5" data-test-id="reset-done">
-        <p className="rounded-[12px] border border-[var(--green)] bg-[var(--green-soft)] px-4 py-3 text-[14px] leading-[1.5] text-[var(--green)]">
+        <p className="rounded-[12px] border border-green-600 bg-green-100 px-4 py-3 text-[14px] leading-[1.5] text-green-700">
           {t('done')}
         </p>
         <Link
           href={signInHref}
-          className="inline-flex w-full items-center justify-center rounded-[12px] bg-primary px-4 py-3 text-[16px] font-semibold text-white no-underline transition-colors hover:bg-[var(--cinnabar-deep)]"
+          className="inline-flex w-full items-center justify-center rounded-[12px] bg-primary px-4 py-3 text-[16px] font-semibold text-white no-underline transition-colors hover:bg-primary/90"
           data-test-id="reset-sign-in-cta"
         >
           {t('signInCta')}
@@ -88,7 +88,7 @@ export function ResetPasswordForm({ token, signInHref }: { token: string; signIn
       )}
       <Button
         type="submit"
-        variant="primary"
+        variant="default"
         size="lg"
         className="!w-full !justify-center"
         disabled={pending}

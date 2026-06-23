@@ -84,6 +84,15 @@ export const adminCreateTenantRequest = z.object({
 });
 export type AdminCreateTenantRequest = z.infer<typeof adminCreateTenantRequest>;
 
+// Transfer a tenant to a brand-new user, created with this password; the user
+// becomes the tenant's owner so the tenant + its restaurants move to them.
+export const adminTransferNewOwnerRequest = z.object({
+  email: z.string().trim().toLowerCase().email(),
+  name: z.string().trim().min(1).max(120),
+  password: z.string().min(12).max(200),
+});
+export type AdminTransferNewOwnerRequest = z.infer<typeof adminTransferNewOwnerRequest>;
+
 export const whoamiResponse = z.object({
   userId: z.string(),
   tenantId: z.string().optional(),

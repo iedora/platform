@@ -2,15 +2,15 @@
 
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
+import { Button } from '@iedora/ui/components/ui/button'
 import {
-  Button,
   Dialog,
   DialogContent,
   DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@iedora/design-system'
+} from '@iedora/ui/components/ui/dialog'
 import { LocalizedFields } from '../../i18n/ui/localized-fields'
 import type { LanguageCode, LocalizedText } from '../../i18n'
 import { updateCategoryTranslations } from '../actions'
@@ -74,13 +74,10 @@ export function CategoryTranslateDialog({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button
-          variant="ghost"
-          data-testid={`category-translate-${categoryId}`}
-        >
-          Translate
-        </Button>
+      <DialogTrigger
+        render={<Button variant="ghost" data-testid={`category-translate-${categoryId}`} />}
+      >
+        Translate
       </DialogTrigger>
       <DialogContent aria-describedby={undefined}>
         <DialogHeader>
@@ -117,7 +114,7 @@ export function CategoryTranslateDialog({
             </Button>
             <Button
               type="submit"
-              variant="solid"
+              variant="default"
               disabled={pending}
               data-testid="category-translate-save"
             >

@@ -12,6 +12,12 @@ export interface TenantReader {
   tenant(tenantId: string): Promise<TenantWithOwner | null>;
   listTenants(): Promise<TenantWithOwner[]>;
   createTenant(name: string, ownerUserId: string): Promise<Tenant>;
+  // Create a new user (with the given password) and make them the tenant's
+  // owner — the tenant + its restaurants transfer to them (Option "new user").
+  transferToNewOwner(
+    tenantId: string,
+    input: { email: string; name: string; password: string },
+  ): Promise<{ ownerId: string }>;
 }
 
 export class AuthClient implements TenantReader {
@@ -32,5 +38,15 @@ export class AuthClient implements TenantReader {
 
   createTenant(name: string, ownerUserId: string): Promise<Tenant> {
     return this.client.post<Tenant>("/auth/admin/tenants", { name, ownerUserId });
+  }
+
+  transferToNewOwner(
+    tenantId: string,
+    input: { email: string; name: string; password: string },
+  ): Promise<{ ownerId: string }> {
+    return this.client.post<{ ownerId: string }>(
+      `/auth/admin/tenants/${encodeURIComponent(tenantId)}/transfer-new-owner`,
+      input,
+    );
   }
 }

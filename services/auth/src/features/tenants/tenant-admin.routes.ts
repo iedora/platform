@@ -1,4 +1,4 @@
-import { adminCreateTenantRequest } from "@iedora/contracts";
+import { adminCreateTenantRequest, adminTransferNewOwnerRequest } from "@iedora/contracts";
 import { type ServiceEnv, serviceAuth } from "@iedora/server-kit";
 import { zValidator } from "@hono/zod-validator";
 import { Hono } from "hono";
@@ -8,7 +8,7 @@ import { findTenantWithOwner, listTenantsWithOwners } from "../../data/tenants";
 import { findUserById } from "../../data/users";
 import type { AuthDeps } from "../../deps";
 import { metaFrom } from "../../session";
-import { createTenantForUser } from "./tenants.service";
+import { createTenantForUser, transferTenantToNewOwner } from "./tenants.service";
 
 // Service-only tenant administration for the menu BFF (admin "New restaurant"):
 //   GET  /auth/tenants/:id   — a tenant joined to its owner (names a restaurant's owner)
@@ -38,6 +38,18 @@ export function tenantAdminRoutes(deps: AuthDeps) {
           throw new HTTPException(422, { message: "owner user not found" });
         }
         return c.json(await createTenantForUser(deps, ownerUserId, name, metaFrom(c)));
+      },
+    )
+    .post(
+      "/admin/tenants/:id/transfer-new-owner",
+      serviceAuth(deps.serviceVerifier),
+      zValidator("json", adminTransferNewOwnerRequest),
+      async (c) => {
+        const tenantId = c.req.param("id");
+        if (!(await findTenantWithOwner(deps.db.db, tenantId))) {
+          throw new HTTPException(404, { message: "tenant not found" });
+        }
+        return c.json(await transferTenantToNewOwner(deps, tenantId, c.req.valid("json"), metaFrom(c)));
       },
     );
 }

@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Plus } from 'lucide-react'
+import { PlusIcon } from '@phosphor-icons/react/ssr'
 import { getTranslations } from 'next-intl/server'
 import { requireStaff } from '@iedora/product-menu/features/auth'
 import { DashboardPage } from '@iedora/product-menu/shared/ui/dashboard-page'
@@ -43,9 +43,9 @@ export default async function AdminRestaurantsPage() {
         <Link
           href="/menu/dashboard/admin/restaurants/new"
           data-test-id="admin-restaurants-new"
-          className="inline-flex items-center gap-2 rounded-[10px] bg-primary px-[18px] py-[11px] text-[14px] font-semibold text-white no-underline transition-colors hover:bg-[var(--cinnabar-deep)]"
+          className="inline-flex items-center gap-2 rounded-[10px] bg-primary px-[18px] py-[11px] text-[14px] font-semibold text-white no-underline transition-colors hover:bg-primary/90"
         >
-          <Plus size={16} strokeWidth={2.4} aria-hidden />
+          <PlusIcon size={16} weight="bold" aria-hidden />
           {t('restaurants.newRestaurant')}
         </Link>
       }

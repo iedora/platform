@@ -1,6 +1,5 @@
 import Link from 'next/link'
 import { ActionChip } from './action-chip'
-import styles from './editorial-list.module.css'
 import { formatDelta } from './format'
 import type { EditorialRow as Row } from './types'
 
@@ -13,7 +12,10 @@ import type { EditorialRow as Row } from './types'
 export function EditorialRow({ row }: { row: Row }) {
   const trailing = row.trailing
   return (
-    <div className={styles.row} data-testid="editorial-row">
+    <div
+      className="group block py-[18px] no-underline text-inherit border-b border-border transition-[background] duration-[180ms] ease-out hover:bg-accent/60 focus-visible:bg-accent/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:[outline-offset:-2px]"
+      data-testid="editorial-row"
+    >
       <div className="flex items-baseline gap-3">
         {row.index && (
           <span
@@ -34,7 +36,10 @@ export function EditorialRow({ row }: { row: Row }) {
             {row.subtitle}
           </div>
         </Link>
-        <span aria-hidden="true" className={styles.leader} />
+        <span
+          aria-hidden="true"
+          className="flex-1 h-0 mx-[14px] -translate-y-1.5 border-b border-dotted border-border group-hover:border-muted-foreground"
+        />
         {trailing ? (
           <div className="text-right">
             <div className="text-[15px] font-medium tabular-nums">
@@ -58,7 +63,7 @@ export function EditorialRow({ row }: { row: Row }) {
         ) : null}
       </div>
       {(row.metadata || (row.actions && row.actions.length > 0)) && (
-        <div className={styles.subRow}>
+        <div className="mt-2.5 flex flex-wrap items-center gap-[18px] text-[12.5px] text-foreground">
           {row.metadata && (
             <span className="text-muted-foreground">
               {row.metadata}

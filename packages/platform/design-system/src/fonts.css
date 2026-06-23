@@ -1,8 +1,0 @@
-/*
- * Loads the printed-menu vocabulary fonts from Google Fonts. Optional —
- * Next.js apps use `next/font` and override `--display` / `--serif` /
- * `--sans` / `--mono` at the html level (see apps/web/src/app/layout.tsx);
- * this file is for plain-HTML consumers and Storybook-style previews.
- */
-
-@import url("https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=Lora:ital,wght@0,400;0,500;1,400;1,500;1,600&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap");

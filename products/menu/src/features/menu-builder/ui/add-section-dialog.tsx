@@ -2,18 +2,20 @@
 
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
+import { Button } from '@iedora/ui/components/ui/button'
 import {
-  Button,
   Dialog,
   DialogContent,
   DialogFooter,
   DialogHeader,
   DialogTitle,
+} from '@iedora/ui/components/ui/dialog'
+import {
   Field,
   FieldHint,
   FieldInput,
   FieldLabel,
-} from '@iedora/design-system'
+} from '@iedora/ui/components/field'
 import { useTranslations } from 'next-intl'
 import { createCategory } from '../actions'
 
@@ -104,7 +106,7 @@ export function AddSectionDialog({
               <p
                 id={`${nameInputId}-msg`}
                 role="alert"
-                className="text-sm text-[var(--cinnabar)]"
+                className="text-sm text-primary"
                 data-test-id="menu-add-section-error"
               >
                 {error}
@@ -123,7 +125,7 @@ export function AddSectionDialog({
             </Button>
             <Button
               type="submit"
-              variant="solid"
+              variant="default"
               disabled={pending || name.trim().length === 0}
               data-test-id="menu-add-section-submit"
             >

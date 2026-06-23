@@ -3,7 +3,8 @@
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
-import { Button, Field, FieldHint, FieldInput, FieldLabel } from '@iedora/design-system'
+import { Button } from '@iedora/ui/components/ui/button'
+import { Field, FieldHint, FieldInput, FieldLabel } from '@iedora/ui/components/field'
 import { staffRenameRestaurant } from '../actions'
 
 /**
@@ -70,11 +71,11 @@ export function AdminRenameForm({ id, name }: { id: string; name: string }) {
           {pending ? t('edit.saving') : t('edit.saveName')}
         </Button>
         {error && (
-          <span id="admin-rename-msg" className="text-sm text-[var(--danger)]">
+          <span id="admin-rename-msg" className="text-sm text-destructive">
             {error}
           </span>
         )}
-        {saved && !error && <span className="text-sm text-[var(--green)]">{t('edit.saved')}</span>}
+        {saved && !error && <span className="text-sm text-green-600">{t('edit.saved')}</span>}
       </div>
     </form>
   )

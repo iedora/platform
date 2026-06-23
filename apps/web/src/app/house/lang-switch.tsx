@@ -30,7 +30,7 @@ export function LandingLangSwitch({ locale }: { locale: string }) {
       disabled={active || pending}
       aria-pressed={active}
       className={`rounded-full px-2.5 py-[5px] transition-colors disabled:cursor-default ${
-        active ? 'bg-[var(--cinnabar)] text-white' : 'text-[var(--muted-foreground)] hover:text-[var(--ink)]'
+        active ? 'bg-primary text-white' : 'text-muted-foreground hover:text-foreground'
       }`}
       data-test-id={`house-lang-${code}`}
     >
@@ -40,7 +40,7 @@ export function LandingLangSwitch({ locale }: { locale: string }) {
 
   return (
     <span
-      className="inline-flex items-center gap-0.5 rounded-full bg-[var(--paper-2)] p-[3px] font-[family-name:var(--display)] text-[13px] font-bold"
+      className="inline-flex items-center gap-0.5 rounded-full bg-muted p-[3px] font-heading text-[13px] font-bold"
       role="group"
       aria-label="Language"
     >

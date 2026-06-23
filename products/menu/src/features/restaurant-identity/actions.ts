@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import type { ImportPayload } from '@iedora/contracts'
+import { staffTransferOwnership as transferOwnershipSchema } from '@iedora/contracts'
 import { ApiError } from '@iedora/api-client'
 import * as api from '../../shared/api'
 import { requireStaff } from '../auth'
@@ -187,6 +188,7 @@ const StaffCreateInput = z
     defaultLanguage: z.string().trim().min(2).max(10).optional(),
     tenantId: z.string().trim().min(1).optional(),
     newTenantName: z.string().trim().min(1).max(120).optional(),
+    slug: z.string().trim().toLowerCase().min(2).max(40).optional(),
   })
   .refine((d) => Boolean(d.tenantId) !== Boolean(d.newTenantName), {
     message: 'tenantRequired',
@@ -206,6 +208,63 @@ export async function staffCreateRestaurantAction(input: unknown): Promise<Provi
   }
 }
 
+// Resolve the slug a create would assign for a desired base, so the form can
+// preview it + flag collisions before submit. Advisory only.
+export async function previewSlugAction(
+  slug: string,
+): Promise<{ valid: boolean; slug: string; available: boolean }> {
+  await requireStaff()
+  if (!slug.trim()) return { valid: false, slug: '', available: false }
+  try {
+    return await api.staffSlugPreview(slug.trim())
+  } catch {
+    return { valid: false, slug: '', available: false }
+  }
+}
+
+// Whether a target tenant can receive another restaurant (plan capacity) —
+// powers the transfer picker's availability hint. Advisory.
+export async function transferEligibilityAction(tenantId: string): Promise<{ eligible: boolean }> {
+  await requireStaff()
+  if (!tenantId.trim()) return { eligible: false }
+  try {
+    return await api.staffTransferEligibility(tenantId.trim())
+  } catch {
+    return { eligible: false }
+  }
+}
+
+// Candidate tenants (with owners) to transfer an existing-tenant restaurant into.
+export async function listTransferTargetsAction(): Promise<
+  { id: string; name: string; ownerEmail: string }[]
+> {
+  await requireStaff()
+  try {
+    const { tenants } = await api.staffListTenants()
+    return tenants.map((t) => ({ id: t.id, name: t.name, ownerEmail: t.owner.email }))
+  } catch {
+    return []
+  }
+}
+
+// Transfer a restaurant's ownership (existing tenant, or a brand-new user who
+// receives the whole tenant). Re-validates with the shared contract; maps a
+// taken email / full plan to friendly message keys.
+export async function staffTransferOwnershipAction(id: string, input: unknown): Promise<ActionResult> {
+  await requireStaff()
+  const parsed = transferOwnershipSchema.safeParse(input)
+  if (!parsed.success) return { ok: false, error: 'invalidInput' }
+  try {
+    await api.staffTransferOwnership(id, parsed.data)
+    revalidatePath(`/menu/dashboard/admin/restaurants/${id}`)
+    return { ok: true }
+  } catch (err) {
+    if (err instanceof ApiError && err.status === 409) return { ok: false, error: 'emailTaken' }
+    if (err instanceof ApiError && err.status === 422) return { ok: false, error: 'planFull' }
+    return { ok: false, error: 'failed' }
+  }
+}
+
 // Import mode: the admin pastes a JSON document. We parse it here (so malformed
 // JSON gets a clean message, not a 500) and hand the structure to the service,
 // which owns the real validation + the menu-tree write.
@@ -213,6 +272,7 @@ export async function staffImportRestaurantAction(input: {
   tenantId?: string
   newTenantName?: string
   payloadText: string
+  slug?: string
 }): Promise<ProvisionResult> {
   await requireStaff()
   let payload: unknown
@@ -227,6 +287,10 @@ export async function staffImportRestaurantAction(input: {
   // The shared tenant picker drives both modes: a "new tenant" choice maps onto
   // the payload's `tenant` name, unless the JSON already names one (which wins).
   const doc = payload as ImportPayload & { tenant?: string }
+  // A custom slug from the form's slug field overrides the payload's (the field
+  // is the source of truth when the admin edits it; otherwise the JSON decides).
+  const customSlug = input.slug?.trim()
+  if (customSlug && doc.restaurant) doc.restaurant.slug = customSlug
   const newTenantName = input.newTenantName?.trim()
   if (newTenantName && !doc.tenant) doc.tenant = newTenantName
   // New-tenant mode with no explicit name: default the tenant to the

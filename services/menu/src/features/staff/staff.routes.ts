@@ -1,4 +1,4 @@
-import { staffCreateRestaurant, staffImportRestaurant } from "@iedora/contracts";
+import { staffCreateRestaurant, staffImportRestaurant, staffTransferOwnership } from "@iedora/contracts";
 import { zValidator } from "@hono/zod-validator";
 import { type Context, Hono } from "hono";
 import { z } from "zod";
@@ -18,7 +18,7 @@ import type { MenuDeps } from "../../deps";
 import { type MenuEnv, STAFF_ROLE, requireRole } from "../../middleware";
 import { generateQRCode, normalizeQRCode, validQRCode } from "../../qr";
 import { invalid, notFound } from "../../errors";
-import { staffSetName } from "../../service";
+import { previewSlug, staffSetName, transferEligibility, transferRestaurant } from "../../service";
 import {
   staffCreateRestaurant as provisionRestaurant,
   staffImportRestaurant as provisionImport,
@@ -110,6 +110,13 @@ export function staffRoutes(deps: MenuDeps) {
       return c.json({ ok: true });
     })
     .get("/restaurants", async (c) => c.json({ restaurants: await listRestaurantRefs(db()) }))
+    // Slug availability preview for the create form: returns the slug a create
+    // would actually assign (the desired base if free, else the next numbered
+    // candidate). MUST be registered before "/restaurants/:id" or it'd match as an id.
+    .get("/restaurants/slug-preview", async (c) => c.json(await previewSlug(deps, c.req.query("slug") ?? "")))
+    // Whether a target tenant can receive another restaurant (plan capacity) —
+    // powers the transfer picker's "available / needs Kasa" hint.
+    .get("/transfer-eligibility", async (c) => c.json(await transferEligibility(deps, c.req.query("tenant") ?? "")))
     // Tenants for the admin "assign to tenant" picker (id + name + owner), via auth.
     .get("/tenants", async (c) => c.json({ tenants: await deps.tenant.listTenants() }))
     // Provision a restaurant under an existing or brand-new tenant. The created
@@ -123,6 +130,12 @@ export function staffRoutes(deps: MenuDeps) {
     .post("/restaurants/import", zValidator("json", staffImportRestaurant, onInvalid), async (c) =>
       c.json({ restaurant: await provisionImport(deps, c.get("user").userId, c.req.valid("json")) }),
     )
+    // Transfer a restaurant's ownership: to an existing tenant (plan-gated), or
+    // to a brand-new user who receives the whole tenant. Audited on the restaurant.
+    .post("/restaurants/:id/transfer", zValidator("json", staffTransferOwnership, onInvalid), async (c) => {
+      await transferRestaurant(deps, c.req.param("id"), c.get("user").userId, c.req.valid("json"));
+      return c.json({ ok: true });
+    })
     // Aggregated restaurant detail for the admin pages: the core record + menus +
     // 14-day trend (from this DB), the tenant's billing (subscriptions + invoices,
     // via the billing service), the restaurant's audit trail (via the audit API),

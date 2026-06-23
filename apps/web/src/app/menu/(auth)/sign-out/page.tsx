@@ -1,5 +1,5 @@
 import { getTranslations } from 'next-intl/server'
-import { Card, CardDesc, CardTitle } from '@iedora/design-system'
+import { Card, CardDesc, CardTitle } from '@iedora/ui/components/card'
 import { brandUrl, isSameIedoraOrigin } from '@iedora/brand'
 import { SignOutAction } from './sign-out-action'
 

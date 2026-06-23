@@ -145,7 +145,7 @@ export function MenuBuilder({
               </p>
               <button
                 type="button"
-                className="menu-builder-add-section"
+                className="flex min-h-14 w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-primary/45 bg-transparent p-4 text-sm font-semibold text-primary hover:border-primary hover:bg-primary/[0.06]"
                 onClick={() => setAddSectionOpen(true)}
                 data-test-id="menu-builder-add-section-empty"
               >
@@ -222,7 +222,7 @@ export function MenuBuilder({
       {categories.length > 0 && (
         <button
           type="button"
-          className="menu-builder-add-section lg:hidden"
+          className="flex min-h-14 w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-primary/45 bg-transparent p-4 text-sm font-semibold text-primary hover:border-primary hover:bg-primary/[0.06] lg:hidden"
           onClick={() => setAddSectionOpen(true)}
           data-test-id="menu-builder-add-section"
         >

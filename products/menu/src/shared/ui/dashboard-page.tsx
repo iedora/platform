@@ -74,7 +74,10 @@ export function DashboardPage({
     <div className="space-y-6" data-test-id={testId}>
       <div className="space-y-4">
         {/* A single bold page title — no breadcrumb trail (Pencil). */}
-        <h1 className="ds-breadcrumb__here" data-test-id={ns('heading')}>
+        <h1
+          className="font-heading text-2xl font-bold leading-[1.15] tracking-[-0.01em] text-foreground"
+          data-test-id={ns('heading')}
+        >
           {title}
         </h1>
 
@@ -85,13 +88,16 @@ export function DashboardPage({
           >
             <div className="space-y-2 min-w-0">
               {eyebrow ? (
-                <div className="eyebrow" data-test-id={ns('eyebrow')}>
+                <div
+                  className="inline-block text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground"
+                  data-test-id={ns('eyebrow')}
+                >
                   {eyebrow}
                 </div>
               ) : null}
               {description ? (
                 <p
-                  className="max-w-prose text-sm text-[var(--foreground)]"
+                  className="max-w-prose text-sm text-foreground"
                   data-test-id={ns('description')}
                 >
                   {description}

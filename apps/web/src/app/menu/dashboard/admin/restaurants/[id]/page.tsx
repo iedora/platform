@@ -1,12 +1,13 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
-import { ChevronLeft, Pencil } from 'lucide-react'
+import { CaretLeftIcon, PencilSimpleIcon } from '@phosphor-icons/react/ssr'
 import { requireStaff } from '@iedora/product-menu/features/auth'
 import { loadRestaurantDetail } from '@iedora/product-menu/features/restaurant-identity'
 import { AdminQrCard } from '@iedora/product-menu/features/restaurant-identity/ui/admin-qr-card'
 import { ApiError } from '@iedora/api-client'
 import { PRODUCTS, productUrl } from '@iedora/brand'
+import { TransferOwner } from './transfer-owner'
 import {
   AdminCard,
   AuditList,
@@ -71,11 +72,11 @@ export default async function AdminRestaurantDetailPage({
             className="inline-flex items-center gap-1.5 text-[13px] font-medium text-muted-foreground no-underline transition-colors hover:text-foreground"
             data-test-id="admin-restaurant-back"
           >
-            <ChevronLeft size={16} strokeWidth={2} />
+            <CaretLeftIcon size={16} />
             {t('detail.back')}
           </Link>
           <div className="flex items-center gap-3">
-            <h1 className="font-[family-name:var(--display)] text-[26px] font-extrabold tracking-[-0.5px] text-foreground">
+            <h1 className="font-heading text-[26px] font-extrabold tracking-[-0.5px] text-foreground">
               {r.name}
             </h1>
             <StatusPill live={live} label={t(live ? 'restaurants.statusLive' : 'restaurants.statusDraft')} />
@@ -92,9 +93,9 @@ export default async function AdminRestaurantDetailPage({
           </Link>
           <Link
             href={`/menu/dashboard/admin/restaurants/${r.id}/edit`}
-            className="inline-flex items-center gap-2 rounded-[10px] bg-primary px-4 py-2 text-[14px] font-semibold text-white no-underline transition-colors hover:bg-[var(--cinnabar-deep)]"
+            className="inline-flex items-center gap-2 rounded-[10px] bg-primary px-4 py-2 text-[14px] font-semibold text-white no-underline transition-colors hover:bg-primary/90"
           >
-            <Pencil size={15} strokeWidth={2.2} />
+            <PencilSimpleIcon size={15} weight="bold" />
             {t('detail.edit')}
           </Link>
         </div>
@@ -142,11 +143,14 @@ export default async function AdminRestaurantDetailPage({
 
           <SideCard title={t('detail.owner')} data-test-id="admin-restaurant-owner">
             {tenant ? (
-              <EntityRow
-                initials={initialsOf(tenant.owner.name ?? tenant.owner.email)}
-                name={tenant.owner.name ?? tenant.owner.email}
-                sub={tenant.owner.email}
-              />
+              <>
+                <EntityRow
+                  initials={initialsOf(tenant.owner.name ?? tenant.owner.email)}
+                  name={tenant.owner.name ?? tenant.owner.email}
+                  sub={tenant.owner.email}
+                />
+                <TransferOwner restaurantId={r.id} currentTenantId={tenant.id} />
+              </>
             ) : (
               <p className="text-[13px] text-muted-foreground">{t('detail.ownerUnavailable')}</p>
             )}

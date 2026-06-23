@@ -16,22 +16,22 @@ export type { RestaurantSummary };
 
 type DB = Kysely<MenuDB>;
 
-// createRestaurant inserts a restaurant and returns its id. Throws slugTaken on
-// a slug collision so the caller can pick the next candidate.
+// createRestaurant inserts a restaurant and returns its id, or undefined when
+// the slug is already taken. ON CONFLICT DO NOTHING (a handled conflict, not a
+// raised unique violation) means a collision does NOT abort the surrounding
+// transaction, so the caller can keep trying the next numbered candidate. A
+// thrown constraint error would poison the tx ("current transaction is aborted,
+// commands ignored until end of transaction block") and break the retry.
 export async function createRestaurant(
   db: DB,
   r: { tenantId: string; name: string; slug: string; defaultLanguage: string; supportedLanguages: string[] },
-): Promise<string> {
-  try {
-    const res = await sql<{ id: string }>`
-      INSERT INTO restaurants (tenant_id, name, slug, default_language, supported_languages)
-      VALUES (${r.tenantId}, ${r.name}, ${r.slug}, ${r.defaultLanguage}, ${textArray(r.supportedLanguages)})
-      RETURNING id`.execute(db);
-    return res.rows[0]!.id;
-  } catch (err) {
-    if (isUniqueViolation(err)) throw slugTaken();
-    throw err;
-  }
+): Promise<string | undefined> {
+  const res = await sql<{ id: string }>`
+    INSERT INTO restaurants (tenant_id, name, slug, default_language, supported_languages)
+    VALUES (${r.tenantId}, ${r.name}, ${r.slug}, ${r.defaultLanguage}, ${textArray(r.supportedLanguages)})
+    ON CONFLICT (slug) DO NOTHING
+    RETURNING id`.execute(db);
+  return res.rows[0]?.id;
 }
 
 // updateIdentityRow persists the editable identity fields and returns the
@@ -98,6 +98,17 @@ export async function deleteRestaurant(db: DB, id: string, tenantId: string): Pr
 }
 
 // countRestaurants counts a tenant's restaurants (plan gate input).
+// Re-parent a restaurant to a different tenant (ownership transfer to an
+// existing tenant — the caller plan-gates the target). 404 if no such row.
+export async function setRestaurantTenant(db: DB, id: string, tenantId: string): Promise<void> {
+  const res = await db
+    .updateTable("restaurants")
+    .set({ tenant_id: tenantId, updated_at: new Date() })
+    .where("id", "=", id)
+    .executeTakeFirst();
+  if (res.numUpdatedRows === 0n) throw notFound();
+}
+
 export async function countRestaurants(db: DB, tenantId: string): Promise<number> {
   const r = await sql<{ n: string }>`SELECT count(*)::text AS n FROM restaurants WHERE tenant_id=${tenantId}`.execute(db);
   return Number(r.rows[0]!.n);

@@ -5,10 +5,10 @@ import { useForm, getFormProps, getInputProps } from '@conform-to/react'
 import { getZodConstraint, parseWithZod } from '@conform-to/zod/v4'
 import { useTranslations } from 'next-intl'
 import Link from 'next/link'
-import { Button } from '@iedora/design-system'
+import { Button } from '@iedora/ui/components/ui/button'
 import { forgotPasswordAction } from '@iedora/product-menu/features/auth/actions'
 import { forgotPasswordSchema } from '@iedora/product-menu/features/auth/schemas'
-import { TextField } from '../../_components/form-fields'
+import { TextField } from '@iedora/ui/components/field'
 
 export function ForgotPasswordForm({ signInHref }: { signInHref: string }) {
   const t = useTranslations('Auth.forgotPassword')
@@ -30,7 +30,7 @@ export function ForgotPasswordForm({ signInHref }: { signInHref: string }) {
   if (lastResult?.status === 'success') {
     return (
       <div className="flex flex-col gap-5" data-test-id="forgot-sent">
-        <p className="rounded-[12px] border border-[var(--green)] bg-[var(--green-soft)] px-4 py-3 text-[14px] leading-[1.5] text-[var(--green)]">
+        <p className="rounded-[12px] border border-green-600 bg-green-100 px-4 py-3 text-[14px] leading-[1.5] text-green-700">
           {t('sent')}
         </p>
         <Link
@@ -63,7 +63,7 @@ export function ForgotPasswordForm({ signInHref }: { signInHref: string }) {
       />
       <Button
         type="submit"
-        variant="primary"
+        variant="default"
         size="lg"
         className="!w-full !justify-center"
         disabled={pending}

@@ -4,19 +4,20 @@ import * as React from 'react'
 import { useEffect, useMemo, useState, useSyncExternalStore } from 'react'
 import { createPortal } from 'react-dom'
 import QRCode from 'qrcode'
+import { Button } from '@iedora/ui/components/ui/button'
 import {
-  Button,
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogBody,
   DialogFooter,
+} from '@iedora/ui/components/ui/dialog'
+import {
   Field,
   FieldInput,
   FieldLabel,
   FieldHint,
-} from '@iedora/design-system'
+} from '@iedora/ui/components/field'
 import {
   A4_H_MM,
   A4_W_MM,
@@ -111,7 +112,7 @@ export function QrPrintSheetDialog({
           <DialogHeader>
             <DialogTitle className="break-all">Print A4 sheet · {code}</DialogTitle>
           </DialogHeader>
-          <DialogBody>
+          <div>
             <div
               className="grid gap-3 sm:grid-cols-3"
               data-test-id="qr-print-sheet-controls"
@@ -170,15 +171,14 @@ export function QrPrintSheetDialog({
               onAutoFit={handleAutoFit}
               autoFitDisabled={!svgMarkup}
             />
-          </DialogBody>
+          </div>
           <DialogFooter>
             <Button variant="secondary" type="button" onClick={() => onOpenChange(false)}>
               Close
             </Button>
             <Button
-              variant="solid"
+              variant="default"
               type="button"
-              arrow
               disabled={!svgMarkup || grid.total === 0}
               onClick={() => window.print()}
               data-test-id="qr-print-sheet-print"
@@ -240,7 +240,7 @@ function PrintSheetSummary({
           </p>
         )}
         {grid.total === 0 && (
-          <p className="mt-1 text-xs text-[var(--cinnabar)]">
+          <p className="mt-1 text-xs text-primary">
             Reduce QR size or gutter — nothing fits at these values.
           </p>
         )}

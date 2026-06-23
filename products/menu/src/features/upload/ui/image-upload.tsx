@@ -1,7 +1,7 @@
 'use client'
 
 import { useRef, useState, useTransition } from 'react'
-import { Button } from '@iedora/design-system'
+import { Button } from '@iedora/ui/components/ui/button'
 import { commitAsset, clearAsset, requestUploadUrl } from '../actions'
 import { TARGET_CONSTRAINTS } from '../targets'
 import type { AssetTarget } from '../types'

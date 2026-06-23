@@ -1,6 +1,8 @@
 import { type Kysely, type Selectable, sql } from "kysely";
+import { HTTPException } from "hono/http-exception";
 
 import type { AuthDB } from "../schema";
+import { isUniqueViolation } from "../errors";
 
 export type User = Selectable<AuthDB["users"]>;
 
@@ -26,6 +28,22 @@ export function createUser(
     .values({ email: input.email, password_hash: input.passwordHash, name: input.name ?? null })
     .returningAll()
     .executeTakeFirstOrThrow();
+}
+
+/** The one "create a user" entry point: createUser with a duplicate-email unique
+ *  violation mapped to a clean 409. Shared by register + ownership transfer so
+ *  the conflict handling lives in a single place. Hash the password BEFORE the
+ *  caller's tx (argon2 is expensive) and pass it in. */
+export async function createUserOr409(
+  db: Kysely<AuthDB>,
+  input: { email: string; passwordHash: string; name?: string | null },
+): Promise<User> {
+  try {
+    return await createUser(db, input);
+  } catch (err) {
+    if (isUniqueViolation(err)) throw new HTTPException(409, { message: "email already registered" });
+    throw err;
+  }
 }
 
 /** Sets a user's global role (e.g. "admin"). Used by the admin-email hook. */

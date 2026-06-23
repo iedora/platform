@@ -2,8 +2,8 @@
 
 import { useState, useTransition } from 'react'
 import { useTranslations } from 'next-intl'
+import { Button } from '@iedora/ui/components/ui/button'
 import {
-  Button,
   Dialog,
   DialogContent,
   DialogDescription,
@@ -11,12 +11,14 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+} from '@iedora/ui/components/ui/dialog'
+import {
   Field,
   FieldError,
   FieldHint,
   FieldInput,
   FieldLabel,
-} from '@iedora/design-system'
+} from '@iedora/ui/components/field'
 import { createMenu } from '../actions'
 
 export function CreateMenuDialog({ slug }: { slug: string }) {
@@ -42,11 +44,12 @@ export function CreateMenuDialog({ slug }: { slug: string }) {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="solid">{t('newMenu')}</Button>
-      </DialogTrigger>
-      <DialogContent eyebrow="Menu · New">
+      <DialogTrigger render={<Button variant="default">{t('newMenu')}</Button>} />
+      <DialogContent>
         <DialogHeader>
+          <p className="text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">
+            Menu · New
+          </p>
           <DialogTitle>{t('newMenu')}</DialogTitle>
           <DialogDescription>
             Group categories under a name like &quot;Lunch&quot; or &quot;Dinner&quot;.
@@ -71,7 +74,7 @@ export function CreateMenuDialog({ slug }: { slug: string }) {
             {error && <FieldError id="menu-name-msg">{error}</FieldError>}
           </Field>
           <DialogFooter>
-            <Button type="submit" variant="solid" disabled={pending}>
+            <Button type="submit" variant="default" disabled={pending}>
               {pending ? tc('saving') : tc('save')}
             </Button>
           </DialogFooter>

@@ -3,18 +3,19 @@
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
+import { Badge } from '@iedora/ui/components/ui/badge'
+import { Button } from '@iedora/ui/components/ui/button'
+import { Card } from '@iedora/ui/components/ui/card'
+import { Checkbox } from '@iedora/ui/components/ui/checkbox'
+import { Combobox } from '@iedora/ui/components/combobox'
 import {
-  Badge,
-  Button,
-  Checkbox,
-  Combobox,
   Field,
   FieldHint,
   FieldInput,
   FieldLabel,
   FieldTextarea,
-  SectionHeader,
-} from '@iedora/design-system'
+} from '@iedora/ui/components/field'
+import { SectionHeader } from '@iedora/ui/components/section-header'
 import { ImageUpload } from '../../upload/ui/image-upload'
 import { LocalizedFields } from '../../i18n/ui/localized-fields'
 import { MenuRenderer } from '../../menu-publishing/rsc/menu-renderer'
@@ -87,7 +88,10 @@ export function ThemeEditor({
     // bookmark to the old URL and the operator rarely needs it.
     <div className="grid gap-6 lg:grid-cols-[minmax(0,420px)_minmax(0,1fr)]">
       <div className="order-2 space-y-4 lg:order-none">
-        <div className="settings-card" data-test-id="settings-card-identity">
+        <Card
+          className="block rounded-lg px-[18px] pt-[18px] pb-4 sm:px-[22px] sm:pt-5 sm:pb-[18px]"
+          data-test-id="settings-card-identity"
+        >
           <IdentitySection
             slug={slug}
             defaultLanguage={initialLanguageSettings.defaultLanguage}
@@ -97,15 +101,21 @@ export function ThemeEditor({
             onChange={setIdentity}
             onSaved={() => router.refresh()}
           />
-        </div>
-        <div className="settings-card" data-test-id="settings-card-languages">
+        </Card>
+        <Card
+          className="block rounded-lg px-[18px] pt-[18px] pb-4 sm:px-[22px] sm:pt-5 sm:pb-[18px]"
+          data-test-id="settings-card-languages"
+        >
           <LanguagesSection
             slug={slug}
             initial={initialLanguageSettings}
             onSaved={() => router.refresh()}
           />
-        </div>
-        <div className="settings-card" data-test-id="settings-card-theme">
+        </Card>
+        <Card
+          className="block rounded-lg px-[18px] pt-[18px] pb-4 sm:px-[22px] sm:pt-5 sm:pb-[18px]"
+          data-test-id="settings-card-theme"
+        >
           <ThemeSection
             slug={slug}
             initial={initialTheme}
@@ -113,10 +123,13 @@ export function ThemeEditor({
             onChange={setTheme}
             onSaved={() => router.refresh()}
           />
-        </div>
-        <div className="settings-card" data-test-id="settings-card-url">
+        </Card>
+        <Card
+          className="block rounded-lg px-[18px] pt-[18px] pb-4 sm:px-[22px] sm:pt-5 sm:pb-[18px]"
+          data-test-id="settings-card-url"
+        >
           <SlugSection currentSlug={slug} urlPrefix={urlPrefix} />
-        </div>
+        </Card>
       </div>
 
       <div className="order-1 lg:order-none lg:sticky lg:top-6 lg:h-fit">
@@ -243,27 +256,27 @@ function LanguagesSection({
               className={
                 'flex min-h-11 min-w-0 items-center gap-3 rounded-[12px] border px-3 py-2 ' +
                 (isSupported
-                  ? 'border-primary bg-[var(--cinnabar-soft)]'
+                  ? 'border-primary bg-primary/5'
                   : 'border-border bg-card')
               }
             >
-              <Checkbox
-                checked={isSupported}
-                onChange={() => toggle(lang.code)}
-                disabled={isDefault}
-                data-test-id={`lang-supported-${lang.code}`}
-                className="min-w-0 flex-1"
-              >
+              <label className="flex min-w-0 flex-1 items-center gap-3">
+                <Checkbox
+                  checked={isSupported}
+                  onCheckedChange={() => toggle(lang.code)}
+                  disabled={isDefault}
+                  data-test-id={`lang-supported-${lang.code}`}
+                />
                 <span className="min-w-0">
                   <span className="truncate">{lang.name}</span>
-                  <span className="ml-2 text-[10.5px] uppercase tracking-[0.16em] text-[var(--muted-foreground)]">
+                  <span className="ml-2 text-[10.5px] uppercase tracking-[0.16em] text-muted-foreground">
                     {lang.nativeName}
                   </span>
                 </span>
-              </Checkbox>
+              </label>
               {isDefault ? (
                 <Badge
-                  variant="ink"
+                  variant="default"
                   data-test-id={`lang-default-${lang.code}`}
                 >
                   {t('default')}
@@ -287,17 +300,17 @@ function LanguagesSection({
       <div className="flex flex-wrap items-center gap-3 pt-1">
         <Button
           type="submit"
-          variant="solid"
+          variant="default"
           disabled={!dirty || pending}
           data-test-id="languages-save"
         >
           {pending ? tc('saving') : t('save')}
         </Button>
         {saved && !dirty && (
-          <span className="text-sm text-[var(--muted-foreground)]">{t('saved')}</span>
+          <span className="text-sm text-muted-foreground">{t('saved')}</span>
         )}
         {error && (
-          <span className="text-sm text-[var(--cinnabar)]">{error}</span>
+          <span className="text-sm text-destructive">{error}</span>
         )}
       </div>
     </form>
@@ -454,7 +467,7 @@ function IdentitySection({
       <div className="flex items-center gap-3 pt-1">
         <Button
           type="submit"
-          variant="solid"
+          variant="default"
           disabled={!dirty || !nameValid || pending}
           data-test-id="identity-save"
         >
@@ -547,7 +560,7 @@ function SlugSection({ currentSlug, urlPrefix }: { currentSlug: string; urlPrefi
       </Field>
 
       {dirty && (
-        <p className="text-xs text-[var(--cinnabar)]" role="status">
+        <p className="text-xs text-primary" role="status">
           {t('warning')}
         </p>
       )}
@@ -555,7 +568,7 @@ function SlugSection({ currentSlug, urlPrefix }: { currentSlug: string; urlPrefi
       <div className="flex items-center gap-3 pt-1">
         <Button
           type="submit"
-          variant="solid"
+          variant="default"
           disabled={!dirty || !looksValid || pending}
           data-test-id="slug-save"
         >
@@ -634,7 +647,7 @@ function ThemeSection({
       <SectionHeader title={t('title')} hint={t('subtitle')} />
 
       <fieldset className="space-y-2">
-        <legend className="ds-field__label">{t('layout')}</legend>
+        <legend className="mb-1.5 text-sm font-medium text-foreground">{t('layout')}</legend>
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
           {LAYOUTS.map((l) => {
             const selected = value.layout === l.id
@@ -648,14 +661,14 @@ function ThemeSection({
                 className={
                   'min-h-[72px] rounded-[12px] border p-3 text-left transition-colors ' +
                   (selected
-                    ? 'border-primary bg-[var(--cinnabar-soft)]'
-                    : 'border-border bg-card hover:border-[color-mix(in_srgb,var(--cinnabar)_40%,transparent)]')
+                    ? 'border-primary bg-primary/5'
+                    : 'border-border bg-card hover:border-primary/40')
                 }
               >
                 <div className="font-[family-name:var(--display)] text-base font-semibold">
                   {l.name}
                 </div>
-                <div className="mt-1 text-xs text-[var(--muted-foreground)]">
+                <div className="mt-1 text-xs text-muted-foreground">
                   {l.description}
                 </div>
               </button>
@@ -699,7 +712,7 @@ function ThemeSection({
       <div className="flex flex-wrap items-center gap-3 pt-1">
         <Button
           type="submit"
-          variant="solid"
+          variant="default"
           disabled={!canSave}
           data-test-id="theme-save"
         >
@@ -718,10 +731,10 @@ function ThemeSection({
           {t('reset')}
         </Button>
         {saved && !dirty && (
-          <span className="text-sm text-[var(--muted-foreground)]">{t('saved')}</span>
+          <span className="text-sm text-muted-foreground">{t('saved')}</span>
         )}
         {error && (
-          <span className="text-sm text-[var(--cinnabar)]">{error}</span>
+          <span className="text-sm text-destructive">{error}</span>
         )}
       </div>
     </form>
@@ -767,8 +780,8 @@ function ColorField({
           id={`${id}-hex`}
           data-test-id={`${id}-hex`}
           className={
-            'ds-input ds-input--compact min-w-0 flex-1 font-[family-name:var(--mono)] uppercase ' +
-            (valid ? '' : 'ds-input--error')
+            'h-9 min-w-0 flex-1 rounded-md border bg-transparent px-3 font-mono text-sm uppercase outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 ' +
+            (valid ? 'border-input focus-visible:border-ring' : 'border-destructive')
           }
           value={value}
           onChange={(e) => onChange(e.target.value)}
@@ -780,7 +793,7 @@ function ColorField({
       </div>
       <FieldHint
         id={`${id}-hex-hint`}
-        className={valid ? undefined : 'text-[var(--cinnabar)]'}
+        className={valid ? undefined : 'text-destructive'}
       >
         {hint}
       </FieldHint>

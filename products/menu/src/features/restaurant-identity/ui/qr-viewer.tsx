@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import QRCode from 'qrcode'
 import { useTranslations } from 'next-intl'
-import { Button } from '@iedora/design-system'
+import { Button } from '@iedora/ui/components/ui/button'
 
 // Render size in CSS pixels for the on-screen preview. PNG export uses a
 // higher pixel multiplier so prints stay sharp.
@@ -91,7 +91,7 @@ export function QrViewer({
           />
         )}
         <div className="space-y-1 text-center">
-          <p className="font-[family-name:var(--display)] text-base font-semibold text-[var(--foreground)]">
+          <p className="font-heading text-base font-semibold text-[var(--foreground)]">
             {restaurantName}
           </p>
           <p className="text-[10.5px] uppercase tracking-[0.18em] text-[var(--muted-foreground)]">
@@ -113,7 +113,7 @@ export function QrViewer({
       {error && (
         <p
           data-test-id="qr-error"
-          className="text-sm text-[var(--cinnabar)]"
+          className="text-sm text-primary"
         >
           {error}
         </p>
@@ -142,7 +142,7 @@ export function QrViewer({
         </Button>
         <Button
           type="button"
-          variant="solid"
+          variant="default"
           onClick={printQr}
           data-test-id="qr-print"
           className="w-full sm:w-auto"

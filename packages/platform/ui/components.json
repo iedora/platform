@@ -1,0 +1,21 @@
+{
+  "$schema": "https://ui.shadcn.com/schema.json",
+  "style": "base-sera",
+  "rsc": true,
+  "tsx": true,
+  "tailwind": {
+    "config": "",
+    "css": "src/styles.css",
+    "baseColor": "neutral",
+    "cssVariables": true,
+    "prefix": ""
+  },
+  "iconLibrary": "phosphor",
+  "aliases": {
+    "components": "@iedora/ui/components",
+    "ui": "@iedora/ui/components/ui",
+    "utils": "@iedora/ui/lib/utils",
+    "lib": "@iedora/ui/lib",
+    "hooks": "@iedora/ui/hooks"
+  }
+}

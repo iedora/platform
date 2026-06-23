@@ -36,7 +36,7 @@ export function AdminCard({
   return (
     <section className={CARD} {...rest}>
       <header className="flex items-center justify-between border-b border-border px-[18px] py-[14px]">
-        <h2 className="font-[family-name:var(--display)] text-[16px] font-bold text-foreground">{title}</h2>
+        <h2 className="font-heading text-[16px] font-bold text-foreground">{title}</h2>
         {action && (
           <Link href={action.href} className="text-[13px] font-semibold text-primary">
             {action.label}
@@ -66,7 +66,7 @@ export function SideCard({
   return (
     <section className={`${CARD} p-[18px]`} {...rest}>
       <div className="flex items-center justify-between gap-3">
-        <h2 className="font-[family-name:var(--display)] text-[16px] font-bold text-foreground">{title}</h2>
+        <h2 className="font-heading text-[16px] font-bold text-foreground">{title}</h2>
         {action && (
           <Link
             href={action.href}
@@ -95,7 +95,7 @@ export function EntityRow({
 }) {
   return (
     <div className="flex items-center gap-3">
-      <span className="grid size-9 shrink-0 place-items-center rounded-[10px] bg-[var(--cinnabar-soft)] font-[family-name:var(--display)] text-[14px] font-bold text-primary">
+      <span className="grid size-9 shrink-0 place-items-center rounded-[10px] bg-primary/10 font-heading text-[14px] font-bold text-primary">
         {initials}
       </span>
       <div className="min-w-0">
@@ -128,7 +128,7 @@ export function Metric({ label, value }: { label: string; value: string }) {
   return (
     <div className={`${CARD} p-[18px]`}>
       <p className="text-[13px] text-muted-foreground">{label}</p>
-      <p className="mt-1 font-[family-name:var(--display)] text-[26px] font-extrabold tracking-[-0.5px] text-foreground">
+      <p className="mt-1 font-heading text-[26px] font-extrabold tracking-[-0.5px] text-foreground">
         {value}
       </p>
     </div>
@@ -161,16 +161,12 @@ export function AdminButton({
 export function StatusPill({ live, label }: { live: boolean; label: string }) {
   return (
     <span
-      className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[12px] font-semibold"
-      style={
-        live
-          ? { color: 'var(--green)', background: 'color-mix(in srgb, var(--green) 12%, transparent)' }
-          : undefined
-      }
+      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[12px] font-semibold ${
+        live ? 'bg-green-100 text-green-700' : ''
+      }`}
     >
       <span
-        className="size-1.5 rounded-full"
-        style={{ background: live ? 'var(--green)' : 'var(--muted-foreground)' }}
+        className={`size-1.5 rounded-full ${live ? 'bg-green-600' : 'bg-muted-foreground'}`}
         aria-hidden="true"
       />
       <span className={live ? '' : 'text-muted-foreground'}>{label}</span>
@@ -243,8 +239,7 @@ export async function InvoiceList({
               {formatMoney(inv.amountCents, inv.currency)}
             </span>
             <span
-              className="rounded-full px-2.5 py-0.5 text-[12px] font-semibold capitalize"
-              style={invoiceStyle(inv.status)}
+              className={`rounded-full px-2.5 py-0.5 text-[12px] font-semibold capitalize ${invoiceClass(inv.status)}`}
             >
               {inv.status}
             </span>
@@ -255,12 +250,10 @@ export async function InvoiceList({
   )
 }
 
-function invoiceStyle(status: string): { color: string; background: string } {
-  if (status === 'paid')
-    return { color: 'var(--green)', background: 'color-mix(in srgb, var(--green) 12%, transparent)' }
-  if (status === 'void')
-    return { color: 'var(--danger)', background: 'color-mix(in srgb, var(--danger) 12%, transparent)' }
-  return { color: 'var(--muted-foreground)', background: 'var(--muted)' }
+function invoiceClass(status: string): string {
+  if (status === 'paid') return 'bg-green-100 text-green-700'
+  if (status === 'void') return 'bg-destructive/10 text-destructive'
+  return 'bg-muted text-muted-foreground'
 }
 
 export function formatDate(iso: string): string {

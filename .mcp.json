@@ -1,28 +1,11 @@
 {
   "mcpServers": {
     "shadcn": {
-      "command": "bunx",
-      "args": ["-y", "shadcn@latest", "mcp"]
-    },
-    "postgres": {
-      "command": "bunx",
+      "command": "npx",
       "args": [
-        "-y",
-        "@modelcontextprotocol/server-postgres",
-        "postgresql://iedora:iedora@localhost:55432/menu"
+        "shadcn@latest",
+        "mcp"
       ]
-    },
-    "bun": {
-      "command": "bunx",
-      "args": ["-y", "mcp-bun@latest"]
-    },
-    "next-devtools": {
-      "command": "bunx",
-      "args": ["-y", "next-devtools-mcp@latest"]
-    },
-    "playwright": {
-      "command": "bunx",
-      "args": ["-y", "@playwright/mcp@latest"]
-    },
+    }
   }
 }

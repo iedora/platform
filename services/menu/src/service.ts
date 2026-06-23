@@ -1,4 +1,4 @@
-import type { LocalizedText } from "@iedora/contracts";
+import type { LocalizedText, StaffTransferOwnership } from "@iedora/contracts";
 import { sql } from "kysely";
 
 import * as builder from "./data/builder";
@@ -9,11 +9,13 @@ import {
   createRestaurant as createRestaurantRow,
   deleteRestaurant as deleteRestaurantRow,
   renameSlug as renameSlugRow,
+  setRestaurantTenant,
   updateIdentityRow,
 } from "./data/restaurants.write";
+import { restaurantById, restaurantBySlug } from "./data/restaurants";
 import type { MenuDeps } from "./deps";
 import type { Restaurant, Variant } from "./domain";
-import { invalid } from "./errors";
+import { invalid, notFound } from "./errors";
 import { Languages } from "./i18n";
 import { numbered, slugify, validSlug } from "./slug";
 import {
@@ -36,7 +38,7 @@ async function record(
   deps: MenuDeps,
   actorId: string,
   action: string,
-  r: { id: string; tenantId: string; slug: string },
+  r: { id: string; tenantId: string; slug: string; name: string },
 ): Promise<void> {
   await deps.auditor.record({
     action,
@@ -44,7 +46,7 @@ async function record(
     tenantId: r.tenantId,
     targetType: "restaurant",
     targetId: r.id,
-    meta: { slug: r.slug },
+    meta: { slug: r.slug, name: r.name },
   });
 }
 
@@ -59,13 +61,17 @@ export async function createRestaurant(
   name: string,
   defaultLanguage: string,
   supportedLanguages?: string[],
+  slugBase?: string,
 ): Promise<Restaurant> {
   name = trimmed("name", name, MAX_SHORT_NAME);
   if (defaultLanguage === "") defaultLanguage = Languages[0];
   // The default is always part of the supported set (dedup, default first).
   const supported = Array.from(new Set([defaultLanguage, ...(supportedLanguages ?? [])]));
   validLanguages(defaultLanguage, supported);
-  const base = slugify(name) || "restaurant";
+  // A custom slug overrides the name-derived one; it's slugified the same way
+  // (so it matches previewSlug) and is still the BASE — numbered (base-2, …) if
+  // the slug is already taken.
+  const base = (slugBase ? slugify(slugBase) : "") || slugify(name) || "restaurant";
 
   let created: Restaurant | undefined;
   await deps.db.runInTx(async () => {
@@ -73,39 +79,129 @@ export async function createRestaurant(
     await deps.plans.canAddRestaurant(tenantId);
     for (let n = 1; n <= 50; n++) {
       const slug = numbered(base, n);
-      try {
-        const id = await createRestaurantRow(deps.db.db, {
-          tenantId,
-          name,
-          slug,
-          defaultLanguage,
-          supportedLanguages: supported,
-        });
-        created = {
-          id,
-          tenantId,
-          name,
-          slug,
-          description: "",
-          descriptionI18n: null,
-          logoUrl: "",
-          bannerUrl: "",
-          theme: null,
-          defaultLanguage,
-          supportedLanguages: supported,
-          onboardingCompletedAt: null,
-          updatedAt: new Date(),
-        };
-        return;
-      } catch (err) {
-        if ((err as { status?: number })?.status === 409) continue; // slugTaken → next candidate
-        throw err;
-      }
+      // ON CONFLICT returns undefined when the slug is taken — no raised unique
+      // violation, so the tx is NOT aborted and we can try the next candidate.
+      const id = await createRestaurantRow(deps.db.db, {
+        tenantId,
+        name,
+        slug,
+        defaultLanguage,
+        supportedLanguages: supported,
+      });
+      if (id === undefined) continue; // slug taken → next numbered candidate
+      created = {
+        id,
+        tenantId,
+        name,
+        slug,
+        description: "",
+        descriptionI18n: null,
+        logoUrl: "",
+        bannerUrl: "",
+        theme: null,
+        defaultLanguage,
+        supportedLanguages: supported,
+        onboardingCompletedAt: null,
+        updatedAt: new Date(),
+      };
+      // Transactional outbox: enqueue the audit event in the SAME tx as the row
+      // insert (recordSync), so the "restaurant created" entry can't be lost or
+      // exist without the restaurant. The relay ships it to the audit service.
+      await deps.auditor.recordSync({
+        action: "menu.restaurant.created",
+        actor: { type: "user", id: actorId },
+        tenantId: created.tenantId,
+        targetType: "restaurant",
+        targetId: created.id,
+        meta: { slug: created.slug, name: created.name, defaultLanguage: created.defaultLanguage },
+      });
+      return;
     }
     throw invalid(`could not allocate a slug for "${base}"`);
   });
-  await record(deps, actorId, "menu.restaurant.created", created!);
   return created!;
+}
+
+// previewSlug resolves the slug a create would actually assign for a desired
+// base: the base itself if free, else the next numbered candidate. Advisory
+// only (the unique index is the real guard), so a slug can still be claimed
+// between preview and insert — the create path numbers it then anyway.
+export async function previewSlug(
+  deps: MenuDeps,
+  desired: string,
+): Promise<{ valid: boolean; slug: string; available: boolean }> {
+  const base = slugify(desired);
+  if (!validSlug(base)) return { valid: false, slug: base, available: false };
+  for (let n = 1; n <= 50; n++) {
+    const slug = numbered(base, n);
+    if (!(await restaurantBySlug(deps.db.db, slug))) {
+      return { valid: true, slug, available: n === 1 };
+    }
+  }
+  return { valid: true, slug: base, available: false };
+}
+
+// transferRestaurant moves a restaurant's ownership. "existing": re-parent ONLY
+// this restaurant into the target tenant, plan-gated on that target. "new":
+// create a user and hand them the whole current tenant (auth side) — the
+// restaurant stays put but its tenant's owner changes. Either way it emits an
+// audit event ON THE RESTAURANT so the transfer shows in its audit log.
+export async function transferRestaurant(
+  deps: MenuDeps,
+  id: string,
+  actorId: string,
+  input: StaffTransferOwnership,
+): Promise<void> {
+  const r = await restaurantById(deps.db.db, id);
+  if (!r) throw notFound();
+
+  if (input.mode === "existing") {
+    if (input.tenantId === r.tenantId) throw invalid("the restaurant already belongs to that tenant");
+    await deps.db.runInTx(async () => {
+      // Plan gate on the TARGET tenant (On Us holds 1 restaurant; full → needs Kasa).
+      await deps.plans.canAddRestaurant(input.tenantId);
+      await setRestaurantTenant(deps.db.db, id, input.tenantId);
+      await deps.auditor.recordSync({
+        action: "menu.restaurant.owner_transferred",
+        actor: { type: "user", id: actorId },
+        tenantId: input.tenantId,
+        targetType: "restaurant",
+        targetId: r.id,
+        meta: { slug: r.slug, name: r.name, fromTenant: r.tenantId, toTenant: input.tenantId, mode: "existing" },
+      });
+    });
+    return;
+  }
+
+  // "new": auth creates the user + swaps the current tenant's owner. The
+  // restaurant's tenant_id is unchanged; the tenant simply gets a new owner.
+  const { ownerId } = await deps.tenant.transferToNewOwner(r.tenantId, {
+    email: input.email,
+    name: input.name,
+    password: input.password,
+  });
+  await deps.auditor.record({
+    action: "menu.restaurant.owner_transferred",
+    actor: { type: "user", id: actorId },
+    tenantId: r.tenantId,
+    targetType: "restaurant",
+    targetId: r.id,
+    meta: { slug: r.slug, name: r.name, newOwnerEmail: input.email, newOwnerId: ownerId, mode: "new" },
+  });
+}
+
+// transferEligibility: can the target tenant receive another restaurant under
+// its plan? Advisory (the transfer re-checks) — powers the picker's availability.
+export async function transferEligibility(
+  deps: MenuDeps,
+  targetTenantId: string,
+): Promise<{ eligible: boolean }> {
+  try {
+    await deps.plans.canAddRestaurant(targetTenantId);
+    return { eligible: true };
+  } catch {
+    return { eligible: false };
+  }
 }
 
 export interface IdentityPatch {

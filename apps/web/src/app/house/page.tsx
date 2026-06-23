@@ -2,15 +2,17 @@ import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
 import { getLocale, getTranslations } from 'next-intl/server'
 import {
-  ArrowRight,
-  Blocks,
-  Check,
-  Compass,
-  GraduationCap,
-  Package,
-  Sparkles,
-  UtensilsCrossed,
-} from 'lucide-react'
+  ArrowRightIcon,
+  CheckIcon,
+  CompassIcon,
+  ForkKnifeIcon,
+  GraduationCapIcon,
+  PackageIcon,
+  SparkleIcon,
+  SquaresFourIcon,
+} from '@phosphor-icons/react/ssr'
+import { Button } from '@iedora/ui/components/ui/button'
+import { ThemeToggle } from '../../components/theme-toggle'
 import { BRAND_NAME, CONTACT_EMAIL, PRODUCTS, productUrl } from '@iedora/brand'
 import { LandingLangSwitch } from './lang-switch'
 
@@ -28,10 +30,10 @@ function Brand({ size = 'md' }: { size?: 'md' | 'sm' }) {
   const word = size === 'sm' ? 'text-[19px]' : 'text-[21px]'
   return (
     <span className="inline-flex items-center gap-2.5">
-      <span className={`grid ${sq} place-items-center rounded-[10px] bg-[var(--cinnabar)] text-white`}>
-        <Blocks size={size === 'sm' ? 17 : 18} strokeWidth={2.2} />
+      <span className={`grid ${sq} place-items-center rounded-[10px] bg-primary text-white`}>
+        <SquaresFourIcon size={size === 'sm' ? 17 : 18} />
       </span>
-      <span className={`font-[family-name:var(--display)] ${word} font-extrabold tracking-[-0.02em] text-[var(--ink)]`}>
+      <span className={`font-heading ${word} font-extrabold tracking-[-0.02em] text-foreground`}>
         {BRAND_NAME}
       </span>
     </span>
@@ -41,8 +43,8 @@ function Brand({ size = 'md' }: { size?: 'md' | 'sm' }) {
 /** Eyebrow pill (Pencil "Eyebrow") — cinnabar-soft pill, sparkle + label. */
 function EyebrowPill({ children }: { children: ReactNode }) {
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--cinnabar-soft)] px-3.5 py-1.5 text-[13px] font-semibold text-[var(--cinnabar)]">
-      <Sparkles size={14} strokeWidth={2.4} />
+    <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3.5 py-1.5 text-[13px] font-semibold text-primary">
+      <SparkleIcon size={14} />
       {children}
     </span>
   )
@@ -51,7 +53,7 @@ function EyebrowPill({ children }: { children: ReactNode }) {
 /** Plain uppercase section label (the section heads, not the hero pill). */
 function Eyebrow({ children }: { children: ReactNode }) {
   return (
-    <p className="font-[family-name:var(--sans)] text-[13px] font-bold uppercase tracking-[0.14em] text-[var(--cinnabar)]">
+    <p className="text-[13px] font-bold uppercase tracking-[0.14em] text-primary">
       {children}
     </p>
   )
@@ -59,18 +61,19 @@ function Eyebrow({ children }: { children: ReactNode }) {
 
 function PrimaryButton({ href, children }: { href: string; children: ReactNode }) {
   return (
-    <a
-      href={href}
-      className="inline-flex items-center gap-2 rounded-full bg-[var(--cinnabar)] px-6 py-3 font-[family-name:var(--display)] text-[15px] font-bold text-white no-underline transition-colors hover:bg-[var(--cinnabar-deep)]"
+    <Button
+      render={<a href={href} />}
+      nativeButton={false}
+      className="h-auto gap-2 rounded-full bg-primary px-6 py-3 font-heading text-[15px] font-bold normal-case tracking-normal text-white no-underline transition-colors hover:bg-primary/90"
     >
       {children}
-    </a>
+    </Button>
   )
 }
 
 function LivePill() {
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--green-soft)] px-2.5 py-1 text-[12px] font-semibold text-[var(--green)]">
+    <span className="inline-flex items-center gap-1.5 rounded-full bg-green-600/10 px-2.5 py-1 text-[12px] font-semibold text-green-600">
       <span className="size-1.5 rounded-full bg-current" aria-hidden="true" />
       Live
     </span>
@@ -83,9 +86,9 @@ export default async function HouseLanding() {
   const menuHost = menuUrl.replace(/^https?:\/\//, '').replace(/\/$/, '')
 
   const services = [
-    { icon: Compass, title: t('service1Title'), desc: t('service1Desc') },
-    { icon: GraduationCap, title: t('service2Title'), desc: t('service2Desc') },
-    { icon: Package, title: t('service3Title'), desc: t('service3Desc') },
+    { icon: CompassIcon, title: t('service1Title'), desc: t('service1Desc') },
+    { icon: GraduationCapIcon, title: t('service2Title'), desc: t('service2Desc') },
+    { icon: PackageIcon, title: t('service3Title'), desc: t('service3Desc') },
   ]
   const steps = [
     { n: '01', title: t('step1Title'), desc: t('step1Desc') },
@@ -94,15 +97,15 @@ export default async function HouseLanding() {
   ]
 
   return (
-    <div className="min-h-screen bg-[var(--paper)] text-[var(--ink)] [font-family:var(--sans)]">
+    <div className="min-h-screen bg-background text-foreground">
       {/* ── Announce ── */}
-      <div className="flex items-center justify-center gap-2 bg-[var(--cinnabar)] px-4 py-2.5 text-center text-white">
-        <Sparkles size={14} strokeWidth={2.4} className="shrink-0" />
+      <div className="flex items-center justify-center gap-2 bg-primary px-4 py-2.5 text-center text-white">
+        <SparkleIcon size={14} className="shrink-0" />
         <span className="text-[13px] font-semibold sm:text-[14px]">{t('announce')}</span>
       </div>
 
       {/* ── Nav ── */}
-      <header className="sticky top-0 z-30 border-b border-[var(--rule)] bg-[color-mix(in_srgb,var(--paper)_88%,transparent)] backdrop-blur">
+      <header className="sticky top-0 z-30 border-b border-border bg-background/90 backdrop-blur">
         <nav className="mx-auto flex max-w-[1180px] items-center justify-between px-6 py-4 lg:px-10">
           <a href="/house" className="no-underline" aria-label={BRAND_NAME}>
             <Brand />
@@ -118,47 +121,47 @@ export default async function HouseLanding() {
       </header>
 
       {/* ── Hero ── */}
-      <section className="bg-[var(--paper)]" data-test-id="house-hero">
+      <section className="bg-background" data-test-id="house-hero">
         <div className="mx-auto flex max-w-[1180px] flex-col items-center px-6 pb-12 pt-16 text-center lg:px-10 lg:pb-16 lg:pt-24">
           <EyebrowPill>{t('heroEyebrow')}</EyebrowPill>
-          <h1 className="mt-4 max-w-[760px] font-[family-name:var(--display)] text-[40px] font-extrabold leading-[1.05] tracking-[-0.03em] sm:text-[58px]">
+          <h1 className="mt-4 max-w-[760px] font-heading text-[40px] font-extrabold leading-[1.05] tracking-[-0.03em] sm:text-[58px]">
             {t('heroTitle')}
           </h1>
-          <p className="mt-5 max-w-[640px] text-[17px] leading-[1.5] text-[var(--muted-foreground)] sm:text-[19px]">
+          <p className="mt-5 max-w-[640px] text-[17px] leading-[1.5] text-muted-foreground sm:text-[19px]">
             {t('heroSubtitle')}
           </p>
           <div className="mt-7">
             <PrimaryButton href={mailto}>
               {t('heroCta')}
-              <ArrowRight size={17} strokeWidth={2.2} />
+              <ArrowRightIcon size={17} />
             </PrimaryButton>
           </div>
-          <p className="mt-3.5 text-[14px] font-medium text-[var(--muted-foreground)]">{t('heroMicro')}</p>
+          <p className="mt-3.5 text-[14px] font-medium text-muted-foreground">{t('heroMicro')}</p>
 
-          {/* Hero art — cinnabar-soft stage holding a tilted product mockup. */}
-          <div className="mt-12 w-full max-w-[940px] overflow-hidden rounded-[28px] bg-[var(--cinnabar-soft)] px-6 py-12 sm:py-14">
-            <div className="mx-auto w-full max-w-[440px] -rotate-2 rounded-[24px] border border-[var(--rule)] bg-white p-5 shadow-[0_18px_40px_-6px_rgba(31,26,22,0.15)]">
+          {/* Hero art — soft-primary stage holding a tilted product mockup. */}
+          <div className="mt-12 w-full max-w-[940px] overflow-hidden rounded-[28px] bg-primary/10 px-6 py-12 sm:py-14">
+            <div className="mx-auto w-full max-w-[440px] -rotate-2 rounded-[24px] border border-border bg-card p-5 shadow-[0_18px_40px_-6px_rgba(31,26,22,0.15)]">
               <div className="flex items-center justify-between">
                 <span className="inline-flex items-center gap-2.5">
-                  <span className="grid size-8 place-items-center rounded-[10px] bg-[var(--cinnabar)] text-white">
-                    <UtensilsCrossed size={15} strokeWidth={2.2} />
+                  <span className="grid size-8 place-items-center rounded-[10px] bg-primary text-white">
+                    <ForkKnifeIcon size={15} />
                   </span>
-                  <span className="font-[family-name:var(--display)] text-[15px] font-bold text-[var(--ink)]">
+                  <span className="font-heading text-[15px] font-bold text-foreground">
                     iedora · studio
                   </span>
                 </span>
                 <LivePill />
               </div>
               <div className="mt-5 space-y-2.5">
-                <div className="h-3 w-full rounded-full bg-[var(--paper-2)]" />
-                <div className="h-3 w-[70%] rounded-full bg-[var(--paper-2)]" />
-                <div className="h-3 w-1/2 rounded-full bg-[var(--paper-2)]" />
+                <div className="h-3 w-full rounded-full bg-muted" />
+                <div className="h-3 w-[70%] rounded-full bg-muted" />
+                <div className="h-3 w-1/2 rounded-full bg-muted" />
               </div>
               <div className="mt-5 flex items-center gap-2.5">
-                <span className="rounded-full bg-[var(--cinnabar)] px-4 py-2 font-[family-name:var(--display)] text-[14px] font-bold text-white">
+                <span className="rounded-full bg-primary px-4 py-2 font-heading text-[14px] font-bold text-white">
                   Ship it
                 </span>
-                <span className="rounded-full bg-[var(--paper-2)] px-4 py-2 text-[14px] font-semibold text-[var(--muted-foreground)]">
+                <span className="rounded-full bg-muted px-4 py-2 text-[14px] font-semibold text-muted-foreground">
                   Preview
                 </span>
               </div>
@@ -168,17 +171,17 @@ export default async function HouseLanding() {
       </section>
 
       {/* ── Manifesto ── */}
-      <section className="bg-[var(--paper-2)]" data-test-id="house-manifesto">
+      <section className="bg-muted" data-test-id="house-manifesto">
         <div className="mx-auto flex max-w-[1180px] flex-col items-center px-6 py-16 text-center lg:px-10 lg:py-24">
           <Eyebrow>{t('manifestoEyebrow')}</Eyebrow>
-          <h2 className="mt-2 max-w-[760px] font-[family-name:var(--display)] text-[30px] font-extrabold leading-[1.1] tracking-[-0.02em] sm:text-[40px]">
+          <h2 className="mt-2 max-w-[760px] font-heading text-[30px] font-extrabold leading-[1.1] tracking-[-0.02em] sm:text-[40px]">
             {t('manifestoTitle')}
           </h2>
-          <p className="mt-2 text-[16px] text-[var(--muted-foreground)] sm:text-[17px]">{t('manifestoSubtitle')}</p>
+          <p className="mt-2 text-[16px] text-muted-foreground sm:text-[17px]">{t('manifestoSubtitle')}</p>
           <ul className="mt-8 w-full max-w-[680px] space-y-3.5 text-left">
             {['belief1', 'belief2', 'belief3', 'belief4', 'belief5'].map((key) => (
               <li key={key} className="flex items-start gap-3">
-                <Check size={20} strokeWidth={2.4} className="mt-0.5 shrink-0 text-[var(--cinnabar)]" />
+                <CheckIcon size={20} className="mt-0.5 shrink-0 text-primary" />
                 <span className="text-[16px] font-medium leading-[1.4] sm:text-[17px]">{t(key)}</span>
               </li>
             ))}
@@ -187,22 +190,22 @@ export default async function HouseLanding() {
       </section>
 
       {/* ── Services ── */}
-      <section id="house-services" className="scroll-mt-20 bg-[var(--paper)]" data-test-id="house-services">
+      <section id="house-services" className="scroll-mt-20 bg-background" data-test-id="house-services">
         <div className="mx-auto max-w-[1180px] px-6 py-16 lg:px-10 lg:py-24">
           <div className="flex flex-col items-center text-center">
             <Eyebrow>{t('servicesEyebrow')}</Eyebrow>
-            <h2 className="mt-2 max-w-[760px] font-[family-name:var(--display)] text-[30px] font-extrabold leading-[1.1] tracking-[-0.02em] sm:text-[40px]">
+            <h2 className="mt-2 max-w-[760px] font-heading text-[30px] font-extrabold leading-[1.1] tracking-[-0.02em] sm:text-[40px]">
               {t('servicesTitle')}
             </h2>
           </div>
           <div className="mt-10 grid gap-5 sm:grid-cols-3">
             {services.map(({ icon: Icon, title, desc }) => (
-              <div key={title} className="rounded-[18px] border border-[var(--rule)] bg-[var(--card)] p-7">
-                <span className="grid size-12 place-items-center rounded-[10px] bg-[var(--cinnabar-soft)] text-[var(--cinnabar)]">
-                  <Icon size={24} strokeWidth={2.2} />
+              <div key={title} className="rounded-[18px] border border-border bg-card p-7">
+                <span className="grid size-12 place-items-center rounded-[10px] bg-primary/10 text-primary">
+                  <Icon size={24} />
                 </span>
-                <h3 className="mt-4 font-[family-name:var(--display)] text-[19px] font-bold">{title}</h3>
-                <p className="mt-2 text-[15px] leading-[1.5] text-[var(--muted-foreground)]">{desc}</p>
+                <h3 className="mt-4 font-heading text-[19px] font-bold">{title}</h3>
+                <p className="mt-2 text-[15px] leading-[1.5] text-muted-foreground">{desc}</p>
               </div>
             ))}
           </div>
@@ -210,22 +213,22 @@ export default async function HouseLanding() {
       </section>
 
       {/* ── How we work ── */}
-      <section className="bg-[var(--paper-2)]" data-test-id="house-how">
+      <section className="bg-muted" data-test-id="house-how">
         <div className="mx-auto max-w-[1180px] px-6 py-16 lg:px-10 lg:py-24">
           <div className="flex flex-col items-center text-center">
             <Eyebrow>{t('howEyebrow')}</Eyebrow>
-            <h2 className="mt-2 font-[family-name:var(--display)] text-[30px] font-extrabold leading-[1.1] tracking-[-0.02em] sm:text-[40px]">
+            <h2 className="mt-2 font-heading text-[30px] font-extrabold leading-[1.1] tracking-[-0.02em] sm:text-[40px]">
               {t('howTitle')}
             </h2>
           </div>
           <div className="mt-10 grid gap-5 sm:grid-cols-3">
             {steps.map(({ n, title, desc }) => (
               <div key={n}>
-                <span className="grid size-11 place-items-center rounded-full bg-[var(--ink)] font-[family-name:var(--display)] text-[16px] font-bold text-[#FBF6EF]">
+                <span className="grid size-11 place-items-center rounded-full bg-foreground font-heading text-[16px] font-bold text-[#FBF6EF]">
                   {n}
                 </span>
-                <h3 className="mt-3.5 font-[family-name:var(--display)] text-[20px] font-bold">{title}</h3>
-                <p className="mt-2 text-[15px] leading-[1.5] text-[var(--muted-foreground)]">{desc}</p>
+                <h3 className="mt-3.5 font-heading text-[20px] font-bold">{title}</h3>
+                <p className="mt-2 text-[15px] leading-[1.5] text-muted-foreground">{desc}</p>
               </div>
             ))}
           </div>
@@ -233,50 +236,50 @@ export default async function HouseLanding() {
       </section>
 
       {/* ── Products ── */}
-      <section id="house-products" className="scroll-mt-20 bg-[var(--paper)]" data-test-id="house-products">
+      <section id="house-products" className="scroll-mt-20 bg-background" data-test-id="house-products">
         <div className="mx-auto max-w-[1180px] px-6 py-16 lg:px-10 lg:py-24">
           <div className="flex flex-col items-center text-center">
             <Eyebrow>{t('productsEyebrow')}</Eyebrow>
-            <h2 className="mt-2 font-[family-name:var(--display)] text-[30px] font-extrabold leading-[1.1] tracking-[-0.02em] sm:text-[40px]">
+            <h2 className="mt-2 font-heading text-[30px] font-extrabold leading-[1.1] tracking-[-0.02em] sm:text-[40px]">
               {t('productsTitle')}
             </h2>
           </div>
           <div className="mx-auto mt-12 grid max-w-[960px] items-center gap-10 lg:grid-cols-2 lg:gap-14">
             <div>
               <div className="flex items-center gap-3">
-                <h3 className="font-[family-name:var(--display)] text-[28px] font-extrabold tracking-[-0.02em]">{t('menuName')}</h3>
+                <h3 className="font-heading text-[28px] font-extrabold tracking-[-0.02em]">{t('menuName')}</h3>
                 <LivePill />
               </div>
-              <p className="mt-4 text-[16px] leading-[1.5] text-[var(--muted-foreground)] sm:text-[17px]">{t('menuDesc')}</p>
+              <p className="mt-4 text-[16px] leading-[1.5] text-muted-foreground sm:text-[17px]">{t('menuDesc')}</p>
               <a
                 href={menuUrl}
                 rel="noopener"
-                className="mt-4 inline-flex items-center gap-1.5 text-[15px] font-semibold text-[var(--cinnabar)] no-underline"
+                className="mt-4 inline-flex items-center gap-1.5 text-[15px] font-semibold text-primary no-underline"
                 data-test-id="house-product-menu"
               >
                 {menuHost}
-                <ArrowRight size={16} strokeWidth={2.2} />
+                <ArrowRightIcon size={16} />
               </a>
             </div>
             {/* Menu preview mockup */}
-            <div className="mx-auto w-full max-w-[340px] rounded-[24px] border border-[var(--rule)] bg-white p-5 shadow-[0_18px_40px_-10px_rgba(31,26,22,0.15)]">
-              <p className="font-[family-name:var(--display)] text-[17px] font-bold">La Trattoria</p>
-              <p className="text-[12px] uppercase tracking-[0.16em] text-[var(--muted-foreground)]">{t('menuPreviewCat')}</p>
+            <div className="mx-auto w-full max-w-[340px] rounded-[24px] border border-border bg-card p-5 shadow-[0_18px_40px_-10px_rgba(31,26,22,0.15)]">
+              <p className="font-heading text-[17px] font-bold">La Trattoria</p>
+              <p className="text-[12px] uppercase tracking-[0.16em] text-muted-foreground">{t('menuPreviewCat')}</p>
               <div className="mt-4 space-y-3">
                 {[
                   { name: 'Margherita', price: '€9' },
                   { name: 'Tagliatelle al ragù', price: '€14' },
                   { name: 'Tiramisù', price: '€6' },
                 ].map((d) => (
-                  <div key={d.name} className="flex items-center justify-between border-b border-[var(--rule)] pb-3 last:border-b-0 last:pb-0">
+                  <div key={d.name} className="flex items-center justify-between border-b border-border pb-3 last:border-b-0 last:pb-0">
                     <span className="text-[15px] font-medium">{d.name}</span>
-                    <span className="text-[15px] font-semibold tabular-nums text-[var(--muted-foreground)]">{d.price}</span>
+                    <span className="text-[15px] font-semibold tabular-nums text-muted-foreground">{d.price}</span>
                   </div>
                 ))}
               </div>
               <div className="mt-4 flex items-center gap-2">
-                <span className="rounded-full bg-[var(--cinnabar-soft)] px-3 py-1 text-[12px] font-semibold text-[var(--cinnabar)]">{t('menuQrReady')}</span>
-                <span className="rounded-full bg-[var(--paper-2)] px-3 py-1 text-[12px] font-semibold text-[var(--muted-foreground)]">{t('menuLanguages')}</span>
+                <span className="rounded-full bg-primary/10 px-3 py-1 text-[12px] font-semibold text-primary">{t('menuQrReady')}</span>
+                <span className="rounded-full bg-muted px-3 py-1 text-[12px] font-semibold text-muted-foreground">{t('menuLanguages')}</span>
               </div>
             </div>
           </div>
@@ -284,10 +287,10 @@ export default async function HouseLanding() {
       </section>
 
       {/* ── Multilingual (dark) ── */}
-      <section className="bg-[var(--ink)]" data-test-id="house-multilingual">
+      <section className="bg-foreground" data-test-id="house-multilingual">
         <div className="mx-auto max-w-[1180px] px-6 py-16 text-center lg:px-10 lg:py-24">
           <Eyebrow>{t('multilingualEyebrow')}</Eyebrow>
-          <h2 className="mt-2 font-[family-name:var(--display)] text-[30px] font-extrabold leading-[1.1] tracking-[-0.02em] text-[#FBF6EF] sm:text-[40px]">
+          <h2 className="mt-2 font-heading text-[30px] font-extrabold leading-[1.1] tracking-[-0.02em] text-[#FBF6EF] sm:text-[40px]">
             {t('multilingualTitle')}
           </h2>
           <p className="mx-auto mt-4 max-w-[640px] text-[16px] leading-[1.5] text-[#B6A99C] sm:text-[17px]">{t('multilingualSubtitle')}</p>
@@ -302,41 +305,44 @@ export default async function HouseLanding() {
       </section>
 
       {/* ── CTA band ── */}
-      <section className="bg-[var(--cinnabar)]" data-test-id="house-cta">
+      <section className="bg-primary" data-test-id="house-cta">
         <div className="mx-auto flex max-w-[1180px] flex-col items-center px-6 py-20 text-center lg:px-10 lg:py-28">
-          <h2 className="max-w-[760px] font-[family-name:var(--display)] text-[34px] font-extrabold leading-[1.08] tracking-[-0.02em] text-white sm:text-[46px]">
+          <h2 className="max-w-[760px] font-heading text-[34px] font-extrabold leading-[1.08] tracking-[-0.02em] text-white sm:text-[46px]">
             {t('ctaTitle')}
           </h2>
           <p className="mx-auto mt-4 max-w-[600px] text-[16px] leading-[1.5] text-white/90 sm:text-[17px]">{t('ctaSubtitle')}</p>
           <a
             href={mailto}
-            className="mt-7 inline-flex items-center gap-2 rounded-full bg-white px-7 py-3.5 font-[family-name:var(--display)] text-[17px] font-bold text-[var(--cinnabar)] no-underline transition-transform hover:-translate-y-0.5"
+            className="mt-7 inline-flex items-center gap-2 rounded-full bg-white px-7 py-3.5 font-heading text-[17px] font-bold text-primary no-underline transition-transform hover:-translate-y-0.5"
             data-test-id="house-cta-email"
           >
             {CONTACT_EMAIL}
-            <ArrowRight size={17} strokeWidth={2.4} />
+            <ArrowRightIcon size={17} />
           </a>
         </div>
       </section>
 
       {/* ── Footer ── */}
-      <footer className="border-t border-[var(--rule)] bg-[var(--paper)]">
+      <footer className="border-t border-border bg-background">
         <div className="mx-auto max-w-[1180px] px-6 py-12 lg:px-10">
           <div className="flex flex-col items-start justify-between gap-8 sm:flex-row sm:items-center">
             <div className="max-w-[420px]">
               <Brand size="sm" />
-              <p className="mt-3 text-[15px] leading-[1.5] text-[var(--muted-foreground)]">{t('footerTagline')}</p>
+              <p className="mt-3 text-[15px] leading-[1.5] text-muted-foreground">{t('footerTagline')}</p>
             </div>
             <nav className="flex flex-wrap gap-x-7 gap-y-2 text-[15px] font-medium">
-              <a href="#house-services" className="text-[var(--ink)] no-underline hover:text-[var(--cinnabar)]">{t('footerServices')}</a>
-              <a href="#house-products" className="text-[var(--ink)] no-underline hover:text-[var(--cinnabar)]">{t('footerProducts')}</a>
-              <a href={mailto} className="text-[var(--ink)] no-underline hover:text-[var(--cinnabar)]">{t('footerWorkshops')}</a>
-              <a href={mailto} className="text-[var(--ink)] no-underline hover:text-[var(--cinnabar)]">{t('footerContact')}</a>
+              <a href="#house-services" className="text-foreground no-underline hover:text-primary">{t('footerServices')}</a>
+              <a href="#house-products" className="text-foreground no-underline hover:text-primary">{t('footerProducts')}</a>
+              <a href={mailto} className="text-foreground no-underline hover:text-primary">{t('footerWorkshops')}</a>
+              <a href={mailto} className="text-foreground no-underline hover:text-primary">{t('footerContact')}</a>
             </nav>
           </div>
-          <div className="mt-8 flex items-center justify-between border-t border-[var(--rule)] pt-5">
-            <p className="text-[14px] text-[var(--muted-foreground)]">{t('copyright', { year: 2026 })}</p>
-            <LandingLangSwitch locale={locale} />
+          <div className="mt-8 flex items-center justify-between border-t border-border pt-5">
+            <p className="text-[14px] text-muted-foreground">{t('copyright', { year: 2026 })}</p>
+            <div className="flex items-center gap-2">
+              <ThemeToggle />
+              <LandingLangSwitch locale={locale} />
+            </div>
           </div>
         </div>
       </footer>

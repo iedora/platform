@@ -317,6 +317,8 @@ export const staffCreateRestaurant = z
     newTenantName: z.string().trim().min(1).max(120).optional(),
     name: z.string().trim().min(1).max(120),
     defaultLanguage: z.string().trim().min(2).max(10).optional(),
+    // Optional custom slug base; the service still numbers it if it's taken.
+    slug: z.string().trim().toLowerCase().min(2).max(40).optional(),
   })
   .refine((d) => Boolean(d.tenantId) !== Boolean(d.newTenantName), {
     message: "provide exactly one of tenantId or newTenantName",
@@ -371,6 +373,9 @@ export const importPayload = z.object({
     // The languages the menu is offered in. The default is always included even
     // if omitted here. Item translations must use codes from this set.
     supportedLanguages: z.array(z.string().trim().min(2).max(10)).max(20).optional(),
+    // Optional custom slug; the service slugifies it (same as manual mode) and
+    // numbers it if taken. Omit to derive the slug from the name.
+    slug: z.string().trim().toLowerCase().min(2).max(40).optional(),
   }),
   menus: z.array(importMenu).min(1).max(IMPORT_LIMITS.menus),
 });
@@ -383,3 +388,21 @@ export const staffImportRestaurant = z.object({
   payload: importPayload,
 });
 export type StaffImportRestaurant = z.infer<typeof staffImportRestaurant>;
+
+// Transfer a restaurant's ownership. Two modes:
+//  - "existing": move ONLY this restaurant into an existing tenant, plan-gated
+//    on that target (On Us holds 1 restaurant, so a full On-Us tenant can't
+//    receive another — it needs Kasa).
+//  - "new": create a brand-new user with the given password and hand them the
+//    whole CURRENT tenant — it + its restaurants transfer; the user logs in and
+//    skips onboarding. No plan change (the tenant just gets a new owner).
+export const staffTransferOwnership = z.discriminatedUnion("mode", [
+  z.object({ mode: z.literal("existing"), tenantId: z.string().min(1) }),
+  z.object({
+    mode: z.literal("new"),
+    email: z.string().trim().toLowerCase().email(),
+    name: z.string().trim().min(1).max(120),
+    password: z.string().min(12).max(200),
+  }),
+]);
+export type StaffTransferOwnership = z.infer<typeof staffTransferOwnership>;

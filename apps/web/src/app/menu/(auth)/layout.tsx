@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { UtensilsCrossed } from 'lucide-react'
+import { ForkKnifeIcon } from '@phosphor-icons/react/ssr'
 import { getTranslations } from 'next-intl/server'
 import { brandUrl } from '@iedora/brand'
 import { SupportLine } from '../_components/support-line'
@@ -22,7 +22,7 @@ export default async function AuthLayout({
       <div className="mx-auto flex min-h-screen max-w-md flex-col px-5 pb-8 pt-12">
         <Link href={brandUrl()} aria-label="iedora" className="mb-9 flex items-center gap-2 no-underline">
           <span className="grid size-9 place-items-center rounded-lg bg-primary text-white">
-            <UtensilsCrossed size={19} strokeWidth={2.2} />
+            <ForkKnifeIcon size={19} weight="bold" />
           </span>
           <span className="font-[family-name:var(--display)] text-[22px] font-extrabold tracking-[-0.02em] text-foreground">
             iedora

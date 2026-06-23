@@ -2,18 +2,20 @@
 
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
+import { Button } from '@iedora/ui/components/ui/button'
 import {
-  Button,
   Dialog,
   DialogContent,
   DialogFooter,
   DialogHeader,
   DialogTitle,
+} from '@iedora/ui/components/ui/dialog'
+import {
   Field,
   FieldHint,
   FieldInput,
   FieldLabel,
-} from '@iedora/design-system'
+} from '@iedora/ui/components/field'
 import { useTranslations } from 'next-intl'
 import { createItem } from '../actions'
 import {
@@ -134,11 +136,11 @@ export function AddItemDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent
-        eyebrow={categoryName}
-        aria-describedby={undefined}
-      >
+      <DialogContent aria-describedby={undefined}>
         <DialogHeader>
+          <p className="text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">
+            {categoryName}
+          </p>
           <DialogTitle>{t('addItemTitle')}</DialogTitle>
         </DialogHeader>
         <form
@@ -194,7 +196,7 @@ export function AddItemDialog({
             <p
               id={errId}
               role="alert"
-              className="text-sm text-[var(--cinnabar)]"
+              className="text-sm text-primary"
               data-test-id={`menu-add-item-error-${categoryId}`}
             >
               {error}
@@ -212,7 +214,7 @@ export function AddItemDialog({
             </Button>
             <Button
               type="submit"
-              variant="solid"
+              variant="default"
               disabled={pending || name.trim().length === 0}
               data-test-id={`menu-add-item-submit-${categoryId}`}
             >

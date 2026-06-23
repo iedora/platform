@@ -32,7 +32,7 @@ every API call. The browser NEVER calls the services directly.
 - **Backend services** (`services/`) — Bun + Hono, Kysely on Bun's native `SQL`, jose for EdDSA JWTs. Postgres 18, one database per service, migrations owned by each service. See [`services/AGENTS.md`](./services/AGENTS.md).
 - **Next.js 16** (App Router, Turbopack default) — UI only: RSC reads via `serverFetch`, mutations via server actions.
 - **TypeScript** strict, every workspace.
-- **`@iedora/design-system`** + Tailwind v4 — CSS-variable tokens + BEM `.ds-*` React primitives (no shadcn). Warm-light "appetizing" look (off-white paper, **coral `#EF5430` primary**, rounded corners, Plus Jakarta Sans / Inter). Mid-migration from the old editorial look on branch `redesign/pencil-look`. **Design every UI change in the Pencil files (`iedora.pen` / `iedora.lib.pen`) FIRST — see [`CLAUDE.md`](./CLAUDE.md).**
+- **`@iedora/ui`** + Tailwind v4 — shadcn/ui on Base UI primitives (style `base-sera`), phosphor icons. Components at `@iedora/ui/components/ui/*` plus editorial drop-ins (`card`, `combobox`, `field`, `section-header`). **Design every UI change in the Pencil files (`iedora.pen` / `iedora.lib.pen`) FIRST — see [`CLAUDE.md`](./CLAUDE.md).**
 - **@dnd-kit** — menu's drag-and-drop builder.
 - **Bun** — package manager, test runner, dev orchestrator. **Production runtime is Node** — `bun + next build` is unstable as of 2026 (oven-sh/bun#23944).
 - **Deploy** — owned by the `iedora-infra` repo (Docker Swarm + Ansible + OpenTofu). This repo ships images: `apps/web/Dockerfile` (UI) and `services/Dockerfile` (backend services).
@@ -50,7 +50,7 @@ iedora/
   packages/platform/                     Foundation tier — zero product knowledge
     api-client/                          @iedora/api-client — backend HTTP client: cookies, session, serverFetch, middleware refresh
     brand/                               @iedora/brand — brand strings, product registry, URL validators
-    design-system/                       @iedora/design-system — CSS tokens + React primitives
+    ui/                                  @iedora/ui — shadcn/ui on Base UI primitives + phosphor
     eslint-config/                       @iedora/eslint-config — shared ESLint config
     observability/                       @iedora/observability — OTel wiring (Next side)
 
@@ -110,7 +110,7 @@ Reference slices: `features/menu-builder` (read loader + a dozen thin actions), 
 - Files **across** slices import only via the sibling barrel (`@/features/auth`) or the sanctioned subpaths: `actions`, `ui/**`, `rsc/**`. Everything else is slice-private.
 - `src/shared/*` is freely importable — the only horizontal layer (`api.ts`, `url.ts`, `env.ts`, `ui/`).
 - Slices don't call each other's loaders from server code; coordination happens in the action shell or the page component that composes both.
-- **No cross-product imports.** Menu reaches `@iedora/api-client` / `@iedora/design-system`; nothing reaches across products' source trees.
+- **No cross-product imports.** Menu reaches `@iedora/api-client` / `@iedora/ui`; nothing reaches across products' source trees.
 
 ### The Next.js boundary
 
@@ -149,7 +149,7 @@ data-test-id="sessions-revoke-button-{sessionId}"
 
 **Form inputs** with an existing `id` + `htmlFor` pair already have a stable selector — adding `data-test-id` is harmless but optional.
 
-**Design-system primitives** (`@iedora/design-system`) forward `data-test-id` to their root via the standard prop-spread; never re-declare on the consumer.
+**UI primitives** (`@iedora/ui`) forward `data-test-id` to their root via the standard prop-spread; never re-declare on the consumer.
 
 ### 2. Visible UI text goes through translation
 

@@ -4,21 +4,23 @@ import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
+import { Button } from '@iedora/ui/components/ui/button'
+import { Checkbox } from '@iedora/ui/components/ui/checkbox'
 import {
-  Button,
-  Checkbox,
   Dialog,
   DialogContent,
   DialogFooter,
   DialogHeader,
   DialogTitle,
+} from '@iedora/ui/components/ui/dialog'
+import {
   Field,
   FieldHint,
   FieldInput,
   FieldLabel,
   FieldTextarea,
-  SectionHeader,
-} from '@iedora/design-system'
+} from '@iedora/ui/components/field'
+import { SectionHeader } from '@iedora/ui/components/section-header'
 import { useTranslations } from 'next-intl'
 import { formatPrice } from '../../../shared/format'
 import { ImageUpload } from '../../upload/ui/image-upload'
@@ -200,13 +202,13 @@ export function SortableItem({
     >
       <button
         type="button"
-        className="menu-item-row"
+        className="group flex min-h-16 w-full cursor-pointer items-center gap-3 border-0 border-t border-border bg-transparent px-3.5 py-3 text-left text-foreground transition-colors first:border-t-0 hover:bg-muted focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary data-[unavailable=true]:opacity-[0.55]"
         onClick={() => onOpenChange(true)}
         data-test-id={`menu-item-row-${item.id}`}
         data-unavailable={item.available ? 'false' : 'true'}
       >
         <span
-          className="menu-builder-grip"
+          className="inline-flex h-7 w-7 shrink-0 cursor-grab items-center justify-center rounded-md border-0 bg-transparent text-muted-foreground hover:bg-muted hover:text-foreground active:cursor-grabbing"
           aria-label={t('dragItem', { name: item.name })}
           data-test-id={`menu-item-grip-${item.id}`}
           onPointerDown={(e) => e.stopPropagation()}
@@ -222,27 +224,31 @@ export function SortableItem({
             src={item.imageUrl}
             alt=""
             data-testid={`item-thumb-${item.id}`}
-            className="menu-item-row__thumb"
+            className="h-[52px] w-[52px] shrink-0 rounded-md object-cover"
           />
         )}
-        <span className="menu-item-row__body">
-          <span className="menu-item-row__name">{item.name}</span>
+        <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+          <span className="line-clamp-2 overflow-hidden text-ellipsis font-heading text-[15px] font-semibold leading-[1.3] group-data-[unavailable=true]:text-muted-foreground group-data-[unavailable=true]:line-through">
+            {item.name}
+          </span>
           {item.description && (
-            <span className="menu-item-row__desc">{item.description}</span>
+            <span className="overflow-hidden text-ellipsis whitespace-nowrap text-[13px] text-muted-foreground">
+              {item.description}
+            </span>
           )}
           {item.variants.length > 0 && (
             <span
-              className="menu-item-row__variants"
+              className="mt-1 flex flex-wrap gap-1.5"
               data-test-id={`item-variants-${item.id}`}
             >
               {item.variants.map((v, vi) => (
                 <span
                   key={`${v.label}-${vi}`}
-                  className="menu-item-row__variant-pill"
+                  className="inline-flex items-center gap-1 rounded-full border border-border bg-muted px-2 py-0.5 text-[11px] text-muted-foreground"
                 >
                   <span>{v.label}</span>
                   <span aria-hidden="true">·</span>
-                  <span className="num">
+                  <span className="tabular-nums text-foreground">
                     {formatPrice(v.priceCents, item.currency)}
                   </span>
                 </span>
@@ -253,17 +259,18 @@ export function SortableItem({
         <span
           className={
             showPrice
-              ? 'menu-item-row__price'
-              : 'menu-item-row__price menu-item-row__price--zero'
+              ? 'ml-1.5 shrink-0 tabular-nums text-[15px] font-semibold text-foreground'
+              : 'ml-1.5 shrink-0 tabular-nums text-[13px] font-normal italic text-muted-foreground'
           }
         >
           {formattedPrice ?? t('noPrice')}
         </span>
         <span
           className={
-            item.available
-              ? 'menu-item-row__status menu-item-row__status--available'
-              : 'menu-item-row__status menu-item-row__status--hidden'
+            'ml-2 inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold whitespace-nowrap before:h-1.5 before:w-1.5 before:rounded-full before:bg-current before:content-[""] ' +
+            (item.available
+              ? 'text-green-700 bg-green-100'
+              : 'text-muted-foreground bg-muted')
           }
           data-test-id={`menu-item-status-${item.id}`}
         >
@@ -272,11 +279,11 @@ export function SortableItem({
       </button>
 
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent
-          aria-describedby={undefined}
-          eyebrow={t('itemEditEyebrow')}
-        >
+        <DialogContent aria-describedby={undefined}>
           <DialogHeader>
+            <p className="text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">
+              {t('itemEditEyebrow')}
+            </p>
             <DialogTitle>{t('editItem')}</DialogTitle>
           </DialogHeader>
           <form
@@ -351,15 +358,14 @@ export function SortableItem({
                   </FieldHint>
                 </Field>
                 <div className="flex items-end pb-1">
-                  <Checkbox
-                    checked={available}
-                    onChange={(e) =>
-                      setAvailable((e.target as HTMLInputElement).checked)
-                    }
-                    data-test-id={`menu-item-available-${item.id}`}
-                  >
-                    {t('itemAvailable')}
-                  </Checkbox>
+                  <label className="flex items-center gap-2 text-sm">
+                    <Checkbox
+                      checked={available}
+                      onCheckedChange={(checked) => setAvailable(checked)}
+                      data-test-id={`menu-item-available-${item.id}`}
+                    />
+                    <span>{t('itemAvailable')}</span>
+                  </label>
                 </div>
               </div>
               <Field>
@@ -428,7 +434,7 @@ export function SortableItem({
             )}
 
             {/* ─── Part 4 · Danger zone (delete) ────────────────────
-                Quiet by default, cinnabar on confirm. Sits alone at
+                Quiet by default, accented on confirm. Sits alone at
                 the bottom so an accidental tap can't reach it during
                 normal editing. */}
             <section
@@ -436,7 +442,7 @@ export function SortableItem({
               data-test-id={`menu-item-part-danger-${item.id}`}
             >
               {confirmDelete ? (
-                <div className="flex flex-col gap-3 border border-[var(--cinnabar)] p-3">
+                <div className="flex flex-col gap-3 border border-primary p-3">
                   <p className="text-sm">
                     {t('itemDeleteConfirm', { name: item.name })}
                   </p>
@@ -452,7 +458,7 @@ export function SortableItem({
                     </Button>
                     <Button
                       type="button"
-                      variant="danger"
+                      variant="destructive"
                       onClick={doDelete}
                       disabled={pending}
                       data-test-id={`menu-item-delete-confirm-${item.id}`}
@@ -466,7 +472,7 @@ export function SortableItem({
                   type="button"
                   variant="ghost"
                   onClick={() => setConfirmDelete(true)}
-                  className="justify-self-start text-[var(--cinnabar)]"
+                  className="justify-self-start text-primary"
                   data-test-id={`menu-item-delete-${item.id}`}
                 >
                   {t('deleteItem')}
@@ -478,7 +484,7 @@ export function SortableItem({
               <p
                 id={errId}
                 role="alert"
-                className="text-sm text-[var(--cinnabar)]"
+                className="text-sm text-primary"
                 data-test-id={`menu-item-error-${item.id}`}
               >
                 {error}
@@ -497,7 +503,7 @@ export function SortableItem({
               </Button>
               <Button
                 type="submit"
-                variant="solid"
+                variant="default"
                 disabled={pending}
                 data-test-id={`menu-item-save-${item.id}`}
               >

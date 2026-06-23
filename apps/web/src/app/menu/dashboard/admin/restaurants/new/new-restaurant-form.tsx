@@ -5,24 +5,26 @@ import { useRouter } from 'next/navigation'
 import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import { useTranslations } from 'next-intl'
-import { Building2, Check, ChevronLeft, ClipboardCheck, Gift, Plus, Sparkles, Upload, Wand2 } from 'lucide-react'
+import { BuildingsIcon, CheckIcon, CaretLeftIcon, ClipboardTextIcon, GiftIcon, PlusIcon, SparkleIcon, UploadIcon, MagicWandIcon } from '@phosphor-icons/react'
 import {
+  previewSlugAction,
   staffCreateRestaurantAction,
   staffImportRestaurantAction,
 } from '@iedora/product-menu/features/restaurant-identity/actions'
+import { useDebouncedAction } from '../../../../_components/use-debounced-action'
 import { isImportable, validateMenuJson } from './validate-menu-json'
 
 // Warm-light primary button (cinnabar, rounded, inline icon). Used instead of
 // the design-system Button here so it matches the form's surface and an inline
 // leading icon lays out correctly.
 const PRIMARY_BTN =
-  'inline-flex items-center justify-center gap-2 rounded-[12px] bg-primary px-5 py-2.5 text-[14px] font-semibold text-white transition-colors hover:bg-[var(--cinnabar-deep)] disabled:cursor-not-allowed disabled:opacity-50'
+  'inline-flex items-center justify-center gap-2 rounded-[12px] bg-primary px-5 py-2.5 text-[14px] font-semibold text-white transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50'
 
 // CodeMirror needs the DOM — load the editor client-only with a sized fallback
 // so the layout doesn't jump on hydration.
 const JsonMenuEditor = dynamic(() => import('./json-menu-editor').then((m) => m.JsonMenuEditor), {
   ssr: false,
-  loading: () => <div className="h-[340px] rounded-[12px] border border-border bg-[var(--paper-2)]" />,
+  loading: () => <div className="h-[340px] rounded-[12px] border border-border bg-muted" />,
 })
 
 type Tenant = { id: string; name: string; ownerEmail: string }
@@ -32,6 +34,7 @@ type Mode = 'manual' | 'import'
 const JSON_TEMPLATE = `{
   "restaurant": {
     "name": "La Trattoria",
+    "slug": "la-trattoria",
     "defaultLanguage": "en",
     "supportedLanguages": ["en", "pt"]
   },
@@ -60,6 +63,7 @@ Schema:
 {
   "restaurant": {
     "name": "<restaurant name>",
+    "slug": "<optional url slug; omit to derive from the name>",
     "defaultLanguage": "en",
     "supportedLanguages": ["en", "pt"]
   },
@@ -151,8 +155,33 @@ export function NewRestaurantForm({
   const [payloadText, setPayloadText] = useState('')
   const [copied, setCopied] = useState(false)
   const importValidation = useMemo(() => validateMenuJson(payloadText), [payloadText])
+  // The tenant name defaults to the restaurant name. In manual mode that's the
+  // Name field; in import mode the name lives in the pasted JSON
+  // (restaurant.name), so derive it there for the tenant preview + hint.
+  const importRestaurant = useMemo(() => {
+    try {
+      const parsed = JSON.parse(payloadText) as { restaurant?: { name?: unknown; slug?: unknown } }
+      return {
+        name: typeof parsed.restaurant?.name === 'string' ? parsed.restaurant.name : '',
+        slug: typeof parsed.restaurant?.slug === 'string' ? parsed.restaurant.slug : '',
+      }
+    } catch {
+      return { name: '', slug: '' }
+    }
+  }, [payloadText])
+  const tenantDefaultName = mode === 'import' ? importRestaurant.name : name
 
-  const slug = slugPreview(name)
+  // Slug: the manual Name's derived slug until the admin edits it (below Tenant).
+  const [customSlug, setCustomSlug] = useState('')
+  const [slugTouched, setSlugTouched] = useState(false)
+  // Default slug per mode: the manual Name, or the import payload's slug (else
+  // its name). The field below Tenant lets the admin override it either way.
+  const slugDefault =
+    mode === 'import' ? importRestaurant.slug || slugPreview(importRestaurant.name) : slugPreview(name)
+  const slug = slugTouched ? customSlug : slugDefault
+  // Resolves the slug a create would actually assign (debounced), so a collision
+  // or invalid input shows before submit.
+  const slugCheck = useDebouncedAction(slug, previewSlugAction)
   const errorText = error ? t(`errors.${error}`) : null
 
   // In "new tenant" mode the name is OPTIONAL and defaults to the restaurant
@@ -177,8 +206,22 @@ export function NewRestaurantForm({
   }
 
   const onCreate = () =>
-    go(() => staffCreateRestaurantAction({ name: name.trim(), defaultLanguage: language, ...resolveTenant(name) }))
-  const onImport = () => go(() => staffImportRestaurantAction({ ...resolveTenant(), payloadText }))
+    go(() =>
+      staffCreateRestaurantAction({
+        name: name.trim(),
+        defaultLanguage: language,
+        slug: slugTouched && slug.trim() ? slug.trim() : undefined,
+        ...resolveTenant(name),
+      }),
+    )
+  const onImport = () =>
+    go(() =>
+      staffImportRestaurantAction({
+        ...resolveTenant(),
+        payloadText,
+        slug: slugTouched && slug.trim() ? slug.trim() : undefined,
+      }),
+    )
 
   function copyPrompt() {
     void navigator.clipboard?.writeText(AI_PROMPT).then(() => {
@@ -199,7 +242,7 @@ export function NewRestaurantForm({
   }
 
   const fieldCls =
-    'w-full rounded-[12px] border border-border bg-card px-4 py-3 text-[15px] text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-[color-mix(in_srgb,var(--cinnabar)_22%,transparent)]'
+    'w-full rounded-[12px] border border-border bg-card px-4 py-3 text-[15px] text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20'
 
   return (
     <div className="space-y-7" data-test-id="new-restaurant-form">
@@ -208,7 +251,7 @@ export function NewRestaurantForm({
           href="/menu/dashboard/admin/restaurants"
           className="inline-flex items-center gap-1.5 text-[13px] font-medium text-muted-foreground no-underline transition-colors hover:text-foreground"
         >
-          <ChevronLeft size={15} strokeWidth={2.2} /> {t('back')}
+          <CaretLeftIcon size={15} weight="bold" /> {t('back')}
         </Link>
 
         {/* Manual | Import JSON toggle */}
@@ -228,7 +271,7 @@ export function NewRestaurantForm({
                 setError(null)
               }}
               className={`rounded-full px-5 py-2 text-[13.5px] font-semibold transition-colors ${
-                mode === m ? 'bg-[var(--cinnabar-soft)] text-primary' : 'text-muted-foreground hover:text-foreground'
+                mode === m ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:text-foreground'
               }`}
               data-test-id={`new-restaurant-tab-${m}`}
             >
@@ -249,7 +292,7 @@ export function NewRestaurantForm({
               </div>
               <div className="space-y-5 p-5">
                 <label className="block">
-                  <span className="mb-1.5 block text-[13px] font-semibold text-[var(--ink-soft)]">{t('manual.nameLabel')}</span>
+                  <span className="mb-1.5 block text-[13px] font-semibold text-muted-foreground">{t('manual.nameLabel')}</span>
                   <input
                     type="text"
                     value={name}
@@ -263,16 +306,15 @@ export function NewRestaurantForm({
                 </label>
 
                 <div>
-                  <span className="mb-1.5 block text-[13px] font-semibold text-[var(--ink-soft)]">{t('manual.urlLabel')}</span>
-                  <div className="flex items-center gap-1 rounded-[12px] border border-border bg-[var(--paper-2)] px-4 py-3 text-[15px]">
+                  <span className="mb-1.5 block text-[13px] font-semibold text-muted-foreground">{t('manual.urlLabel')}</span>
+                  <div className="flex items-center gap-1 rounded-[12px] border border-border bg-muted px-4 py-3 text-[15px]">
                     <span className="text-muted-foreground">{urlPrefix}</span>
                     <span className="truncate font-semibold text-foreground">{slug}</span>
-                    <Check size={16} strokeWidth={2.5} className="ml-auto shrink-0 text-[var(--green)]" />
                   </div>
                 </div>
 
                 <div>
-                  <span className="mb-1.5 block text-[13px] font-semibold text-[var(--ink-soft)]">{t('manual.languageLabel')}</span>
+                  <span className="mb-1.5 block text-[13px] font-semibold text-muted-foreground">{t('manual.languageLabel')}</span>
                   <div className="flex flex-wrap gap-2">
                     {languages.map((l) => {
                       const on = language === l.code
@@ -284,12 +326,12 @@ export function NewRestaurantForm({
                           aria-pressed={on}
                           className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-[13.5px] font-medium transition-colors ${
                             on
-                              ? 'border-primary bg-[var(--cinnabar-soft)] text-primary'
-                              : 'border-border bg-card text-foreground hover:border-[color-mix(in_srgb,var(--cinnabar)_40%,transparent)]'
+                              ? 'border-primary bg-primary/10 text-primary'
+                              : 'border-border bg-card text-foreground hover:border-primary/40'
                           }`}
                           data-test-id={`new-restaurant-lang-${l.code}`}
                         >
-                          {on ? <Check size={13} strokeWidth={2.6} /> : null}
+                          {on ? <CheckIcon size={13} weight="bold" /> : null}
                           {l.label}
                         </button>
                       )
@@ -317,10 +359,10 @@ export function NewRestaurantForm({
                   <button
                     type="button"
                     onClick={copyPrompt}
-                    className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-primary transition-colors hover:text-[var(--cinnabar-deep)]"
+                    className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-primary transition-colors hover:text-primary/90"
                     data-test-id="new-restaurant-copy-prompt"
                   >
-                    {copied ? <ClipboardCheck size={14} strokeWidth={2.4} /> : <Sparkles size={14} strokeWidth={2.4} />}
+                    {copied ? <ClipboardTextIcon size={14} weight="bold" /> : <SparkleIcon size={14} weight="bold" />}
                     {copied ? t('import.copied') : t('import.copyPrompt')}
                   </button>
                   <button
@@ -330,7 +372,7 @@ export function NewRestaurantForm({
                     className="inline-flex items-center gap-1.5 text-[13px] font-medium text-muted-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
                     data-test-id="new-restaurant-format"
                   >
-                    <Wand2 size={14} strokeWidth={2.2} />
+                    <MagicWandIcon size={14} weight="bold" />
                     {t('import.format')}
                   </button>
                   <button
@@ -361,7 +403,7 @@ export function NewRestaurantForm({
                     className={PRIMARY_BTN}
                     data-test-id="new-restaurant-import-submit"
                   >
-                    <Upload size={15} strokeWidth={2.2} />
+                    <UploadIcon size={15} weight="bold" />
                     {pending ? t('importing') : t('import.submit')}
                   </button>
                 </div>
@@ -380,19 +422,19 @@ export function NewRestaurantForm({
         <div className="space-y-5">
           <section className="rounded-[18px] border border-border bg-card p-5" data-test-id="new-restaurant-tenant">
             <div className="mb-3 flex items-center justify-between">
-              <span className="text-[13px] font-semibold text-[var(--ink-soft)]">{t('tenant.label')}</span>
+              <span className="text-[13px] font-semibold text-muted-foreground">{t('tenant.label')}</span>
               {tenants.length ? (
                 <button
                   type="button"
                   onClick={() => setTenantMode((m) => (m === 'new' ? 'existing' : 'new'))}
-                  className="inline-flex items-center gap-1 text-[12px] font-semibold text-primary transition-colors hover:text-[var(--cinnabar-deep)]"
+                  className="inline-flex items-center gap-1 text-[12px] font-semibold text-primary transition-colors hover:text-primary/90"
                   data-test-id="new-restaurant-tenant-toggle"
                 >
                   {tenantMode === 'new' ? (
                     t('tenant.useExisting')
                   ) : (
                     <>
-                      <Plus size={13} strokeWidth={2.6} /> {t('tenant.new')}
+                      <PlusIcon size={13} weight="bold" /> {t('tenant.new')}
                     </>
                   )}
                 </button>
@@ -414,15 +456,15 @@ export function NewRestaurantForm({
               </select>
             ) : (
               <div className="flex items-center gap-2 rounded-[12px] border border-border bg-card px-3 py-2.5">
-                <span className="grid size-8 shrink-0 place-items-center rounded-[8px] bg-[var(--paper-2)] text-muted-foreground">
-                  <Building2 size={16} />
+                <span className="grid size-8 shrink-0 place-items-center rounded-[8px] bg-muted text-muted-foreground">
+                  <BuildingsIcon size={16} />
                 </span>
                 <input
                   type="text"
                   value={newTenantName}
                   onChange={(e) => setNewTenantName(e.target.value)}
                   maxLength={120}
-                  placeholder={name.trim() || t('tenant.newPlaceholder')}
+                  placeholder={tenantDefaultName.trim() || t('tenant.newPlaceholder')}
                   className="min-w-0 flex-1 bg-transparent text-[15px] text-foreground outline-none placeholder:text-muted-foreground"
                   data-test-id="new-restaurant-tenant-name"
                 />
@@ -431,9 +473,9 @@ export function NewRestaurantForm({
             <p className="mt-2 break-words text-[12px] leading-relaxed text-muted-foreground">
               {tenantMode === 'existing' ? (
                 t('tenant.hint')
-              ) : name.trim() ? (
+              ) : tenantDefaultName.trim() ? (
                 t.rich('tenant.newHintNamed', {
-                  name: name.trim(),
+                  name: tenantDefaultName.trim(),
                   b: (chunks) => <strong className="font-semibold text-foreground">{chunks}</strong>,
                 })
               ) : (
@@ -442,9 +484,42 @@ export function NewRestaurantForm({
             </p>
           </section>
 
-          <section className="flex items-center gap-3 rounded-[14px] bg-[var(--green-soft)] p-3.5" data-test-id="new-restaurant-plan">
-            <span className="grid size-8 shrink-0 place-items-center rounded-[8px] bg-[var(--green)] text-white">
-              <Gift size={16} />
+          <section className="rounded-[18px] border border-border bg-card p-5" data-test-id="new-restaurant-slug">
+            <span className="mb-1.5 block text-[13px] font-semibold text-muted-foreground">{t('slug.label')}</span>
+            <div className="flex items-center gap-1 rounded-[12px] border border-border bg-card px-3 py-2.5 text-[15px]">
+              <span className="shrink-0 text-muted-foreground">{urlPrefix}</span>
+              <input
+                type="text"
+                value={slug}
+                onChange={(e) => {
+                  setSlugTouched(true)
+                  setCustomSlug(e.target.value.toLowerCase())
+                }}
+                maxLength={40}
+                spellCheck={false}
+                className="min-w-0 flex-1 bg-transparent font-semibold text-foreground outline-none"
+                data-test-id="new-restaurant-slug-input"
+              />
+            </div>
+            <p className="mt-2 break-words text-[12px] leading-relaxed text-muted-foreground">
+              {!slugCheck ? (
+                t('slug.hint')
+              ) : !slugCheck.valid ? (
+                <span className="text-[#D92D20]">{t('slug.invalid')}</span>
+              ) : slugCheck.available ? (
+                <span className="font-semibold text-green-600">{t('slug.available')}</span>
+              ) : (
+                t.rich('slug.taken', {
+                  slug: slugCheck.slug,
+                  b: (chunks) => <strong className="font-semibold text-foreground">{chunks}</strong>,
+                })
+              )}
+            </p>
+          </section>
+
+          <section className="flex items-center gap-3 rounded-[14px] bg-green-100 p-3.5" data-test-id="new-restaurant-plan">
+            <span className="grid size-8 shrink-0 place-items-center rounded-[8px] bg-green-600 text-white">
+              <GiftIcon size={16} />
             </span>
             <div className="min-w-0">
               <p className="text-[14px] font-bold text-foreground">{t('plan.name')}</p>

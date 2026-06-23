@@ -1,13 +1,13 @@
 'use client'
 
 import { useTranslations } from 'next-intl'
+import { Button } from '@iedora/ui/components/ui/button'
 import {
-  Button,
   Field,
   FieldHint,
   FieldInput,
   FieldLabel,
-} from '@iedora/design-system'
+} from '@iedora/ui/components/field'
 import type { LocalizedText } from '../../i18n'
 
 /**

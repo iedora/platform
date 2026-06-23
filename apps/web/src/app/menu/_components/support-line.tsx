@@ -1,4 +1,4 @@
-import { Phone } from 'lucide-react'
+import { PhoneIcon } from '@phosphor-icons/react/ssr'
 
 const SUPPORT_PHONE = '+351 917 140 356'
 
@@ -25,7 +25,7 @@ export function SupportLine({
       data-test-id={testId}
     >
       <span className="flex items-center gap-2 text-[14px] text-muted-foreground">
-        <Phone size={15} strokeWidth={2} aria-hidden="true" />
+        <PhoneIcon size={15} aria-hidden="true" />
         {label}
       </span>
       <span className="text-[15px] font-semibold tracking-[0.01em] text-primary">{SUPPORT_PHONE}</span>

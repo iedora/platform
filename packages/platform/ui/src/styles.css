@@ -1,0 +1,9 @@
+/*
+ * @iedora/ui — shadcn/ui (Base UI) component styles.
+ *
+ * The theme (CSS variables: --background, --primary, --destructive, the
+ * --sidebar-* / --chart-* sets, etc.) lives in apps/web/src/app/globals.css,
+ * which already maps the shadcn token contract onto the iedora palette. This
+ * file is the package's own style entry for any component-local CSS the kit
+ * needs beyond Tailwind utilities.
+ */

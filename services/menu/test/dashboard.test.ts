@@ -33,6 +33,12 @@ test("create a restaurant (slug derived) + it's listed with counts", async () =>
   expect(Number(n.rows[0]!.n)).toBe(1);
 });
 
+test("a duplicate name gets a numbered slug, not an error (ON CONFLICT retry)", async () => {
+  const res = await h.app.request("/api/restaurants", await json(h, { name: "Tasca do Zé", defaultLanguage: "pt" }));
+  expect(res.status).toBe(200);
+  expect(((await res.json()) as { slug: string }).slug).toBe("tasca-do-ze-2");
+});
+
 test("the plan gate blocks creating past the limit", async () => {
   h.planStub.code = "menu_free"; // restaurants: 1, already at 1
   const res = await h.app.request("/api/restaurants", await json(h, { name: "Second" }));

@@ -9,8 +9,9 @@ import {
 } from "next/font/google";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale } from "next-intl/server";
-import "@iedora/design-system/styles.css";
+import "@iedora/ui/styles.css";
 import "./globals.css";
+import { ThemeProvider } from "../components/theme-provider";
 
 // Printed-menu vocabulary — four faces of the same voice:
 //   --display   Playfair Display 600   wordmark + h1
@@ -73,6 +74,7 @@ export default async function RootLayout({
   const locale = await getLocale();
   return (
     <html
+      suppressHydrationWarning
       lang={locale}
       className={`${geistMono.variable} ${playfair.variable} ${lora.variable} ${inter.variable} ${plusJakarta.variable} ${spaceGrotesk.variable} h-full antialiased`}
       style={{
@@ -87,7 +89,9 @@ export default async function RootLayout({
       }}
     >
       <body className="min-h-full flex flex-col">
-        <NextIntlClientProvider>{children}</NextIntlClientProvider>
+        <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
+          <NextIntlClientProvider>{children}</NextIntlClientProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

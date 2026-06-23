@@ -2,11 +2,11 @@
 
 import { useActionState, useState } from 'react'
 import { useTranslations } from 'next-intl'
-import { Check } from 'lucide-react'
-import { Button } from '@iedora/design-system'
+import { CheckIcon } from '@phosphor-icons/react'
+import { Button } from '@iedora/ui/components/ui/button'
+import { TextField } from '@iedora/ui/components/field'
 import { completeOnboarding, type OnboardingFormState } from './actions'
 import { SupportLine } from '../_components/support-line'
-import { TextField } from '../_components/form-fields'
 
 /**
  * Step 1 form — the warm-light "Tell us about your restaurant" screen
@@ -69,7 +69,7 @@ export function OnboardingForm({
 
   return (
     <form action={action} className="flex flex-1 flex-col" data-test-id="onboarding-form">
-      <h1 className="font-[family-name:var(--display)] text-[28px] font-extrabold leading-[1.12] tracking-[-0.01em] text-foreground">
+      <h1 className="font-heading text-[28px] font-extrabold leading-[1.12] tracking-[-0.01em] text-foreground">
         {t('title')}
       </h1>
       <p className="mt-2 text-[15px] leading-[1.5] text-muted-foreground">{t('subtitle')}</p>
@@ -96,7 +96,7 @@ export function OnboardingForm({
           <div className="flex items-center gap-1 rounded-[12px] border border-border bg-[var(--muted)] px-4 py-3 text-[15px]" data-test-id="onboarding-public-url">
             <span className="text-muted-foreground">{urlPrefix}</span>
             <span className="truncate font-semibold text-foreground">{slug}</span>
-            <Check size={18} strokeWidth={2.5} className="ml-auto shrink-0 text-[var(--green)]" />
+            <CheckIcon size={18} weight="bold" className="ml-auto shrink-0 text-green-600" />
           </div>
         </div>
 
@@ -115,11 +115,11 @@ export function OnboardingForm({
                   data-test-id={`onboarding-lang-${l.code}`}
                   className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-[14px] font-medium transition-colors ${
                     on
-                      ? 'border-primary bg-[var(--cinnabar-soft)] text-primary'
-                      : 'border-border bg-card text-foreground hover:border-[color-mix(in_srgb,var(--cinnabar)_40%,transparent)]'
+                      ? 'border-primary bg-primary/10 text-primary'
+                      : 'border-border bg-card text-foreground hover:border-primary/40'
                   }`}
                 >
-                  {on ? <Check size={14} strokeWidth={2.6} /> : null}
+                  {on ? <CheckIcon size={14} weight="bold" /> : null}
                   {l.label}
                 </button>
               )
@@ -129,7 +129,7 @@ export function OnboardingForm({
       </div>
 
       {state?.error && (
-        <p className="mt-5 text-center text-[14px] text-[var(--danger)]" role="alert" data-test-id="onboarding-error">
+        <p className="mt-5 text-center text-[14px] text-destructive" role="alert" data-test-id="onboarding-error">
           {state.error}
         </p>
       )}
@@ -139,7 +139,7 @@ export function OnboardingForm({
       <div className="mt-auto pt-8">
         <Button
           type="submit"
-          variant="primary"
+          variant="default"
           size="lg"
           className="!w-full !justify-center"
           disabled={!name.trim() || pending}

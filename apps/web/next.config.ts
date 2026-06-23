@@ -13,9 +13,9 @@ const nextConfig: NextConfig = {
   // traces only inside apps/web/, missing the per-product packages.
   outputFileTracingRoot: path.join(here, '..', '..'),
   transpilePackages: [
-    '@iedora/design-system',
     '@iedora/observability',
     '@iedora/product-menu',
+    '@iedora/ui',
   ],
   // Version skew protection — forces hard navigation when the client
   // holds assets from a previous deployment. Passed as

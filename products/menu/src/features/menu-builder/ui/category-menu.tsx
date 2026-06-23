@@ -2,8 +2,8 @@
 
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
+import { Button } from '@iedora/ui/components/ui/button'
 import {
-  Button,
   Dialog,
   DialogContent,
   DialogDescription,
@@ -11,7 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@iedora/design-system'
+} from '@iedora/ui/components/ui/dialog'
 import { useTranslations } from 'next-intl'
 import { deleteCategory } from '../actions'
 
@@ -75,24 +75,29 @@ export function CategoryMenu({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <button
-          type="button"
-          aria-label={t('sectionActionsAria', { name: categoryName })}
-          data-test-id={`menu-section-kebab-${categoryId}`}
-          className="menu-section-card__kebab"
-        >
-          {/* Three vertical dots — heavier glyph reads better than `⋮` on
-              mobile Safari. */}
-          <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
-            <circle cx="12" cy="5" r="1.7" fill="currentColor" />
-            <circle cx="12" cy="12" r="1.7" fill="currentColor" />
-            <circle cx="12" cy="19" r="1.7" fill="currentColor" />
-          </svg>
-        </button>
+      <DialogTrigger
+        render={
+          <button
+            type="button"
+            aria-label={t('sectionActionsAria', { name: categoryName })}
+            data-test-id={`menu-section-kebab-${categoryId}`}
+            className="inline-flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-transparent bg-transparent text-muted-foreground transition-colors hover:border-border hover:bg-muted hover:text-foreground"
+          />
+        }
+      >
+        {/* Three vertical dots — heavier glyph reads better than `⋮` on
+            mobile Safari. */}
+        <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="12" cy="5" r="1.7" fill="currentColor" />
+          <circle cx="12" cy="12" r="1.7" fill="currentColor" />
+          <circle cx="12" cy="19" r="1.7" fill="currentColor" />
+        </svg>
       </DialogTrigger>
-      <DialogContent aria-describedby={undefined} eyebrow={t('sectionActionsEyebrow')}>
+      <DialogContent aria-describedby={undefined}>
         <DialogHeader>
+          <p className="text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">
+            {t('sectionActionsEyebrow')}
+          </p>
           <DialogTitle>{categoryName}</DialogTitle>
         </DialogHeader>
 
@@ -113,7 +118,7 @@ export function CategoryMenu({
               </Button>
               <Button
                 type="button"
-                variant="danger"
+                variant="destructive"
                 onClick={doDelete}
                 disabled={pending}
                 data-test-id={`menu-section-delete-confirm-${categoryId}`}
@@ -123,10 +128,10 @@ export function CategoryMenu({
             </DialogFooter>
           </>
         ) : (
-          <div className="menu-action-list">
+          <div className="grid gap-2">
             <button
               type="button"
-              className="menu-action-list__item"
+              className="flex min-h-14 cursor-pointer items-center gap-3 rounded-md border border-border bg-card px-4 py-3.5 text-left text-[15px] font-medium text-foreground transition-colors hover:border-primary hover:bg-muted"
               onClick={doRename}
               data-test-id={`menu-section-action-rename-${categoryId}`}
             >
@@ -136,7 +141,7 @@ export function CategoryMenu({
             {onReorder && (
               <button
                 type="button"
-                className="menu-action-list__item"
+                className="flex min-h-14 cursor-pointer items-center gap-3 rounded-md border border-border bg-card px-4 py-3.5 text-left text-[15px] font-medium text-foreground transition-colors hover:border-primary hover:bg-muted"
                 onClick={doReorder}
                 data-test-id={`menu-section-action-reorder-${categoryId}`}
               >
@@ -145,7 +150,7 @@ export function CategoryMenu({
             )}
             <button
               type="button"
-              className="menu-action-list__item menu-action-list__item--danger"
+              className="flex min-h-14 cursor-pointer items-center gap-3 rounded-md border border-border bg-card px-4 py-3.5 text-left text-[15px] font-medium text-destructive transition-colors hover:border-destructive hover:bg-muted"
               onClick={() => setConfirmDelete(true)}
               data-test-id={`menu-section-action-delete-${categoryId}`}
             >

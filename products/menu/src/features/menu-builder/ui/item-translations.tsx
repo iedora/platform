@@ -8,7 +8,7 @@ import {
   FieldInput,
   FieldLabel,
   FieldTextarea,
-} from '@iedora/design-system'
+} from '@iedora/ui/components/field'
 import { LANGUAGE_META, type LanguageCode, type LocalizedText } from '../../i18n'
 import type { EditableVariant } from './variants-editor'
 

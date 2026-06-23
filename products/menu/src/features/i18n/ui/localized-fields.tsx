@@ -7,7 +7,7 @@ import {
   FieldInput,
   FieldLabel,
   FieldTextarea,
-} from '@iedora/design-system'
+} from '@iedora/ui/components/field'
 import { LANGUAGE_META } from '../registry'
 import type { LanguageCode, LocalizedText } from '../types'
 

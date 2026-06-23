@@ -19,7 +19,7 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { FieldInput } from '@iedora/design-system'
+import { FieldInput } from '@iedora/ui/components/field'
 import { useTranslations } from 'next-intl'
 import type { LanguageCode } from '../../i18n'
 import { reorderItems, updateCategoryName } from '../actions'
@@ -139,19 +139,19 @@ export function SortableCategory({
       id={`menu-section-${category.id}`}
       data-section-id={category.id}
       data-test-id={`menu-section-${category.id}`}
-      className="menu-section-card"
+      className="overflow-hidden rounded-lg border border-border bg-card scroll-mt-24"
       style={{
         transform: CSS.Transform.toString(transform),
         transition,
         opacity: isDragging ? 0.6 : 1,
       }}
     >
-      <header className="menu-section-card__head">
+      <header className="flex min-h-14 items-center gap-2.5 border-b border-border py-3.5 pl-3.5 pr-3">
         <button
           type="button"
           aria-label={t('dragSection', { name: category.name })}
           data-test-id={`menu-section-grip-${category.id}`}
-          className="menu-builder-grip"
+          className="inline-flex h-7 w-7 shrink-0 cursor-grab items-center justify-center rounded-md border-0 bg-transparent text-muted-foreground hover:bg-muted hover:text-foreground active:cursor-grabbing"
           {...attributes}
           {...listeners}
         >
@@ -178,7 +178,7 @@ export function SortableCategory({
         ) : (
           <button
             type="button"
-            className="menu-section-card__head-title"
+            className="min-w-0 flex-1 cursor-text border-0 bg-transparent py-1 text-left font-heading text-[17px] font-semibold text-foreground hover:underline hover:decoration-border hover:underline-offset-4"
             onClick={() => setEditingName(true)}
             data-test-id={`menu-section-title-${category.id}`}
           >
@@ -219,9 +219,9 @@ export function SortableCategory({
           items={items.map((i) => i.id)}
           strategy={verticalListSortingStrategy}
         >
-          <div className="menu-section-card__items">
+          <div>
             {items.length === 0 ? (
-              <p className="menu-section-card__empty">
+              <p className="px-4 py-[18px] text-center text-sm text-muted-foreground">
                 {t('emptySection')}
               </p>
             ) : (
@@ -241,7 +241,7 @@ export function SortableCategory({
 
       <button
         type="button"
-        className="menu-builder-add"
+        className="flex min-h-[52px] w-full cursor-pointer items-center justify-center gap-1.5 border-0 border-t border-border bg-transparent px-4 py-3.5 text-sm font-semibold text-primary hover:bg-muted"
         onClick={() => setAddItemOpen(true)}
         disabled={pending}
         data-test-id={`menu-section-add-item-${category.id}`}

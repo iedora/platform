@@ -25,7 +25,7 @@ export function KpiCard({
       <div className="text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
         {eyebrow}
       </div>
-      <div className="mt-3 text-[28px] font-semibold tabular-nums leading-none text-brand">
+      <div className="mt-3 text-[28px] font-semibold tabular-nums leading-none text-primary">
         {value}
       </div>
       <div className="mt-2 text-[12px] text-muted-foreground">
@@ -64,7 +64,7 @@ export function ScansCard({
         {labels.eyebrow}
       </div>
       <div className="mt-3 flex items-baseline gap-3">
-        <span className="text-[28px] font-semibold tabular-nums leading-none text-brand">
+        <span className="text-[28px] font-semibold tabular-nums leading-none text-primary">
           {total.toLocaleString()}
         </span>
         <span className="text-[12px] text-muted-foreground">
@@ -84,7 +84,7 @@ export function ScansCard({
               <span
                 key={p.day}
                 title={`${p.day}: ${p.count}`}
-                className="flex-1 bg-brand"
+                className="flex-1 bg-primary"
                 style={{
                   height: `${Math.max(ratio * 100, p.count > 0 ? 8 : 4)}%`,
                   opacity: p.count > 0 ? 1 : 0.25,
@@ -171,7 +171,7 @@ export function ScansChart({
               key={p.day}
               data-testid="scans-chart-bar"
               title={`${fmt.format(parse(p.day))}: ${p.count}`}
-              className="flex-1 bg-brand"
+              className="flex-1 bg-primary"
               style={{
                 height: `${Math.max(ratio * 100, p.count > 0 ? 4 : 2)}%`,
                 opacity: p.count > 0 ? 1 : 0.18,
@@ -218,7 +218,7 @@ export function TopDishesCard({
         <ul className="mt-3 divide-y divide-border">
           {dishes.map((d, i) => (
             <li key={d.itemId} className="flex items-center gap-3 py-2.5">
-              <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-[var(--cinnabar-soft)] text-[12px] font-bold text-primary">
+              <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-primary/10 text-[12px] font-bold text-primary">
                 {i + 1}
               </span>
               <span className="min-w-0 flex-1 truncate text-[14px] font-medium text-foreground">

@@ -17,7 +17,7 @@ import {
   planHas,
 } from '@iedora/product-menu/features/plans'
 import { addAnotherRestaurantHref } from '@iedora/product-menu/features/menu-onboarding'
-import { Card, CardDesc, CardTitle } from '@iedora/design-system'
+import { Card, CardDesc, CardTitle } from '@iedora/ui/components/card'
 import {
   KpiCard,
   ScansCard,
@@ -78,7 +78,7 @@ export default async function DashboardPage() {
     <Link
       href={addAnotherRestaurantHref()}
       data-test-id="dashboard-new-restaurant"
-      className="inline-flex items-center rounded-[12px] bg-primary px-4 py-2 text-[13.5px] font-semibold text-white no-underline transition-colors hover:bg-[var(--cinnabar-deep)]"
+      className="inline-flex items-center rounded-[12px] bg-primary px-4 py-2 text-[13.5px] font-semibold text-white no-underline transition-colors hover:bg-primary/90"
     >
       {t('newRestaurant')}
     </Link>

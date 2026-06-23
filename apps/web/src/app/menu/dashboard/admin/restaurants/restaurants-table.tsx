@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useDeferredValue, useMemo, useState } from 'react'
 import { useTranslations } from 'next-intl'
-import { QrCode } from 'lucide-react'
+import { QrCodeIcon } from '@phosphor-icons/react'
 
 export type AdminRestaurantRow = {
   id: string
@@ -79,7 +79,7 @@ export function RestaurantsTable({ rows }: { rows: AdminRestaurantRow[] }) {
           placeholder={t('restaurants.searchPlaceholder')}
           aria-label={t('restaurants.searchAria')}
           spellCheck={false}
-          className="w-full rounded-[12px] border border-border bg-card px-4 py-2.5 text-[15px] text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-[color-mix(in_srgb,var(--cinnabar)_22%,transparent)]"
+          className="w-full rounded-[12px] border border-border bg-card px-4 py-2.5 text-[15px] text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20"
           data-test-id="admin-restaurants-search"
         />
         {hasFilters ? (
@@ -105,7 +105,7 @@ export function RestaurantsTable({ rows }: { rows: AdminRestaurantRow[] }) {
               aria-pressed={sortKey === s.key}
               className={`rounded-full border px-3 py-1 text-[13px] font-medium transition-colors ${
                 sortKey === s.key
-                  ? 'border-primary bg-[var(--cinnabar-soft)] text-primary'
+                  ? 'border-primary bg-primary/10 text-primary'
                   : 'border-border bg-card text-muted-foreground hover:text-foreground'
               }`}
               data-test-id={`admin-restaurants-sort-${s.key}`}
@@ -153,7 +153,7 @@ export function RestaurantsTable({ rows }: { rows: AdminRestaurantRow[] }) {
                   data-test-id={`admin-restaurants-row-${r.slug}`}
                 >
                   <div className="flex min-w-0 items-center gap-3">
-                    <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-[var(--cinnabar-soft)] text-[14px] font-bold text-primary">
+                    <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-primary/10 text-[14px] font-bold text-primary">
                       {r.name.charAt(0).toUpperCase()}
                     </span>
                     <div className="min-w-0">
@@ -168,7 +168,7 @@ export function RestaurantsTable({ rows }: { rows: AdminRestaurantRow[] }) {
                   </div>
                   <span>
                     <span
-                      className="inline-flex max-w-full items-center truncate rounded-full bg-[var(--paper-2)] px-2.5 py-1 font-mono text-[11.5px] text-muted-foreground"
+                      className="inline-flex max-w-full items-center truncate rounded-full bg-muted px-2.5 py-1 font-mono text-[11.5px] text-muted-foreground"
                       title={r.tenantId}
                       data-test-id={`admin-restaurants-tenant-${r.slug}`}
                     >
@@ -183,7 +183,7 @@ export function RestaurantsTable({ rows }: { rows: AdminRestaurantRow[] }) {
                   <span>
                     <span
                       className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[12px] font-semibold ${
-                        live ? 'bg-[var(--green-soft)] text-[var(--green)]' : 'bg-muted text-muted-foreground'
+                        live ? 'bg-green-100 text-green-700' : 'bg-muted text-muted-foreground'
                       }`}
                     >
                       <span className="size-1.5 rounded-full bg-current" />
@@ -196,11 +196,11 @@ export function RestaurantsTable({ rows }: { rows: AdminRestaurantRow[] }) {
                       aria-label={t('restaurants.qrAria')}
                       className="grid size-8 shrink-0 place-items-center rounded-[8px] border border-border text-muted-foreground transition-colors hover:border-primary hover:text-primary"
                     >
-                      <QrCode size={15} strokeWidth={2.2} />
+                      <QrCodeIcon size={15} weight="bold" />
                     </Link>
                     <Link
                       href={`/menu/dashboard/admin/restaurants/${r.id}`}
-                      className="inline-flex items-center rounded-[8px] bg-primary px-3 py-1.5 text-[13px] font-semibold text-white no-underline transition-colors hover:bg-[var(--cinnabar-deep)]"
+                      className="inline-flex items-center rounded-[8px] bg-primary px-3 py-1.5 text-[13px] font-semibold text-white no-underline transition-colors hover:bg-primary/90"
                     >
                       {t('restaurants.open')}
                     </Link>

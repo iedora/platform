@@ -2,7 +2,7 @@ import { getTranslations } from 'next-intl/server'
 import { requireActiveOrganization } from '@iedora/product-menu/features/auth'
 import { PLANS, getOrganizationPlan } from '@iedora/product-menu/features/plans'
 import { DashboardPage } from '@iedora/product-menu/shared/ui/dashboard-page'
-import { Badge } from '@iedora/design-system'
+import { Badge } from '@iedora/ui/components/ui/badge'
 
 /**
  * Billing — current plan + the plan ladder.
@@ -34,7 +34,7 @@ export default async function BillingPage() {
       data-test-id="billing"
     >
       <section
-        className="billing-plans"
+        className="grid gap-3.5 min-[720px]:grid-cols-[repeat(auto-fit,minmax(280px,1fr))]"
         data-test-id="billing-plan-section"
         aria-label={t('currentPlanTitle')}
       >
@@ -61,22 +61,22 @@ export default async function BillingPage() {
               data-test-id={`billing-plan-card-${plan.code}`}
               data-current={isCurrent ? 'true' : 'false'}
               data-recommended={isRecommended ? 'true' : 'false'}
-              className="billing-plan-card"
+              className="grid content-start gap-3.5 rounded-lg border bg-card px-[22px] pt-[22px] pb-5 data-[current=true]:border-primary data-[current=true]:bg-primary/5 data-[recommended=true]:border-primary"
             >
-              <header className="billing-plan-card__head">
-                <h2 className="billing-plan-card__name">
+              <header className="flex flex-wrap items-center gap-2.5">
+                <h2 className="m-0 font-heading text-[22px] font-medium text-foreground">
                   {t(`plans.${plan.code}.name`)}
                 </h2>
                 {isRecommended && !isCurrent && (
-                  <Badge variant="live">
+                  <Badge variant="default">
                     {t(`plans.${plan.code}.badge`)}
                   </Badge>
                 )}
               </header>
-              <p className="billing-plan-card__tagline">
+              <p className="m-0 text-sm leading-[1.4] text-muted-foreground">
                 {t(`plans.${plan.code}.tagline`)}
               </p>
-              <ul className="billing-plan-card__features">
+              <ul className="m-0 grid list-none gap-2 p-0 text-sm text-foreground [&>li]:relative [&>li]:pl-[18px] [&>li]:before:absolute [&>li]:before:left-1.5 [&>li]:before:text-muted-foreground [&>li]:before:content-['·']">
                 <li>{restaurantsCopy}</li>
                 <li>{viewsCopy}</li>
                 {plan.isDefault && <li>{t('unlimitedTranslations')}</li>}
@@ -86,14 +86,14 @@ export default async function BillingPage() {
                 )}
               </ul>
               {isCurrent && (
-                <div className="billing-plan-card__action">
+                <div className="mt-1">
                   <p
-                    className="billing-plan-card__current"
+                    className="m-0 inline-flex items-center gap-1.5 py-1.5 text-xs font-semibold uppercase tracking-[0.02em] text-primary"
                     data-test-id={`billing-plan-current-${plan.code}`}
                   >
                     <span
                       aria-hidden="true"
-                      className="billing-plan-card__current-dot"
+                      className="inline-block h-2 w-2 rounded-full bg-primary"
                     />
                     {t('activePlan')}
                   </p>
@@ -104,7 +104,7 @@ export default async function BillingPage() {
         })}
       </section>
 
-      <p className="text-sm text-[var(--muted-foreground)]" data-test-id="billing-contact">
+      <p className="text-sm text-muted-foreground" data-test-id="billing-contact">
         {t('changePlanHint')}
       </p>
     </DashboardPage>

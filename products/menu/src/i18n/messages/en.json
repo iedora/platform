@@ -310,59 +310,6 @@
     "updateMenuDoneDescription": "{added, plural, =0 {No dishes added} =1 {1 dish added} other {# dishes added}} · {updated, plural, =0 {nothing updated} =1 {1 updated} other {# updated}} · {removed, plural, =0 {nothing removed} =1 {1 removed} other {# removed}}.",
     "updateMenuDone": "Close"
   },
-  "RestaurantTransfer": {
-    "eyebrow": "Admin",
-    "title": "Transfer {name}",
-    "context": {
-      "heading": "Currently",
-      "subtitle": "What the restaurant, tenant and member roster look like today.",
-      "restaurantName": "Restaurant",
-      "restaurantSlug": "Slug",
-      "restaurantCreated": "Created",
-      "tenantName": "Tenant",
-      "tenantCreated": "Tenant created",
-      "membersHeading": "{count, plural, =0 {No members} =1 {1 member} other {# members}}",
-      "membersEmpty": "Tenant has no members.",
-      "role": {
-        "owner": "Owner",
-        "admin": "Admin",
-        "member": "Member",
-        "viewer": "Viewer",
-        "custom": "Custom"
-      }
-    },
-    "description": "Hand this restaurant to another tenant + owner. You lose access once it's done.",
-    "crumbRestaurant": "Restaurant",
-    "tenantHeading": "Destination tenant",
-    "tenantHint": "Pick an existing tenant or create a brand new one to house this restaurant.",
-    "pickExistingTenant": "Pick existing",
-    "createTenant": "Create new",
-    "tenantSearchPlaceholder": "Search tenants by name…",
-    "tenantNameLabel": "Tenant name",
-    "tenantNamePlaceholder": "e.g. Taberna do José",
-    "ownerHeading": "Owner",
-    "ownerHint": "Pick an existing user or create a brand new one. Owners get full powers in the destination tenant.",
-    "pickExistingUser": "Pick existing",
-    "createUser": "Create new",
-    "userSearchPlaceholder": "Search users by email or name…",
-    "userEmailLabel": "Email",
-    "userNameLabel": "Name",
-    "userPasswordLabel": "Initial password",
-    "userPasswordHint": "Min 12 chars. Share with the new owner — they can change it on first login.",
-    "staffMarker": "Staff",
-    "confirmHeading": "Review",
-    "rowRestaurant": "Restaurant",
-    "rowTenant": "Destination tenant",
-    "rowOwner": "Owner",
-    "newSuffix": "(new)",
-    "pendingTenant": "—",
-    "pendingOwner": "—",
-    "handoffNotice": "After the transfer you no longer belong to the destination tenant. Every step is audited.",
-    "submit": "Transfer",
-    "submitting": "Transferring…",
-    "emptyList": "No matches.",
-    "searching": "Searching…"
-  },
   "Settings": {
     "livePreview": "Live preview",
     "Identity": {
@@ -554,86 +501,6 @@
     "translate": "Translate",
     "back": "Back"
   },
-  "Imopush": {
-    "PropertyList": {
-      "title": "Properties",
-      "newProperty": "New property",
-      "emptyLabel": "No properties",
-      "emptyHint": "Add your first property above."
-    },
-    "Property": {
-      "location": "Location",
-      "data": "Details",
-      "features": "Features",
-      "description": "Description",
-      "platforms": "Platforms",
-      "statusDraft": "Draft",
-      "statusPublished": "Published",
-      "statusPublishing": "Publishing…",
-      "statusFailed": "Failed",
-      "energyCertificate": "Energy certificate",
-      "heating": "Heating",
-      "heatingIndividual": "Individual",
-      "heatingCentral": "Central",
-      "heatingNone": "No heating",
-      "yearBuilt": "Year built",
-      "delete": "Delete",
-      "deleteTitle": "Delete property",
-      "deleteDescription": "This will remove the property from every platform it was published on.",
-      "viewListing": "View listing",
-      "rooms": "{count} rooms",
-      "bathrooms": "{count} bathrooms",
-      "rooms_label": "Rooms",
-      "bathrooms_label": "Bathrooms",
-      "areaLabel": "Area",
-      "usableArea": "Usable area",
-      "lotSize": "Lot size",
-      "floors": "Floors",
-      "feature": {
-        "pool": "Pool",
-        "garden": "Garden",
-        "terrace": "Terrace",
-        "balcony": "Balcony",
-        "parking": "Parking",
-        "storage": "Storage",
-        "wardrobe": "Wardrobes",
-        "airConditioning": "Air conditioning",
-        "fireplace": "Fireplace",
-        "lift": "Lift"
-      }
-    },
-    "PropertyPhotos": {
-      "noPhoto": "No photo",
-      "expandPhoto": "Expand photo",
-      "previousPhoto": "Previous photo",
-      "nextPhoto": "Next photo",
-      "closeLightbox": "Close"
-    },
-    "IdealistaPublish": {
-      "publish": "Publish on Idealista",
-      "publishing": "Publishing…",
-      "retry": "Retry"
-    },
-    "IdealistaIntegrator": {
-      "title": "Idealista",
-      "description": "Publish and manage Idealista.pt listings using the agency account.",
-      "accountLabel": "Configured account",
-      "stateLabel": "State",
-      "stateActive": "Active",
-      "note": "Publishing is driven by Chrome automation over CDP — no API key needed."
-    },
-    "Nav": {
-      "ariaLabel": "Primary navigation",
-      "properties": "Properties",
-      "integrators": "Integrators",
-      "idealista": "Idealista"
-    },
-    "Common": {
-      "edit": "Edit",
-      "delete": "Delete",
-      "cancel": "Cancel"
-    }
-  },
   "Landing": {
     "nav": {
       "getStarted": "Get started",
@@ -792,7 +659,10 @@
       "modeLabel": "How to create the restaurant",
       "creating": "Creating…",
       "importing": "Importing…",
-      "tabs": { "manual": "Manual", "import": "Import JSON" },
+      "tabs": {
+        "manual": "Manual",
+        "import": "Import JSON"
+      },
       "manual": {
         "heading": "Create manually",
         "hint": "Name it and pick its languages. It starts with an empty menu.",
@@ -834,6 +704,13 @@
         "invalidInput": "Check the form and try again.",
         "invalidJson": "That isn't valid JSON. Check the syntax and try again.",
         "failed": "Could not create the restaurant. Please try again."
+      },
+      "slug": {
+        "label": "Slug",
+        "hint": "The public link. Defaults to the name; edit to customize.",
+        "invalid": "Use 2 to 40 lowercase letters, numbers or dashes.",
+        "available": "Available.",
+        "taken": "Taken. We'll use <b>{slug}</b>."
       }
     },
     "restaurants": {
@@ -965,6 +842,35 @@
     },
     "plans": {
       "freeSuffix": "(free)"
+    },
+    "transfer": {
+      "open": "Transfer ownership",
+      "loading": "Loading…",
+      "mode": {
+        "existing": "Existing user",
+        "new": "New user"
+      },
+      "existing": {
+        "label": "Transfer to",
+        "placeholder": "Pick a tenant",
+        "hint": "The restaurant moves to this tenant.",
+        "available": "Available.",
+        "full": "That tenant's plan is full. Upgrade it to Kasa first."
+      },
+      "new": {
+        "nameLabel": "Owner name",
+        "emailLabel": "Owner email",
+        "passwordLabel": "Password",
+        "passwordHint": "At least 12 characters. They log in with this and skip onboarding."
+      },
+      "submit": "Transfer",
+      "cancel": "Cancel",
+      "errors": {
+        "invalidInput": "Check the fields and try again.",
+        "emailTaken": "That email is already registered. Use \"Existing user\" instead.",
+        "planFull": "That tenant's plan is full. Upgrade it to Kasa first.",
+        "failed": "Could not transfer ownership. Please try again."
+      }
     }
   },
   "House": {

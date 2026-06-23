@@ -80,3 +80,18 @@ export async function addMembership(
     .values({ user_id: m.userId, tenant_id: m.tenantId, role: m.role })
     .execute();
 }
+
+/** Make `newUserId` the sole owner of the tenant: drop the existing owner
+ *  membership(s) and add the new one. Used by ownership transfer — run in a tx. */
+export async function setTenantOwner(
+  db: Kysely<AuthDB>,
+  tenantId: string,
+  newUserId: string,
+): Promise<void> {
+  await db
+    .deleteFrom("memberships")
+    .where("tenant_id", "=", tenantId)
+    .where("role", "=", "owner")
+    .execute();
+  await addMembership(db, { userId: newUserId, tenantId, role: "owner" });
+}

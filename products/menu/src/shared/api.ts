@@ -285,8 +285,37 @@ export function staffCreateRestaurant(input: {
   defaultLanguage?: string
   tenantId?: string
   newTenantName?: string
+  slug?: string
 }) {
   return apiJson<{ restaurant: Restaurant }>('/api/staff/restaurants', {
+    method: 'POST',
+    ...json(input),
+  })
+}
+
+/** Resolve the slug a create would assign for a desired base — advisory: the
+ *  unique index is the real guard, so a slug can still be claimed before insert. */
+export function staffSlugPreview(slug: string) {
+  return apiJson<{ valid: boolean; slug: string; available: boolean }>(
+    `/api/staff/restaurants/slug-preview?slug=${encodeURIComponent(slug)}`,
+  )
+}
+
+/** Whether a target tenant can receive another restaurant under its plan. */
+export function staffTransferEligibility(tenantId: string) {
+  return apiJson<{ eligible: boolean }>(
+    `/api/staff/transfer-eligibility?tenant=${encodeURIComponent(tenantId)}`,
+  )
+}
+
+/** Transfer a restaurant's ownership: to an existing tenant, or to a new user. */
+export function staffTransferOwnership(
+  id: string,
+  input:
+    | { mode: 'existing'; tenantId: string }
+    | { mode: 'new'; email: string; name: string; password: string },
+) {
+  return apiJson<{ ok: true }>(`/api/staff/restaurants/${encodeURIComponent(id)}/transfer`, {
     method: 'POST',
     ...json(input),
   })

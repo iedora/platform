@@ -1,4 +1,7 @@
-import { addMembership, createTenant } from "../../data/tenants";
+import { hashPassword } from "@iedora/server-kit";
+
+import { addMembership, createTenant, setTenantOwner } from "../../data/tenants";
+import { createUserOr409 } from "../../data/users";
 import type { AuthDeps } from "../../deps";
 import type { RequestMeta } from "../../session";
 
@@ -24,5 +27,33 @@ export async function createTenantForUser(
       ipHash: meta.ipHash ?? undefined,
     });
     return { id, name };
+  });
+}
+
+// Transfer a tenant to a BRAND-NEW user: create the user with the given password
+// (so they can log straight in) and make them the tenant's sole owner — the
+// tenant + all its restaurants move to them. The new user skips onboarding
+// because the tenant already has a restaurant. 409 if the email is taken.
+export async function transferTenantToNewOwner(
+  deps: AuthDeps,
+  tenantId: string,
+  input: { email: string; name: string; password: string },
+  meta: RequestMeta,
+): Promise<{ ownerId: string }> {
+  const passwordHash = await hashPassword(input.password);
+  return deps.db.runInTx(async () => {
+    const user = await createUserOr409(deps.db.db, { email: input.email, passwordHash, name: input.name });
+    await setTenantOwner(deps.db.db, tenantId, user.id);
+    await deps.auditor.recordSync({
+      action: "auth.tenant.owner_transferred",
+      actor: { type: "user", id: user.id },
+      tenantId,
+      targetType: "tenant",
+      targetId: tenantId,
+      meta: { newOwnerEmail: input.email, reason: "transfer_new_user" },
+      userAgent: meta.userAgent ?? undefined,
+      ipHash: meta.ipHash ?? undefined,
+    });
+    return { ownerId: user.id };
   });
 }

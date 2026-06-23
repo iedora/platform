@@ -14,58 +14,16 @@ import {
 } from '../actions'
 import type { QrCodeListRow, QrStats } from '../stats'
 import { QrPrintSheetDialog } from '../qr-generation/qr-print-sheet-dialog'
+import { ArrowSquareOutIcon, PrinterIcon, TrashIcon } from '@phosphor-icons/react'
 
 type RestaurantOption = { id: string; name: string; slug: string }
 
-// Inline icons — products/menu doesn't depend on lucide-react.
-function Svg({ size, className, children }: { size: number; className?: string; children: React.ReactNode }) {
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-      className={className}
-    >
-      {children}
-    </svg>
-  )
-}
-const ExternalLinkIcon = ({ size = 12, className }: { size?: number; className?: string }) => (
-  <Svg size={size} className={className}>
-    <path d="M15 3h6v6" />
-    <path d="M10 14 21 3" />
-    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-  </Svg>
-)
-const PrinterIcon = ({ size = 15, className }: { size?: number; className?: string }) => (
-  <Svg size={size} className={className}>
-    <path d="M6 9V2h12v7" />
-    <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
-    <rect x="6" y="14" width="12" height="8" rx="1" />
-  </Svg>
-)
-const TrashIcon = ({ size = 15, className }: { size?: number; className?: string }) => (
-  <Svg size={size} className={className}>
-    <path d="M3 6h18" />
-    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
-    <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-    <path d="M10 11v6" />
-    <path d="M14 11v6" />
-  </Svg>
-)
-
 const INPUT =
-  'w-full rounded-[12px] border border-border bg-card px-3 py-2 text-[14px] text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-[color-mix(in_srgb,var(--cinnabar)_22%,transparent)] disabled:opacity-60'
+  'w-full rounded-[12px] border border-border bg-card px-3 py-2 text-[14px] text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 disabled:opacity-60'
 const BTN_PRIMARY =
-  'inline-flex items-center justify-center rounded-[12px] bg-primary px-4 py-2 text-[14px] font-semibold text-white transition-colors hover:bg-[var(--cinnabar-deep)] disabled:opacity-60'
+  'inline-flex items-center justify-center rounded-[12px] bg-primary px-4 py-2 text-[14px] font-semibold text-white transition-colors hover:bg-primary/90 disabled:opacity-60'
 const BTN_GHOST =
-  'inline-flex items-center justify-center gap-1.5 rounded-[10px] border border-border bg-card px-3 py-2 text-[13px] font-semibold text-foreground transition-colors hover:border-[color-mix(in_srgb,var(--cinnabar)_40%,transparent)] disabled:opacity-60'
+  'inline-flex items-center justify-center gap-1.5 rounded-[10px] border border-border bg-card px-3 py-2 text-[13px] font-semibold text-foreground transition-colors hover:border-primary/40 disabled:opacity-60'
 const LABEL = 'mb-1 block text-[12px] font-semibold text-muted-foreground'
 const CARD = 'rounded-[18px] border border-border bg-card'
 
@@ -369,10 +327,10 @@ function CodeRow({
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
-            <span className="font-[family-name:var(--mono)] text-[15px] font-semibold text-foreground break-all">{row.code}</span>
+            <span className="font-mono text-[15px] font-semibold text-foreground break-all">{row.code}</span>
             <span
               className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold ${
-                bound ? 'bg-[var(--green-soft)] text-[var(--green)]' : 'bg-muted text-muted-foreground'
+                bound ? 'bg-green-100 text-green-700' : 'bg-muted text-muted-foreground'
               }`}
             >
               {bound ? t('qrCodes.bound') : t('qrCodes.unbound')}
@@ -387,7 +345,7 @@ function CodeRow({
             className="mt-1 inline-flex max-w-full items-center gap-1 text-[12px] text-muted-foreground no-underline transition-colors hover:text-primary"
           >
             <span className="truncate">{stickerUrl.replace(/^https?:\/\//, '')}</span>
-            <ExternalLinkIcon size={11} className="shrink-0" />
+            <ArrowSquareOutIcon size={11} className="shrink-0" />
           </Link>
         </div>
         <time

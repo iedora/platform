@@ -5,10 +5,10 @@ import { useForm, getFormProps, getInputProps } from '@conform-to/react'
 import { getZodConstraint, parseWithZod } from '@conform-to/zod/v4'
 import { useTranslations } from 'next-intl'
 import Link from 'next/link'
-import { Button } from '@iedora/design-system'
+import { Button } from '@iedora/ui/components/ui/button'
 import { signInAction } from '@iedora/product-menu/features/auth/actions'
 import { signInSchema } from '@iedora/product-menu/features/auth/schemas'
-import { PasswordField, TextField } from '../../_components/form-fields'
+import { PasswordField, TextField } from '@iedora/ui/components/field'
 
 export function SignInForm({
   next,
@@ -87,7 +87,7 @@ export function SignInForm({
       )}
       <Button
         type="submit"
-        variant="primary"
+        variant="default"
         size="lg"
         className="!w-full !justify-center"
         disabled={pending}

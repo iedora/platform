@@ -1,7 +1,7 @@
 # iedora-frontend — working rules for Claude
 
 > Architecture, slice pattern, auth, and commands live in **[`AGENTS.md`](./AGENTS.md)** — read it.
-> This file adds the **design workflow** and the **design-system knowledge** that AGENTS.md doesn't cover.
+> This file adds the **design workflow** and the **UI-kit knowledge** that AGENTS.md doesn't cover.
 
 ---
 
@@ -20,50 +20,26 @@
 
 ---
 
-## The design language — "warm-light, appetizing" (Pencil redesign)
+## The UI kit — shadcn/ui on Base UI
 
-The app is mid-migration **from** an editorial look (paper/ink/cinnabar, Playfair, square corners) **to** the Pencil warm-light look. Branch: `redesign/pencil-look`. The aesthetic:
+The UI is built on **shadcn/ui** with **Base UI** primitives (shadcn style `base-sera`) and **phosphor** icons, in the **`@iedora/ui`** package. The theme is the shadcn green/neutral palette with light + dark modes.
 
-| Token | Value | Use |
-|---|---|---|
-| `--paper` / `--background` | `#FFFDFA` | page surface |
-| `--card` | `#FFFFFF` | cards |
-| `--paper-2` / `--muted` | `#F6F1EA` | muted surface |
-| `--ink` / `--foreground` | `#1F1A16` | text |
-| `--ink-2` | `#3A322B` | ink-soft |
-| `--muted` (text) / `--muted-foreground` | `#80756B` | secondary text |
-| `--rule` / `--border` | `#ECE4DA` | hairline borders |
-| `--cinnabar` / `--primary` | **`#EF5430`** | **coral — the primary CTA / brand accent** |
-| `--cinnabar-soft` | `#FCEAE2` | coral tint (eyebrows, icon tiles) |
-| `--green` | `#1E8A52` | success / "live" |
-| `--green-soft` | `#E3F2E9` | green tint |
-| `--danger` | `#D92D20` | destructive, errors |
-| `--radius-s/m/l/pill` | 10 / 18 / 28 / 999px | rounded chrome |
-
-- **Fonts:** `--display` = **Plus Jakarta Sans** (headings, wordmark, weight 700/800), `--sans` / `--serif` = **Inter** (UI + body), `--mono` = Geist Mono. Loaded via `next/font` in `apps/web/src/app/layout.tsx`. Headings (`h1–h4`) default to Plus Jakarta 700.
-- **Buttons** are filled & rounded; `variant="primary"` = coral on white text. **Inputs** are boxed + rounded (not underline). **Labels** are sans, sentence-case (not mono-uppercase).
-
-### Where the design system lives
-- **`packages/platform/design-system/`** — `@iedora/design-system`. CSS-variable tokens + BEM-scoped `.ds-*` React primitives (Button, Card, Field/Input, Dialog, Table, Toggle, Checkbox, SegmentedControl, Combobox, EmptyState, Stat, …). No shadcn, no clsx — a simple `cn()` helper.
-  - `src/tokens.css` — the raw palette + fonts (change values here to re-skin everything; **no hardcoded hex in `styles.css`**, all read from vars).
-  - `src/styles.css` — `.ds-*` rules. **A trailing `PENCIL REDESIGN` block** overrides the editorial vocabulary (filled rounded buttons, boxed inputs, sans labels, rounded surfaces). Revert by deleting that one block.
-- **`apps/web/src/app/globals.css`** — Tailwind v4 `@theme inline` maps tokens → utilities (`bg-primary`, `text-muted-foreground`, `rounded-2xl`, …) + `:root` semantic mappings (`--primary` → coral, radii, headings).
+### Where the UI kit lives
+- **`packages/platform/ui/`** — `@iedora/ui`. shadcn primitives at `@iedora/ui/components/ui/*` (Base UI, `@base-ui/react`); thin form wrappers at `@iedora/ui/components/field` (`TextField` / `TextareaField` / `SelectField` / `PasswordField` / `FieldMessage` + low-level `Field`/`FieldLabel`/`FieldError`/…); editorial drop-ins at `@iedora/ui/components/{card,combobox,section-header}`. `Button` has a custom `loading` prop (phosphor `SpinnerIcon`). `cn()` helper at `@iedora/ui/lib/utils`.
+- **`apps/web/src/app/globals.css`** — the single theme source: Tailwind v4 `@theme inline` mapping shadcn vars → utilities, `:root` (light) + `.dark` semantic tokens (`--primary` is green `oklch(0.527 0.154 150)`, `--radius` `0.625rem`, sidebar/chart sets), and the `@source` globs that scan each workspace surface. No bespoke CSS.
+- **Theme switching** — `next-themes` (`ThemeProvider` in `apps/web/src/app/layout.tsx`, `ThemeToggle` in footers).
+- **Fonts** — `--display`/`--serif`/`--sans`/`--mono` set on `<html>` via `next/font` in `layout.tsx`; surfaced as `font-heading`/`font-serif`/`font-sans`/`font-mono`.
 
 ### Building UI
-- **Compose from `@iedora/design-system`** primitives first (`Button`, `Field`, `Card`, `Dialog`, `Table`…). Use the re-skinned components; don't hand-roll buttons/inputs.
-- Layout with Tailwind v4 utilities reading the tokens (`bg-background`, `bg-card`, `border-border`, `text-primary`, `bg-[var(--cinnabar-soft)]`, `rounded-2xl`, `font-[family-name:var(--display)]`). Never hardcode hex.
-- Icons: **`lucide-react`** (in `apps/web`).
+- **Compose from `@iedora/ui`** primitives first (`Button`, `Field`, `Card`, `Dialog`, `Tabs`, `Sidebar`…). Don't hand-roll buttons/inputs.
+- Layout with Tailwind v4 utilities reading the shadcn tokens (`bg-background`, `bg-card`, `border-border`, `text-primary`, `text-muted-foreground`, `rounded-lg`, `font-heading`). Never hardcode hex.
+- Icons: **`@phosphor-icons/react`** (`*Icon` names). In **Server Components import from `@phosphor-icons/react/ssr`** — the main entry uses `createContext` and 500s in RSC.
+- Base UI uses the **`render` prop**, not radix `asChild`/`Slot`: `<X render={<Y/>}>children</X>`.
 - Match the Pencil design exactly: same text, icon, spacing, radius, color.
 
 ---
 
-## Redesign status (keep current)
-
-- ✅ **Stage 1 (root re-skin):** tokens + fonts + radius + core `.ds-*` overrides → the whole `.ds-*` system renders in the warm-light coral/rounded look. Files: `design-system/src/tokens.css`, `apps/web/src/app/layout.tsx`, `apps/web/src/app/globals.css`, `design-system/src/styles.css`.
-- ✅ **Landing** (`apps/web/src/app/menu/_components/landing/landing-page.tsx`) rebuilt to the Pencil marketing design (Hero → Features → How-it-works → Showcase → Pricing → Testimonial → CTA → Footer), as an async server component. **Fully i18n'd** under the `Landing` namespace (EN + pt-PT in `products/menu/src/i18n/messages/{en,pt}.json`); the nav EN/PT switch (`landing/lang-switch.tsx`) reuses `setUserLocale` to set the `NEXT_LOCALE` cookie. Hero/showcase/avatar use `next/image` (Unsplash `remotePatterns` in `next.config.ts`).
-- ⏳ **Pending Stage 2:** admin "control all restaurants + create/bind/print QR"; **50+-friendly onboarding** (no jargon, big targets, plain words — AI/JSON import is **admin-only**, never owner-facing); the **"Need help? Call us"** Support Line; self-host the landing photos; per-screen polish (selects/segmented). Design each in Pencil first.
-
-### Two audiences, opposite UIs (design accordingly)
+## Two audiences, opposite UIs (design accordingly)
 - **Admin (staff)** — power tools: tables, bulk actions, AI/JSON menu import, density.
 - **Restaurant owner (50+, non-technical)** — the opposite: no jargon (never "JSON/import/tenant"), big text + tap targets, plain friendly language, few steps, a real phone number to call. Admin onboards restaurants (incl. menu import); owners only maintain (edit price, mark sold out).
 

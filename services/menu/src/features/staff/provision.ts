@@ -59,7 +59,7 @@ export function staffCreateRestaurant(
     tenantId: input.tenantId,
     newTenantName: input.newTenantName,
   }).then((tenantId) =>
-    createRestaurant(deps, tenantId, actorId, input.name, input.defaultLanguage ?? ""),
+    createRestaurant(deps, tenantId, actorId, input.name, input.defaultLanguage ?? "", undefined, input.slug),
   );
 }
 
@@ -115,6 +115,7 @@ export async function staffImportRestaurant(
       payload.restaurant.name,
       defaultLang,
       supported,
+      payload.restaurant.slug,
     );
     for (const menu of payload.menus) {
       const menuId = await createMenu(deps, restaurant.id, menu.name);
