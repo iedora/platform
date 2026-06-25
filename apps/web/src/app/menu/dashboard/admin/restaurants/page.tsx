@@ -3,7 +3,10 @@ import { PlusIcon } from '@phosphor-icons/react/ssr'
 import { getTranslations } from 'next-intl/server'
 import { requireStaff } from '@iedora/product-menu/features/auth'
 import { DashboardPage } from '@iedora/product-menu/shared/ui/dashboard-page'
-import { listRestaurantsDirectory } from '@iedora/product-menu/features/restaurant-identity'
+import {
+  listRestaurantsDirectory,
+  listTenantsDirectory,
+} from '@iedora/product-menu/features/restaurant-identity'
 import { RestaurantsTable, type AdminRestaurantRow } from './restaurants-table'
 
 /**
@@ -20,13 +23,22 @@ import { RestaurantsTable, type AdminRestaurantRow } from './restaurants-table'
 export default async function AdminRestaurantsPage() {
   await requireStaff()
 
-  const [t, raw] = await Promise.all([getTranslations('Admin'), listRestaurantsDirectory()])
+  // The directory row only carries `tenantId`; the tenant *name* lives in the
+  // tenant directory (same one the "New restaurant" picker uses), so join them
+  // here to show a human label next to each restaurant.
+  const [t, raw, tenants] = await Promise.all([
+    getTranslations('Admin'),
+    listRestaurantsDirectory(),
+    listTenantsDirectory(),
+  ])
+  const tenantNames = new Map(tenants.map((tn) => [tn.id, tn.name]))
 
   const rows: AdminRestaurantRow[] = raw.map((r) => ({
     id: r.id,
     name: r.name,
     slug: r.slug,
     tenantId: r.tenantId,
+    tenantName: tenantNames.get(r.tenantId),
     // The staff directory row carries `menus`/`items`/`createdAt` (the service's
     // field names); map them onto the table's display fields.
     menuCount: r.menus,

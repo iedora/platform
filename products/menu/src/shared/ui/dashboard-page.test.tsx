@@ -10,9 +10,10 @@ describe('DashboardPage', () => {
         <div>content</div>
       </DashboardPage>,
     )
-    expect(html).toMatch(/<h1[^>]*class="ds-breadcrumb__here"/)
+    // A plain heading, not the old breadcrumb "you are here" chrome.
     expect(html).toContain('data-test-id="dashboard-root-heading"')
     expect(html).toContain('>Menus</h1>')
+    expect(html).not.toContain('ds-breadcrumb__here')
     expect(html).not.toContain('aria-label="Breadcrumb"')
   })
 

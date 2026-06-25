@@ -4,7 +4,7 @@ import { grantedRole } from "../../config";
 import { insertSession } from "../../data/sessions";
 import { createUserOr409, setRole } from "../../data/users";
 import type { AuthDeps } from "../../deps";
-import { buildSession, mintTokens, type RequestMeta, type Tokens } from "../../session";
+import { auditWith, buildSession, mintTokens, type RequestMeta, type Tokens } from "../../session";
 
 // Register creates a user (+ its audit event, atomically) then auto-logs them in
 // with a fresh session.
@@ -15,32 +15,29 @@ export async function register(
 ): Promise<Tokens> {
   const passwordHash = await hashPassword(input.password);
 
+  const audit = auditWith(deps.auditor, meta);
   const user = await deps.db.runInTx(async () => {
     const created = await createUserOr409(deps.db.db, {
       email: input.email,
       passwordHash,
       name: input.name,
     });
-    await deps.auditor.recordSync({
+    await audit.recordSync({
       action: "auth.user.register",
       actor: { type: "user", id: created.id },
       targetType: "user",
       targetId: created.id,
-      userAgent: meta.userAgent ?? undefined,
-      ipHash: meta.ipHash ?? undefined,
     });
     // Role-grant hook: a registration matching ROLE_GRANTS lands with that role
     // straight away (same resolver + audit event the login hook uses).
     const role = grantedRole(deps.cfg, created.email);
     if (role && created.role !== role) {
       await setRole(deps.db.db, created.id, role);
-      await deps.auditor.recordSync({
+      await audit.recordSync({
         action: "auth.user.role_granted",
         actor: { type: "user", id: created.id },
         targetType: "user",
         targetId: created.id,
-        userAgent: meta.userAgent ?? undefined,
-        ipHash: meta.ipHash ?? undefined,
         meta: { role, reason: "role_grant" },
       });
       created.role = role;

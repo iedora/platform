@@ -11,7 +11,7 @@ import {
 import { findUserById, isBanned, listMemberships } from "../../data/users";
 import type { AuthDeps } from "../../deps";
 import { unauthorized } from "../../errors";
-import { buildNextSession, mintTokens, type RequestMeta, type Tokens } from "../../session";
+import { auditWith, buildNextSession, mintTokens, type RequestMeta, type Tokens } from "../../session";
 
 class ReuseError extends Error {}
 
@@ -20,15 +20,13 @@ class ReuseError extends Error {}
 async function burnFamily(deps: AuthDeps, cur: Session, meta: RequestMeta): Promise<void> {
   await deps.db.runInTx(async () => {
     await revokeFamily(deps.db.db, cur.family_id);
-    await deps.auditor.recordSync({
+    await auditWith(deps.auditor, meta).recordSync({
       action: "auth.token.reuse_detected",
       outcome: "failure",
       actor: { type: "user", id: cur.user_id },
       tenantId: cur.tenant_id ?? undefined,
       targetType: "user",
       targetId: cur.user_id,
-      userAgent: meta.userAgent ?? undefined,
-      ipHash: meta.ipHash ?? undefined,
       meta: { family_id: cur.family_id, session_id: cur.id },
     });
   });
@@ -66,14 +64,12 @@ export async function refresh(deps: AuthDeps, refreshToken: string, meta: Reques
     await deps.db.runInTx(async () => {
       const { ok, nextId } = await rotate(deps.db.db, cur.id, next);
       if (!ok) throw new ReuseError(); // lost the race → roll back the inserted successor
-      await deps.auditor.recordSync({
+      await auditWith(deps.auditor, meta).recordSync({
         action: "auth.token.refresh",
         actor: { type: "user", id: user.id },
         tenantId: next.tenantId ?? undefined,
         targetType: "user",
         targetId: user.id,
-        userAgent: meta.userAgent ?? undefined,
-        ipHash: meta.ipHash ?? undefined,
         meta: { session_id: nextId },
       });
     });

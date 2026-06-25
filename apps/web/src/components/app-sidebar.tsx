@@ -1,6 +1,6 @@
 'use client'
 
-import type { ComponentProps, ReactNode } from 'react'
+import { type ComponentProps, type ReactNode, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
@@ -13,6 +13,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  useSidebar,
 } from '@iedora/ui/components/ui/sidebar'
 import { NavUser } from './nav-user'
 
@@ -23,6 +24,9 @@ export type AppNavItem = {
   testId?: string
   /** Match only the exact path (no descendant highlighting). */
   exact?: boolean
+  /** Extra path prefixes that also activate this item (e.g. admin Restaurants
+   *  staying lit while viewing an owner-scoped restaurant page). */
+  match?: string[]
 }
 
 export type AppSidebarProps = ComponentProps<typeof Sidebar> & {
@@ -38,8 +42,17 @@ export type AppSidebarProps = ComponentProps<typeof Sidebar> & {
  */
 export function AppSidebar({ navItems, brand, account, ...props }: AppSidebarProps) {
   const pathname = usePathname()
+  const { setOpenMobile } = useSidebar()
+  // On mobile the sidebar is an off-canvas Sheet. Close it on route change
+  // (in an effect, after navigation settles) rather than on click, so the
+  // Sheet's slide-out animation plays instead of being cut off by the nav.
+  useEffect(() => {
+    setOpenMobile(false)
+  }, [pathname, setOpenMobile])
+  const matchesPrefix = (prefix: string) => pathname === prefix || pathname.startsWith(`${prefix}/`)
   const isActive = (item: AppNavItem) =>
-    item.exact ? pathname === item.href : pathname === item.href || pathname.startsWith(`${item.href}/`)
+    (item.exact ? pathname === item.href : matchesPrefix(item.href)) ||
+    (item.match?.some(matchesPrefix) ?? false)
 
   return (
     <Sidebar collapsible="offcanvas" {...props}>

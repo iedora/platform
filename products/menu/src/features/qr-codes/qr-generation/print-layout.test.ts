@@ -11,6 +11,7 @@ import {
   MIN_GUTTER_MM,
   MIN_PAGE_MARGIN_MM,
   MIN_QR_MM,
+  PAGE_SIZES,
   autoFitQrSize,
   clampLayoutInputs,
   computeGrid,
@@ -58,6 +59,57 @@ describe('computeGrid', () => {
     const tight = computeGrid({ qrSizeMm: 35, gutterMm: 6, pageMarginMm: 3 })
     const loose = computeGrid({ qrSizeMm: 35, gutterMm: 6, pageMarginMm: 12 })
     expect(tight.total).toBeGreaterThanOrEqual(loose.total)
+  })
+})
+
+describe('page sizes', () => {
+  it('defaults to A4 when no page dimensions are passed', () => {
+    const def = computeGrid({ qrSizeMm: 35, gutterMm: 6, pageMarginMm: 5 })
+    const a4 = computeGrid({
+      qrSizeMm: 35,
+      gutterMm: 6,
+      pageMarginMm: 5,
+      pageWMm: PAGE_SIZES.a4.wMm,
+      pageHMm: PAGE_SIZES.a4.hMm,
+    })
+    expect(def).toEqual(a4)
+  })
+
+  it('honours an explicit page size in the packing inequality (US Letter)', () => {
+    const { wMm, hMm } = PAGE_SIZES.letter
+    const inputs = { qrSizeMm: 35, gutterMm: 6, pageMarginMm: 5, pageWMm: wMm, pageHMm: hMm }
+    const { cols, rows } = computeGrid(inputs)
+    const widthUsed = 2 * inputs.pageMarginMm + cols * inputs.qrSizeMm + (cols - 1) * inputs.gutterMm
+    const heightUsed = 2 * inputs.pageMarginMm + rows * inputs.qrSizeMm + (rows - 1) * inputs.gutterMm
+    expect(widthUsed).toBeLessThanOrEqual(wMm)
+    expect(heightUsed).toBeLessThanOrEqual(hMm)
+  })
+
+  it('Legal is taller than Letter, so it fits at least as many rows', () => {
+    const base = { qrSizeMm: 35, gutterMm: 6, pageMarginMm: 5 }
+    const letter = computeGrid({ ...base, pageWMm: PAGE_SIZES.letter.wMm, pageHMm: PAGE_SIZES.letter.hMm })
+    const legal = computeGrid({ ...base, pageWMm: PAGE_SIZES.legal.wMm, pageHMm: PAGE_SIZES.legal.hMm })
+    expect(legal.rows).toBeGreaterThanOrEqual(letter.rows)
+    expect(legal.total).toBeGreaterThanOrEqual(letter.total)
+  })
+
+  it('autoFit respects the chosen page size', () => {
+    const r = autoFitQrSize({
+      minQrSizeMm: 25,
+      gutterMm: DEFAULT_GUTTER_MM,
+      pageMarginMm: DEFAULT_PAGE_MARGIN_MM,
+      pageWMm: PAGE_SIZES.letter.wMm,
+      pageHMm: PAGE_SIZES.letter.hMm,
+    })
+    const direct = computeGrid({
+      qrSizeMm: r.qrSizeMm,
+      gutterMm: DEFAULT_GUTTER_MM,
+      pageMarginMm: DEFAULT_PAGE_MARGIN_MM,
+      pageWMm: PAGE_SIZES.letter.wMm,
+      pageHMm: PAGE_SIZES.letter.hMm,
+    })
+    expect(r.total).toBe(direct.total)
+    expect(r.total).toBeGreaterThan(0)
   })
 })
 

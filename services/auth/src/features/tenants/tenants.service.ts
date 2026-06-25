@@ -3,7 +3,7 @@ import { hashPassword } from "@iedora/server-kit";
 import { addMembership, createTenant, setTenantOwner } from "../../data/tenants";
 import { createUserOr409 } from "../../data/users";
 import type { AuthDeps } from "../../deps";
-import type { RequestMeta } from "../../session";
+import { auditWith, type RequestMeta } from "../../session";
 
 // Provisions a tenant with the caller as owner (+ audit), all in one tx. Ports
 // service.CreateTenant. The caller's current access token doesn't carry the new
@@ -17,14 +17,12 @@ export async function createTenantForUser(
   return deps.db.runInTx(async () => {
     const id = await createTenant(deps.db.db, name);
     await addMembership(deps.db.db, { userId, tenantId: id, role: "owner" });
-    await deps.auditor.recordSync({
+    await auditWith(deps.auditor, meta).recordSync({
       action: "auth.tenant.created",
       actor: { type: "user", id: userId },
       tenantId: id,
       targetType: "tenant",
       targetId: id,
-      userAgent: meta.userAgent ?? undefined,
-      ipHash: meta.ipHash ?? undefined,
     });
     return { id, name };
   });
@@ -44,15 +42,13 @@ export async function transferTenantToNewOwner(
   return deps.db.runInTx(async () => {
     const user = await createUserOr409(deps.db.db, { email: input.email, passwordHash, name: input.name });
     await setTenantOwner(deps.db.db, tenantId, user.id);
-    await deps.auditor.recordSync({
+    await auditWith(deps.auditor, meta).recordSync({
       action: "auth.tenant.owner_transferred",
       actor: { type: "user", id: user.id },
       tenantId,
       targetType: "tenant",
       targetId: tenantId,
       meta: { newOwnerEmail: input.email, reason: "transfer_new_user" },
-      userAgent: meta.userAgent ?? undefined,
-      ipHash: meta.ipHash ?? undefined,
     });
     return { ownerId: user.id };
   });

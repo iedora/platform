@@ -32,7 +32,6 @@
     "./features/qr-codes/ui/qr-codes-admin": "./src/features/qr-codes/ui/qr-codes-admin.tsx",
     "./features/restaurant-identity": "./src/features/restaurant-identity/index.ts",
     "./features/restaurant-identity/actions": "./src/features/restaurant-identity/actions.ts",
-    "./features/restaurant-identity/ui/admin-qr-card": "./src/features/restaurant-identity/ui/admin-qr-card.tsx",
     "./features/restaurant-identity/ui/admin-rename-form": "./src/features/restaurant-identity/ui/admin-rename-form.tsx",
     "./features/restaurant-identity/ui/restaurant-qr-shelf": "./src/features/restaurant-identity/ui/restaurant-qr-shelf.tsx",
     "./features/restaurant-identity/ui/theme-editor": "./src/features/restaurant-identity/ui/theme-editor.tsx",

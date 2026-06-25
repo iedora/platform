@@ -11,9 +11,22 @@ import { seedSample } from "../../seed";
 import {
   completeOnboarding,
   deleteRestaurant,
+  recordQrPrint,
   renameSlug,
   updateIdentity,
 } from "../../service";
+
+// Print-sheet options recorded on the QR audit event (mirrors the dialog).
+const qrPrintMeta = z.object({
+  kind: z.enum(["menu", "sticker"]),
+  code: z.string().max(64).optional(),
+  pageSize: z.enum(["a4", "letter", "legal"]),
+  qrSizeMm: z.number().int().positive().max(500),
+  gutterMm: z.number().int().nonnegative().max(100),
+  pageMarginMm: z.number().int().nonnegative().max(100),
+  cutMarks: z.boolean(),
+  perSheet: z.number().int().nonnegative().max(10_000),
+});
 
 // Scoped restaurant-identity slice: everything under /restaurants/{slug} that
 // acts on the restaurant as a whole. Relies on the parent `scoped` middleware
@@ -40,6 +53,14 @@ export function restaurantRoutes(deps: MenuDeps) {
     })
     .post("/complete-onboarding", async (c) => {
       await completeOnboarding(deps, c.get("restaurant"));
+      return c.json({ ok: true });
+    })
+    // Audit a QR print from the owner QR page or the admin restaurant view. The
+    // scoped middleware already resolved + tenancy-checked the restaurant, so
+    // owner (own) and staff (any) both land here; the event targets the
+    // restaurant so it surfaces in its admin audit trail.
+    .post("/qr-print", zValidator("json", qrPrintMeta), async (c) => {
+      await recordQrPrint(deps, c.get("restaurant"), c.get("user").userId, c.req.valid("json"));
       return c.json({ ok: true });
     })
     .post("/seed", async (c) => c.json({ menuId: await seedSample(deps, c.get("restaurant")) }))

@@ -1,6 +1,7 @@
 import { beforeAll, expect, test } from "bun:test";
+import { sql } from "kysely";
 
-import { auth, json, jsonPatch, seedRestaurant, useHarness } from "./harness";
+import { auth, json, jsonPatch, seedRestaurant, staffToken, useHarness } from "./harness";
 
 // Restaurant-identity slice: theme, slug rename, and delete — the
 // per-restaurant settings, asserted through the public read model.
@@ -36,4 +37,58 @@ test("DELETE the restaurant → its slug stops resolving", async () => {
   const res = await h.app.request("/api/restaurants/nova-casa", { method: "DELETE", headers: await auth(h) });
   expect(res.status).toBe(200);
   expect((await h.app.request("/public/r/nova-casa")).status).toBe(404);
+});
+
+// --- QR print audit -------------------------------------------------------
+
+const QR_RID = "ffffffff-ffff-ffff-ffff-ffffffffffff";
+const PRINT_META = {
+  kind: "sticker",
+  code: "KASA-1",
+  pageSize: "letter",
+  qrSizeMm: 35,
+  gutterMm: 6,
+  pageMarginMm: 5,
+  cutMarks: true,
+  perSheet: 24,
+};
+
+async function printedEvents() {
+  const rows = await sql<{ payload: string }>`
+    SELECT convert_from(payload, 'UTF8') AS payload FROM outbox
+  `.execute(h.db.root);
+  return rows.rows
+    .map((r) => JSON.parse(r.payload) as { action: string; targetId?: string; meta?: unknown })
+    .filter((e) => e.action === "menu.restaurant.qr_printed");
+}
+
+test("qr-print records an audit event scoped to the restaurant, with the print options as meta", async () => {
+  await seedRestaurant(h, { id: QR_RID, slug: "qrcasa", name: "QR Casa", defaultLanguage: "en" });
+
+  const res = await h.app.request("/api/restaurants/qrcasa/qr-print", await json(h, PRINT_META));
+  expect(res.status).toBe(200);
+
+  const events = await printedEvents();
+  const ev = events.find((e) => e.targetId === QR_RID);
+  expect(ev).toBeDefined();
+  // Rich metadata: the chosen print options ride along on the event.
+  expect(ev!.meta).toMatchObject({ pageSize: "letter", cutMarks: true, perSheet: 24, kind: "sticker" });
+});
+
+test("staff can record a qr-print on any restaurant (cross-tenant)", async () => {
+  const res = await h.app.request(
+    "/api/restaurants/qrcasa/qr-print",
+    await json(h, { ...PRINT_META, pageSize: "a4" }, await staffToken(h)),
+  );
+  expect(res.status).toBe(200);
+  const events = await printedEvents();
+  expect(events.some((e) => e.targetId === QR_RID && (e.meta as { pageSize?: string })?.pageSize === "a4")).toBe(true);
+});
+
+test("qr-print rejects an invalid page size", async () => {
+  const res = await h.app.request(
+    "/api/restaurants/qrcasa/qr-print",
+    await json(h, { ...PRINT_META, pageSize: "tabloid" }),
+  );
+  expect(res.status).toBe(400);
 });

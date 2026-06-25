@@ -21,6 +21,9 @@ export type PlanDisplay = {
   readonly code: PlanCode
   // Display NAMES are not stored here — they live in i18n (`Billing.plans.<code>.name`),
   // the single source every surface (tenant billing page + admin) renders from.
+  /** Monthly list price in minor units (cents); 0 = free. Drives the admin
+   * payment dialog's automatic discount calculation. */
+  readonly priceCents: number
   /** Mirrors the `PlanLimits` contract (-1 = unlimited). Display copy only. */
   readonly restaurants: number
   readonly monthlyViews: number
@@ -32,6 +35,7 @@ export type PlanDisplay = {
 export const REGISTRY = {
   menu_free: {
     code: 'menu_free',
+    priceCents: 0,
     restaurants: 1,
     monthlyViews: 1000,
     features: [],
@@ -39,6 +43,7 @@ export const REGISTRY = {
   },
   menu_pro: {
     code: 'menu_pro',
+    priceCents: 1200,
     restaurants: 3,
     monthlyViews: 20000,
     features: ['exportPdf', 'customBranding', 'analytics'],
@@ -47,6 +52,7 @@ export const REGISTRY = {
   },
   menu_agency: {
     code: 'menu_agency',
+    priceCents: 4900,
     restaurants: -1,
     monthlyViews: -1,
     features: ['exportPdf', 'customBranding', 'analytics'],

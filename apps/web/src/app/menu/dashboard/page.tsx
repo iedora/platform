@@ -1,5 +1,4 @@
 import Link from 'next/link'
-import { redirect } from 'next/navigation'
 import { getLocale, getTranslations } from 'next-intl/server'
 import {
   getSession,
@@ -30,6 +29,7 @@ import {
   formatEditedAt,
   formatIndex,
 } from '@iedora/product-menu/shared/ui/editorial-list'
+import { AdminOverview } from './admin/_components/admin-overview'
 
 const RANGE = '30d' as const
 
@@ -38,11 +38,11 @@ export default async function DashboardPage() {
   const tBillingPromise = getTranslations('Billing')
   const localePromise = getLocale()
 
-  // Staff manage everything via Admin → Restaurants; the per-tenant home is
-  // meaningless for them — short-circuit before the tenant gate.
+  // Staff get a cross-tenant CRM overview (the per-tenant owner home below is
+  // meaningless for them) — short-circuit before the tenant gate.
   const session = await getSession()
   if (isStaff(session)) {
-    redirect('/menu/dashboard/admin/restaurants')
+    return <AdminOverview />
   }
   await requireActiveOrganization()
 

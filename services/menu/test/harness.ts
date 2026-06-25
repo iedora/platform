@@ -137,8 +137,23 @@ export async function createHarness(
     billing: {
       subscriptions: async () => billingStub.subscriptions,
       invoices: async () => billingStub.invoices,
+      recordPayment: async (input) => {
+        const inv: Invoice = {
+          id: `inv_${billingStub.invoices.length + 1}`,
+          tenantId: input.tenantId,
+          product: "menu",
+          planCode: input.planCode,
+          amountCents: input.amountCents,
+          currency: input.currency,
+          status: "paid",
+          promo: input.promo ?? null,
+          createdAt: new Date().toISOString(),
+        };
+        billingStub.invoices.unshift(inv);
+        return inv;
+      },
     },
-    audit: { forTarget: async () => auditStub.events },
+    audit: { forTarget: async () => auditStub.events, forTenant: async () => auditStub.events },
     tenant: {
       tenant: async () => {
         if (tenantStub.fail) throw new Error("auth unavailable");

@@ -9,6 +9,7 @@ export * from "./jwt";
 export * from "./migrate";
 export * from "./outbox";
 export * from "./password";
+export * from "./pgerror";
 export * from "./runservice";
 export * from "./serviceauth";
 export * from "./serviceclient";

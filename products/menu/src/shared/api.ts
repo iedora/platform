@@ -139,6 +139,26 @@ export function getMenuTree(slug: string) {
   }>(`${r(slug)}/tree`)
 }
 
+export type QrPrintAuditMeta = {
+  kind: 'menu' | 'sticker'
+  code?: string
+  pageSize: string
+  qrSizeMm: number
+  gutterMm: number
+  pageMarginMm: number
+  cutMarks: boolean
+  perSheet: number
+}
+
+/** Records a QR print against the restaurant's audit trail (owner or staff). */
+export function recordQrPrint(slug: string, meta: QrPrintAuditMeta) {
+  return apiJson<{ ok: true }>(`${r(slug)}/qr-print`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(meta),
+  })
+}
+
 // --- builder ---
 
 const json = (body: unknown): RequestInit => ({
@@ -249,19 +269,27 @@ export function staffDirectory(q?: string) {
 }
 
 /** Aggregated detail for the admin restaurant pages: the record + menus +
- * 14-day trend, the tenant's billing (subscriptions + invoices), and the
- * restaurant's audit trail. Billing/audit are best-effort on the service. */
+ * 14-day trend, the tenant's billing (subscriptions + invoices). Billing is
+ * best-effort on the service. The audit trail is NOT here — it loads lazily
+ * via `staffRestaurantAudit` when the Activity tab opens. */
 export type StaffRestaurantFull = {
   restaurant: StaffRestaurantRow
   menus: MenuSummary[]
   trend: DailyPoint[]
   billing: { subscriptions: Subscription[]; invoices: Invoice[] }
-  audit: AuditRecord[]
   tenant: TenantWithOwner | null // tenant + owner user (null if the auth read failed/absent)
 }
 
 export function staffRestaurantDetail(id: string) {
   return apiJson<StaffRestaurantFull>(`/api/staff/restaurants/${encodeURIComponent(id)}`)
+}
+
+/** Lazily-loaded audit trail for one restaurant (the Activity tab). Split from
+ * the aggregate so a record view only hits the audit DB on demand. */
+export function staffRestaurantAudit(id: string) {
+  return apiJson<{ events: AuditRecord[] }>(
+    `/api/staff/restaurants/${encodeURIComponent(id)}/audit`,
+  )
 }
 
 /** Staff identity override — a privileged rename of a restaurant's friendly name,
@@ -319,6 +347,17 @@ export function staffTransferOwnership(
     method: 'POST',
     ...json(input),
   })
+}
+
+/** Record a (cash) payment against the restaurant's tenant — a paid invoice. */
+export function staffRecordPayment(
+  id: string,
+  input: { amountCents: number; currency: string; planCode: string; promo?: string },
+) {
+  return apiJson<{ invoice: Invoice }>(
+    `/api/staff/restaurants/${encodeURIComponent(id)}/payments`,
+    { method: 'POST', ...json(input) },
+  )
 }
 
 /** Provision a restaurant + its full menu from a pasted JSON document. The

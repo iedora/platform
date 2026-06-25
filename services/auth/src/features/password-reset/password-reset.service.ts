@@ -11,7 +11,7 @@ import {
 import { revokeAllForUser } from "../../data/sessions";
 import { findUserByEmail, findUserById, isBanned, updatePasswordHash } from "../../data/users";
 import type { AuthDeps } from "../../deps";
-import type { RequestMeta } from "../../session";
+import { auditWith, type RequestMeta } from "../../session";
 
 // Builds the emailed reset link from configured base + the raw token. The base
 // comes from cfg (never the request Host header) → no reset-link poisoning.
@@ -44,13 +44,11 @@ export async function requestReset(
 
   await deps.db.runInTx(async () => {
     await insertResetToken(deps.db.db, { userId: user.id, tokenHash: hash, expiresAt });
-    await deps.auditor.recordSync({
+    await auditWith(deps.auditor, meta).recordSync({
       action: "auth.user.password_reset_requested",
       actor: { type: "user", id: user.id },
       targetType: "user",
       targetId: user.id,
-      userAgent: meta.userAgent ?? undefined,
-      ipHash: meta.ipHash ?? undefined,
     });
   });
 
@@ -82,13 +80,11 @@ export async function confirmReset(
     await updatePasswordHash(deps.db.db, row.user_id, passwordHash);
     await invalidateUserTokens(deps.db.db, row.user_id); // burn any sibling tokens
     await revokeAllForUser(deps.db.db, row.user_id); // log out every device
-    await deps.auditor.recordSync({
+    await auditWith(deps.auditor, meta).recordSync({
       action: "auth.user.password_reset_completed",
       actor: { type: "user", id: row.user_id },
       targetType: "user",
       targetId: row.user_id,
-      userAgent: meta.userAgent ?? undefined,
-      ipHash: meta.ipHash ?? undefined,
     });
   });
 

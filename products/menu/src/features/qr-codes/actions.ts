@@ -125,3 +125,20 @@ export async function deleteCodeAction(code: string): Promise<ActionResult> {
   revalidatePath(ADMIN_PATH)
   return { ok: true }
 }
+
+/**
+ * Records a QR print against the restaurant's audit trail (the event shows on
+ * the admin restaurant view). Best-effort: a failed audit write must never
+ * block the print itself, so this swallows errors and returns nothing. Works
+ * for the owner (their restaurant) and staff (any) via the scoped route.
+ */
+export async function logQrPrintAction(
+  slug: string,
+  meta: api.QrPrintAuditMeta,
+): Promise<void> {
+  try {
+    await api.recordQrPrint(slug, meta)
+  } catch {
+    // swallow — auditing is observability, not part of the print flow
+  }
+}

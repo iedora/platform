@@ -37,6 +37,8 @@ export const invoice = z.object({
   amountCents: z.number().int(),
   currency: z.string(),
   status: z.string(), // issued | paid | void
+  /** Optional promo / campaign label (e.g. "Early Adopter"). */
+  promo: z.string().nullable().optional(),
   createdAt: z.string(),
 });
 export type Invoice = z.infer<typeof invoice>;

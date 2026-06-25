@@ -5,8 +5,16 @@ import QRCode from 'qrcode'
 import { useTranslations } from 'next-intl'
 import { Badge } from '@iedora/ui/components/ui/badge'
 import { Button } from '@iedora/ui/components/ui/button'
-import { SectionHeader } from '@iedora/ui/components/section-header'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@iedora/ui/components/ui/card'
 import { QrViewer } from './qr-viewer'
+import { QrPrintSheet } from '../../qr-codes/qr-generation/qr-print-sheet'
+import { logQrPrintAction } from '../../qr-codes/actions'
 
 /**
  * Per-restaurant QR shelf — the read-only tenant-side view of every QR
@@ -28,11 +36,14 @@ import { QrViewer } from './qr-viewer'
  * to the left edge on wider viewports.
  */
 export function RestaurantQrShelf({
+  slug,
   brandedUrl,
   restaurantName,
   stickers,
   publicOrigin,
 }: {
+  /** Restaurant slug — scopes the print audit event to this restaurant. */
+  slug: string
   brandedUrl: string
   restaurantName: string
   /** Sticker codes bound to this restaurant. Empty list = nothing to render below the branded QR. */
@@ -45,63 +56,71 @@ export function RestaurantQrShelf({
 }) {
   const t = useTranslations('Qr')
 
+  // CRM-style record: stacked cards, single column (mobile-first — almost every
+  // operator is on a phone). Each concern is its own card: the menu QR, the
+  // print sheet, and the admin-managed bound stickers.
   return (
-    <div
-      className="space-y-10"
-      data-test-id="restaurant-qr-shelf"
-    >
-      <section className="space-y-4" data-test-id="restaurant-qr-branded-section">
-        <SectionHeader title={t('brandedTitle')} hint={t('brandedHint')} />
-        <div className="grid place-items-center">
-          <QrViewer
-            publicUrl={brandedUrl}
-            restaurantName={restaurantName}
-          />
-        </div>
-      </section>
+    <div className="space-y-4" data-test-id="restaurant-qr-shelf">
+      {/* Mobile: stacked single column. Desktop: one grid, QR (25%) beside the
+          print sheet (75%). Bound stickers always span the full width below. */}
+      <div className="grid gap-4 lg:grid-cols-[1fr_3fr] lg:items-start">
+        {/* Menu QR */}
+        <Card data-test-id="restaurant-qr-branded-section">
+          <CardHeader>
+            <CardTitle>{t('brandedTitle')}</CardTitle>
+            <CardDescription>{t('brandedHint')}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <QrViewer publicUrl={brandedUrl} restaurantName={restaurantName} />
+          </CardContent>
+        </Card>
 
+        {/* Print options inline in their own card (no dialog). Prints a sheet of
+            the branded menu QR; audited as "menu". */}
+        <Card data-test-id="qr-print-card">
+          <CardHeader>
+            <CardTitle>{t('printSheet')}</CardTitle>
+            <CardDescription>{t('printSectionHint')}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <QrPrintSheet
+              code={slug}
+              stickerUrl={brandedUrl}
+              label={restaurantName}
+              onPrinted={(options) => logQrPrintAction(slug, { kind: 'menu', code: slug, ...options })}
+            />
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Bound stickers (admin-managed) */}
       {stickers.length > 0 && (
-        <section
-          className="space-y-4"
-          data-test-id="restaurant-qr-bound-section"
-        >
-          {/* Heading row: title fills the row, the admin-managed badge
-              clings to the right. flex-wrap so on a narrow phone the
-              badge drops below the title instead of cramping it. */}
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="flex-1 min-w-0">
-              <SectionHeader
-                title={t('boundStickersTitle', { count: stickers.length })}
-                hint={t('boundStickersCount', { count: stickers.length })}
-              />
+        <Card data-test-id="restaurant-qr-bound-section">
+          <CardHeader>
+            <div className="flex flex-wrap items-start justify-between gap-2">
+              <CardTitle>{t('boundStickersTitle', { count: stickers.length })}</CardTitle>
+              <Badge variant="ghost" data-test-id="restaurant-qr-bound-admin-tag">
+                {t('adminManagedTag')}
+              </Badge>
             </div>
-            <Badge
-              variant="ghost"
-              data-test-id="restaurant-qr-bound-admin-tag"
-            >
-              {t('adminManagedTag')}
-            </Badge>
-          </div>
-
-          <p
-            className="max-w-prose text-sm text-[var(--muted-foreground)]"
-            data-test-id="restaurant-qr-bound-explanation"
-          >
-            {t('boundStickersExplanation')}
-          </p>
-
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {stickers.map((s) => (
-              <StickerCard
-                key={s.code}
-                code={s.code}
-                label={s.label}
-                stickerUrl={`${publicOrigin}/q/${s.code}`}
-                restaurantName={restaurantName}
-              />
-            ))}
-          </div>
-        </section>
+            <CardDescription data-test-id="restaurant-qr-bound-explanation">
+              {t('boundStickersExplanation')}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {stickers.map((s) => (
+                <StickerCard
+                  key={s.code}
+                  code={s.code}
+                  label={s.label}
+                  stickerUrl={`${publicOrigin}/q/${s.code}`}
+                  restaurantName={restaurantName}
+                />
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       )}
     </div>
   )

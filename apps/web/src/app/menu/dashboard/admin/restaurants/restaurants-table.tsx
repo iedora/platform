@@ -1,15 +1,26 @@
 'use client'
 
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { useDeferredValue, useMemo, useState } from 'react'
 import { useTranslations } from 'next-intl'
-import { QrCodeIcon } from '@phosphor-icons/react'
+import { CaretRightIcon, QrCodeIcon } from '@phosphor-icons/react'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@iedora/ui/components/ui/table'
 
 export type AdminRestaurantRow = {
   id: string
   name: string
   slug: string
   tenantId: string
+  /** Display name of the owning tenant (joined from the tenant directory). */
+  tenantName?: string
   menuCount: number
   dishCount: number
   views30d: number
@@ -26,21 +37,21 @@ const SORTS: { key: SortKey; labelKey: 'sortRecent' | 'sortMostViewed' | 'sortAZ
   { key: 'name', labelKey: 'sortAZ' },
 ]
 
-// One column template shared by the header row and every data row — this is
-// what guarantees cells line up under their headers (the misalignment fix).
-// Columns: Restaurant · Tenant · Menus · Items · Views 30d · Status · Actions
-// (Pencil "Admin · Restaurants" U4kxT).
-const GRID_COLS =
-  'grid grid-cols-[minmax(170px,1fr)_116px_72px_72px_92px_88px_124px] items-center gap-3'
-
 /** Short, copy-stable tenant id for the pill — full value lives in `title`. */
 function shortTenant(tenantId: string): string {
   return tenantId.length > 8 ? tenantId.slice(0, 8) : tenantId
 }
 
-/** Warm-light cross-tenant restaurants list (Pencil "Admin · Restaurants"). */
+/**
+ * Cross-tenant restaurants list (staff only) as a CRM table: Tenant →
+ * Restaurant → counts. Rows are the tap target (open the record); the QR
+ * action stays independently clickable. Columns reveal progressively as
+ * the viewport grows, so on a phone it stays a clean two-column list (no
+ * horizontal scroll).
+ */
 export function RestaurantsTable({ rows }: { rows: AdminRestaurantRow[] }) {
   const t = useTranslations('Admin')
+  const router = useRouter()
   const [query, setQuery] = useState('')
   const [sortKey, setSortKey] = useState<SortKey>('updatedAt')
   const deferredQuery = useDeferredValue(query)
@@ -52,7 +63,8 @@ export function RestaurantsTable({ rows }: { rows: AdminRestaurantRow[] }) {
         ? true
         : r.name.toLowerCase().includes(q) ||
           r.slug.toLowerCase().includes(q) ||
-          r.tenantId.toLowerCase().includes(q),
+          r.tenantId.toLowerCase().includes(q) ||
+          (r.tenantName?.toLowerCase().includes(q) ?? false),
     )
     return [...list].sort((a, b) => {
       switch (sortKey) {
@@ -67,6 +79,10 @@ export function RestaurantsTable({ rows }: { rows: AdminRestaurantRow[] }) {
   }, [rows, deferredQuery, sortKey])
 
   const hasFilters = query.length > 0
+
+  function open(id: string) {
+    router.push(`/menu/dashboard/admin/restaurants/${id}`)
+  }
 
   return (
     <div className="space-y-4" data-test-id="admin-restaurants-table">
@@ -96,7 +112,7 @@ export function RestaurantsTable({ rows }: { rows: AdminRestaurantRow[] }) {
 
       {/* Sort + count */}
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex gap-1.5">
+        <div className="flex flex-wrap gap-1.5">
           {SORTS.map((s) => (
             <button
               key={s.key}
@@ -119,96 +135,105 @@ export function RestaurantsTable({ rows }: { rows: AdminRestaurantRow[] }) {
         </p>
       </div>
 
-      {/* Cards */}
+      {/* Table */}
       {filtered.length === 0 ? (
-        <p className="rounded-[18px] border border-border bg-card px-4 py-10 text-center text-[14px] text-muted-foreground" data-test-id="admin-restaurants-empty">
+        <p
+          className="rounded-[18px] border border-border bg-card px-4 py-10 text-center text-[14px] text-muted-foreground"
+          data-test-id="admin-restaurants-empty"
+        >
           {hasFilters ? t('restaurants.emptyNoMatch') : t('restaurants.emptyNone')}
         </p>
       ) : (
         <div
-          className="overflow-x-auto rounded-[18px] border border-border bg-card"
+          className="overflow-hidden rounded-[18px] border border-border bg-card"
           data-test-id="admin-restaurants-list"
         >
-          {/* Header + every row share GRID_COLS so columns always line up. */}
-          <div role="table" className="min-w-[860px]">
-            <div
-              role="row"
-              className={`${GRID_COLS} border-b border-border bg-muted px-4 py-2.5 text-[11.5px] font-semibold uppercase tracking-[0.05em] text-muted-foreground`}
-            >
-              <span role="columnheader">{t('restaurants.colRestaurant')}</span>
-              <span role="columnheader">{t('restaurants.colTenant')}</span>
-              <span role="columnheader" className="text-right">{t('restaurants.colMenus')}</span>
-              <span role="columnheader" className="text-right">{t('restaurants.colItems')}</span>
-              <span role="columnheader" className="text-right">{t('restaurants.colViews30d')}</span>
-              <span role="columnheader">{t('restaurants.colStatus')}</span>
-              <span role="columnheader" className="text-right">{t('restaurants.colActions')}</span>
-            </div>
-            {filtered.map((r) => {
-              const live = r.dishCount > 0
-              return (
-                <div
-                  role="row"
+          <Table>
+            <TableHeader>
+              <TableRow className="hover:bg-transparent">
+                <TableHead className="hidden md:table-cell">{t('restaurants.colTenant')}</TableHead>
+                <TableHead>{t('restaurants.colRestaurant')}</TableHead>
+                <TableHead className="hidden text-right lg:table-cell">{t('restaurants.colMenus')}</TableHead>
+                <TableHead className="hidden text-right lg:table-cell">{t('restaurants.colItems')}</TableHead>
+                <TableHead className="hidden text-right sm:table-cell">{t('restaurants.colViews30d')}</TableHead>
+                <TableHead className="w-[1%]" aria-label={t('restaurants.colActions')} />
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filtered.map((r) => (
+                <TableRow
                   key={r.id}
-                  className={`${GRID_COLS} border-b border-border px-4 py-3 transition-colors last:border-b-0 hover:bg-muted`}
+                  onClick={() => open(r.id)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') open(r.id)
+                  }}
+                  tabIndex={0}
+                  className="cursor-pointer outline-none focus-visible:bg-muted"
                   data-test-id={`admin-restaurants-row-${r.slug}`}
                 >
-                  <div className="flex min-w-0 items-center gap-3">
-                    <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-primary/10 text-[14px] font-bold text-primary">
-                      {r.name.charAt(0).toUpperCase()}
+                  {/* Tenant (desktop column). */}
+                  <TableCell className="hidden align-middle md:table-cell">
+                    <span className="block max-w-[180px] truncate text-[13.5px] font-medium text-foreground" title={r.tenantName ?? r.tenantId}>
+                      {r.tenantName ?? '—'}
                     </span>
-                    <div className="min-w-0">
-                      <Link
-                        href={`/menu/dashboard/admin/restaurants/${r.id}`}
-                        className="block truncate text-[14.5px] font-semibold text-foreground no-underline transition-colors hover:text-primary"
-                      >
-                        {r.name}
-                      </Link>
-                      <p className="truncate font-mono text-[11.5px] text-muted-foreground">/r/{r.slug}</p>
-                    </div>
-                  </div>
-                  <span>
                     <span
-                      className="inline-flex max-w-full items-center truncate rounded-full bg-muted px-2.5 py-1 font-mono text-[11.5px] text-muted-foreground"
+                      className="font-mono text-[11px] text-muted-foreground"
                       title={r.tenantId}
                       data-test-id={`admin-restaurants-tenant-${r.slug}`}
                     >
                       {shortTenant(r.tenantId)}
                     </span>
-                  </span>
-                  <span className="text-right text-[14px] tabular-nums text-foreground">{r.menuCount}</span>
-                  <span className="text-right text-[14px] tabular-nums text-foreground">{r.dishCount}</span>
-                  <span className="text-right text-[14px] tabular-nums text-foreground">
+                  </TableCell>
+
+                  {/* Restaurant. */}
+                  <TableCell className="align-middle">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-primary/10 text-[14px] font-bold text-primary">
+                        {r.name.charAt(0).toUpperCase()}
+                      </span>
+                      <div className="min-w-0">
+                        <span className="block truncate text-[14.5px] font-semibold text-foreground">
+                          {r.name}
+                        </span>
+                        <span className="block truncate font-mono text-[11.5px] text-muted-foreground">
+                          /r/{r.slug}
+                        </span>
+                        {/* Tenant inline on mobile (column hidden < md). */}
+                        <span className="mt-0.5 block truncate text-[11.5px] text-muted-foreground md:hidden">
+                          {r.tenantName ?? shortTenant(r.tenantId)}
+                        </span>
+                      </div>
+                    </div>
+                  </TableCell>
+
+                  <TableCell className="hidden text-right align-middle text-[14px] tabular-nums text-foreground lg:table-cell">
+                    {r.menuCount}
+                  </TableCell>
+                  <TableCell className="hidden text-right align-middle text-[14px] tabular-nums text-foreground lg:table-cell">
+                    {r.dishCount}
+                  </TableCell>
+                  <TableCell className="hidden text-right align-middle text-[14px] tabular-nums text-foreground sm:table-cell">
                     {r.views30d.toLocaleString()}
-                  </span>
-                  <span>
-                    <span
-                      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[12px] font-semibold ${
-                        live ? 'bg-green-100 text-green-700' : 'bg-muted text-muted-foreground'
-                      }`}
-                    >
-                      <span className="size-1.5 rounded-full bg-current" />
-                      {live ? t('restaurants.statusLive') : t('restaurants.statusDraft')}
-                    </span>
-                  </span>
-                  <span className="flex items-center justify-end gap-2">
-                    <Link
-                      href="/menu/dashboard/admin/qr-codes"
-                      aria-label={t('restaurants.qrAria')}
-                      className="grid size-8 shrink-0 place-items-center rounded-[8px] border border-border text-muted-foreground transition-colors hover:border-primary hover:text-primary"
-                    >
-                      <QrCodeIcon size={15} weight="bold" />
-                    </Link>
-                    <Link
-                      href={`/menu/dashboard/admin/restaurants/${r.id}`}
-                      className="inline-flex items-center rounded-[8px] bg-primary px-3 py-1.5 text-[13px] font-semibold text-white no-underline transition-colors hover:bg-primary/90"
-                    >
-                      {t('restaurants.open')}
-                    </Link>
-                  </span>
-                </div>
-              )
-            })}
-          </div>
+                  </TableCell>
+
+                  {/* Actions. */}
+                  <TableCell className="align-middle">
+                    <div className="flex items-center justify-end gap-1.5">
+                      <Link
+                        href="/menu/dashboard/admin/qr-codes"
+                        aria-label={t('restaurants.qrAria')}
+                        onClick={(e) => e.stopPropagation()}
+                        className="grid size-8 shrink-0 place-items-center rounded-[8px] border border-border text-muted-foreground transition-colors hover:border-primary hover:text-primary"
+                      >
+                        <QrCodeIcon size={15} weight="bold" />
+                      </Link>
+                      <CaretRightIcon size={15} className="shrink-0 text-muted-foreground" aria-hidden />
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         </div>
       )}
     </div>

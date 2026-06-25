@@ -1,4 +1,4 @@
-import { type AuditEvent, hashPassword, verifyPassword } from "@iedora/server-kit";
+import { hashPassword, verifyPassword } from "@iedora/server-kit";
 import { HTTPException } from "hono/http-exception";
 
 import { grantedRole } from "../../config";
@@ -6,7 +6,7 @@ import { insertSession } from "../../data/sessions";
 import { findUserByEmail, isBanned, listMemberships, setRole } from "../../data/users";
 import type { AuthDeps } from "../../deps";
 import { unauthorized } from "../../errors";
-import { buildSession, mintTokens, type RequestMeta, type Tokens } from "../../session";
+import { auditWith, buildSession, mintTokens, type RequestMeta, type Tokens } from "../../session";
 
 // A real argon2 hash, verified against on the no-such-user path to equalize
 // timing and deny an account-enumeration oracle.
@@ -18,12 +18,9 @@ export async function login(
   input: { email: string; password: string },
   meta: RequestMeta,
 ): Promise<Tokens> {
-  // Every login emit carries the request's user-agent + ip hash; close over them
-  // so each call site states only what differs (action/outcome/actor/meta).
-  const ua = meta.userAgent ?? undefined;
-  const ip = meta.ipHash ?? undefined;
-  const audit = (e: AuditEvent) => deps.auditor.record({ userAgent: ua, ipHash: ip, ...e });
-  const auditSync = (e: AuditEvent) => deps.auditor.recordSync({ userAgent: ua, ipHash: ip, ...e });
+  // Every login emit carries the request's user-agent + ip hash; the recorder
+  // stamps them so each call site states only what differs.
+  const { record: audit, recordSync: auditSync } = auditWith(deps.auditor, meta);
 
   const user = await findUserByEmail(deps.db.db, input.email);
   if (!user) {

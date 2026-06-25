@@ -5,7 +5,10 @@
   "type": "module",
   "description": "Billing service (Hono/Bun): subscriptions + the append-only invoice ledger over a code-defined plan registry. Subscription/invoice/audit commit in one transaction (outbox). Service-auth gated. Vertical slices over @iedora/server-kit.",
   "exports": {
-    "./app": "./src/app.ts"
+    "./app": "./src/app.ts",
+    "./config": "./src/config.ts",
+    "./expire": "./src/features/expiry/expire.service.ts",
+    "./schema": "./src/schema.ts"
   },
   "scripts": {
     "dev": "bun run --hot src/index.ts",

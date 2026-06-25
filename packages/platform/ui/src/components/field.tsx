@@ -112,6 +112,9 @@ export function TextareaField({
 export type SelectFieldOption = {
   value: string;
   label: React.ReactNode;
+  /** Optional muted second line in the dropdown (e.g. an email under a name).
+   *  The trigger still shows just `label`. */
+  description?: React.ReactNode;
   disabled?: boolean;
 };
 
@@ -128,12 +131,14 @@ export function SelectField({
   placeholder,
   options,
   children,
+  disabled,
 }: FieldBase & {
   name?: string;
   value?: string;
   defaultValue?: string;
   onValueChange?: (value: string) => void;
   placeholder?: string;
+  disabled?: boolean;
   /** Convenience: pass options instead of composing <SelectItem> children. */
   options?: SelectFieldOption[];
   children?: React.ReactNode;
@@ -147,11 +152,16 @@ export function SelectField({
         value={value}
         defaultValue={defaultValue}
         onValueChange={onValueChange ? (v) => onValueChange(v ?? "") : undefined}
+        disabled={disabled}
+        // Lets <SelectValue> render the selected option's label (not the raw
+        // value) — needed when a value is pre-set, e.g. an edit form.
+        items={options}
       >
         <SelectTrigger
           id={fieldId}
           aria-invalid={invalid}
           aria-describedby={describedBy}
+          disabled={disabled}
           className="w-full"
         >
           <SelectValue placeholder={placeholder} />
@@ -160,7 +170,14 @@ export function SelectField({
           {options
             ? options.map((o) => (
                 <SelectItem key={o.value} value={o.value} disabled={o.disabled}>
-                  {o.label}
+                  {o.description ? (
+                    <span className="flex min-w-0 flex-col">
+                      <span className="truncate">{o.label}</span>
+                      <span className="truncate text-xs text-muted-foreground">{o.description}</span>
+                    </span>
+                  ) : (
+                    o.label
+                  )}
                 </SelectItem>
               ))
             : children}

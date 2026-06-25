@@ -62,16 +62,13 @@ test("staff directory search + drill-in", async () => {
   expect(d.trend.length).toBe(14); // 13 days back + today
 });
 
-test("staff restaurant detail aggregates the record + billing + audit trail", async () => {
+test("staff restaurant detail aggregates the record + billing + tenant (audit is NOT eagerly loaded)", async () => {
   const s = await staffToken(h);
   h.billingStub.subscriptions = [
     { id: "s1", tenantId: TENANT, product: "menu", planCode: "menu_pro", status: "active", createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-01-01T00:00:00Z" },
   ];
   h.billingStub.invoices = [
     { id: "i1", tenantId: TENANT, product: "menu", planCode: "menu_pro", amountCents: 1200, currency: "EUR", status: "paid", createdAt: "2026-01-01T00:00:00Z" },
-  ];
-  h.auditStub.events = [
-    { id: "e1", at: "2026-01-01T00:00:00Z", source: "menu", action: "menu.restaurant.created", outcome: "success", actorType: "user", targetId: RID, meta: {} },
   ];
   h.tenantStub.value = {
     id: TENANT,
@@ -86,16 +83,34 @@ test("staff restaurant detail aggregates the record + billing + audit trail", as
     restaurant: { slug: string };
     trend: unknown[];
     billing: { subscriptions: { planCode: string }[]; invoices: { amountCents: number }[] };
-    audit: { action: string }[];
     tenant: { name: string; owner: { email: string } } | null;
   };
   expect(d.restaurant.slug).toBe("tasca");
   expect(d.trend.length).toBe(14);
   expect(d.billing.subscriptions[0]!.planCode).toBe("menu_pro");
   expect(d.billing.invoices[0]!.amountCents).toBe(1200);
-  expect(d.audit[0]!.action).toBe("menu.restaurant.created");
+  // The aggregate must NOT carry the audit trail — it loads lazily via .../audit.
+  expect(d).not.toHaveProperty("audit");
   expect(d.tenant!.name).toBe("Tasca Group");
   expect(d.tenant!.owner.email).toBe("owner@tasca.test");
+});
+
+test("the lazy audit endpoint returns the restaurant's trail; 404s for an unknown id", async () => {
+  const s = await staffToken(h);
+  h.auditStub.events = [
+    { id: "e1", at: "2026-01-01T00:00:00Z", source: "menu", action: "menu.restaurant.created", outcome: "success", actorType: "user", targetId: RID, meta: {} },
+  ];
+
+  const res = await h.app.request(`/api/staff/restaurants/${RID}/audit`, { headers: bearer(s) });
+  expect(res.status).toBe(200);
+  const d = (await res.json()) as { events: { action: string }[] };
+  expect(d.events[0]!.action).toBe("menu.restaurant.created");
+
+  const missing = await h.app.request(
+    `/api/staff/restaurants/00000000-0000-0000-0000-000000000000/audit`,
+    { headers: bearer(s) },
+  );
+  expect(missing.status).toBe(404);
 });
 
 test("staff restaurant detail still 200s when a cross-service read throws", async () => {
@@ -154,4 +169,49 @@ test("staff alerts flag the empty-menu restaurant has items (so not flagged) + u
   const a = (await res.json()) as { emptyMenus: unknown[]; unboundQr: number };
   expect(a.emptyMenus.length).toBe(0); // our seed restaurant has an item
   expect(a.unboundQr).toBe(2); // 3 created, 1 bound
+});
+
+test("staff records a cash payment (paid invoice on the tenant)", async () => {
+  const s = await staffToken(h);
+  const res = await h.app.request(
+    `/api/staff/restaurants/${RID}/payments`,
+    await json(
+      h,
+      { amountCents: 1000, currency: "EUR", planCode: "menu_pro", promo: "Early Adopter" },
+      s,
+    ),
+  );
+  expect(res.status).toBe(201);
+  const body = (await res.json()) as {
+    invoice: { amountCents: number; status: string; promo: string | null };
+  };
+  expect(body.invoice.amountCents).toBe(1000);
+  expect(body.invoice.status).toBe("paid");
+  expect(body.invoice.promo).toBe("Early Adopter");
+
+  // Surfaces in the tenant's ledger via the detail aggregation.
+  const detail = (await (
+    await h.app.request(`/api/staff/restaurants/${RID}`, { headers: bearer(s) })
+  ).json()) as { billing: { invoices: { amountCents: number }[] } };
+  expect(detail.billing.invoices.some((i) => i.amountCents === 1000)).toBe(true);
+});
+
+test("staff record payment is role-gated (a plain user token is 403)", async () => {
+  const user = await mintUserToken(h, { roles: [] });
+  const res = await h.app.request(
+    `/api/staff/restaurants/${RID}/payments`,
+    await json(h, { amountCents: 100, currency: "EUR", planCode: "menu_pro" }, user),
+  );
+  expect(res.status).toBe(403);
+});
+
+test("transfer to the same tenant fails with a detailed message, not a generic one", async () => {
+  // RID already belongs to TENANT, so an "existing → TENANT" transfer is a 422
+  // whose body carries the specific reason the UI now surfaces verbatim.
+  const res = await h.app.request(
+    `/api/staff/restaurants/${RID}/transfer`,
+    await json(h, { mode: "existing", tenantId: TENANT }, await staffToken(h)),
+  );
+  expect(res.status).toBe(422);
+  expect(await res.text()).toContain("already belongs to that tenant");
 });

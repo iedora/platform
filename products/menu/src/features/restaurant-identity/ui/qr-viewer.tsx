@@ -1,15 +1,17 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import QRCode from 'qrcode'
 import { useTranslations } from 'next-intl'
 import { Button } from '@iedora/ui/components/ui/button'
 
-// Render size in CSS pixels for the on-screen preview. PNG export uses a
-// higher pixel multiplier so prints stay sharp.
-const PREVIEW_PX = 320
+// PNG export resolution — high enough that downloaded prints stay sharp. The
+// on-screen preview is responsive (CSS), so it needs no fixed pixel size.
 const PNG_EXPORT_PX = 1024
 
+// Preview + vector/PNG downloads of the branded menu QR. Printing lives in the
+// adjacent inline QrPrintSheet panel (page size, cut marks, etc.), so this is
+// download-only.
 export function QrViewer({
   publicUrl,
   restaurantName,
@@ -19,7 +21,6 @@ export function QrViewer({
 }) {
   const [svgMarkup, setSvgMarkup] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const printRef = useRef<HTMLDivElement>(null)
   const t = useTranslations('Qr')
 
   useEffect(() => {
@@ -65,30 +66,21 @@ export function QrViewer({
     }
   }
 
-  function printQr() {
-    window.print()
-  }
-
   return (
-    <div className="w-full max-w-md space-y-6">
+    <div className="w-full space-y-5">
       <div
-        ref={printRef}
         data-test-id="qr-printable"
-        className="qr-printable mx-auto flex w-fit flex-col items-center gap-4 border border-[var(--border)] bg-white p-6"
+        className="qr-printable mx-auto flex w-full max-w-[260px] flex-col items-center gap-4 border border-[var(--border)] bg-white p-4"
       >
         {svgMarkup ? (
           <div
             data-test-id="qr-svg"
-            style={{ width: PREVIEW_PX, height: PREVIEW_PX }}
-            className="[&>svg]:h-full [&>svg]:w-full"
+            className="aspect-square w-full [&>svg]:h-full [&>svg]:w-full"
             // qrcode.toString returns trusted, deterministic SVG markup.
             dangerouslySetInnerHTML={{ __html: svgMarkup }}
           />
         ) : (
-          <div
-            style={{ width: PREVIEW_PX, height: PREVIEW_PX }}
-            className="animate-pulse bg-[var(--border)]"
-          />
+          <div className="aspect-square w-full animate-pulse bg-[var(--border)]" />
         )}
         <div className="space-y-1 text-center">
           <p className="font-heading text-base font-semibold text-[var(--foreground)]">
@@ -140,27 +132,7 @@ export function QrViewer({
         >
           {t('downloadPng')}
         </Button>
-        <Button
-          type="button"
-          variant="default"
-          onClick={printQr}
-          data-test-id="qr-print"
-          className="w-full sm:w-auto"
-        >
-          {t('print')}
-        </Button>
       </div>
-
-      <style>{`
-        @media print {
-          /* Strip every chrome that isn't the QR card so the printer ink
-             goes to the code itself. The .qr-printable card is centered on
-             its own page. */
-          body * { visibility: hidden !important; }
-          .qr-printable, .qr-printable * { visibility: visible !important; }
-          .qr-printable { position: fixed; inset: 0; margin: auto; border: none !important; }
-        }
-      `}</style>
     </div>
   )
 }

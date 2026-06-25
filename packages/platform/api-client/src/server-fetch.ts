@@ -52,12 +52,22 @@ export async function authedFetch(url: string, init: RequestInit = {}): Promise<
 export async function apiJson<T>(path: string, init: RequestInit = {}): Promise<T> {
   const res = await serverFetch(path, init)
   if (!res.ok) {
+    // Surface the service's real message. Read the body as text once, then
+    // prefer a JSON `{ error }` shape, else use the raw text (Hono's
+    // HTTPException returns the message as a plain-text body). Falls back to
+    // the status text only when there's no body at all.
     let message = res.statusText
-    try {
-      const body = (await res.json()) as { error?: string }
-      message = body.error ?? message
-    } catch {
-      /* non-JSON error body */
+    const text = await res.text().catch(() => '')
+    if (text) {
+      try {
+        const body = JSON.parse(text) as unknown
+        message =
+          body && typeof body === 'object' && typeof (body as { error?: unknown }).error === 'string'
+            ? (body as { error: string }).error
+            : text
+      } catch {
+        message = text
+      }
     }
     throw new ApiError(res.status, message)
   }

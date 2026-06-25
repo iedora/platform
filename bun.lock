@@ -47,6 +47,22 @@
         "typescript": "catalog:",
       },
     },
+    "integration": {
+      "name": "@iedora/integration",
+      "version": "0.1.0",
+      "dependencies": {
+        "@iedora/contracts": "workspace:*",
+        "@iedora/server-kit": "workspace:*",
+        "@iedora/service-billing": "workspace:*",
+        "@iedora/service-menu": "workspace:*",
+      },
+      "devDependencies": {
+        "@types/bun": "catalog:",
+        "jose": "catalog:",
+        "kysely": "catalog:",
+        "typescript": "catalog:",
+      },
+    },
     "packages/platform/api-client": {
       "name": "@iedora/api-client",
       "version": "0.1.0",
@@ -594,6 +610,8 @@
     "@iedora/contracts": ["@iedora/contracts@workspace:packages/platform/contracts"],
 
     "@iedora/eslint-config": ["@iedora/eslint-config@workspace:packages/platform/eslint-config"],
+
+    "@iedora/integration": ["@iedora/integration@workspace:integration"],
 
     "@iedora/observability": ["@iedora/observability@workspace:packages/platform/observability"],
 

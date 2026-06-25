@@ -5,7 +5,8 @@
   "type": "module",
   "description": "Menu product service (Hono/Bun): multi-tenant restaurant digital menus (restaurant → menu → category → item), localized public rendering, QR resolution, view metrics, plan gates, S3 uploads. Vertical slices over @iedora/server-kit.",
   "exports": {
-    "./app": "./src/app.ts"
+    "./app": "./src/app.ts",
+    "./billing": "./src/billing.ts"
   },
   "scripts": {
     "dev": "bun run --hot src/index.ts",

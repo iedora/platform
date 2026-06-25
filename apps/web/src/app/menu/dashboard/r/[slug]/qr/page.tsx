@@ -42,9 +42,13 @@ export default async function QrPage({
   return (
     <DashboardPage
       title={t('qrCode')}
+      chrome="none"
       data-test-id="restaurant-qr"
     >
+      {/* Title + location come from the server-rendered @breadcrumb slot
+          (name › QR code), so the page body starts straight at the cards. */}
       <RestaurantQrShelf
+        slug={r.slug}
         brandedUrl={brandedUrl}
         restaurantName={r.name}
         stickers={stickers}

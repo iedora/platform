@@ -23,17 +23,19 @@ export function buildApp(deps: MenuDeps) {
     .route("/", builderRoutes(deps))
     .route("/", uploadsRoutes(deps));
 
-  // Tenant-scoped surface: requireTenant guards the dashboard + scoped subtree.
-  // The cross-tenant /staff surface is role-gated only (a staff token may carry
-  // no tenant), so it must NOT sit under requireTenant.
+  // The dashboard surface reads the CALLER's tenant, so it stays under
+  // requireTenant. The scoped restaurant subtree does NOT: its own `scoped`
+  // middleware enforces tenancy (owner same-tenant, or staff cross-tenant) and
+  // its handlers key off the resolved restaurant's tenant, never the caller's —
+  // so a tenant-less staff token can edit any restaurant top to bottom.
   const tenantApp = new Hono<MenuEnv>()
     .use(requireTenant)
-    .route("/", dashboardRoutes(deps))
-    .route("/restaurants/:slug", scopedApp);
+    .route("/", dashboardRoutes(deps));
 
   const api = new Hono<MenuEnv>()
     .use(userAuth(deps.userVerifier))
     .route("/staff", staffRoutes(deps))
+    .route("/restaurants/:slug", scopedApp)
     .route("/", tenantApp);
 
   const app = createServiceApp<MenuEnv>()

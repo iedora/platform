@@ -8,7 +8,10 @@ import {
 
 import { buildApp } from "./app";
 import { loadConfig } from "./config";
+import { expireDueSubscriptions } from "./features/expiry/expire.service";
 import type { BillingDB } from "./schema";
+
+const EXPIRY_SWEEP_MS = 60 * 60 * 1000; // hourly
 
 expandFileSecrets();
 const cfg = loadConfig();
@@ -28,5 +31,18 @@ runRelayService({
   source: "billing",
   db,
   auditDatabaseUrl: cfg.auditDatabaseUrl,
-  build: ({ auditor }) => buildApp({ db, verifier, auditor, cfg }),
+  build: ({ auditor }) => {
+    // Expiry sweep: subscriptions past their period end drop to On Us (+ audit).
+    // Run once at boot to catch anything missed while down, then hourly. The
+    // sweep is idempotent and multi-instance safe (see expireDueSubscriptions).
+    const sweep = () =>
+      expireDueSubscriptions(db, auditor).catch((err: unknown) =>
+        console.error(
+          JSON.stringify({ level: "error", msg: "expiry sweep failed", err: String(err) }),
+        ),
+      );
+    void sweep();
+    setInterval(() => void sweep(), EXPIRY_SWEEP_MS).unref();
+    return buildApp({ db, verifier, auditor, cfg });
+  },
 });

@@ -1,6 +1,6 @@
 import { createHash, randomUUID } from "node:crypto";
 
-import { newRefreshToken } from "@iedora/server-kit";
+import { type AuditEvent, type Auditor, newRefreshToken } from "@iedora/server-kit";
 import type { Context } from "hono";
 import { deleteCookie, setCookie } from "hono/cookie";
 
@@ -20,6 +20,21 @@ export function metaFrom(c: Context): RequestMeta {
   const xff = c.req.header("x-forwarded-for");
   const ip = xff ? (xff.split(",")[0]?.trim() ?? "") : "";
   return { userAgent: ua, ipHash: ip ? createHash("sha256").update(ip).digest() : null };
+}
+
+/**
+ * A request-scoped auditor that stamps every event with the request's
+ * user-agent + ip hash, so each call site states only what differs
+ * (action/outcome/actor/meta) and no auth flow can forget that context. Build
+ * one per request from its {@link RequestMeta}.
+ */
+export function auditWith(auditor: Auditor, meta: RequestMeta) {
+  const userAgent = meta.userAgent ?? undefined;
+  const ipHash = meta.ipHash ?? undefined;
+  return {
+    record: (e: AuditEvent) => auditor.record({ userAgent, ipHash, ...e }),
+    recordSync: (e: AuditEvent) => auditor.recordSync({ userAgent, ipHash, ...e }),
+  };
 }
 
 export interface Tokens {

@@ -20,6 +20,7 @@ export interface Invoices {
   id: Generated<string>;
   plan_code: string;
   product: string;
+  promo: string | null;
   status: Generated<string>;
   tenant_id: string;
 }

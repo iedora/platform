@@ -3,7 +3,7 @@
 // caches it until shortly before expiry, and presents it as a Bearer to billing.
 
 import type { Invoice, Subscription } from "@iedora/contracts";
-import { ServiceClient } from "@iedora/server-kit";
+import { ServiceClient, type TokenSource } from "@iedora/server-kit";
 
 export interface PlanSource {
   // planCode resolves a tenant's active menu plan code; "" means unsubscribed.
@@ -15,6 +15,21 @@ export interface PlanSource {
 export interface BillingReader {
   subscriptions(tenantId: string): Promise<Subscription[]>;
   invoices(tenantId: string): Promise<Invoice[]>;
+}
+
+// Billing write surface for staff actions — recording a manual (cash) payment
+// against a tenant. Separate from the readers so tests can stub just this.
+export interface RecordPaymentInput {
+  tenantId: string;
+  planCode: string;
+  amountCents: number;
+  currency: string;
+  promo?: string;
+  /** The staff user who recorded the payment, for the audit trail. */
+  actorId?: string;
+}
+export interface BillingWriter {
+  recordPayment(input: RecordPaymentInput): Promise<Invoice>;
 }
 
 // ServiceTokenSource mints + caches a client-credentials service token.
@@ -68,10 +83,12 @@ function jwtExpiryMs(token: string): number | undefined {
 }
 
 // BillingClient reads the tenant's menu subscription from the billing service.
-export class BillingClient implements PlanSource, BillingReader {
+export class BillingClient implements PlanSource, BillingReader, BillingWriter {
   private readonly client: ServiceClient;
 
-  constructor(base: string, tokens: ServiceTokenSource) {
+  // Depends on the TokenSource interface (ServiceTokenSource satisfies it in
+  // prod; a stub token source wires it in integration tests).
+  constructor(base: string, tokens: TokenSource) {
     this.client = new ServiceClient(base, tokens, "billing");
   }
 
@@ -104,5 +121,22 @@ export class BillingClient implements PlanSource, BillingReader {
       `/billing/invoices?tenant=${encodeURIComponent(tenantId)}`,
     );
     return out.invoices;
+  }
+
+  // Record a manual (cash) payment as a paid invoice. The plan code changes
+  // rarely, so drop the cached value for this tenant to keep the next read fresh.
+  async recordPayment(input: RecordPaymentInput): Promise<Invoice> {
+    const out = await this.client.post<{ invoice: Invoice }>("/billing/invoices", {
+      tenant: input.tenantId,
+      product: "menu",
+      planCode: input.planCode,
+      amountCents: input.amountCents,
+      currency: input.currency,
+      status: "paid",
+      ...(input.promo ? { promo: input.promo } : {}),
+      ...(input.actorId ? { actorId: input.actorId } : {}),
+    });
+    this.planCache.delete(input.tenantId);
+    return out.invoice;
   }
 }

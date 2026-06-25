@@ -49,8 +49,11 @@ function initialsOf(label: string): string {
 
 export default async function DashboardLayout({
   children,
+  breadcrumb,
 }: {
   children: React.ReactNode
+  /** `@breadcrumb` parallel-route slot — server-rendered trail for the header. */
+  breadcrumb: React.ReactNode
 }) {
   // Auth gate lives here AND in each page's DAL (`requireActiveOrganization`).
   // Layout-level redirect is OK here because the conditions are uniform
@@ -92,7 +95,7 @@ export default async function DashboardLayout({
   const navItems: AppNavItem[] = isStaffAdmin
     ? [
         { href: '/menu/dashboard', label: nav('overview'), icon: <SquaresFourIcon {...icon} />, exact: true, testId: 'dashboard-nav-overview' },
-        { href: '/menu/dashboard/admin/restaurants', label: nav('restaurants'), icon: <StorefrontIcon {...icon} />, testId: 'dashboard-nav-admin-restaurants' },
+        { href: '/menu/dashboard/admin/restaurants', label: nav('restaurants'), icon: <StorefrontIcon {...icon} />, match: ['/menu/dashboard/r'], testId: 'dashboard-nav-admin-restaurants' },
         { href: '/menu/dashboard/admin/qr-codes', label: nav('qrCodes'), icon: <QrCodeIcon {...icon} />, testId: 'dashboard-nav-admin' },
         ...(tenantId ? [{ href: '/menu/dashboard/misc', label: nav('settings'), icon: <GearIcon {...icon} />, testId: 'dashboard-nav-settings' }] : []),
       ]
@@ -131,7 +134,7 @@ export default async function DashboardLayout({
         }}
       />
       <SidebarInset>
-        <SiteHeader title={isStaffAdmin ? nav('admin') : primary?.name} />
+        <SiteHeader breadcrumb={breadcrumb} />
         <main className="flex-1 p-4 pb-24 lg:p-6">{children}</main>
       </SidebarInset>
     </SidebarProvider>

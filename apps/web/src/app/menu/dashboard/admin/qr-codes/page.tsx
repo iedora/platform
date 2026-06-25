@@ -39,17 +39,15 @@ export default async function QrCodesAdminPage() {
   const publicOrigin = `${proto}://${host}${menuPath}`
 
   const stats = computeQrStats(rows)
-  const snapshotAt = new Date().toISOString()
   const t = await getTranslations('Admin')
 
   return (
-    <DashboardPage title={t('qrCodes.title')} data-test-id="qr-codes-admin">
+    <DashboardPage title={t('qrCodes.title')} chrome="none" data-test-id="qr-codes-admin">
       <QrCodesAdmin
         rows={rows}
         restaurants={restaurants}
         publicOrigin={publicOrigin}
         stats={stats}
-        snapshotAt={snapshotAt}
       />
     </DashboardPage>
   )

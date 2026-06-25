@@ -1,6 +1,7 @@
 import { cookies } from 'next/headers'
 
-import { ACCESS_COOKIE } from './cookies'
+import { refreshTokens } from './auth-api'
+import { ACCESS_COOKIE, REFRESH_COOKIE, authCookies } from './cookies'
 import { decodeJwt } from './jwt'
 
 /** The signed-in principal, decoded from the access-token cookie. */
@@ -28,12 +29,48 @@ export function sessionFromToken(token: string): Session | null {
 }
 
 /**
- * Reads the session from the request's access cookie. Middleware keeps
- * the cookie fresh on protected routes, so RSCs can rely on this being
- * current there; elsewhere a null just means "not signed in".
+ * Reads the session, self-healing an expired access token from the
+ * refresh cookie.
+ *
+ * Refresh happens in three places, by request type:
+ *   - page navigations  → the proxy middleware (refreshes + persists)
+ *   - backend data calls → `serverFetch` (refreshes on 401 + retries)
+ *   - the guards here    → this function, for server actions
+ *
+ * IMPORTANT: refresh tokens rotate, so a refresh MUST persist the new
+ * token. In an RSC the cookie store is read-only and the middleware
+ * already owns refresh, so we never rotate there — orphaning a rotated
+ * token would trip the auth service's reuse-detection and revoke the
+ * session. We only self-heal where cookie writes are allowed (a server
+ * action / route handler).
  */
 export async function getSession(): Promise<Session | null> {
   const store = await cookies()
-  const token = store.get(ACCESS_COOKIE)?.value
-  return token ? sessionFromToken(token) : null
+  const access = store.get(ACCESS_COOKIE)?.value
+  const session = access ? sessionFromToken(access) : null
+  if (session) return session
+
+  const refreshToken = store.get(REFRESH_COOKIE)?.value
+  if (!refreshToken || !canWriteCookies(store)) return null
+
+  const result = await refreshTokens(refreshToken)
+  if (!result) return null
+  for (const c of authCookies(result.tokens, result.setCookies)) {
+    store.set(c.name, c.value, c.options)
+  }
+  return sessionFromToken(result.tokens.accessToken)
+}
+
+/**
+ * True only in a Server Action / Route Handler, where mutating cookies is
+ * allowed; a throw means we're rendering an RSC (read-only store). The probe
+ * deletes a name that's never used, so it never touches real cookies.
+ */
+function canWriteCookies(store: Awaited<ReturnType<typeof cookies>>): boolean {
+  try {
+    store.set('__iedora_rt_probe', '', { maxAge: 0, path: '/' })
+    return true
+  } catch {
+    return false
+  }
 }

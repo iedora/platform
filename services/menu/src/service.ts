@@ -34,6 +34,39 @@ import {
 // audit on restaurant lifecycle events. Builder edits are too noisy to audit;
 // lifecycle changes are the security-relevant ones.
 
+// Print-sheet options captured on the QR audit event. Mirrors the dialog's
+// QrPrintOptions plus what was printed (the branded menu QR vs a bound sticker).
+export type QrPrintMeta = {
+  kind: "menu" | "sticker";
+  code?: string;
+  pageSize: string;
+  qrSizeMm: number;
+  gutterMm: number;
+  pageMarginMm: number;
+  cutMarks: boolean;
+  perSheet: number;
+};
+
+// recordQrPrint logs a "QR sheet printed" event ON THE RESTAURANT so it shows in
+// the restaurant's admin audit trail. Reachable by the owner (own restaurant)
+// and staff (any) via the scoped subtree; the meta carries the chosen print
+// options. Best-effort by design — the frontend never blocks printing on it.
+export async function recordQrPrint(
+  deps: MenuDeps,
+  r: { id: string; tenantId: string; slug: string; name: string },
+  actorId: string,
+  meta: QrPrintMeta,
+): Promise<void> {
+  await deps.auditor.record({
+    action: "menu.restaurant.qr_printed",
+    actor: { type: "user", id: actorId },
+    tenantId: r.tenantId,
+    targetType: "restaurant",
+    targetId: r.id,
+    meta: { slug: r.slug, name: r.name, ...meta },
+  });
+}
+
 async function record(
   deps: MenuDeps,
   actorId: string,

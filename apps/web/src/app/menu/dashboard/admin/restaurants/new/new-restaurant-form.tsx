@@ -3,9 +3,18 @@
 import { useMemo, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import dynamic from 'next/dynamic'
-import Link from 'next/link'
 import { useTranslations } from 'next-intl'
-import { BuildingsIcon, CheckIcon, CaretLeftIcon, ClipboardTextIcon, GiftIcon, PlusIcon, SparkleIcon, UploadIcon, MagicWandIcon } from '@phosphor-icons/react'
+import { BuildingsIcon, ClipboardTextIcon, GiftIcon, PlusIcon, SparkleIcon, UploadIcon, MagicWandIcon } from '@phosphor-icons/react'
+import { Button } from '@iedora/ui/components/ui/button'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@iedora/ui/components/ui/card'
+import { Tabs, TabsList, TabsTrigger } from '@iedora/ui/components/ui/tabs'
+import { FieldHint, FieldLabel, FieldMessage, SelectField, TextField } from '@iedora/ui/components/field'
 import {
   previewSlugAction,
   staffCreateRestaurantAction,
@@ -13,12 +22,6 @@ import {
 } from '@iedora/product-menu/features/restaurant-identity/actions'
 import { useDebouncedAction } from '../../../../_components/use-debounced-action'
 import { isImportable, validateMenuJson } from './validate-menu-json'
-
-// Warm-light primary button (cinnabar, rounded, inline icon). Used instead of
-// the design-system Button here so it matches the form's surface and an inline
-// leading icon lays out correctly.
-const PRIMARY_BTN =
-  'inline-flex items-center justify-center gap-2 rounded-[12px] bg-primary px-5 py-2.5 text-[14px] font-semibold text-white transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50'
 
 // CodeMirror needs the DOM — load the editor client-only with a sized fallback
 // so the layout doesn't jump on hydration.
@@ -241,152 +244,101 @@ export function NewRestaurantForm({
     }
   }
 
-  const fieldCls =
-    'w-full rounded-[12px] border border-border bg-card px-4 py-3 text-[15px] text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20'
-
   return (
-    <div className="space-y-7" data-test-id="new-restaurant-form">
-      <div className="flex flex-col items-start gap-4">
-        <Link
-          href="/menu/dashboard/admin/restaurants"
-          className="inline-flex items-center gap-1.5 text-[13px] font-medium text-muted-foreground no-underline transition-colors hover:text-foreground"
-        >
-          <CaretLeftIcon size={15} weight="bold" /> {t('back')}
-        </Link>
-
-        {/* Manual | Import JSON toggle */}
-        <div
-          className="inline-flex items-center gap-1 rounded-full border border-border bg-card p-1"
-          role="tablist"
-          aria-label={t('modeLabel')}
-        >
+    <div className="space-y-5" data-test-id="new-restaurant-form">
+      {/* Manual | Import JSON — shared Tabs (full-width on mobile). */}
+      <Tabs
+        value={mode}
+        onValueChange={(v) => {
+          setMode((v ?? 'manual') as Mode)
+          setError(null)
+        }}
+      >
+        <TabsList className="w-full sm:w-fit">
           {(['manual', 'import'] as Mode[]).map((m) => (
-            <button
-              key={m}
-              type="button"
-              role="tab"
-              aria-selected={mode === m}
-              onClick={() => {
-                setMode(m)
-                setError(null)
-              }}
-              className={`rounded-full px-5 py-2 text-[13.5px] font-semibold transition-colors ${
-                mode === m ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:text-foreground'
-              }`}
-              data-test-id={`new-restaurant-tab-${m}`}
-            >
+            <TabsTrigger key={m} value={m} data-test-id={`new-restaurant-tab-${m}`}>
               {t(`tabs.${m}`)}
-            </button>
+            </TabsTrigger>
           ))}
-        </div>
-      </div>
+        </TabsList>
+      </Tabs>
 
-      <div className="grid gap-5 lg:grid-cols-[1fr_340px]">
-        {/* Left: the active mode */}
-        <div className="min-w-0">
+      {/* Mobile-first: the active mode leads; the tenant/slug/plan config rail
+          drops below it and returns to the right column on lg+. */}
+      <div className="grid gap-5 lg:grid-cols-[1fr_340px] lg:items-start">
+        <div className="min-w-0 space-y-3">
           {mode === 'manual' ? (
-            <section className="overflow-hidden rounded-[18px] border border-border bg-card" data-test-id="new-restaurant-manual">
-              <div className="border-b border-border px-5 py-4">
-                <h2 className="text-[16px] font-bold text-foreground">{t('manual.heading')}</h2>
-                <p className="mt-0.5 text-[12.5px] text-muted-foreground">{t('manual.hint')}</p>
-              </div>
-              <div className="space-y-5 p-5">
-                <label className="block">
-                  <span className="mb-1.5 block text-[13px] font-semibold text-muted-foreground">{t('manual.nameLabel')}</span>
-                  <input
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    maxLength={120}
-                    placeholder={t('manual.namePlaceholder')}
-                    className={fieldCls}
-                    data-test-id="new-restaurant-name"
-                    autoFocus
-                  />
-                </label>
+            <Card className="gap-0 py-0" data-test-id="new-restaurant-manual">
+              <CardHeader className="border-b border-border p-5">
+                <CardTitle>{t('manual.heading')}</CardTitle>
+                <CardDescription>{t('manual.hint')}</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-5 p-5">
+                <TextField
+                  id="new-restaurant-name"
+                  data-test-id="new-restaurant-name"
+                  label={t('manual.nameLabel')}
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  maxLength={120}
+                  placeholder={t('manual.namePlaceholder')}
+                  autoFocus
+                  className="gap-1.5"
+                />
 
-                <div>
-                  <span className="mb-1.5 block text-[13px] font-semibold text-muted-foreground">{t('manual.urlLabel')}</span>
-                  <div className="flex items-center gap-1 rounded-[12px] border border-border bg-muted px-4 py-3 text-[15px]">
+                <div className="grid gap-1.5">
+                  <FieldLabel>{t('manual.urlLabel')}</FieldLabel>
+                  {/* break-all so the full URL wraps instead of being trimmed
+                      on narrow phones (down to 320px / iPhone 4S). */}
+                  <p className="border border-border bg-muted px-3 py-2.5 text-sm break-all">
                     <span className="text-muted-foreground">{urlPrefix}</span>
-                    <span className="truncate font-semibold text-foreground">{slug}</span>
-                  </div>
+                    <span className="font-semibold text-foreground">{slug}</span>
+                  </p>
                 </div>
 
-                <div>
-                  <span className="mb-1.5 block text-[13px] font-semibold text-muted-foreground">{t('manual.languageLabel')}</span>
-                  <div className="flex flex-wrap gap-2">
-                    {languages.map((l) => {
-                      const on = language === l.code
-                      return (
-                        <button
-                          key={l.code}
-                          type="button"
-                          onClick={() => setLanguage(l.code)}
-                          aria-pressed={on}
-                          className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-[13.5px] font-medium transition-colors ${
-                            on
-                              ? 'border-primary bg-primary/10 text-primary'
-                              : 'border-border bg-card text-foreground hover:border-primary/40'
-                          }`}
-                          data-test-id={`new-restaurant-lang-${l.code}`}
-                        >
-                          {on ? <CheckIcon size={13} weight="bold" /> : null}
-                          {l.label}
-                        </button>
-                      )
-                    })}
-                  </div>
-                  <p className="mt-2 text-[12px] text-muted-foreground">{t('manual.languageHint')}</p>
-                </div>
+                <SelectField
+                  label={t('manual.languageLabel')}
+                  value={language}
+                  onValueChange={setLanguage}
+                  options={languages.map((l) => ({ value: l.code, label: l.label }))}
+                  hint={t('manual.languageHint')}
+                  className="gap-1.5"
+                />
 
-                <button
+                <Button
                   type="button"
                   onClick={onCreate}
-                  disabled={pending || !name.trim()}
-                  className={PRIMARY_BTN}
+                  loading={pending}
+                  disabled={!name.trim()}
                   data-test-id="new-restaurant-create"
+                  className="w-full sm:w-auto"
                 >
-                  {pending ? t('creating') : t('manual.submit')}
-                </button>
-              </div>
-            </section>
+                  {t('manual.submit')}
+                </Button>
+              </CardContent>
+            </Card>
           ) : (
-            <section className="overflow-hidden rounded-[18px] border border-border bg-card" data-test-id="new-restaurant-import">
-              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-4">
-                <h2 className="text-[16px] font-bold text-foreground">{t('import.heading')}</h2>
-                <div className="flex items-center gap-4">
-                  <button
-                    type="button"
-                    onClick={copyPrompt}
-                    className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-primary transition-colors hover:text-primary/90"
-                    data-test-id="new-restaurant-copy-prompt"
-                  >
-                    {copied ? <ClipboardTextIcon size={14} weight="bold" /> : <SparkleIcon size={14} weight="bold" />}
-                    {copied ? t('import.copied') : t('import.copyPrompt')}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={formatJson}
-                    disabled={!canFormat}
-                    className="inline-flex items-center gap-1.5 text-[13px] font-medium text-muted-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
-                    data-test-id="new-restaurant-format"
-                  >
-                    <MagicWandIcon size={14} weight="bold" />
-                    {t('import.format')}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setPayloadText(JSON_TEMPLATE)}
-                    className="text-[13px] font-medium text-muted-foreground transition-colors hover:text-foreground"
-                    data-test-id="new-restaurant-template"
-                  >
-                    {t('import.template')}
-                  </button>
+            <Card className="gap-0 py-0" data-test-id="new-restaurant-import">
+              <CardHeader className="border-b border-border p-5">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <CardTitle>{t('import.heading')}</CardTitle>
+                  <div className="flex flex-wrap items-center gap-1">
+                    <Button variant="ghost" size="sm" type="button" onClick={copyPrompt} data-test-id="new-restaurant-copy-prompt">
+                      {copied ? <ClipboardTextIcon size={14} weight="bold" /> : <SparkleIcon size={14} weight="bold" />}
+                      {copied ? t('import.copied') : t('import.copyPrompt')}
+                    </Button>
+                    <Button variant="ghost" size="sm" type="button" onClick={formatJson} disabled={!canFormat} data-test-id="new-restaurant-format">
+                      <MagicWandIcon size={14} weight="bold" />
+                      {t('import.format')}
+                    </Button>
+                    <Button variant="ghost" size="sm" type="button" onClick={() => setPayloadText(JSON_TEMPLATE)} data-test-id="new-restaurant-template">
+                      {t('import.template')}
+                    </Button>
+                  </div>
                 </div>
-              </div>
-              <div className="space-y-4 p-5">
-                <p className="text-[12.5px] leading-relaxed text-muted-foreground">{t('import.lead')}</p>
+              </CardHeader>
+              <CardContent className="space-y-4 p-5">
+                <p className="text-sm leading-relaxed text-muted-foreground">{t('import.lead')}</p>
                 <JsonMenuEditor
                   value={payloadText}
                   onChange={setPayloadText}
@@ -394,138 +346,139 @@ export function NewRestaurantForm({
                   problemsTitle={t('import.problems')}
                   validLabel={t('import.valid')}
                 />
-                <div className="flex items-center justify-between gap-3">
+                <div className="flex flex-wrap items-center justify-between gap-3">
                   <p className="text-[12px] text-muted-foreground">{t('import.hint')}</p>
-                  <button
+                  <Button
                     type="button"
                     onClick={onImport}
-                    disabled={pending || !isImportable(importValidation)}
-                    className={PRIMARY_BTN}
+                    loading={pending}
+                    disabled={!isImportable(importValidation)}
                     data-test-id="new-restaurant-import-submit"
                   >
                     <UploadIcon size={15} weight="bold" />
-                    {pending ? t('importing') : t('import.submit')}
-                  </button>
+                    {t('import.submit')}
+                  </Button>
                 </div>
-              </div>
-            </section>
+              </CardContent>
+            </Card>
           )}
 
-          {errorText ? (
-            <p className="mt-3 text-[13px] text-[#D92D20]" role="alert" data-test-id="new-restaurant-error">
-              {errorText}
-            </p>
-          ) : null}
+          {errorText ? <FieldMessage error={errorText} data-test-id="new-restaurant-error" /> : null}
         </div>
 
-        {/* Right: shared tenant + plan */}
-        <div className="space-y-5">
-          <section className="rounded-[18px] border border-border bg-card p-5" data-test-id="new-restaurant-tenant">
-            <div className="mb-3 flex items-center justify-between">
-              <span className="text-[13px] font-semibold text-muted-foreground">{t('tenant.label')}</span>
-              {tenants.length ? (
-                <button
-                  type="button"
-                  onClick={() => setTenantMode((m) => (m === 'new' ? 'existing' : 'new'))}
-                  className="inline-flex items-center gap-1 text-[12px] font-semibold text-primary transition-colors hover:text-primary/90"
-                  data-test-id="new-restaurant-tenant-toggle"
-                >
-                  {tenantMode === 'new' ? (
-                    t('tenant.useExisting')
-                  ) : (
-                    <>
-                      <PlusIcon size={13} weight="bold" /> {t('tenant.new')}
-                    </>
-                  )}
-                </button>
-              ) : null}
-            </div>
+        {/* Config rail: tenant + slug + plan. */}
+        <div className="space-y-3">
+          <Card size="sm" data-test-id="new-restaurant-tenant">
+            <CardContent className="space-y-3">
+              <div className="flex items-center justify-between gap-2">
+                <FieldLabel>{t('tenant.label')}</FieldLabel>
+                {tenants.length ? (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    type="button"
+                    onClick={() => setTenantMode((m) => (m === 'new' ? 'existing' : 'new'))}
+                    data-test-id="new-restaurant-tenant-toggle"
+                  >
+                    {tenantMode === 'new' ? (
+                      t('tenant.useExisting')
+                    ) : (
+                      <>
+                        <PlusIcon size={13} weight="bold" /> {t('tenant.new')}
+                      </>
+                    )}
+                  </Button>
+                ) : null}
+              </div>
 
-            {tenantMode === 'existing' ? (
-              <select
-                value={tenantId}
-                onChange={(e) => setTenantId(e.target.value)}
-                className={fieldCls}
-                data-test-id="new-restaurant-tenant-select"
-              >
-                {tenants.map((tn) => (
-                  <option key={tn.id} value={tn.id}>
-                    {tn.name} — {tn.ownerEmail}
-                  </option>
-                ))}
-              </select>
-            ) : (
-              <div className="flex items-center gap-2 rounded-[12px] border border-border bg-card px-3 py-2.5">
-                <span className="grid size-8 shrink-0 place-items-center rounded-[8px] bg-muted text-muted-foreground">
-                  <BuildingsIcon size={16} />
-                </span>
+              {tenantMode === 'existing' ? (
+                <SelectField
+                  label=""
+                  value={tenantId}
+                  onValueChange={setTenantId}
+                  options={tenants.map((tn) => ({ value: tn.id, label: tn.name, description: tn.ownerEmail }))}
+                  data-test-id="new-restaurant-tenant-select"
+                />
+              ) : (
+                <div className="flex items-center gap-2 border border-border bg-card px-3 py-2.5">
+                  <span className="grid size-8 shrink-0 place-items-center bg-muted text-muted-foreground">
+                    <BuildingsIcon size={16} />
+                  </span>
+                  <input
+                    type="text"
+                    value={newTenantName}
+                    onChange={(e) => setNewTenantName(e.target.value)}
+                    maxLength={120}
+                    placeholder={tenantDefaultName.trim() || t('tenant.newPlaceholder')}
+                    className="min-w-0 flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
+                    data-test-id="new-restaurant-tenant-name"
+                  />
+                </div>
+              )}
+              <FieldHint className="break-words leading-relaxed">
+                {tenantMode === 'existing' ? (
+                  t('tenant.hint')
+                ) : tenantDefaultName.trim() ? (
+                  t.rich('tenant.newHintNamed', {
+                    name: tenantDefaultName.trim(),
+                    b: (chunks) => <strong className="font-semibold text-foreground">{chunks}</strong>,
+                  })
+                ) : (
+                  t('tenant.newHint')
+                )}
+              </FieldHint>
+            </CardContent>
+          </Card>
+
+          <Card size="sm" data-test-id="new-restaurant-slug">
+            <CardContent className="space-y-1.5">
+              <FieldLabel htmlFor="new-restaurant-slug-input">{t('slug.label')}</FieldLabel>
+              {/* flex-wrap + min-w-0 so the prefix wraps and the input drops to
+                  its own full-width line on narrow phones instead of overflowing. */}
+              <div className="flex flex-wrap items-center gap-x-1 gap-y-1 border border-border bg-card px-3 py-2.5 text-sm">
+                <span className="min-w-0 break-all text-muted-foreground">{urlPrefix}</span>
                 <input
+                  id="new-restaurant-slug-input"
                   type="text"
-                  value={newTenantName}
-                  onChange={(e) => setNewTenantName(e.target.value)}
-                  maxLength={120}
-                  placeholder={tenantDefaultName.trim() || t('tenant.newPlaceholder')}
-                  className="min-w-0 flex-1 bg-transparent text-[15px] text-foreground outline-none placeholder:text-muted-foreground"
-                  data-test-id="new-restaurant-tenant-name"
+                  value={slug}
+                  onChange={(e) => {
+                    setSlugTouched(true)
+                    setCustomSlug(e.target.value.toLowerCase())
+                  }}
+                  maxLength={40}
+                  spellCheck={false}
+                  className="min-w-[7rem] flex-1 bg-transparent font-semibold text-foreground outline-none"
+                  data-test-id="new-restaurant-slug-input"
                 />
               </div>
-            )}
-            <p className="mt-2 break-words text-[12px] leading-relaxed text-muted-foreground">
-              {tenantMode === 'existing' ? (
-                t('tenant.hint')
-              ) : tenantDefaultName.trim() ? (
-                t.rich('tenant.newHintNamed', {
-                  name: tenantDefaultName.trim(),
-                  b: (chunks) => <strong className="font-semibold text-foreground">{chunks}</strong>,
-                })
-              ) : (
-                t('tenant.newHint')
-              )}
-            </p>
-          </section>
+              <FieldHint className="break-words leading-relaxed">
+                {!slugCheck ? (
+                  t('slug.hint')
+                ) : !slugCheck.valid ? (
+                  <span className="text-destructive">{t('slug.invalid')}</span>
+                ) : slugCheck.available ? (
+                  <span className="font-semibold text-green-700">{t('slug.available')}</span>
+                ) : (
+                  t.rich('slug.taken', {
+                    slug: slugCheck.slug,
+                    b: (chunks) => <strong className="font-semibold text-foreground">{chunks}</strong>,
+                  })
+                )}
+              </FieldHint>
+            </CardContent>
+          </Card>
 
-          <section className="rounded-[18px] border border-border bg-card p-5" data-test-id="new-restaurant-slug">
-            <span className="mb-1.5 block text-[13px] font-semibold text-muted-foreground">{t('slug.label')}</span>
-            <div className="flex items-center gap-1 rounded-[12px] border border-border bg-card px-3 py-2.5 text-[15px]">
-              <span className="shrink-0 text-muted-foreground">{urlPrefix}</span>
-              <input
-                type="text"
-                value={slug}
-                onChange={(e) => {
-                  setSlugTouched(true)
-                  setCustomSlug(e.target.value.toLowerCase())
-                }}
-                maxLength={40}
-                spellCheck={false}
-                className="min-w-0 flex-1 bg-transparent font-semibold text-foreground outline-none"
-                data-test-id="new-restaurant-slug-input"
-              />
-            </div>
-            <p className="mt-2 break-words text-[12px] leading-relaxed text-muted-foreground">
-              {!slugCheck ? (
-                t('slug.hint')
-              ) : !slugCheck.valid ? (
-                <span className="text-[#D92D20]">{t('slug.invalid')}</span>
-              ) : slugCheck.available ? (
-                <span className="font-semibold text-green-600">{t('slug.available')}</span>
-              ) : (
-                t.rich('slug.taken', {
-                  slug: slugCheck.slug,
-                  b: (chunks) => <strong className="font-semibold text-foreground">{chunks}</strong>,
-                })
-              )}
-            </p>
-          </section>
-
-          <section className="flex items-center gap-3 rounded-[14px] bg-green-100 p-3.5" data-test-id="new-restaurant-plan">
-            <span className="grid size-8 shrink-0 place-items-center rounded-[8px] bg-green-600 text-white">
-              <GiftIcon size={16} />
-            </span>
-            <div className="min-w-0">
-              <p className="text-[14px] font-bold text-foreground">{t('plan.name')}</p>
-              <p className="text-[12px] text-muted-foreground">{t('plan.note')}</p>
-            </div>
-          </section>
+          <Card size="sm" className="bg-green-100" data-test-id="new-restaurant-plan">
+            <CardContent className="flex items-center gap-3">
+              <span className="grid size-8 shrink-0 place-items-center bg-green-600 text-white">
+                <GiftIcon size={16} />
+              </span>
+              <div className="min-w-0">
+                <p className="text-[14px] font-bold text-foreground">{t('plan.name')}</p>
+                <p className="text-[12px] text-muted-foreground">{t('plan.note')}</p>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>

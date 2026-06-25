@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
-import type { ImportPayload } from '@iedora/contracts'
+import type { AuditRecord, ImportPayload } from '@iedora/contracts'
 import { staffTransferOwnership as transferOwnershipSchema } from '@iedora/contracts'
 import { ApiError } from '@iedora/api-client'
 import * as api from '../../shared/api'
@@ -26,7 +26,7 @@ import { isValidSlugShape } from '../restaurant-slug'
  * guard until tag-only invalidation is fully rolled out.
  */
 
-type ActionResult = { ok: true } | { ok: false; error: string }
+type ActionResult = { ok: true } | { ok: false; error: string; message?: string }
 
 function errorMessage(err: unknown): string {
   return err instanceof ApiError ? err.message : 'Something went wrong'
@@ -222,6 +222,18 @@ export async function previewSlugAction(
   }
 }
 
+/**
+ * Lazily load a restaurant's audit trail for the admin Activity tab. Kept out
+ * of the page's eager aggregate so opening a record never queries the audit DB;
+ * the tab calls this only when it's actually opened. Throws on failure so the
+ * tab can show a retry instead of an empty list masquerading as "no activity".
+ */
+export async function loadRestaurantAuditAction(id: string): Promise<AuditRecord[]> {
+  await requireStaff()
+  const { events } = await api.staffRestaurantAudit(id)
+  return events
+}
+
 // Whether a target tenant can receive another restaurant (plan capacity) —
 // powers the transfer picker's availability hint. Advisory.
 export async function transferEligibilityAction(tenantId: string): Promise<{ eligible: boolean }> {
@@ -259,8 +271,35 @@ export async function staffTransferOwnershipAction(id: string, input: unknown): 
     revalidatePath(`/menu/dashboard/admin/restaurants/${id}`)
     return { ok: true }
   } catch (err) {
+    // A taken email (new-user mode) is a 409 we route to the email field.
     if (err instanceof ApiError && err.status === 409) return { ok: false, error: 'emailTaken' }
-    if (err instanceof ApiError && err.status === 422) return { ok: false, error: 'planFull' }
+    // Otherwise surface the service's actual message (e.g. "the restaurant
+    // already belongs to that tenant", a plan-limit message) instead of a
+    // generic "try again". Non-ApiError (network/unexpected) → generic.
+    if (err instanceof ApiError) return { ok: false, error: 'failed', message: err.message }
+    return { ok: false, error: 'failed' }
+  }
+}
+
+// Record a manual (cash) payment against the restaurant's tenant — a paid
+// invoice. amountCents is minor units (cents), converted from the form input.
+const recordPaymentSchema = z.object({
+  amountCents: z.number().int().positive(),
+  currency: z.string().trim().min(1).max(8),
+  planCode: z.string().trim().min(1),
+  promo: z.string().trim().min(1).max(80).optional(),
+})
+
+export async function staffRecordPaymentAction(id: string, input: unknown): Promise<ActionResult> {
+  await requireStaff()
+  const parsed = recordPaymentSchema.safeParse(input)
+  if (!parsed.success) return { ok: false, error: 'invalidInput' }
+  try {
+    await api.staffRecordPayment(id, parsed.data)
+    revalidatePath(`/menu/dashboard/admin/restaurants/${id}/payments`)
+    revalidatePath(`/menu/dashboard/admin/restaurants/${id}`)
+    return { ok: true }
+  } catch {
     return { ok: false, error: 'failed' }
   }
 }

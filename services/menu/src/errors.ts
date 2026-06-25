@@ -1,5 +1,10 @@
+import { isInvalidUUID } from "@iedora/server-kit";
 import type { Context } from "hono";
 import { HTTPException } from "hono/http-exception";
+
+// SQLSTATE detectors live in server-kit (shared across services); re-exported so
+// the menu data layer keeps importing them from the error vocabulary.
+export { isInvalidUUID, isUniqueViolation } from "@iedora/server-kit";
 
 // The menu error vocabulary — the single response chokepoint. A foreign id and
 // a missing id look identical (both 404), never a 500.
@@ -23,21 +28,6 @@ export class RateLimitError extends HTTPException {
     });
     super(429, { res, message: "rate limited" });
   }
-}
-
-/** Bun's PostgresError carries the SQLSTATE in `errno`. */
-function sqlState(err: unknown): string | undefined {
-  const e = (err as { errno?: unknown } | null)?.errno;
-  return typeof e === "string" ? e : undefined;
-}
-
-/** A malformed id reaching a uuid column (22P02) → indistinguishable from missing. */
-export function isInvalidUUID(err: unknown): boolean {
-  return sqlState(err) === "22P02";
-}
-
-export function isUniqueViolation(err: unknown): boolean {
-  return sqlState(err) === "23505";
 }
 
 // onErrorBody is the menu services' shared error handler: HTTPException renders

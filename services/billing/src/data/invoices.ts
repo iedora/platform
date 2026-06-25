@@ -15,6 +15,7 @@ const COLUMNS = [
   "amount_cents",
   "currency",
   "status",
+  "promo",
   "created_at",
 ] as const;
 
@@ -28,6 +29,7 @@ function toInvoice(r: any): Invoice {
     amountCents: Number(r.amount_cents), // bigint arrives as string; the values fit a JS number
     currency: r.currency,
     status: r.status,
+    promo: r.promo ?? null,
     createdAt: iso(r.created_at),
   };
 }
@@ -38,9 +40,15 @@ export interface NewInvoice {
   planCode: string;
   amountCents: number;
   currency: string;
+  /** Optional status override (e.g. 'paid' for a manually-recorded cash
+   * payment). Omitted ⇒ the schema default ('issued'). */
+  status?: string;
+  /** Optional promo / campaign label. */
+  promo?: string;
 }
 
-// insert persists an invoice (status defaults to 'issued' in the schema).
+// insert persists an invoice (status defaults to 'issued' in the schema unless
+// overridden — staff record cash payments as 'paid').
 export async function insert(db: Kysely<BillingDB>, i: NewInvoice): Promise<Invoice> {
   const row = await db
     .insertInto("invoices")
@@ -50,6 +58,8 @@ export async function insert(db: Kysely<BillingDB>, i: NewInvoice): Promise<Invo
       plan_code: i.planCode,
       amount_cents: i.amountCents,
       currency: i.currency,
+      ...(i.status ? { status: i.status } : {}),
+      ...(i.promo ? { promo: i.promo } : {}),
     })
     .returning([...COLUMNS])
     .executeTakeFirstOrThrow();

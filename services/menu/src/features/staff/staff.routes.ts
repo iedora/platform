@@ -136,23 +136,64 @@ export function staffRoutes(deps: MenuDeps) {
       await transferRestaurant(deps, c.req.param("id"), c.get("user").userId, c.req.valid("json"));
       return c.json({ ok: true });
     })
+    // Record a (cash) payment against the restaurant's tenant — a manually-entered
+    // paid invoice. Staff-only (this whole surface is role-gated).
+    .post(
+      "/restaurants/:id/payments",
+      zValidator(
+        "json",
+        z.object({
+          amountCents: z.number().int().positive(),
+          currency: z.string().min(1).default("EUR"),
+          planCode: z.string().min(1),
+          promo: z.string().min(1).max(80).optional(),
+        }),
+        onInvalid,
+      ),
+      async (c) => {
+        const rest = await restaurantById(db(), c.req.param("id"));
+        if (!rest) throw notFound();
+        const b = c.req.valid("json");
+        const invoice = await deps.billing.recordPayment({
+          tenantId: rest.tenantId,
+          planCode: b.planCode,
+          amountCents: b.amountCents,
+          currency: b.currency,
+          promo: b.promo,
+          actorId: c.get("user").userId,
+        });
+        return c.json({ invoice }, 201);
+      },
+    )
     // Aggregated restaurant detail for the admin pages: the core record + menus +
     // 14-day trend (from this DB), the tenant's billing (subscriptions + invoices,
-    // via the billing service), the restaurant's audit trail (via the audit API),
-    // and the tenant + owner (via the auth API). The core record is required (404s
-    // for an unknown id); the three cross-service reads are best-effort and degrade
-    // to empty/null with a logged warning rather than failing the page.
+    // via the billing service), and the tenant + owner (via the auth API). The
+    // core record is required (404s for an unknown id); the cross-service reads
+    // are best-effort and degrade to empty/null with a logged warning rather
+    // than failing the page. The audit trail is NOT loaded here — it's fetched
+    // lazily by GET .../audit only when the admin opens the Activity tab, so a
+    // record view never touches the audit DB it doesn't display.
     .get("/restaurants/:id", async (c) => {
       const id = c.req.param("id");
       const detail = await staffRestaurantById(db(), id, new Date());
       const tenantId = detail.restaurant.tenantId;
-      const [subscriptions, invoices, audit, tenant] = await Promise.all([
+      const [subscriptions, invoices, tenant] = await Promise.all([
         bestEffort("billing.subscriptions", deps.billing.subscriptions(tenantId), []),
         bestEffort("billing.invoices", deps.billing.invoices(tenantId), []),
-        bestEffort("audit", deps.audit.forTarget(id, AUDIT_TRAIL_LIMIT), []),
         bestEffort("tenant", deps.tenant.tenant(tenantId), null),
       ]);
-      return c.json({ ...detail, billing: { subscriptions, invoices }, audit, tenant });
+      return c.json({ ...detail, billing: { subscriptions, invoices }, tenant });
+    })
+    // Lazy activity feed for the restaurant record's Activity tab. Tenant-wide:
+    // everything that happened to this restaurant's tenant (payments, plan
+    // changes, every restaurant under it), not just this restaurant. Split out
+    // of the aggregate so the DB is only queried when the admin opens Activity.
+    // 404 for an unknown restaurant so we never scan audit for a bogus id.
+    .get("/restaurants/:id/audit", async (c) => {
+      const id = c.req.param("id");
+      const rest = await restaurantById(db(), id);
+      if (!rest) throw notFound();
+      return c.json({ events: await deps.audit.forTenant(rest.tenantId, AUDIT_TRAIL_LIMIT) });
     })
     // Staff identity override: a privileged rename of the friendly name,
     // cross-tenant by id. The owner-scoped builder still owns menu content; this
