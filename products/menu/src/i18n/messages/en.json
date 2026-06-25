@@ -341,6 +341,7 @@
     "itemNameHint": "The name guests read on the menu.",
     "itemPrice": "Price ({currency})",
     "itemPriceHint": "Leave blank to show no price.",
+    "itemPriceVariantsHint": "Set per variant below.",
     "itemDescription": "Description",
     "itemDescriptionPlaceholder": "Short, appetising description…",
     "itemDescriptionHint": "One line works best — ingredients or a tasting note.",
@@ -436,7 +437,7 @@
         "IT",
         "DE"
       ],
-      "worksWithLabel": "Plays nicely with"
+      "worksWithLabel": "Direct links to"
     },
     "features": {
       "accent": "what you get",
@@ -486,7 +487,7 @@
         "price": "€0",
         "per": "forever",
         "feats": [
-          "1,000 views",
+          "500 views a month",
           "1 restaurant"
         ],
         "cta": "Start free"
@@ -494,11 +495,14 @@
       "kasa": {
         "tier": "Kasa",
         "price": "€12",
-        "per": "/yr",
+        "per": "per year",
         "badge": "chef's pick",
         "feats": [
-          "Unlimited",
-          "All features"
+          "Unlimited views",
+          "Analytics that matter",
+          "Priority support",
+          "A direct line to us",
+          "On-site help when you need it"
         ],
         "cta": "Get Kasa"
       }
@@ -834,7 +838,7 @@
     "heroTitle": "Your product, built by people who stick around.",
     "heroSubtitle": "You know how it goes. The agency overpromises, ships half of it, then vanishes when you need a change. We pick up the phone and stay to run what we build.",
     "heroCta": "Tell us what you’re building",
-    "heroMicro": "We’ll even talk you out of the build you don’t need.",
+    "heroMicro": "If you don’t need it, we’ll say so. We don’t sell what you don’t need.",
     "manifestoEyebrow": "How we’re different",
     "manifestoTitle": "We’re not for everyone.",
     "manifestoSubtitle": "That’s the point.",

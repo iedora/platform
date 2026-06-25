@@ -99,13 +99,19 @@ export function AddItemDialog({
       setErrorField('name')
       return
     }
-    const priceCents = priceText.trim()
-      ? Math.round(Number(priceText.replace(',', '.')) * 100)
-      : 0
-    if (!Number.isFinite(priceCents) || priceCents < 0) {
-      setError(t('addItemBadPrice'))
-      setErrorField('price')
-      return
+    // Variants drive the price once they exist, so the base price is ignored
+    // (and its field is disabled). Only parse/validate it for variant-less dishes.
+    const hasVariants = variants.length > 0
+    let priceCents = 0
+    if (!hasVariants) {
+      priceCents = priceText.trim()
+        ? Math.round(Number(priceText.replace(',', '.')) * 100)
+        : 0
+      if (!Number.isFinite(priceCents) || priceCents < 0) {
+        setError(t('addItemBadPrice'))
+        setErrorField('price')
+        return
+      }
     }
     const cleaned = cleanVariants(variants)
     if (!cleaned.ok) {
@@ -174,8 +180,9 @@ export function AddItemDialog({
               id={`add-item-price-${categoryId}`}
               inputMode="decimal"
               placeholder="0.00"
-              value={priceText}
+              value={variants.length > 0 ? '' : priceText}
               onChange={(e) => setPriceText(e.target.value)}
+              disabled={variants.length > 0}
               error={errorField === 'price'}
               aria-describedby={
                 errorField === 'price' ? errId : `add-item-price-${categoryId}-hint`
@@ -183,7 +190,7 @@ export function AddItemDialog({
               data-test-id={`menu-add-item-price-input-${categoryId}`}
             />
             <FieldHint id={`add-item-price-${categoryId}-hint`}>
-              {t('addItemPriceHint')}
+              {variants.length > 0 ? t('itemPriceVariantsHint') : t('addItemPriceHint')}
             </FieldHint>
           </Field>
           <VariantsEditor
@@ -191,6 +198,7 @@ export function AddItemDialog({
             onChange={setVariants}
             idPrefix={`menu-add-item-variant-${categoryId}`}
             invalidPriceLabel={variantErrorLabel}
+            currency={currency}
           />
           {error && (
             <p

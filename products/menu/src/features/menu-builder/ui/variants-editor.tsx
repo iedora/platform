@@ -50,6 +50,7 @@ export function VariantsEditor({
   onChange,
   idPrefix,
   invalidPriceLabel,
+  currency,
 }: {
   value: ReadonlyArray<EditableVariant>
   onChange: (next: EditableVariant[]) => void
@@ -59,6 +60,9 @@ export function VariantsEditor({
    * submit — that row's price input is marked invalid so the operator can
    * see which one to fix. */
   invalidPriceLabel?: string | null
+  /** Currency shown beside each variant's price (the dish price is set per
+   * variant once variants exist, so each row carries its own price). */
+  currency?: string
 }) {
   const t = useTranslations('Builder')
 
@@ -86,7 +90,7 @@ export function VariantsEditor({
           {value.map((v, vi) => (
             <li
               key={vi}
-              className="grid grid-cols-[minmax(0,1fr)_6rem_auto] items-center gap-2"
+              className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-2"
               data-test-id={`${idPrefix}-row-${vi}`}
             >
               <FieldInput
@@ -98,22 +102,29 @@ export function VariantsEditor({
                 data-test-id={`${idPrefix}-label-${vi}`}
                 maxLength={60}
               />
-              <FieldInput
-                compact
-                inputMode="decimal"
-                value={v.priceText}
-                onChange={(e) => patch(vi, { priceText: e.target.value })}
-                placeholder="0.00"
-                aria-label={t('itemVariantPriceAria', {
-                  label: v.label || t('itemVariantLabelAria'),
-                })}
-                error={
-                  Boolean(invalidPriceLabel) &&
-                  v.label.trim() === invalidPriceLabel
-                }
-                className="text-right"
-                data-test-id={`${idPrefix}-price-${vi}`}
-              />
+              <div className="flex items-center gap-1.5">
+                <FieldInput
+                  compact
+                  inputMode="decimal"
+                  value={v.priceText}
+                  onChange={(e) => patch(vi, { priceText: e.target.value })}
+                  placeholder="0.00"
+                  aria-label={t('itemVariantPriceAria', {
+                    label: v.label || t('itemVariantLabelAria'),
+                  })}
+                  error={
+                    Boolean(invalidPriceLabel) &&
+                    v.label.trim() === invalidPriceLabel
+                  }
+                  className="w-16 text-right"
+                  data-test-id={`${idPrefix}-price-${vi}`}
+                />
+                {currency ? (
+                  <span className="shrink-0 text-[12px] font-medium text-muted-foreground">
+                    {currency}
+                  </span>
+                ) : null}
+              </div>
               <Button
                 type="button"
                 variant="ghost"

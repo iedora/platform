@@ -1,12 +1,24 @@
 import Link from 'next/link'
-import { getTranslations } from 'next-intl/server'
-import { CheckIcon, ForkKnifeIcon, MapPinIcon, PlayIcon, QrCodeIcon, StarIcon } from '@phosphor-icons/react/ssr'
+import { getLocale, getTranslations } from 'next-intl/server'
+import { CheckIcon, ForkKnifeIcon, PlayIcon } from '@phosphor-icons/react/ssr'
 import { Button } from '@iedora/ui/components/ui/button'
 import { Card, CardContent } from '@iedora/ui/components/ui/card'
 import { signInUrl, signUpUrl } from '@iedora/product-menu/shared/auth-urls'
 import { LangSwitch } from './lang-switch'
+import { MenuPreviewCard } from './menu-preview-card'
 import { ThemeToggle } from '../../../../components/theme-toggle'
-import { Accent, Container, CtaButton, SectionLabel, Tag } from '../../../../components/landing'
+import {
+  Accent,
+  CheckList,
+  Container,
+  CtaBand,
+  CtaButton,
+  InvertedBand,
+  Section,
+  SectionHead,
+  Steps,
+  Tag,
+} from '../../../../components/landing'
 
 /**
  * Menu marketing landing. Same design language as the house page (/house):
@@ -22,9 +34,33 @@ type Dish = { name: string; price: string }
 type Plan = { tier: string; price: string; per: string; badge?: string; cta: string; feats: string[] }
 type FooterCol = { heading: string; links: string[] }
 
-/** The dotted menu leader between a dish and its price. */
-function Leader() {
-  return <span className="h-px flex-1 self-center border-b border-dotted border-border" aria-hidden="true" />
+/** Google Maps location pin (Google red + white dot). */
+function GoogleMapsMark({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} aria-hidden="true">
+      <path
+        d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"
+        fill="#EA4335"
+      />
+      <circle cx="12" cy="9" r="2.5" fill="#fff" />
+    </svg>
+  )
+}
+
+/** TheFork app-icon style — green roundel with a fork. */
+function TheForkMark({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} aria-hidden="true">
+      <rect width="24" height="24" rx="6" fill="#00684A" />
+      <g fill="#fff">
+        <rect x="9.2" y="5" width="1" height="4" rx="0.5" />
+        <rect x="11.5" y="5" width="1" height="4" rx="0.5" />
+        <rect x="13.8" y="5" width="1" height="4" rx="0.5" />
+        <path d="M9 8.5h6v0.4a3 3 0 0 1-6 0z" />
+        <rect x="11.2" y="11" width="1.6" height="8" rx="0.8" />
+      </g>
+    </svg>
+  )
 }
 
 /** iedora wordmark — fork-knife square + name. Shared by header + footer. */
@@ -40,12 +76,9 @@ function Logo() {
 }
 
 export default async function LandingPage() {
-  const t = await getTranslations('Landing')
+  const [t, locale] = await Promise.all([getTranslations('Landing'), getLocale()])
 
   const dishes = t.raw('hero.dishes') as Dish[]
-  const special = dishes[0]
-  const rest = dishes.slice(1)
-  const langs = t.raw('hero.langs') as string[]
   const features = t.raw('features.items') as string[]
   const steps = t.raw('how.steps') as { title: string; body: string }[]
   const bullets = t.raw('board.bullets') as string[]
@@ -106,8 +139,9 @@ export default async function LandingPage() {
                 {t('hero.ctaSecondary')}
               </CtaButton>
             </div>
-            {/* Plays nicely with — real brand-coloured chips (fixed brand colours) */}
-            <div className="mt-6 flex flex-wrap items-center gap-2 text-[13px]">
+            {/* Direct links to — brand chips. Stacked one-per-line on mobile,
+                all on a single line at sm+ (never a half-wrapped middle). */}
+            <div className="mt-6 flex flex-col items-start gap-2 text-[13px] sm:flex-row sm:items-center">
               <span className="italic text-muted-foreground">{t('hero.worksWithLabel')}</span>
               <a
                 href="https://www.thefork.com"
@@ -115,9 +149,7 @@ export default async function LandingPage() {
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-2.5 py-1 font-semibold text-foreground no-underline hover:border-primary/45"
               >
-                <span className="grid size-4 shrink-0 place-items-center rounded bg-[#1fa76a] text-white">
-                  <ForkKnifeIcon size={10} weight="bold" />
-                </span>
+                <TheForkMark className="size-4 shrink-0" />
                 {worksWith[0]}
               </a>
               <a
@@ -126,156 +158,65 @@ export default async function LandingPage() {
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-2.5 py-1 font-semibold text-foreground no-underline hover:border-primary/45"
               >
-                <MapPinIcon size={14} weight="fill" className="shrink-0 text-[#EA4335]" />
+                <GoogleMapsMark className="size-4 shrink-0" />
                 {worksWith[1]}
               </a>
             </div>
           </div>
 
-          {/* Menu card with Today's special */}
-          <Card size="sm" className="w-full lg:max-w-md lg:justify-self-end">
-            <CardContent>
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="font-heading text-[20px] font-extrabold">{t('hero.card.name')}</p>
-                  <p className="truncate text-[12px] italic text-muted-foreground">{t('hero.card.note')}</p>
-                </div>
-                <Tag tone="primary">
-                  <QrCodeIcon size={13} weight="bold" />
-                  {t('hero.card.scan')}
-                </Tag>
-              </div>
-
-              {special ? (
-                <div className="mt-4 flex items-baseline gap-2 rounded-[12px] bg-amber-500/10 px-3 py-2.5">
-                  <StarIcon size={15} weight="fill" className="shrink-0 self-center text-amber-500" />
-                  <span className="text-[15px] font-bold">{special.name}</span>
-                  <Leader />
-                  <span className="text-[15px] font-bold tabular-nums">{special.price}</span>
-                </div>
-              ) : null}
-
-              <ul className="mt-4 flex flex-col gap-3">
-                {rest.map((d) => (
-                  <li key={d.name} className="flex items-baseline gap-2 text-[15px]">
-                    <span className="font-medium">{d.name}</span>
-                    <Leader />
-                    <span className="font-semibold tabular-nums text-muted-foreground">{d.price}</span>
-                  </li>
-                ))}
-              </ul>
-
-              <div className="mt-4 flex flex-wrap gap-1.5">
-                {langs.slice(0, 6).map((l) => (
-                  <span
-                    key={l}
-                    className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-semibold text-muted-foreground"
-                  >
-                    {l}
-                  </span>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+          {/* Interactive multilingual demo — tap a language to translate the card */}
+          <MenuPreviewCard name={t('hero.card.name')} dishes={dishes} initialLang={locale} />
         </Container>
       </section>
 
       {/* 01 Features */}
-      <section id="features" className="scroll-mt-16 bg-muted" data-test-id="menu-features">
-        <Container className="py-12 sm:py-16">
-          <SectionLabel index="01">{t('features.accent')}</SectionLabel>
-          <h2 className="mt-4 font-heading text-[26px] font-extrabold leading-[1.1] tracking-[-0.02em] sm:text-[36px]">
-            {t('features.title')}
-          </h2>
-          <ul className="mt-7 grid gap-x-8 gap-y-3 sm:grid-cols-2">
-            {features.map((name) => (
-              <li key={name} className="flex items-center gap-3 border-b border-border py-2.5">
-                <CheckIcon size={18} weight="bold" className="shrink-0 text-primary" />
-                <span className="text-[15px] font-medium">{name}</span>
-              </li>
-            ))}
-          </ul>
-        </Container>
-      </section>
+      <Section id="features" className="scroll-mt-16 bg-muted" data-test-id="menu-features">
+        <SectionHead index="01" eyebrow={t('features.accent')} title={t('features.title')} />
+        <CheckList items={features} bordered />
+      </Section>
 
       {/* 02 How */}
-      <section id="how" className="scroll-mt-16" data-test-id="menu-how">
-        <Container className="py-12 sm:py-16">
-          <SectionLabel index="02">{t('how.accent')}</SectionLabel>
-          <h2 className="mt-4 font-heading text-[26px] font-extrabold leading-[1.1] tracking-[-0.02em] sm:text-[36px]">
-            {t('how.title')}
-          </h2>
-          <ol className="mt-7 flex flex-col divide-y divide-border border-y border-border">
-            {steps.map((s, i) => (
-              <li key={s.title} className="flex items-start gap-4 py-5">
-                <span className="font-mono text-[14px] font-bold text-primary">{`0${i + 1}`}</span>
-                <div className="min-w-0">
-                  <h3 className="font-heading text-[18px] font-bold">{s.title}</h3>
-                  <p className="mt-1 text-[14.5px] leading-[1.5] text-muted-foreground">{s.body}</p>
-                </div>
-              </li>
-            ))}
-          </ol>
-        </Container>
-      </section>
+      <Section id="how" className="scroll-mt-16" data-test-id="menu-how">
+        <SectionHead index="02" eyebrow={t('how.accent')} title={t('how.title')} />
+        <Steps items={steps.map((s) => ({ title: s.title, desc: s.body }))} />
+      </Section>
 
       {/* Board (inverted band) */}
-      <section className="bg-foreground text-background" data-test-id="menu-board">
-        <Container className="py-12 text-center sm:py-16">
-          <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-background/60">
-            {t('board.accent')}
-          </span>
-          <h2 className="mx-auto mt-3 max-w-[18ch] font-heading text-[26px] font-extrabold leading-[1.1] tracking-[-0.02em] sm:text-[34px]">
-            {t('board.title')}
-          </h2>
-          <ul className="mx-auto mt-6 grid max-w-md grid-cols-2 gap-x-4 gap-y-3 text-left">
-            {bullets.map((b) => (
-              <li key={b} className="flex items-center gap-2 text-[14.5px]">
-                <CheckIcon size={16} weight="bold" className="shrink-0 text-primary" />
-                {b}
-              </li>
-            ))}
-          </ul>
-        </Container>
-      </section>
+      <InvertedBand eyebrow={t('board.accent')} title={t('board.title')} data-test-id="menu-board">
+        <ul className="mx-auto mt-6 grid max-w-md grid-cols-2 gap-x-4 gap-y-3 text-left">
+          {bullets.map((b) => (
+            <li key={b} className="flex items-center gap-2 text-[14.5px]">
+              <CheckIcon size={16} weight="bold" className="shrink-0 text-primary" />
+              {b}
+            </li>
+          ))}
+        </ul>
+      </InvertedBand>
 
       {/* 03 Pricing */}
-      <section id="pricing" className="scroll-mt-16" data-test-id="menu-pricing">
-        <Container className="py-12 sm:py-16">
-          <SectionLabel index="03">{t('pricing.accent')}</SectionLabel>
-          <h2 className="mt-4 font-heading text-[26px] font-extrabold leading-[1.1] tracking-[-0.02em] sm:text-[36px]">
-            {t('pricing.title')}
-          </h2>
-          <div className="mx-auto mt-8 grid max-w-2xl gap-4 sm:grid-cols-2">
-            <PlanCard plan={onus} href={SIGN_UP_HREF} />
-            <PlanCard plan={kasa} href={SIGN_UP_HREF} highlighted />
-          </div>
-        </Container>
-      </section>
+      <Section id="pricing" className="scroll-mt-16" data-test-id="menu-pricing">
+        <SectionHead index="03" eyebrow={t('pricing.accent')} title={t('pricing.title')} />
+        <div className="mt-8 grid gap-4 sm:grid-cols-2">
+          <PlanCard plan={onus} href={SIGN_UP_HREF} />
+          <PlanCard plan={kasa} href={SIGN_UP_HREF} highlighted />
+        </div>
+      </Section>
 
       {/* CTA band */}
-      <section className="bg-primary text-primary-foreground" data-test-id="menu-cta">
-        <Container className="flex flex-col items-center py-14 text-center sm:py-20">
-          <h2 className="max-w-[18ch] font-heading text-[28px] font-extrabold leading-[1.1] tracking-[-0.02em] sm:text-[40px]">
-            {t('cta.title')}
-          </h2>
-          <p className="mt-3 max-w-[40ch] text-[16px] text-primary-foreground/90">{t('cta.subhead')}</p>
-          <div className="mt-7 flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
-            <Button render={<a href={SIGN_UP_HREF} />} className="!w-full !justify-center !rounded-full !bg-primary-foreground !text-primary hover:!bg-primary-foreground/90 sm:!w-auto" nativeButton={false} size="lg">
-              {t('cta.primary')}
-            </Button>
-            <Button
-              render={<a href={SIGN_IN_HREF} />}
-              nativeButton={false}
-              variant="ghost"
-              size="lg"
-              className="!w-full !justify-center !rounded-full !border !border-primary-foreground/45 !text-primary-foreground hover:!bg-primary-foreground/10 hover:!text-primary-foreground sm:!w-auto"
-            >
-              {t('cta.secondary')}
-            </Button>
-          </div>
-        </Container>
-      </section>
+      <CtaBand title={t('cta.title')} subtitle={t('cta.subhead')} data-test-id="menu-cta">
+        <Button render={<a href={SIGN_UP_HREF} />} className="!w-full !justify-center !rounded-full !bg-primary-foreground !text-primary hover:!bg-primary-foreground/90 sm:!w-auto" nativeButton={false} size="lg">
+          {t('cta.primary')}
+        </Button>
+        <Button
+          render={<a href={SIGN_IN_HREF} />}
+          nativeButton={false}
+          variant="ghost"
+          size="lg"
+          className="!w-full !justify-center !rounded-full !border !border-primary-foreground/45 !text-primary-foreground hover:!bg-primary-foreground/10 hover:!text-primary-foreground sm:!w-auto"
+        >
+          {t('cta.secondary')}
+        </Button>
+      </CtaBand>
 
       {/* Footer */}
       <footer className="border-t border-border">

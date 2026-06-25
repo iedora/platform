@@ -1,6 +1,6 @@
 'use client'
 
-import { useActionState, useState } from 'react'
+import { useActionState, useEffect, useState } from 'react'
 import { useForm, getFormProps, getInputProps } from '@conform-to/react'
 import { getZodConstraint, parseWithZod } from '@conform-to/zod/v4'
 import { useTranslations } from 'next-intl'
@@ -22,6 +22,13 @@ export function SignInForm({
   const t = useTranslations('Auth.signIn')
   const tf = useTranslations('Auth.fields')
   const [lastResult, action, pending] = useActionState(signInAction, undefined)
+  // On success the action has set the auth cookies; do a full-page navigation
+  // (not a soft router push) so the destination's first render always carries
+  // them — avoids the transient "something went wrong" that an F5 used to fix.
+  const redirecting = lastResult?.status === 'success'
+  useEffect(() => {
+    if (redirecting) window.location.assign(next)
+  }, [redirecting, next])
   const [form, fields] = useForm({
     lastResult,
     constraint: getZodConstraint(signInSchema),
@@ -90,10 +97,10 @@ export function SignInForm({
         variant="default"
         size="lg"
         className="!w-full !justify-center"
-        disabled={pending}
+        disabled={pending || redirecting}
         data-test-id="sign-in-submit"
       >
-        {pending ? t('submitting') : t('submit')}
+        {pending || redirecting ? t('submitting') : t('submit')}
       </Button>
       <p className="text-center text-[14px] text-muted-foreground">
         {t('noAccount')}{' '}

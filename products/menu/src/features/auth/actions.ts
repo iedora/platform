@@ -42,7 +42,13 @@ export async function signInAction(
     return submission.reply({ formErrors: ['invalidCredentials'] })
   }
   await persistAuth(result)
-  redirect(safeNext(formData))
+  // Don't redirect from inside the action. Setting the auth cookies AND
+  // redirect()-ing in the same Server Action triggers a soft RSC navigation
+  // whose first render can race the just-written cookies — the destination
+  // renders without a session and throws a transient error that an F5 (a full,
+  // cookie-carrying load) clears. Returning success lets the form do that full
+  // navigation itself, so the fresh cookies are always present at the target.
+  return submission.reply()
 }
 
 export async function signUpAction(
@@ -63,7 +69,9 @@ export async function signUpAction(
     return submission.reply({ formErrors: ['signupFailed'] })
   }
   await persistAuth(result)
-  redirect(safeNext(formData))
+  // See signInAction: the form does the full-page navigation on success so the
+  // freshly-written auth cookies are guaranteed present at the destination.
+  return submission.reply()
 }
 
 /**
@@ -126,9 +134,4 @@ async function persistAuth(result: AuthResult): Promise<void> {
   for (const c of authCookies(result.tokens, result.setCookies)) {
     store.set(c.name, c.value, c.options)
   }
-}
-
-function safeNext(formData: FormData): string {
-  const next = formData.get('next')
-  return typeof next === 'string' && isSameIedoraOrigin(next) ? next : brandUrl()
 }

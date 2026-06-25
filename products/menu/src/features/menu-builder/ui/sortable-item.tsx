@@ -144,13 +144,19 @@ export function SortableItem({
       setErrorField('name')
       return
     }
-    const priceCents = priceText.trim()
-      ? Math.round(Number(priceText.replace(',', '.')) * 100)
-      : 0
-    if (!Number.isFinite(priceCents) || priceCents < 0) {
-      setError(t('itemBadPrice'))
-      setErrorField('price')
-      return
+    // Variants drive the price once they exist; the base price field is disabled
+    // and ignored. Only parse/validate it for variant-less dishes.
+    const hasVariants = variants.length > 0
+    let priceCents = 0
+    if (!hasVariants) {
+      priceCents = priceText.trim()
+        ? Math.round(Number(priceText.replace(',', '.')) * 100)
+        : 0
+      if (!Number.isFinite(priceCents) || priceCents < 0) {
+        setError(t('itemBadPrice'))
+        setErrorField('price')
+        return
+      }
     }
 
     const cleaned = cleanVariants(variants)
@@ -345,8 +351,9 @@ export function SortableItem({
                     id={`item-price-${item.id}`}
                     inputMode="decimal"
                     placeholder="0.00"
-                    value={priceText}
+                    value={variants.length > 0 ? '' : priceText}
                     onChange={(e) => setPriceText(e.target.value)}
+                    disabled={variants.length > 0}
                     error={errorField === 'price'}
                     aria-describedby={
                       errorField === 'price' ? errId : `item-price-${item.id}-hint`
@@ -354,7 +361,7 @@ export function SortableItem({
                     data-test-id={`menu-item-price-input-${item.id}`}
                   />
                   <FieldHint id={`item-price-${item.id}-hint`}>
-                    {t('itemPriceHint')}
+                    {variants.length > 0 ? t('itemPriceVariantsHint') : t('itemPriceHint')}
                   </FieldHint>
                 </Field>
                 <div className="flex items-end pb-1">
@@ -397,6 +404,7 @@ export function SortableItem({
                   onChange={setVariants}
                   idPrefix={`item-variant-${item.id}`}
                   invalidPriceLabel={variantErrorLabel}
+                  currency={item.currency}
                 />
               </div>
             </section>

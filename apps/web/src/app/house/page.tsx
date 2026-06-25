@@ -2,7 +2,6 @@ import type { Metadata } from 'next'
 import { getLocale, getTranslations } from 'next-intl/server'
 import {
   ArrowRightIcon,
-  CheckIcon,
   GraduationCapIcon,
   PackageIcon,
   SquaresFourIcon,
@@ -10,7 +9,19 @@ import {
 } from '@phosphor-icons/react/ssr'
 import { Card, CardContent } from '@iedora/ui/components/ui/card'
 import { ThemeToggle } from '../../components/theme-toggle'
-import { Accent, Container, CtaButton, SectionLabel, Tag } from '../../components/landing'
+import {
+  Accent,
+  CheckList,
+  Container,
+  CtaBand,
+  CtaButton,
+  InvertedBand,
+  Section,
+  SectionHead,
+  SectionLabel,
+  Steps,
+  Tag,
+} from '../../components/landing'
 import { BRAND_NAME, CONTACT_EMAIL, PRODUCTS, productUrl } from '@iedora/brand'
 import { LandingLangSwitch } from './lang-switch'
 
@@ -103,31 +114,23 @@ export default async function HouseLanding() {
       </section>
 
       {/* Beliefs */}
-      <section className="bg-muted" data-test-id="house-manifesto">
-        <Container className="py-12 sm:py-16">
-          <SectionLabel>{t('manifestoEyebrow')}</SectionLabel>
-          <h2 className="mt-4 max-w-[20ch] font-heading text-[26px] font-extrabold leading-[1.1] tracking-[-0.02em] sm:text-[36px]">
-            {t('manifestoTitle')} <span className="text-muted-foreground">{t('manifestoSubtitle')}</span>
-          </h2>
-          <ul className="mt-7 grid gap-x-8 gap-y-3.5 sm:grid-cols-2">
-            {beliefs.map((key) => (
-              <li key={key} className="flex items-start gap-3">
-                <CheckIcon size={19} className="mt-0.5 shrink-0 text-primary" />
-                <span className="text-[15px] font-medium leading-[1.45] sm:text-[16px]">{t(key)}</span>
-              </li>
-            ))}
-          </ul>
-        </Container>
-      </section>
+      <Section className="bg-muted" data-test-id="house-manifesto">
+        <SectionHead
+          eyebrow={t('manifestoEyebrow')}
+          title={
+            <>
+              {t('manifestoTitle')} <span className="text-muted-foreground">{t('manifestoSubtitle')}</span>
+            </>
+          }
+          className="max-w-[20ch]"
+        />
+        <CheckList items={beliefs.map((key) => t(key))} />
+      </Section>
 
       {/* Services */}
-      <section id="house-services" className="scroll-mt-16" data-test-id="house-services">
-        <Container className="py-12 sm:py-16">
-          <SectionLabel index="01">{t('servicesEyebrow')}</SectionLabel>
-          <h2 className="mt-4 max-w-[18ch] font-heading text-[26px] font-extrabold leading-[1.1] tracking-[-0.02em] sm:text-[36px]">
-            {t('servicesTitle')}
-          </h2>
-          <div className="mt-8 grid gap-4 sm:grid-cols-3">
+      <Section id="house-services" className="scroll-mt-16" data-test-id="house-services">
+        <SectionHead index="01" eyebrow={t('servicesEyebrow')} title={t('servicesTitle')} className="max-w-[18ch]" />
+        <div className="mt-8 grid gap-4 sm:grid-cols-3">
             {services.map(({ icon: Icon, title, desc }) => (
               <Card key={title} size="sm">
                 <CardContent className="flex flex-col gap-3">
@@ -140,38 +143,18 @@ export default async function HouseLanding() {
               </Card>
             ))}
           </div>
-        </Container>
-      </section>
+      </Section>
 
       {/* How */}
-      <section className="bg-muted" data-test-id="house-how">
-        <Container className="py-12 sm:py-16">
-          <SectionLabel index="02">{t('howEyebrow')}</SectionLabel>
-          <h2 className="mt-4 font-heading text-[26px] font-extrabold leading-[1.1] tracking-[-0.02em] sm:text-[36px]">
-            {t('howTitle')}
-          </h2>
-          <ol className="mt-7 flex flex-col divide-y divide-border border-y border-border">
-            {steps.map(({ n, title, desc }) => (
-              <li key={n} className="flex items-start gap-4 py-5">
-                <span className="font-mono text-[14px] font-bold text-primary">{n}</span>
-                <div className="min-w-0">
-                  <h3 className="font-heading text-[18px] font-bold">{title}</h3>
-                  <p className="mt-1 text-[14.5px] leading-[1.5] text-muted-foreground">{desc}</p>
-                </div>
-              </li>
-            ))}
-          </ol>
-        </Container>
-      </section>
+      <Section className="bg-muted" data-test-id="house-how">
+        <SectionHead index="02" eyebrow={t('howEyebrow')} title={t('howTitle')} />
+        <Steps items={steps} />
+      </Section>
 
       {/* Products */}
-      <section id="house-products" className="scroll-mt-16" data-test-id="house-products">
-        <Container className="py-12 sm:py-16">
-          <SectionLabel index="03">{t('productsEyebrow')}</SectionLabel>
-          <h2 className="mt-4 font-heading text-[26px] font-extrabold leading-[1.1] tracking-[-0.02em] sm:text-[36px]">
-            {t('productsTitle')}
-          </h2>
-          <div className="mt-8 grid gap-8 lg:grid-cols-2 lg:items-center lg:gap-14">
+      <Section id="house-products" className="scroll-mt-16" data-test-id="house-products">
+        <SectionHead index="03" eyebrow={t('productsEyebrow')} title={t('productsTitle')} />
+        <div className="mt-8 grid gap-8 lg:grid-cols-2 lg:items-center lg:gap-14">
             <div>
               <h3 className="font-heading text-[26px] font-extrabold tracking-[-0.02em]">{t('menuName')}</h3>
               <p className="mt-3 text-[16px] leading-[1.5] text-muted-foreground">{t('menuDesc')}</p>
@@ -208,33 +191,28 @@ export default async function HouseLanding() {
               </CardContent>
             </Card>
           </div>
-        </Container>
-      </section>
+      </Section>
 
       {/* Multilingual (inverted band) */}
-      <section className="bg-foreground text-background" data-test-id="house-multilingual">
-        <Container className="py-12 text-center sm:py-16">
-          <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-background/60">
-            {t('multilingualEyebrow')}
-          </span>
-          <h2 className="mx-auto mt-3 max-w-[18ch] font-heading text-[26px] font-extrabold leading-[1.1] tracking-[-0.02em] sm:text-[36px]">
-            {t('multilingualTitle')}
-          </h2>
-          <p className="mx-auto mt-3 max-w-[52ch] text-[15px] leading-[1.5] text-background/70 sm:text-[17px]">
-            {t('multilingualSubtitle')}
-          </p>
-          <div className="mt-6 flex flex-wrap justify-center gap-2">
-            {['EN', 'PT', 'ES', 'FR', t('langsMore')].map((l) => (
-              <span
-                key={l}
-                className="rounded-full border border-background/25 px-3 py-1.5 text-[13px] font-semibold text-background"
-              >
-                {l}
-              </span>
-            ))}
-          </div>
-        </Container>
-      </section>
+      <InvertedBand
+        eyebrow={t('multilingualEyebrow')}
+        title={t('multilingualTitle')}
+        data-test-id="house-multilingual"
+      >
+        <p className="mx-auto mt-3 max-w-[52ch] text-[15px] leading-[1.5] text-background/70 sm:text-[17px]">
+          {t('multilingualSubtitle')}
+        </p>
+        <div className="mt-6 flex flex-wrap justify-center gap-2">
+          {['EN', 'PT', 'ES', 'FR', t('langsMore')].map((l) => (
+            <span
+              key={l}
+              className="rounded-full border border-background/25 px-3 py-1.5 text-[13px] font-semibold text-background"
+            >
+              {l}
+            </span>
+          ))}
+        </div>
+      </InvertedBand>
 
       {/* Founder note */}
       <section data-test-id="house-founder">
@@ -256,24 +234,16 @@ export default async function HouseLanding() {
       </section>
 
       {/* CTA band */}
-      <section className="bg-primary text-primary-foreground" data-test-id="house-cta">
-        <Container className="flex flex-col items-center py-16 text-center sm:py-24">
-          <h2 className="max-w-[18ch] font-heading text-[30px] font-extrabold leading-[1.08] tracking-[-0.02em] sm:text-[44px]">
-            {t('ctaTitle')}
-          </h2>
-          <p className="mx-auto mt-3 max-w-[46ch] text-[16px] leading-[1.5] text-primary-foreground/90">
-            {t('ctaSubtitle')}
-          </p>
-          <a
-            href={mailto}
-            className="mt-7 inline-flex max-w-full items-center gap-2 rounded-full bg-primary-foreground px-6 py-3.5 font-heading text-[16px] font-bold text-primary no-underline transition-transform hover:-translate-y-0.5"
-            data-test-id="house-cta-email"
-          >
-            <span className="truncate">{CONTACT_EMAIL}</span>
-            <ArrowRightIcon size={17} className="shrink-0" />
-          </a>
-        </Container>
-      </section>
+      <CtaBand title={t('ctaTitle')} subtitle={t('ctaSubtitle')} data-test-id="house-cta">
+        <a
+          href={mailto}
+          className="inline-flex max-w-full items-center gap-2 rounded-full bg-primary-foreground px-6 py-3.5 font-heading text-[16px] font-bold text-primary no-underline transition-transform hover:-translate-y-0.5"
+          data-test-id="house-cta-email"
+        >
+          <span className="truncate">{CONTACT_EMAIL}</span>
+          <ArrowRightIcon size={17} className="shrink-0" />
+        </a>
+      </CtaBand>
 
       {/* Footer */}
       <footer className="border-t border-border">
