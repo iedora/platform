@@ -46,11 +46,14 @@ COPY --link package.json bun.lock tsconfig.base.json ./
 #   - services/* → the Bun backend services (@iedora/service-*). The frontend
 #     doesn't import them, but the SINGLE shared bun.lock lists them, so a frozen
 #     install mismatches unless their manifests are in the build context.
+#   - integration → cross-service test workspace. Only its manifest is needed to
+#     satisfy the workspace declaration; its tests never ship in the image.
 # These trees hold real .ts/.tsx source (workspace exports point at source).
 COPY --link packages packages
 COPY --link products products
 COPY --link services services
 COPY --link apps/web/package.json apps/web/package.json
+COPY --link integration/package.json integration/package.json
 
 # BuildKit cache mount keeps Bun's global cache warm across rebuilds; the cache
 # layer never ships in the image, so it is registry-agnostic.
