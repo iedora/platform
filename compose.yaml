@@ -6,7 +6,29 @@
 # arriving with the auth service) match the runtime, never the host's macOS build.
 name: iedora-api
 
+# Shared OpenTelemetry export config — every service merges this so traces +
+# metrics flow to the local OpenObserve (the same shape as prod, where these two
+# vars come from kamal env / SOPS). Mirror of the registerIedoraOtelNode contract:
+# the endpoint is the org base (no trailing slash); the SDK appends /v1/traces.
+# Header value is OpenObserve Basic auth, %20-encoded so the `=` parser keeps it.
+x-otel-env: &otel-env
+  OTEL_EXPORTER_OTLP_ENDPOINT: http://openobserve:5080/api/default
+  OTEL_EXPORTER_OTLP_HEADERS: Authorization=Basic%20cm9vdEBleGFtcGxlLmNvbTpDb21wbGV4cGFzcyMxMjM=
+
 services:
+  # Local traces/metrics backend. UI + OTLP HTTP ingest on 5080. Default org is
+  # "default"; sign in with the root creds below. Data in a named volume.
+  openobserve:
+    image: public.ecr.aws/zinclabs/openobserve:latest
+    environment:
+      ZO_ROOT_USER_EMAIL: root@example.com
+      ZO_ROOT_USER_PASSWORD: Complexpass#123
+    ports:
+      - "5080:5080"
+    volumes:
+      - openobserve:/data
+    restart: unless-stopped
+
   postgres:
     image: postgres:18-alpine
     environment:
@@ -32,6 +54,7 @@ services:
     working_dir: /app
     command: sh -c "bun install --frozen-lockfile && exec sh services/docker-entrypoint.sh bun run --hot services/audit/src/index.ts"
     environment:
+      <<: *otel-env
       DEPLOYMENT_ENV: development
       AUDIT_PORT: "8081"
       AUDIT_DATABASE_URL: postgres://iedora:iedora@postgres:5432/audit?sslmode=disable
@@ -56,6 +79,7 @@ services:
     working_dir: /app
     command: sh -c "bun install --frozen-lockfile && exec sh services/docker-entrypoint.sh bun run --hot services/auth/src/index.ts"
     environment:
+      <<: *otel-env
       DEPLOYMENT_ENV: development
       AUTH_PORT: "8080"
       AUTH_DATABASE_URL: postgres://iedora:iedora@postgres:5432/auth?sslmode=disable
@@ -92,6 +116,7 @@ services:
     working_dir: /app
     command: sh -c "bun install --frozen-lockfile && exec sh services/docker-entrypoint.sh bun run --hot services/billing/src/index.ts"
     environment:
+      <<: *otel-env
       DEPLOYMENT_ENV: development
       BILLING_PORT: "8083"
       BILLING_DATABASE_URL: postgres://iedora:iedora@postgres:5432/billing?sslmode=disable
@@ -117,6 +142,7 @@ services:
     working_dir: /app
     command: sh -c "bun install --frozen-lockfile && exec sh services/docker-entrypoint.sh bun run --hot services/menu/src/index.ts"
     environment:
+      <<: *otel-env
       DEPLOYMENT_ENV: development
       MENU_PORT: "8084"
       MENU_DATABASE_URL: postgres://iedora:iedora@postgres:5432/menu?sslmode=disable
@@ -156,3 +182,4 @@ services:
 volumes:
   pgdata:
   node_modules:
+  openobserve:

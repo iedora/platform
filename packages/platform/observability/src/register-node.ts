@@ -22,6 +22,7 @@ import {
 } from "@opentelemetry/semantic-conventions";
 import { ATTR_HOST_NAME } from "@opentelemetry/semantic-conventions/incubating";
 
+import { parseOtlpHeaders } from "./signals/otlp";
 import { TenantContextSpanProcessor } from "./signals/processor";
 import { defaultSampler } from "./signals/sampler";
 
@@ -104,9 +105,11 @@ export function registerIedoraOtelNode(opts: RegisterNodeOptions): void {
   // Tracer provider. BatchSpanProcessor only flushes periodically;
   // shutdownIedoraOtel() flushes synchronously before process exit so
   // short-lived scripts don't drop their tail of spans.
+  const otlpHeaders = parseOtlpHeaders(process.env.OTEL_EXPORTER_OTLP_HEADERS);
   const traceExporter = process.env.OTEL_EXPORTER_OTLP_ENDPOINT
     ? new OTLPTraceExporter({
         url: `${process.env.OTEL_EXPORTER_OTLP_ENDPOINT.replace(/\/$/, "")}/v1/traces`,
+        headers: otlpHeaders, // OpenObserve Basic auth (Authorization=Basic …)
       })
     : undefined;
 
@@ -138,6 +141,8 @@ export function registerIedoraOtelNode(opts: RegisterNodeOptions): void {
       readers: [
         new PeriodicExportingMetricReader({
           exporter: new OTLPMetricExporter({
+            url: `${process.env.OTEL_EXPORTER_OTLP_ENDPOINT.replace(/\/$/, "")}/v1/metrics`,
+            headers: otlpHeaders,
             temporalityPreference: AggregationTemporalityPreference.DELTA,
           }),
           exportIntervalMillis:

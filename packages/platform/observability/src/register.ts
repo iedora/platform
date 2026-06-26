@@ -42,23 +42,6 @@ import { TenantContextSpanProcessor } from "./signals/processor";
  * has shifted across minor versions. A 10-line local parser is more
  * stable.
  */
-function parseOtlpHeaders(
-  raw: string | undefined,
-): Record<string, string> | undefined {
-  if (!raw) return undefined;
-  const out: Record<string, string> = {};
-  for (const pair of raw.split(",")) {
-    const eq = pair.indexOf("=");
-    if (eq <= 0) continue;
-    const key = pair.slice(0, eq).trim();
-    if (!key) continue;
-    // Values may be URL-encoded so colon-heavy bearer tokens / basic
-    // creds survive the `,`-delimited shape unscathed. decodeURIComponent
-    // is a no-op on already-decoded strings.
-    out[key] = decodeURIComponent(pair.slice(eq + 1).trim());
-  }
-  return Object.keys(out).length > 0 ? out : undefined;
-}
 
 /**
  * Default OTLP metric export interval (ms). 60s matches what most
@@ -72,6 +55,7 @@ const DEFAULT_METRIC_EXPORT_INTERVAL_MS = 60_000;
 // dependency-free module so register-node.ts can share them without pulling in
 // @vercel/otel. Imported for internal use + re-exported for back-compat.
 import { defaultSampler, NoiseFilteringSampler, NOISE_PATTERNS } from "./signals/sampler";
+import { parseOtlpHeaders } from "./signals/otlp";
 export { defaultSampler, NoiseFilteringSampler, NOISE_PATTERNS };
 
 export type RegisterOptions = {

@@ -1,32 +1,34 @@
 import { AsyncLocalStorage } from "node:async_hooks";
 
-import { SpanKind, SpanStatusCode, tracer } from "@iedora/observability";
+import { SpanKind, SpanStatusCode, trace, tracer } from "@iedora/observability";
 import { SQL } from "bun";
 import { Kysely, type LogEvent, sql, type Transaction } from "kysely";
 import { PostgresJSDialect } from "kysely-postgres-js";
 
 // Emits a CLIENT span per query from Kysely's log event (fires on success AND
-// error, with the duration). The span is created AFTER the query, so its start
-// is backdated by the measured duration; it parents to whatever span is active
-// (the request span during a handler), giving the `… → business → db` leaves of
-// the trace. db.query.text is the PARAMETERIZED sql ($1, $2) — no bound values,
-// so no PII. Negligible cost when OTel isn't recording.
+// error, with the duration), giving the `… → business → db` leaves of a request
+// trace. ONLY when there's an active parent span: background work (the outbox
+// relay polling every 1s, migrations) runs with no parent, and tracing those
+// would flood the backend with rootless db spans carrying no business context.
+// The span is created after the query, so its start is backdated by the measured
+// duration. db.query.text is the PARAMETERIZED sql ($1, $2) — no bound values,
+// no PII.
 function recordQuerySpan(event: LogEvent): void {
-  const startTime = Date.now() - event.queryDurationMillis;
-  const span = tracer.startSpan("db", { kind: SpanKind.CLIENT, startTime });
-  if (span.isRecording()) {
-    const text = event.query.sql;
-    const op = text.trimStart().split(/\s/, 1)[0]?.toUpperCase();
-    const table = text.match(/\b(?:from|into|update|join)\s+"?([a-z_][a-z0-9_]*)"?/i)?.[1];
-    span.updateName(table ? `db ${op} ${table}` : `db ${op ?? "query"}`);
-    span.setAttribute("db.system", "postgresql");
-    if (op) span.setAttribute("db.operation.name", op);
-    if (table) span.setAttribute("db.collection.name", table);
-    span.setAttribute("db.query.text", text.length > 1000 ? `${text.slice(0, 1000)}…` : text);
-    if (event.level === "error") {
-      span.recordException(event.error as Error);
-      span.setStatus({ code: SpanStatusCode.ERROR, message: String(event.error) });
-    }
+  if (!trace.getActiveSpan()?.isRecording()) return;
+  const text = event.query.sql;
+  const op = text.trimStart().split(/\s/, 1)[0]?.toUpperCase();
+  const table = text.match(/\b(?:from|into|update|join)\s+"?([a-z_][a-z0-9_]*)"?/i)?.[1];
+  const span = tracer.startSpan(table ? `db ${op} ${table}` : `db ${op ?? "query"}`, {
+    kind: SpanKind.CLIENT,
+    startTime: Date.now() - event.queryDurationMillis,
+  });
+  span.setAttribute("db.system", "postgresql");
+  if (op) span.setAttribute("db.operation.name", op);
+  if (table) span.setAttribute("db.collection.name", table);
+  span.setAttribute("db.query.text", text.length > 1000 ? `${text.slice(0, 1000)}…` : text);
+  if (event.level === "error") {
+    span.recordException(event.error as Error);
+    span.setStatus({ code: SpanStatusCode.ERROR, message: String(event.error) });
   }
   span.end();
 }
