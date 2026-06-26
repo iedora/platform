@@ -30,6 +30,14 @@ export function optional(field: string, v: string, limit: number): string {
   return t;
 }
 
+// Menus often print a trailing period on dish names ("Bacalhau à Brás."); drop
+// it so titles read cleanly. A numeric prefix keeps its dot ("1. Pizza") — only
+// the very end is trimmed, and never down to an empty string.
+export function stripTrailingDots(s: string): string {
+  const out = s.replace(/[.\s]+$/, "");
+  return out.length > 0 ? out : s;
+}
+
 export function validPrice(field: string, cents: number): void {
   if (!Number.isInteger(cents) || cents < 0 || cents > MAX_PRICE_CENTS) {
     throw invalid(`${field} must be between 0 and ${MAX_PRICE_CENTS} cents`);

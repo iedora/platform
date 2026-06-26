@@ -134,10 +134,13 @@ export async function staffImportRestaurant(
             nameI18n: item.nameI18n,
             description: item.description,
             descriptionI18n: item.descriptionI18n,
-            priceCents: item.priceCents,
+            // Priceless dishes (market price, headers) import as 0 → the menu
+            // renders no price. Variants, when present, carry their own prices.
+            priceCents: item.priceCents ?? 0,
             currency: item.currency,
             available: item.available,
             tags: item.tags,
+            variants: item.variants,
           })),
         );
       }

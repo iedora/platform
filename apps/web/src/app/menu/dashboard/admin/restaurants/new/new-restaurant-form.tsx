@@ -45,13 +45,24 @@ const JSON_TEMPLATE = `{
     { "name": "Dinner", "categories": [
       { "name": "Pizzas", "items": [
         {
-          "name": "Margherita",
+          "name": "1. Margherita",
           "description": "Tomato, mozzarella, basil",
           "priceCents": 950,
           "currency": "EUR",
-          "nameI18n": { "pt": "Margherita" },
+          "nameI18n": { "pt": "1. Margherita" },
           "descriptionI18n": { "pt": "Tomate, mozzarella, manjericão" }
+        },
+        {
+          "name": "2. Diavola",
+          "currency": "EUR",
+          "variants": [
+            { "label": "Medium", "priceCents": 1050 },
+            { "label": "Large", "priceCents": 1350 }
+          ]
         }
+      ] },
+      { "name": "Specials", "items": [
+        { "name": "Catch of the day", "description": "Market price" }
       ] }
     ] }
   ]
@@ -60,7 +71,7 @@ const JSON_TEMPLATE = `{
 // Pasteable into any vision LLM together with a menu photo. It pins the exact
 // schema + the gotchas (cents, sections, original language) so the output drops
 // straight into the editor.
-const AI_PROMPT = `You are given one or more photos of a restaurant menu. Transcribe the menu into JSON that matches EXACTLY the schema below. Output ONLY the JSON — no explanations, no markdown code fences.
+const AI_PROMPT = `You are given one or more photos of a restaurant menu. Transcribe the menu into JSON that matches EXACTLY the schema below. Output ONLY the JSON, with no explanations and no markdown code fences.
 
 Schema:
 {
@@ -80,8 +91,9 @@ Schema:
             {
               "name": "<dish>",
               "description": "<optional>",
-              "priceCents": 0,
+              "priceCents": 950,
               "currency": "EUR",
+              "variants": [ { "label": "<size/option>", "priceCents": 950 } ],
               "nameI18n": { "pt": "<dish translated>" },
               "descriptionI18n": { "pt": "<description translated>" }
             }
@@ -94,12 +106,16 @@ Schema:
 
 Rules:
 - priceCents is the price in CENTS as an integer: 9.50 becomes 950, 12 becomes 1200. Never use decimals or currency symbols.
+- No price? Omit "priceCents" entirely for dishes the menu prints without one (market price, "ask your server", a section's note). Do not write 0. A dish with no price simply shows no price.
+- Variants are for a dish sold in several sizes or options (Small / Large, Glass / Bottle, ...). Put one entry per option in "variants", each with its own "label" and "priceCents", and then DO NOT set the item-level "priceCents". Most dishes have no variants, so omit "variants" for them.
+- Dish numbers: when the menu numbers its dishes (common on large menus), keep the number as part of "name", e.g. "1. Pizza Margherita" or "23. Frango Piri-Piri". There is no separate number field.
+- Never end "name" with a period. Strip any trailing "." from dish and section names (a number prefix keeps its dot, like "1.").
 - Put each dish under the section it appears in on the menu (Starters, Mains, Desserts, Drinks, ...).
 - Use a single menu unless the photos clearly show separate menus (e.g. Food and Drinks).
-- "description" is optional — include it only when the menu prints one.
+- "description" is optional. Include it only when the menu prints one, and never just repeat the dish name.
 - Keep the top-level "name"/"description" in the menu's original language, and set "defaultLanguage" to that language code (en, pt, es or fr).
 - "supportedLanguages" lists every language the menu should be available in (always include the default).
-- For each item, translate the name and description into every supported language OTHER than the default, using "nameI18n"/"descriptionI18n" keyed by language code. Only use codes listed in "supportedLanguages". Drop these fields if there is only one language.
+- For each item, translate the name and description into every supported language OTHER than the default, using "nameI18n"/"descriptionI18n" keyed by language code. Keep the same number prefix in every translation. Only use codes listed in "supportedLanguages". Drop these fields if there is only one language.
 - Make sure the result is valid JSON.`
 
 /** Inline name → slug preview (mirrors the server's slugify). */

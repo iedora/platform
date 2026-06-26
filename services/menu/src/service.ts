@@ -23,6 +23,7 @@ import {
   MAX_ITEM_NAME,
   MAX_SHORT_NAME,
   optional,
+  stripTrailingDots,
   trimmed,
   validI18n,
   validLanguages,
@@ -403,7 +404,7 @@ function normalizeItem(w: ItemWrite, defaultLang: string, defaultCurrency: strin
   if ((w.tags?.length ?? 0) > 20) throw invalid("too many tags");
   validPrice("price", w.priceCents);
   return {
-    name: trimmed("name", w.name, MAX_ITEM_NAME),
+    name: stripTrailingDots(trimmed("name", w.name, MAX_ITEM_NAME)),
     description: optional("description", w.description ?? "", 1000),
     nameI18n: validI18n("name", w.nameI18n, defaultLang),
     descriptionI18n: validI18n("description", w.descriptionI18n, defaultLang),

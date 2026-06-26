@@ -200,6 +200,58 @@ test("import builds the full menu tree under an existing tenant", async () => {
   expect(items.rows[0]!.n).toBe(3);
 });
 
+test("import supports variants, omitted price, and strips trailing dots", async () => {
+  const s = await staffToken(h);
+  const doc = validImport();
+  // Use a fresh tenant so this doesn't consume the shared TENANT's restaurant
+  // budget (the plan stub caps restaurants per tenant).
+  delete (doc as { tenantId?: string }).tenantId;
+  (doc.payload as { tenant?: string }).tenant = "Variants Co";
+  doc.payload.restaurant.name = "Import Variants";
+  doc.payload.menus = [
+    {
+      name: "Dinner",
+      categories: [
+        {
+          name: "Pizzas",
+          items: [
+            // Variants carry their own prices; no item-level price.
+            {
+              name: "Diavola",
+              variants: [
+                { label: "Medium", priceCents: 1050 },
+                { label: "Large", priceCents: 1350 },
+              ],
+            } as unknown as { name: string; priceCents: number },
+            // Priceless dish (market price) — price omitted entirely.
+            { name: "Catch of the day" } as unknown as { name: string; priceCents: number },
+            // Trailing period stripped; a number prefix keeps its inner dot.
+            { name: "1. Margherita.", priceCents: 950 },
+          ],
+        },
+      ],
+    },
+  ];
+  const res = await post("/api/staff/restaurants/import", doc, s);
+  expect(res.status).toBe(200);
+  const { restaurant } = (await res.json()) as { restaurant: { id: string } };
+
+  const rows = (await sql`
+    SELECT name, price_cents, variants FROM items WHERE restaurant_id = ${restaurant.id} ORDER BY position
+  `.execute(h.db.root)) as { rows: { name: string; price_cents: number; variants: unknown }[] };
+
+  const diavola = rows.rows.find((r) => r.name === "Diavola")!;
+  expect(diavola.variants).not.toBeNull();
+  expect(diavola.price_cents).toBe(0); // no item price when variants drive it
+
+  const market = rows.rows.find((r) => r.name === "Catch of the day")!;
+  expect(market.price_cents).toBe(0); // omitted price → 0 → renders as no price
+  expect(market.variants).toBeNull();
+
+  // Trailing "." gone, the "1." number prefix preserved.
+  expect(rows.rows.some((r) => r.name === "1. Margherita")).toBe(true);
+});
+
 test("import sets supportedLanguages and per-item translations", async () => {
   const s = await staffToken(h)
   const doc = validImport()

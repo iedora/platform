@@ -345,17 +345,33 @@ export const IMPORT_LIMITS = {
   totalItems: 2000,
 } as const;
 
+// A size/option variant for the import (e.g. Small / Medium / Large). Mirrors
+// the admin `variant` shape; each carries its own price.
+export const importVariant = z.object({
+  label: z.string().trim().min(1).max(80),
+  labelI18n: localizedText.optional(),
+  priceCents: z.number().int().min(0).max(100_000_000),
+});
+export type ImportVariant = z.infer<typeof importVariant>;
+
 export const importItem = z.object({
+  // The dish name. When the menu numbers its dishes, the number stays part of
+  // the name (e.g. "1. Pizza Margherita") — there is no separate number field.
   name: z.string().trim().min(1).max(160),
   // Per-language overrides of name/description, keyed by language code. Entries
   // for the default language are ignored (the top-level fields are the default).
   nameI18n: localizedText.optional(),
   description: z.string().trim().max(1000).optional(),
   descriptionI18n: localizedText.optional(),
-  priceCents: z.number().int().min(0).max(100_000_000),
+  // Price in cents. Optional: omit it for dishes the menu prints without a price
+  // (market price, "ask your server", section headers); the menu then shows no
+  // price. Ignored when `variants` are given (each variant carries its price).
+  priceCents: z.number().int().min(0).max(100_000_000).optional(),
   currency: z.string().trim().length(3).optional(),
   available: z.boolean().optional(),
   tags: z.array(z.string().trim().min(1)).max(20).optional(),
+  // Size/option variants; when present they replace the single price.
+  variants: z.array(importVariant).max(20).optional(),
 });
 export type ImportItem = z.infer<typeof importItem>;
 
