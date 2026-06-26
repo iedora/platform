@@ -1,4 +1,4 @@
-import { durationMs, env, isProd, requireEnv } from "@iedora/server-kit";
+import { durationMs, env, isProd, requireEnv, type SmtpConfig } from "@iedora/server-kit";
 
 export interface AuthConfig {
   port: number;
@@ -28,6 +28,9 @@ export interface AuthConfig {
   // The reset link's base URL is built from THIS config value, never the request
   // Host header — that defeats password-reset poisoning (host-header injection).
   resetUrlBase: string;
+  // SMTP transport for account emails. `host` empty → no transport (dev logs,
+  // prod drops). MailHog locally, Resend/SES/etc. in prod — pure config.
+  smtp: SmtpConfig;
 }
 
 /**
@@ -106,5 +109,22 @@ export function loadConfig(): AuthConfig {
     resetTokenTtlMs: durationMs(env("API_RESET_TOKEN_TTL", "30m"), 30 * 6e4),
     resetThrottleMs: durationMs(env("API_RESET_THROTTLE", "60s"), 6e4),
     resetUrlBase: env("RESET_URL_BASE", "https://menu.iedora.com/reset-password"),
+    smtp: loadSmtp(),
+  };
+}
+
+// SMTP from env. `SMTP_SECURE` defaults to true only on the implicit-TLS port
+// (465); MailHog (1025) and STARTTLS (587) are non-secure. `SMTP_USER` empty =
+// no auth (MailHog).
+function loadSmtp(): SmtpConfig {
+  const port = Number(env("SMTP_PORT", "587"));
+  const secureRaw = env("SMTP_SECURE", "");
+  return {
+    host: env("SMTP_HOST", ""),
+    port,
+    user: env("SMTP_USER", ""),
+    pass: env("SMTP_PASS", ""),
+    secure: secureRaw ? secureRaw === "true" : port === 465,
+    from: env("MAIL_FROM", "iedora <no-reply@iedora.com>"),
   };
 }

@@ -4,6 +4,7 @@ import {
   ServiceTokenIssuer,
   expandFileSecrets,
   isProd,
+  mailerFromConfig,
   newServiceVerifier,
   newUserVerifier,
   parseClients,
@@ -13,7 +14,7 @@ import {
 
 import { buildApp } from "./app";
 import { loadConfig } from "./config";
-import { loggingResetMailer, noopResetMailer } from "./mailer";
+import { makeResetMailer } from "./mailer";
 import type { AuthDB } from "./schema";
 
 expandFileSecrets();
@@ -38,9 +39,10 @@ const serviceIssuer = new ServiceTokenIssuer({
   ttl: cfg.serviceTokenTtl,
 });
 const serviceVerifier = newServiceVerifier(keys.publicKey, cfg.jwtIssuer, cfg.serviceAudience);
-// No email transport is wired yet: prod drops the message (the reset is still
-// recorded as an audit event), dev logs the link so the flow is testable.
-const resetMailer = isProd() ? noopResetMailer : loggingResetMailer;
+// Transport chosen from config: SMTP when SMTP_HOST is set (MailHog in dev,
+// Resend/SES/etc. in prod), else dev logs the link / prod drops it (the reset is
+// still recorded as an audit event). The account emails are formatted on top.
+const resetMailer = makeResetMailer(mailerFromConfig(cfg.smtp, { prod: isProd() }));
 
 // runRelayService owns the audit DB + outbox writer/relay + graceful shutdown.
 runRelayService({

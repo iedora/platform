@@ -69,6 +69,11 @@ services:
       # Dev role grants: this email is promoted to iedora-admin (the staff role)
       # on its next login/register. Format: "role=id,@domain; role2=id2".
       ROLE_GRANTS: iedora-admin=eduardoferdcarvalho@gmail.com
+      # Local email → MailHog (no auth). Captured at http://localhost:8025.
+      # Prod points the same vars at Resend SMTP (host/user/pass/secure).
+      SMTP_HOST: mailhog
+      SMTP_PORT: "1025"
+      MAIL_FROM: "iedora (dev) <no-reply@iedora.test>"
     # Host 8180 (container 8080) to avoid colliding with a local service on 8080.
     ports:
       - "8180:8080"
@@ -78,6 +83,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      mailhog:
+        condition: service_started
     restart: unless-stopped
 
   billing:
@@ -135,6 +142,15 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    restart: unless-stopped
+
+  # Local SMTP sink: captures every email the stack sends (no real delivery).
+  # SMTP on 1025 (what the auth service points at), web inbox on 8025.
+  mailhog:
+    image: mailhog/mailhog:latest
+    ports:
+      - "1025:1025"
+      - "8025:8025"
     restart: unless-stopped
 
 volumes:

@@ -11,6 +11,7 @@
     "./db": "./src/db.ts",
     "./http": "./src/http.ts",
     "./jwt": "./src/jwt.ts",
+    "./mailer": "./src/mailer.ts",
     "./audit": "./src/audit.ts",
     "./outbox": "./src/outbox.ts",
     "./password": "./src/password.ts",
@@ -30,11 +31,13 @@
     "hono": "catalog:",
     "jose": "catalog:",
     "kysely": "catalog:",
-    "kysely-postgres-js": "catalog:"
+    "kysely-postgres-js": "catalog:",
+    "nodemailer": "^6.10.1"
   },
   "devDependencies": {
     "@iedora/eslint-config": "workspace:*",
     "@types/bun": "catalog:",
+    "@types/nodemailer": "^6.4.17",
     "eslint": "catalog:",
     "typescript": "catalog:",
     "typescript-eslint": "catalog:",

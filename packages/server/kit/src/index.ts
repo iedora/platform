@@ -7,6 +7,7 @@ export * from "./db";
 export * from "./health";
 export * from "./http";
 export * from "./jwt";
+export * from "./mailer";
 export * from "./migrate";
 export * from "./outbox";
 export * from "./password";
