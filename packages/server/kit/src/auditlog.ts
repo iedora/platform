@@ -14,11 +14,11 @@ export async function insertAuditLog(
   await sql`
     INSERT INTO audit_log
       (at, source, tenant_id, action, outcome, actor_type, actor_id,
-       target_type, target_id, session_id, trace_id, ip_hash, ip, user_agent, meta, message_id)
+       target_type, target_id, session_id, trace_id, ip, user_agent, meta, message_id)
     VALUES (
       ${e.occurredAt}, ${e.source}, ${e.tenantId ?? null}, ${e.action}, ${e.outcome},
       ${e.actorType}, ${e.actorId ?? null}, ${e.targetType ?? null}, ${e.targetId ?? null},
-      ${e.sessionId ?? null}, ${e.traceId ?? null}, ${e.ipHash ? Buffer.from(e.ipHash, "base64") : null}, ${e.ip ?? null}, ${e.userAgent ?? null},
+      ${e.sessionId ?? null}, ${e.traceId ?? null}, ${e.ip ?? null}, ${e.userAgent ?? null},
       ${JSON.stringify(e.meta ?? {})}::jsonb, ${e.id}
     )
     ON CONFLICT (message_id, at) DO NOTHING

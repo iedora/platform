@@ -47,7 +47,7 @@ const AUDIT_DDL = `
     outcome text NOT NULL DEFAULT 'success',
     actor_type text NOT NULL DEFAULT 'system',
     actor_id text, target_type text, target_id text, session_id text, trace_id text,
-    ip_hash bytea, ip text, user_agent text,
+    ip text, user_agent text,
     meta jsonb NOT NULL DEFAULT '{}'::jsonb,
     message_id uuid,
     PRIMARY KEY (id, at)

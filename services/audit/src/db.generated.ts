@@ -30,7 +30,6 @@ export interface AuditLog {
   at: Generated<Timestamp>;
   id: Generated<string>;
   ip: string | null;
-  ip_hash: Buffer | null;
   message_id: string | null;
   meta: Generated<Json>;
   outcome: Generated<string>;

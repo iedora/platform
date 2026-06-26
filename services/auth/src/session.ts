@@ -1,4 +1,4 @@
-import { createHash, randomUUID } from "node:crypto";
+import { randomUUID } from "node:crypto";
 
 import { type AuditEvent, type Auditor, newRefreshToken } from "@iedora/server-kit";
 import type { Context } from "hono";
@@ -11,14 +11,13 @@ import type { AuthDeps } from "./deps";
 
 export interface RequestMeta {
   userAgent: string | null;
-  ipHash: Buffer | null;
-  /** The raw client IP — kept for the admin security view (the `ip_hash` stays
-   *  the GDPR-safe correlation key). Null when no forwarded IP is present. */
+  /** The raw client IP, kept for the admin security view. Null when no
+   *  forwarded IP is present. */
   ip: string | null;
 }
 
-/** Client context recorded with sessions + audit events. We keep both the raw
- *  IP (for the admin Users CRM) and its hash (the privacy-safe key). */
+/** Client context recorded with sessions + audit events: the raw IP + user
+ *  agent (for the admin Users CRM). */
 export function metaFrom(c: Context): RequestMeta {
   const ua = c.req.header("user-agent") ?? null;
   const xff = c.req.header("x-forwarded-for");
@@ -26,23 +25,21 @@ export function metaFrom(c: Context): RequestMeta {
   return {
     userAgent: ua,
     ip: ip || null,
-    ipHash: ip ? createHash("sha256").update(ip).digest() : null,
   };
 }
 
 /**
  * A request-scoped auditor that stamps every event with the request's
- * user-agent, raw IP + ip hash, so each call site states only what differs
+ * user-agent + raw IP, so each call site states only what differs
  * (action/outcome/actor/meta) and no auth flow can forget that context. Build
  * one per request from its {@link RequestMeta}.
  */
 export function auditWith(auditor: Auditor, meta: RequestMeta) {
   const userAgent = meta.userAgent ?? undefined;
-  const ipHash = meta.ipHash ?? undefined;
   const ip = meta.ip ?? undefined;
   return {
-    record: (e: AuditEvent) => auditor.record({ userAgent, ipHash, ip, ...e }),
-    recordSync: (e: AuditEvent) => auditor.recordSync({ userAgent, ipHash, ip, ...e }),
+    record: (e: AuditEvent) => auditor.record({ userAgent, ip, ...e }),
+    recordSync: (e: AuditEvent) => auditor.recordSync({ userAgent, ip, ...e }),
   };
 }
 
@@ -78,7 +75,6 @@ export function buildSession(
       expiresAt: new Date(now.getTime() + cfg.refreshTtlMs),
       absoluteExpiresAt: new Date(now.getTime() + cfg.refreshAbsoluteTtlMs),
       userAgent: meta.userAgent,
-      ipHash: meta.ipHash,
       ip: meta.ip,
     },
   };
@@ -106,7 +102,6 @@ export function buildNextSession(
       expiresAt: exp,
       absoluteExpiresAt: abs,
       userAgent: meta.userAgent,
-      ipHash: meta.ipHash,
       ip: meta.ip,
     },
   };

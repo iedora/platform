@@ -5,7 +5,7 @@ import type { AuthDB } from "../schema";
 export type Session = Selectable<AuthDB["sessions"]>;
 
 // The session columns the device-history view (toAdminSession) reads — NOT the
-// secret token_hash or ip_hash. Used to narrow the admin/account list query.
+// secret token_hash. Used to narrow the admin/account list query.
 const ADMIN_SESSION_COLS = [
   "id",
   "family_id",
@@ -29,7 +29,6 @@ export interface NewSession {
   expiresAt: Date;
   absoluteExpiresAt: Date;
   userAgent: string | null;
-  ipHash: Buffer | null;
   ip: string | null;
 }
 
@@ -45,7 +44,6 @@ export async function insertSession(db: Kysely<AuthDB>, s: NewSession): Promise<
       expires_at: s.expiresAt,
       absolute_expires_at: s.absoluteExpiresAt,
       user_agent: s.userAgent,
-      ip_hash: s.ipHash,
       ip: s.ip,
     })
     .returning("id")
@@ -56,7 +54,7 @@ export async function insertSession(db: Kysely<AuthDB>, s: NewSession): Promise<
 /** Every session for a user, newest first — the admin "Sessions" tab. Includes
  *  revoked + expired rows (the full device history); the caller derives the
  *  "current" flag from revoked_at + the expiries. Projects only the displayed
- *  columns, so the secret token_hash / ip_hash never reach the response. */
+ *  columns, so the secret token_hash never reaches the response. */
 export function listSessionsForUser(
   db: Kysely<AuthDB>,
   userId: string,

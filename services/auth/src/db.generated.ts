@@ -45,7 +45,6 @@ export interface Sessions {
   family_id: string;
   id: Generated<string>;
   ip: string | null;
-  ip_hash: Buffer | null;
   issued_at: Generated<Timestamp>;
   replaced_by: string | null;
   revoked_at: Timestamp | null;

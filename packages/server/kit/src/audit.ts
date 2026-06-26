@@ -21,7 +21,6 @@ export interface AuditEvent {
   targetId?: string;
   sessionId?: string;
   traceId?: string;
-  ipHash?: Uint8Array;
   ip?: string; // raw client IP, captured for the admin security view
   userAgent?: string;
   meta?: Record<string, unknown>; // slice detail — never PII/secrets/tokens
@@ -40,7 +39,6 @@ export interface AuditEnvelope {
   targetId?: string;
   sessionId?: string;
   traceId?: string;
-  ipHash?: string; // base64 (the envelope is JSON in the outbox payload; decoded to bytea at insert)
   ip?: string; // raw client IP
   userAgent?: string;
   meta?: Record<string, unknown>;
@@ -68,7 +66,6 @@ export function buildEnvelope(e: AuditEvent, source: string): AuditEnvelope {
     targetId: e.targetId,
     sessionId: e.sessionId,
     traceId: e.traceId,
-    ipHash: e.ipHash ? Buffer.from(e.ipHash).toString("base64") : undefined,
     ip: e.ip || undefined,
     userAgent: e.userAgent,
     meta: e.meta,
