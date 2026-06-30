@@ -29,7 +29,6 @@
   },
   "dependencies": {
     "@iedora/observability": "workspace:*",
-    "@opentelemetry/api": "1.9.1",
     "@node-rs/argon2": "catalog:",
     "hono": "catalog:",
     "jose": "catalog:",

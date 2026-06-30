@@ -1,7 +1,12 @@
-import { context, metrics, trace, propagation } from "@opentelemetry/api";
+import { context, metrics, trace, propagation, diag, DiagConsoleLogger, DiagLogLevel } from "@opentelemetry/api";
 import { AsyncLocalStorageContextManager } from "@opentelemetry/context-async-hooks";
 import { W3CTraceContextPropagator } from "@opentelemetry/core";
-import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
+// OTLP/protobuf (NOT /http JSON): OpenObserve's OTLP-JSON deserializer rejects
+// otherwise-valid SERVER spans with `400 invalid type: map, expected f64` (it
+// chokes on the float duration + exception-event combo), silently dropping them.
+// Protobuf is a different serializer end-to-end (and what the frontend already
+// uses against the same collector), so the spans ingest cleanly.
+import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-proto";
 import {
   AggregationTemporalityPreference,
   OTLPMetricExporter,
@@ -74,6 +79,7 @@ const DEFAULT_METRIC_EXPORT_INTERVAL_MS = 60_000;
 
 export function registerIedoraOtelNode(opts: RegisterNodeOptions): void {
   if (process.env.NODE_ENV === "test") return;
+  if (process.env.IEDORA_OTEL_DIAG === "1") diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.DEBUG);
 
   const globalKey = "__iedora_otel_node_registered" as const;
   const g = globalThis as { [globalKey]?: boolean };

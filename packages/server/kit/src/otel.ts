@@ -8,26 +8,26 @@
 //   - traceIds               — trace/span ids for log correlation
 // Everything no-ops until registerIedoraOtelNode runs with an OTLP endpoint, so
 // it's free when observability is off.
-// Import the OTel API DIRECTLY from @opentelemetry/api — NOT via the
-// @iedora/observability barrel. The barrel also pulls in register.ts →
-// @vercel/otel → Next's *compiled* copy of @opentelemetry/api, which is a
-// SECOND api instance with its own global registry. Going through the barrel
-// made otelHttp read that second instance's (empty) global while register-node
-// registered the provider on the real api — so every request span landed on a
-// no-op ProxyTracerProvider and was silently dropped. One api instance = one
-// global = spans actually export.
+// Import EVERYTHING (the OTel API re-exports AND the iedora helpers) from the
+// @iedora/observability barrel — NOT @opentelemetry/api directly. register-node
+// registers the global tracer provider on the barrel package's @opentelemetry/api
+// instance; in the Bun workspace, server-kit's own @opentelemetry/api resolves to
+// a DIFFERENT module instance, so a direct import here put otelHttp's SERVER span
+// on a no-op provider (it silently never exported) while register-node's tp lived
+// on the barrel instance. Going through the barrel keeps producer + provider on
+// the one instance, so SERVER spans actually export. `tracer` is the shared
+// pre-configured tracer used by every iedora span.
 import {
   context,
+  IEDORA_RESTAURANT_ID,
+  IEDORA_TENANT_ID,
   propagation,
+  registerIedoraOtelNode,
+  shutdownIedoraOtel,
   SpanKind,
   SpanStatusCode,
   trace,
-} from "@opentelemetry/api";
-import {
-  IEDORA_RESTAURANT_ID,
-  IEDORA_TENANT_ID,
-  registerIedoraOtelNode,
-  shutdownIedoraOtel,
+  tracer,
 } from "@iedora/observability";
 import { type Env } from "hono";
 import { createMiddleware } from "hono/factory";
@@ -89,7 +89,7 @@ export function otelHttp<E extends Env>(opts?: {
     const startTime = performance.now();
     let hasErrorStatus = false;
     await context.with(parent, () =>
-      trace.getTracer("iedora").startActiveSpan(`${method} ${route}`, { kind: SpanKind.SERVER }, async (span) => {
+      tracer.startActiveSpan(`${method} ${route}`, { kind: SpanKind.SERVER }, async (span) => {
         span.setAttribute("http.request.method", method);
         span.setAttribute("url.path", c.req.path);
         if (route) span.setAttribute("http.route", route);
@@ -158,7 +158,7 @@ export function recordQuerySpan(event: LogEvent): void {
   const text = event.query.sql;
   const op = text.trimStart().split(/\s/, 1)[0]?.toUpperCase();
   const table = text.match(/\b(?:from|into|update|join)\s+"?([a-z_][a-z0-9_]*)"?/i)?.[1];
-  const span = trace.getTracer("iedora").startSpan(table ? `db ${op} ${table}` : `db ${op ?? "query"}`, {
+  const span = tracer.startSpan(table ? `db ${op} ${table}` : `db ${op ?? "query"}`, {
     kind: SpanKind.CLIENT,
     startTime: Date.now() - event.queryDurationMillis,
   });
