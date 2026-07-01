@@ -21,6 +21,7 @@ import {
   context,
   IEDORA_RESTAURANT_ID,
   IEDORA_TENANT_ID,
+  meter,
   propagation,
   registerIedoraOtelNode,
   shutdownIedoraOtel,
@@ -75,6 +76,35 @@ function clientAddress(h: Headers): string | undefined {
   return undefined;
 }
 
+// Standard OTel HTTP server metric — name, unit, and attributes per
+// https://opentelemetry.io/docs/specs/semconv/http/http-metrics/#metric-httpserverrequestduration
+// (stable). Same reason otelHttp hand-rolls spans instead of relying on
+// @opentelemetry/instrumentation-http: that package patches Node's `http`
+// module, which Bun.serve doesn't go through, so there's no auto-instrumented
+// equivalent to lean on here. Bucket boundaries are the spec's recommended
+// defaults, not invented.
+//
+// Called PER REQUEST, not memoized at module scope. `meter` re-resolves the
+// current global Meter on every property access (see meter.ts), but
+// `meter.createHistogram(...)` itself still has to run AFTER a real
+// MeterProvider is registered to get a real (non-no-op) Histogram back —
+// and every real entrypoint imports this module (which would eagerly run
+// a module-scoped call) before calling initOtel(). Calling createHistogram()
+// on every request is safe and intentionally not memoized: the SDK's real
+// MeterProvider dedupes instrument registration by name+scope, returning
+// the SAME underlying instrument rather than creating a new one each time —
+// so this is a cheap Map lookup, not repeated allocation, and it's
+// self-healing if a stray early call ever raced initOtel().
+function httpServerRequestDurationHistogram(): ReturnType<typeof meter.createHistogram> {
+  return meter.createHistogram("http.server.request.duration", {
+    description: "Duration of HTTP server requests.",
+    unit: "s",
+    advice: {
+      explicitBucketBoundaries: [0.005, 0.01, 0.025, 0.05, 0.075, 0.1, 0.25, 0.5, 0.75, 1, 2.5, 5, 7.5, 10],
+    },
+  });
+}
+
 // One SERVER span per request. Bun.serve/Hono aren't auto-instrumented, so this
 // is where backend HTTP tracing comes from: continue any propagated trace, name
 // the span by the matched route (low cardinality), and stamp status + tenant.
@@ -85,9 +115,11 @@ export function otelHttp<E extends Env>(opts?: {
   return createMiddleware<E>(async (c, next) => {
     const method = c.req.method;
     let route = c.req.path;
+    const urlScheme = new URL(c.req.raw.url).protocol.replace(/:$/, "");
     const parent = propagation.extract(context.active(), c.req.raw.headers, headerGetter);
     const startTime = performance.now();
     let hasErrorStatus = false;
+    let errorType: string | undefined;
     await context.with(parent, () =>
       tracer.startActiveSpan(`${method} ${route}`, { kind: SpanKind.SERVER }, async (span) => {
         span.setAttribute("http.request.method", method);
@@ -105,12 +137,14 @@ export function otelHttp<E extends Env>(opts?: {
           span.recordException(err as Error);
           span.setStatus({ code: SpanStatusCode.ERROR, message: String(err) });
           hasErrorStatus = true;
+          errorType = (err as Error)?.name || "Error";
           throw err;
         } finally {
           if (c.error && !hasErrorStatus) {
             span.recordException(c.error);
             span.setStatus({ code: SpanStatusCode.ERROR, message: String(c.error) });
             hasErrorStatus = true;
+            errorType = c.error.name || "Error";
           }
           const status = c.res.status;
           const matchedRoute = c.req.routePath;
@@ -137,6 +171,17 @@ export function otelHttp<E extends Env>(opts?: {
           const rest = vars.get("restaurant") as { id?: string } | undefined;
           if (rest?.id) span.setAttribute(IEDORA_RESTAURANT_ID, rest.id);
           span.end();
+
+          // http.server.request.duration — required + conditionally-required
+          // attributes per semconv (see the instrument comment above). Seconds,
+          // not milliseconds — a different unit from the span's http.duration.
+          httpServerRequestDurationHistogram().record((performance.now() - startTime) / 1000, {
+            "http.request.method": method,
+            "url.scheme": urlScheme,
+            "http.response.status_code": status,
+            ...(route ? { "http.route": route } : {}),
+            ...(errorType ? { "error.type": errorType } : {}),
+          });
         }
       }),
     );

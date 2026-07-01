@@ -18,6 +18,16 @@ import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-proto";
 // either way, so -http stays a dependency for this import alone.
 import { AggregationTemporalityPreference } from "@opentelemetry/exporter-metrics-otlp-http";
 import { OTLPMetricExporter } from "@opentelemetry/exporter-metrics-otlp-proto";
+import { registerInstrumentations } from "@opentelemetry/instrumentation";
+// Standard Node.js runtime metrics (nodejs.eventloop.*, v8js.*) per
+// https://opentelemetry.io/docs/specs/semconv/runtime/nodejs-metrics/ — collected
+// via perf_hooks/v8, independent of HTTP traffic. This is what actually answers
+// "does the metrics pipeline still work" under Bun: these metrics flow on a
+// fixed cadence whether or not the service has taken a single request, so a gap
+// in them is a real liveness signal — unlike anything derived from request
+// volume. Verified empirically to work under Bun (register despite Bun not
+// being Node; perf_hooks/v8 compat is close enough here).
+import { RuntimeNodeInstrumentation } from "@opentelemetry/instrumentation-runtime-node";
 import { resourceFromAttributes, defaultResource } from "@opentelemetry/resources";
 import {
   BasicTracerProvider,
@@ -203,5 +213,12 @@ export function registerIedoraOtelNode(opts: RegisterNodeOptions): void {
       ],
     });
     metrics.setGlobalMeterProvider(mp);
+
+    // Standard Node.js runtime metrics — see the import comment above. Started
+    // only once a MeterProvider is actually registered, since it collects
+    // against the global meter.
+    registerInstrumentations({
+      instrumentations: [new RuntimeNodeInstrumentation()],
+    });
   }
 }

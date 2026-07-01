@@ -2,22 +2,43 @@ import { metrics, type Meter } from "@opentelemetry/api";
 
 /**
  * Pre-configured Meter for iedora-namespaced instruments. Mirrors the
- * `tracer` export — same pattern, no per-call-site boilerplate around
- * `metrics.getMeter(...)`.
+ * `tracer` export's call-site ergonomics — no per-call-site boilerplate
+ * around `metrics.getMeter(...)` — but NOT its implementation, for a
+ * reason worth spelling out:
  *
- *   import { meter } from '@iedora/observability'
- *   const counter = meter.createCounter('iedora.something_total', {
- *     description: 'What you are counting',
- *   })
- *   counter.add(1, tenantAttributes({ restaurantId, tenantId }))
+ * `@opentelemetry/api`'s trace API has a real deferred-delegation layer
+ * (ProxyTracer/ProxyTracerProvider) — `trace.getTracer('iedora')` called
+ * before any SDK is registered still works correctly once
+ * `setGlobalTracerProvider` runs later, because the returned ProxyTracer
+ * forwards each call to whatever the CURRENT global provider is, at CALL
+ * time. The metrics API has no equivalent (no ProxyMeter class exists in
+ * @opentelemetry/api — confirmed by reading the package source).
+ * `metrics.getMeter(name)` is literally
+ * `this.getMeterProvider().getMeter(name, ...)` — it resolves the
+ * CURRENT provider ONCE, eagerly, and returns THAT provider's Meter.
  *
- * Convention: instrument names are lowercase snake_case under the
- * `iedora.` namespace (e.g. `iedora.restaurant_views_total`). The OTel
- * spec recommends namespacing per service group; `iedora.` keeps our
- * instruments distinct from anything Next 16 auto-emits.
+ * A plain `export const meter = metrics.getMeter('iedora')` — this
+ * package's original implementation — is therefore permanently bound to
+ * whatever provider is global at MODULE IMPORT time. Since this module is
+ * always imported (transitively, via the barrel) before
+ * registerIedoraOtel()/registerIedoraOtelNode() ever runs, `meter` was
+ * always the no-op meter: every `meter.createCounter(...)` /
+ * `.createHistogram(...)` instrument silently discarded every
+ * `.add()`/`.record()` call, forever, even after a real MeterProvider was
+ * registered later. (Caught by testing an actual metric export
+ * end-to-end and finding it missing from the OTLP payload — nothing in
+ * the codebase had exercised this path before.)
  *
- * Before `registerIedoraOtel()` runs, this is the global no-op meter
- * from `@opentelemetry/api` — safe to create counters/histograms/gauges
- * on, they just don't emit. Same shape as `tracer`.
+ * Fix: hand-roll the same "resolve at call time" behavior the trace API
+ * gets for free, via a Proxy that re-resolves `metrics.getMeter('iedora')`
+ * on every property access. This is not a custom pattern — the API's own
+ * ProxyTracer does exactly this for spans; the JS Proxy below just
+ * implements the equivalent for Meter, which upstream doesn't yet ship.
  */
-export const meter: Meter = metrics.getMeter("iedora");
+export const meter: Meter = new Proxy({} as Meter, {
+  get(_target, prop, receiver) {
+    const currentMeter = metrics.getMeter("iedora");
+    const value = Reflect.get(currentMeter, prop, receiver);
+    return typeof value === "function" ? value.bind(currentMeter) : value;
+  },
+});
