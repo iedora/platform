@@ -12,8 +12,29 @@
 # drops devDeps (kysely-codegen, pg, tsgo, eslint).
 FROM oven/bun:1.3.13-alpine AS deps
 WORKDIR /app
-COPY . .
-RUN bun install --frozen-lockfile --production --filter '@iedora/service-*'
+
+# Manifests + lockfile FIRST so the install layer caches independently of source.
+# Previously this stage did `COPY . .` before install, so ANY repo change (docs,
+# dotnet/, apps/web, …) busted the cached `bun install`. A frozen install still
+# needs every workspace manifest present to resolve the same graph the single
+# shared bun.lock describes, so all workspace trees named in the root
+# package.json are copied: packages/* + products/* + services/* carry real .ts
+# source (workspace exports point at source); apps/web + integration need only
+# their manifest to satisfy the workspace declaration. dotnet/, openapi/,
+# scripts/, docs, and apps/web source never enter the image now — smaller image,
+# faster node pull on deploy.
+COPY package.json bun.lock tsconfig.base.json ./
+COPY packages packages
+COPY products products
+COPY services services
+COPY apps/web/package.json apps/web/package.json
+COPY integration/package.json integration/package.json
+
+# BuildKit cache mount keeps Bun's global module cache warm across rebuilds; the
+# cache layer never ships in the image. Even when a manifest change re-runs the
+# install, packages are restored from cache instead of re-downloaded.
+RUN --mount=type=cache,target=/root/.bun/install/cache,sharing=locked \
+    bun install --frozen-lockfile --production --filter '@iedora/service-*'
 
 FROM oven/bun:1.3.13-alpine AS runtime
 WORKDIR /app

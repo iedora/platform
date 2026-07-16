@@ -1,0 +1,53 @@
+# Fails the build if the frontend's generated auth client has drifted from the .NET
+# Iedora.Auth service (the OpenAPI source of truth). Rebuilds the service, regenerates
+# the TypeScript client, and byte-compares against what's committed.
+name: openapi-contract
+
+on:
+  push:
+    paths:
+      - "dotnet/src/Iedora.Auth/**"
+      - "openapi/Iedora.Auth.json"
+      - "packages/platform/contracts/src/generated/auth.ts"
+      - "scripts/openapi-gen.mjs"
+  pull_request:
+    paths:
+      - "dotnet/src/Iedora.Auth/**"
+      - "openapi/Iedora.Auth.json"
+      - "packages/platform/contracts/src/generated/auth.ts"
+      - "scripts/openapi-gen.mjs"
+
+# Only the latest commit on a ref needs checking; cancel superseded runs so a
+# force-push or rapid PR pushes don't stack redundant billed minutes.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  drift:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: "10.0.x"
+
+      - uses: oven-sh/setup-bun@v2
+
+      # Reuse Bun's global module cache across runs (setup-bun doesn't cache
+      # project deps). Keyed on the lockfile; restore-keys take the nearest match.
+      - name: Cache Bun modules
+        uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-${{ hashFiles('bun.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-
+
+      - name: Install workspace deps
+        run: bun install --frozen-lockfile
+
+      - name: Check OpenAPI contract is in sync
+        run: bun run openapi:check
