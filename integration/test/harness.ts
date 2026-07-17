@@ -51,6 +51,8 @@ export async function createIntegration(): Promise<IntegrationHarness> {
   const cfg: BillingConfig = {
     port: 0,
     billingDatabaseUrl: scratch.url,
+    dbSchema: "", // scratch DB = its own database, use the default schema
+    auditSchema: "",
     auditDatabaseUrl: scratch.url, // audit events queue in this DB's outbox (relay not run here)
     serviceJwtPublicKey: "",
     serviceJwtIssuer: ISS,
@@ -93,17 +95,23 @@ export function useIntegration(): IntegrationHarness {
 export async function auditEvents(
   h: IntegrationHarness,
 ): Promise<{ action: string; actorType: string; tenantId?: string; meta: Record<string, unknown> }[]> {
-  const r = await sql<{ payload: Buffer }>`
-    SELECT payload FROM outbox ORDER BY created_at DESC, id DESC
+  // @iedora/messaging outbox_message: jsonb payload in @iedora/audit event shape.
+  const r = await sql<{ payload: string }>`
+    SELECT payload::text AS payload FROM outbox_message ORDER BY created_at DESC, id DESC
   `.execute(h.billingDb.root);
   return r.rows.map((row) => {
-    const env = JSON.parse(row.payload.toString("utf8")) as {
+    const env = JSON.parse(row.payload) as {
       action: string;
       actorType: string;
-      tenantId?: string;
-      meta: Record<string, unknown>;
+      tenantId?: string | null;
+      metadata: Record<string, unknown>;
     };
-    return { action: env.action, actorType: env.actorType, tenantId: env.tenantId, meta: env.meta };
+    return {
+      action: env.action,
+      actorType: env.actorType,
+      tenantId: env.tenantId ?? undefined,
+      meta: env.metadata ?? {},
+    };
   });
 }
 

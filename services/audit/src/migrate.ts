@@ -1,6 +1,6 @@
 import { join } from "node:path";
 
-import { expandFileSecrets, requireEnv, runMigrations } from "@iedora/server-kit";
+import { env, expandFileSecrets, requireEnv, runMigrations } from "@iedora/server-kit";
 
 // One-shot migrator: applies services/audit/migrations/*.sql to AUDIT_DATABASE_URL
 // (creating the database if missing), then exits. Mirrors `iedora audit migrate`.
@@ -10,6 +10,7 @@ const applied = await runMigrations({
   url: requireEnv("AUDIT_DATABASE_URL"),
   dir: join(import.meta.dir, "..", "migrations"),
   createDatabase: true,
+  schema: env("DB_SCHEMA", "audit"),
 });
 
 console.log(

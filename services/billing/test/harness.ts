@@ -83,7 +83,7 @@ export const post = (h: Harness, body: unknown) => ({
 
 /** Number of rows currently in the audit outbox. */
 export async function outboxCount(h: Harness): Promise<number> {
-  const r = await sql<{ n: string }>`SELECT count(*)::text AS n FROM outbox`.execute(h.db.root);
+  const r = await sql<{ n: string }>`SELECT count(*)::text AS n FROM outbox_message`.execute(h.db.root);
   return Number(r.rows[0]!.n);
 }
 

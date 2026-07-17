@@ -1,13 +1,3 @@
-// Timestamp → ISO-8601 string helpers shared by every service's row mappers.
-// Bun's driver hands back a Date for a timestamptz column; tolerate a
-// pre-stringified value too. One home so serialization can't drift per service.
-
-/** ISO-8601 string of a timestamp value. */
-export function iso(v: unknown): string {
-  return v instanceof Date ? v.toISOString() : String(v);
-}
-
-/** Like {@link iso}, but a null/undefined value (nullable column) → undefined. */
-export function isoOpt(v: unknown): string | undefined {
-  return v == null ? undefined : iso(v);
-}
+// Timestamp → ISO-8601 helpers. Now sourced from @iedora/db (identical impl) so
+// serialization lives in one published package across every service.
+export { iso, isoOpt } from "@iedora/db";

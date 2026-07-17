@@ -26,23 +26,29 @@ export type Timestamp = ColumnType<Date, Date | string, Date | string>;
 export interface AuditLog {
   action: string;
   actor_id: string | null;
-  actor_type: Generated<string>;
-  at: Generated<Timestamp>;
+  actor_type: string | null;
+  changed_fields: Json | null;
+  entity_id: string | null;
+  entity_type: string | null;
   id: Generated<string>;
   ip: string | null;
-  message_id: string | null;
-  meta: Generated<Json>;
+  metadata: Generated<Json>;
+  new_data: Json | null;
+  occurred_at: Generated<Timestamp>;
+  old_data: Json | null;
   outcome: Generated<string>;
-  schema_version: Generated<number>;
-  session_id: string | null;
-  source: Generated<string>;
-  target_id: string | null;
-  target_type: string | null;
+  source: string | null;
   tenant_id: string | null;
-  trace_id: string | null;
   user_agent: string | null;
+}
+
+export interface InboxMessage {
+  message_id: string;
+  processed_at: Generated<Timestamp>;
+  topic: string;
 }
 
 export interface DB {
   audit_log: AuditLog;
+  inbox_message: InboxMessage;
 }

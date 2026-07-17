@@ -12,6 +12,9 @@ export interface RelayServiceOptions<DB> {
   source: string; // OutboxWriter tag (the emitting service, e.g. "auth")
   db: Database<DB>; // the service's primary DB (also where its outbox lives)
   auditDatabaseUrl: string; // the audit DB the relay drains the outbox into
+  /** Schema of the audit sink in a shared DB (search_path). Default "audit".
+   *  Set to "" when the audit service runs on its own database. */
+  auditSchema?: string;
   /** Optional email transport. When given, the relay also delivers `email.send`
    *  outbox rows (enqueued via OutboxMailer) through it. */
   mailer?: Mailer;
@@ -30,7 +33,11 @@ export interface RelayServiceOptions<DB> {
  * by the caller and closed over in `build`.
  */
 export function runRelayService<DB>(opts: RelayServiceOptions<DB>): void {
-  const auditDb = new Database(opts.auditDatabaseUrl, { poolMax: 4 }); // relay is low-volume
+  // relay is low-volume; the audit sink is a schema of the shared DB by default.
+  const auditDb = new Database(opts.auditDatabaseUrl, {
+    poolMax: 4,
+    schema: opts.auditSchema === undefined ? "audit" : opts.auditSchema || undefined,
+  });
   const auditor = new OutboxWriter(opts.db, opts.source);
   const relay = new OutboxRelay(opts.db, relayHandlers({ audit: auditDb.root, mailer: opts.mailer }));
   relay.start();

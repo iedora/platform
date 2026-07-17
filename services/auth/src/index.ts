@@ -21,7 +21,7 @@ import type { AuthDB } from "./schema";
 expandFileSecrets();
 const cfg = loadConfig();
 
-const db = new Database<AuthDB>(cfg.authDatabaseUrl);
+const db = new Database<AuthDB>(cfg.authDatabaseUrl, { schema: cfg.dbSchema });
 
 const keys = parseEd25519Seed(cfg.jwtSeed);
 const issuer = new JwtIssuer({
@@ -55,6 +55,7 @@ runRelayService({
   source: "auth",
   db,
   auditDatabaseUrl: cfg.auditDatabaseUrl,
+  auditSchema: cfg.auditSchema,
   mailer: mailTransport,
   build: ({ auditor }) =>
     buildApp({ db, issuer, userVerifier, serviceIssuer, serviceVerifier, serviceClients: parseClients(cfg.serviceClients), auditor, resetMailer, cfg }),

@@ -1,6 +1,6 @@
 import { join } from "node:path";
 
-import { expandFileSecrets, requireEnv, runMigrations } from "@iedora/server-kit";
+import { env, expandFileSecrets, requireEnv, runMigrations } from "@iedora/server-kit";
 
 // One-shot migrator: applies services/billing/migrations/*.sql to
 // BILLING_DATABASE_URL (creating the database if missing), then exits.
@@ -10,6 +10,7 @@ const applied = await runMigrations({
   url: requireEnv("BILLING_DATABASE_URL"),
   dir: join(import.meta.dir, "..", "migrations"),
   createDatabase: true,
+  schema: env("DB_SCHEMA", "billing"),
 });
 
 console.log(

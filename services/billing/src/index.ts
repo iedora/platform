@@ -16,7 +16,7 @@ const EXPIRY_SWEEP_MS = 60 * 60 * 1000; // hourly
 expandFileSecrets();
 const cfg = loadConfig();
 
-const db = new Database<BillingDB>(cfg.billingDatabaseUrl);
+const db = new Database<BillingDB>(cfg.billingDatabaseUrl, { schema: cfg.dbSchema });
 
 const verifier = newServiceVerifier(
   await parseEd25519PublicKey(cfg.serviceJwtPublicKey),
@@ -31,6 +31,7 @@ runRelayService({
   source: "billing",
   db,
   auditDatabaseUrl: cfg.auditDatabaseUrl,
+  auditSchema: cfg.auditSchema,
   build: ({ auditor }) => {
     // Expiry sweep: subscriptions past their period end drop to On Us (+ audit).
     // Run once at boot to catch anything missed while down, then hourly. The

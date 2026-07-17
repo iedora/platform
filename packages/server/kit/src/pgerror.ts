@@ -1,20 +1,10 @@
-// SQLSTATE detection for Postgres errors raised by Bun's SQL driver. Bun's
-// PostgresError carries the SQLSTATE in `errno` (its `code` is the generic
-// ERR_POSTGRES_SERVER_ERROR), so every service that turns a raw store error
-// into a domain error needs this — keep that quirk in one place.
+// SQLSTATE detection for Bun SQL's PostgresError (SQLSTATE in `errno`), sourced
+// from @iedora/db so the Bun-driver quirk lives in one published package.
+import { isInvalidText } from "@iedora/db";
 
-/** The SQLSTATE of a Postgres error, or undefined if it isn't one. */
-export function sqlState(err: unknown): string | undefined {
-  const e = (err as { errno?: unknown } | null)?.errno;
-  return typeof e === "string" ? e : undefined;
-}
+export { isUniqueViolation, sqlState } from "@iedora/db";
 
-/** 23505 — unique-violation (e.g. duplicate email / slug). */
-export function isUniqueViolation(err: unknown): boolean {
-  return sqlState(err) === "23505";
-}
-
-/** 22P02 — a malformed id reaching a uuid column; indistinguishable from missing. */
-export function isInvalidUUID(err: unknown): boolean {
-  return sqlState(err) === "22P02";
-}
+/** 22P02 — a malformed id reaching a uuid column; indistinguishable from missing.
+ *  Named alias of @iedora/db's generic `isInvalidText` (22P02 covers any invalid
+ *  text representation). */
+export const isInvalidUUID = isInvalidText;

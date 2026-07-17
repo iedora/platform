@@ -3,6 +3,8 @@ import { durationMs, env, isProd, requireEnv, type SmtpConfig } from "@iedora/se
 export interface AuthConfig {
   port: number;
   authDatabaseUrl: string;
+  dbSchema: string;
+  auditSchema: string;
   auditDatabaseUrl: string;
   jwtSeed: string;
   jwtKeyId: string;
@@ -89,6 +91,8 @@ export function loadConfig(): AuthConfig {
   return {
     port: Number(env("AUTH_PORT", "8080")),
     authDatabaseUrl: requireEnv("AUTH_DATABASE_URL"),
+    dbSchema: env("DB_SCHEMA", "auth"),
+    auditSchema: env("AUDIT_DB_SCHEMA", "audit"),
     auditDatabaseUrl: requireEnv("AUDIT_DATABASE_URL"),
     jwtSeed: requireEnv("API_JWT_PRIVATE_KEY"),
     jwtKeyId: env("API_JWT_KEY_ID", "k1"),

@@ -6,35 +6,35 @@
 # arriving with the auth service) match the runtime, never the host's macOS build.
 name: iedora-api
 
-# Shared OpenTelemetry export config — every service merges this so traces +
-# metrics flow to the local OpenObserve (the same shape as prod, where these two
-# vars come from kamal env / SOPS). Mirror of the registerIedoraOtelNode contract:
-# the endpoint is the org base (no trailing slash); the SDK appends /v1/traces.
-# Header value is OpenObserve Basic auth, %20-encoded so the `=` parser keeps it.
+# Shared OpenTelemetry export config — every service merges this so traces,
+# metrics + logs flow to the OTel Collector in the sibling `infra/local` stack
+# (otel-collector -> Tempo + Prometheus + Loki -> Grafana). Bring that up
+# (`docker compose -f ../infra/local/compose.yaml up -d`) to view telemetry at
+# http://localhost:3001; with it down, exports just fail (logged, non-fatal) — so
+# api:up no longer ships a telemetry backend of its own. This mirrors prod, where
+# each service exports to a collector accessory it doesn't run itself; the base
+# endpoint has no trailing path (the SDK appends /v1/traces etc.). No auth header:
+# the local collector is unauthenticated (prod's tenant/auth wiring is added
+# collector-side, not here). To silence exports entirely, unset the endpoint.
 x-otel-env: &otel-env
-  OTEL_EXPORTER_OTLP_ENDPOINT: http://openobserve:5080/api/default
-  OTEL_EXPORTER_OTLP_HEADERS: Authorization=Basic%20cm9vdEBleGFtcGxlLmNvbTpDb21wbGV4cGFzcyMxMjM=
+  OTEL_EXPORTER_OTLP_ENDPOINT: http://host.docker.internal:4318
+  # http/protobuf is the OTel-spec default and the most reliable transport under
+  # Bun (never gRPC/node:http2). The exporters are proto by package import; this
+  # documents the wire protocol and covers any env-driven code path.
+  OTEL_EXPORTER_OTLP_PROTOCOL: http/protobuf
+  # CUMULATIVE is required for the Prometheus backend — the collector's
+  # prometheusremotewrite exporter silently drops delta counters/histograms. The
+  # SDK also defaults to cumulative now (no code override), but pin it here so the
+  # choice is declarative and can't drift.
+  OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE: cumulative
 
 services:
-  # Local traces/metrics backend. UI + OTLP HTTP ingest on 5080. Default org is
-  # "default"; sign in with the root creds below. Data in a named volume.
-  openobserve:
-    image: public.ecr.aws/zinclabs/openobserve:latest
-    environment:
-      ZO_ROOT_USER_EMAIL: root@example.com
-      ZO_ROOT_USER_PASSWORD: Complexpass#123
-    ports:
-      - "5080:5080"
-    volumes:
-      - openobserve:/data
-    restart: unless-stopped
-
   postgres:
     image: postgres:18-alpine
     environment:
       POSTGRES_USER: iedora
       POSTGRES_PASSWORD: iedora
-      POSTGRES_DB: postgres # per-service DBs are created by the migrate step
+      POSTGRES_DB: iedora # ONE shared DB; per-service SCHEMAS created by migrate
     volumes:
       - pgdata:/var/lib/postgresql
     # 55433 (not the default 55432) to avoid colliding with a local Postgres on
@@ -57,7 +57,7 @@ services:
       <<: *otel-env
       DEPLOYMENT_ENV: development
       AUDIT_PORT: "8081"
-      AUDIT_DATABASE_URL: postgres://iedora:iedora@postgres:5432/audit?sslmode=disable
+      AUDIT_DATABASE_URL: postgres://iedora:iedora@postgres:5432/iedora?sslmode=disable
       # Verifies internal service tokens. DEV keypair, shared across the stack
       # (auth's API_JWT_PRIVATE_KEY) so tokens cross-verify between services.
       SERVICE_JWT_PUBLIC_KEY: M+/u/gPyq9NyuwfMjS82Y7lOJeyvGq6jpeRxMqr1Ge4=
@@ -82,8 +82,8 @@ services:
       <<: *otel-env
       DEPLOYMENT_ENV: development
       AUTH_PORT: "8080"
-      AUTH_DATABASE_URL: postgres://iedora:iedora@postgres:5432/auth?sslmode=disable
-      AUDIT_DATABASE_URL: postgres://iedora:iedora@postgres:5432/audit?sslmode=disable
+      AUTH_DATABASE_URL: postgres://iedora:iedora@postgres:5432/iedora?sslmode=disable
+      AUDIT_DATABASE_URL: postgres://iedora:iedora@postgres:5432/iedora?sslmode=disable
       # DEV keypair — shared across the stack so tokens cross-verify between services.
       API_JWT_PRIVATE_KEY: 4qiWAUBUtlk6abEM+o0urqz3tGcSVjg8f/NyRa5wWeI=
       API_JWT_ISSUER: https://api.iedora.com
@@ -119,8 +119,8 @@ services:
       <<: *otel-env
       DEPLOYMENT_ENV: development
       BILLING_PORT: "8083"
-      BILLING_DATABASE_URL: postgres://iedora:iedora@postgres:5432/billing?sslmode=disable
-      AUDIT_DATABASE_URL: postgres://iedora:iedora@postgres:5432/audit?sslmode=disable
+      BILLING_DATABASE_URL: postgres://iedora:iedora@postgres:5432/iedora?sslmode=disable
+      AUDIT_DATABASE_URL: postgres://iedora:iedora@postgres:5432/iedora?sslmode=disable
       # Verifies internal service tokens. DEV keypair, shared across the stack
       # (auth's API_JWT_PRIVATE_KEY) so tokens cross-verify between services.
       SERVICE_JWT_PUBLIC_KEY: M+/u/gPyq9NyuwfMjS82Y7lOJeyvGq6jpeRxMqr1Ge4=
@@ -145,8 +145,8 @@ services:
       <<: *otel-env
       DEPLOYMENT_ENV: development
       MENU_PORT: "8084"
-      MENU_DATABASE_URL: postgres://iedora:iedora@postgres:5432/menu?sslmode=disable
-      AUDIT_DATABASE_URL: postgres://iedora:iedora@postgres:5432/audit?sslmode=disable
+      MENU_DATABASE_URL: postgres://iedora:iedora@postgres:5432/iedora?sslmode=disable
+      AUDIT_DATABASE_URL: postgres://iedora:iedora@postgres:5432/iedora?sslmode=disable
       # Verifies dashboard USER tokens (public half of auth's signing key — the
       # DEV keypair shared across the stack so tokens cross-verify between services).
       API_JWT_PUBLIC_KEY: M+/u/gPyq9NyuwfMjS82Y7lOJeyvGq6jpeRxMqr1Ge4=
@@ -182,4 +182,3 @@ services:
 volumes:
   pgdata:
   node_modules:
-  openobserve:

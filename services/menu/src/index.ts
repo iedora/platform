@@ -20,7 +20,7 @@ import { Uploads } from "./uploads";
 expandFileSecrets();
 const cfg = loadConfig();
 
-const db = new Database<MenuDB>(cfg.menuDatabaseUrl);
+const db = new Database<MenuDB>(cfg.menuDatabaseUrl, { schema: cfg.dbSchema });
 
 const userVerifier = newUserVerifier(
   await parseEd25519PublicKey(cfg.apiJwtPublicKey),
@@ -43,6 +43,7 @@ runRelayService({
   source: "menu",
   db,
   auditDatabaseUrl: cfg.auditDatabaseUrl,
+  auditSchema: cfg.auditSchema,
   build: ({ auditor }) =>
     buildApp({ db, limiter, userVerifier, auditor, plans, billing, audit, tenant, uploads, cfg }),
 });

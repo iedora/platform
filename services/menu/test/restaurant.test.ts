@@ -55,10 +55,10 @@ const PRINT_META = {
 
 async function printedEvents() {
   const rows = await sql<{ payload: string }>`
-    SELECT convert_from(payload, 'UTF8') AS payload FROM outbox
+    SELECT payload::text AS payload FROM outbox_message
   `.execute(h.db.root);
   return rows.rows
-    .map((r) => JSON.parse(r.payload) as { action: string; targetId?: string; meta?: unknown })
+    .map((r) => JSON.parse(r.payload) as { action: string; entityId?: string; metadata?: unknown })
     .filter((e) => e.action === "menu.restaurant.qr_printed");
 }
 
@@ -69,10 +69,10 @@ test("qr-print records an audit event scoped to the restaurant, with the print o
   expect(res.status).toBe(200);
 
   const events = await printedEvents();
-  const ev = events.find((e) => e.targetId === QR_RID);
+  const ev = events.find((e) => e.entityId === QR_RID);
   expect(ev).toBeDefined();
   // Rich metadata: the chosen print options ride along on the event.
-  expect(ev!.meta).toMatchObject({ pageSize: "letter", cutMarks: true, perSheet: 24, kind: "sticker" });
+  expect(ev!.metadata).toMatchObject({ pageSize: "letter", cutMarks: true, perSheet: 24, kind: "sticker" });
 });
 
 test("staff can record a qr-print on any restaurant (cross-tenant)", async () => {
@@ -82,7 +82,7 @@ test("staff can record a qr-print on any restaurant (cross-tenant)", async () =>
   );
   expect(res.status).toBe(200);
   const events = await printedEvents();
-  expect(events.some((e) => e.targetId === QR_RID && (e.meta as { pageSize?: string })?.pageSize === "a4")).toBe(true);
+  expect(events.some((e) => e.entityId === QR_RID && (e.metadata as { pageSize?: string })?.pageSize === "a4")).toBe(true);
 });
 
 test("qr-print rejects an invalid page size", async () => {

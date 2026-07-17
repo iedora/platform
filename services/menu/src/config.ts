@@ -10,6 +10,8 @@ const SELF_ROLE = "menu";
 export interface MenuConfig {
   port: number;
   menuDatabaseUrl: string;
+  dbSchema: string;
+  auditSchema: string;
   auditDatabaseUrl: string; // audit DB the outbox relay drains into
   rateLimitDisabled: boolean; // CI/e2e escape hatch
 
@@ -35,6 +37,8 @@ export function loadConfig(): MenuConfig {
   return {
     port: Number(env("MENU_PORT", "8084")),
     menuDatabaseUrl: requireEnv("MENU_DATABASE_URL"),
+    dbSchema: env("DB_SCHEMA", "menu"),
+    auditSchema: env("AUDIT_DB_SCHEMA", "audit"),
     auditDatabaseUrl: requireEnv("AUDIT_DATABASE_URL"),
     rateLimitDisabled: env("DISABLE_RATE_LIMIT", "") !== "",
     apiJwtPublicKey: requireEnv("API_JWT_PUBLIC_KEY"),

@@ -29,7 +29,7 @@ test("create a restaurant (slug derived) + it's listed with counts", async () =>
   expect(body.restaurants[0]!.slug).toBe("tasca-do-ze");
 
   // the create emitted an audit event into the outbox
-  const n = await sql<{ n: string }>`SELECT count(*)::text AS n FROM outbox`.execute(h.db.root);
+  const n = await sql<{ n: string }>`SELECT count(*)::text AS n FROM outbox_message`.execute(h.db.root);
   expect(Number(n.rows[0]!.n)).toBe(1);
 });
 

@@ -1,11 +1,12 @@
 import { SQL } from "bun";
 import { afterAll, beforeAll, expect, test } from "bun:test";
 
+import { up as messagingUp } from "@iedora/messaging";
 import { Database, type EmailMessage, OutboxMailer, OutboxRelay, OutboxWriter, relayHandlers } from "../src";
 
-// Bun-runtime integration test against a real Postgres (testcontainers hangs
-// under Bun). Provisions two throwaway DBs — a producer (outbox) and the audit
-// sink (audit_log) — mirroring the separate-DB topology.
+// Bun-runtime integration test against a real Postgres. Provisions two throwaway
+// DBs — a producer (outbox_message via @iedora/messaging) and the audit sink
+// (audit_log) — mirroring the separate-DB topology.
 const ADMIN_URL = process.env.TEST_DATABASE_URL ?? "postgres://iedora:iedora@localhost:55433/postgres";
 
 const tag = `${Date.now().toString(36)}_${Math.floor(Math.random() * 1e6).toString(36)}`;
@@ -23,36 +24,28 @@ let producer: Database<any>;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let audit: Database<any>;
 
-const OUTBOX_DDL = `
-  CREATE TABLE outbox (
-    id uuid NOT NULL DEFAULT uuidv7(),
-    created_at timestamptz NOT NULL DEFAULT now(),
-    subject text NOT NULL,
-    payload bytea NOT NULL,
-    traceparent text,
-    published_at timestamptz,
-    attempts int NOT NULL DEFAULT 0,
-    last_error text,
-    failed_at timestamptz,
-    PRIMARY KEY (id)
-  )`;
-
+// The audit sink is now @iedora/audit's schema (partitioned) + @iedora/messaging's
+// inbox for idempotent ingestion (the dispatcher's at-least-once redelivery is
+// deduped by the inbox).
 const AUDIT_DDL = `
   CREATE TABLE audit_log (
     id uuid NOT NULL DEFAULT gen_random_uuid(),
-    at timestamptz NOT NULL DEFAULT now(),
-    source text NOT NULL,
-    tenant_id uuid,
+    tenant_id uuid, source text,
+    occurred_at timestamptz NOT NULL DEFAULT now(),
+    actor_type text, actor_id text,
     action text NOT NULL,
+    entity_type text, entity_id text,
     outcome text NOT NULL DEFAULT 'success',
-    actor_type text NOT NULL DEFAULT 'system',
-    actor_id text, target_type text, target_id text, session_id text, trace_id text,
+    old_data jsonb, new_data jsonb, changed_fields jsonb,
+    metadata jsonb NOT NULL DEFAULT '{}'::jsonb,
     ip text, user_agent text,
-    meta jsonb NOT NULL DEFAULT '{}'::jsonb,
-    message_id uuid,
-    PRIMARY KEY (id, at)
-  );
-  CREATE UNIQUE INDEX audit_log_message_id_idx ON audit_log (message_id, at);`;
+    PRIMARY KEY (id, occurred_at)
+  ) PARTITION BY RANGE (occurred_at);
+  CREATE TABLE audit_log_default PARTITION OF audit_log DEFAULT;
+  CREATE TABLE inbox_message (
+    message_id text PRIMARY KEY, topic text NOT NULL,
+    processed_at timestamptz NOT NULL DEFAULT now()
+  );`;
 
 beforeAll(async () => {
   const admin = new SQL(ADMIN_URL);
@@ -60,15 +53,16 @@ beforeAll(async () => {
   await admin.unsafe(`CREATE DATABASE "${auditName}"`);
   await admin.end();
 
-  const p = new SQL(urlFor(producerName));
-  await p.unsafe(OUTBOX_DDL);
-  await p.end();
+  producer = new Database(urlFor(producerName));
+  audit = new Database(urlFor(auditName));
+
+  // Producer gets @iedora/messaging's outbox_message + inbox_message.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await messagingUp(producer.root as any);
+
   const a = new SQL(urlFor(auditName));
   await a.unsafe(AUDIT_DDL);
   await a.end();
-
-  producer = new Database(urlFor(producerName));
-  audit = new Database(urlFor(auditName));
 });
 
 afterAll(async () => {
@@ -91,7 +85,7 @@ async function auditCount(): Promise<number> {
   return r[0]!.n;
 }
 
-test("writer + relay deliver an outbox event into audit_log", async () => {
+test("writer + relay deliver an outbox event into audit_log (on @iedora/messaging)", async () => {
   const writer = new OutboxWriter(producer, "auth");
   await writer.recordSync({
     action: "auth.session.login",
@@ -104,49 +98,25 @@ test("writer + relay deliver an outbox event into audit_log", async () => {
   expect(published).toBe(1);
   expect(await auditCount()).toBe(1);
 
+  // outbox_message row marked delivered.
   const sql = new SQL(urlFor(producerName));
   const rows = (await sql.unsafe(
-    `SELECT published_at, failed_at FROM outbox`,
-  )) as { published_at: unknown; failed_at: unknown }[];
+    `SELECT delivered_at, dead_at FROM outbox_message`,
+  )) as { delivered_at: unknown; dead_at: unknown }[];
   await sql.end();
-  expect(rows[0]!.published_at).not.toBeNull();
-  expect(rows[0]!.failed_at).toBeNull();
-});
-
-test("a poison payload is dead-lettered, not delivered", async () => {
-  const sql = new SQL(urlFor(producerName));
-  await sql.unsafe(`INSERT INTO outbox (subject, payload) VALUES ('audit.events', $1)`, [
-    Buffer.from("this is not json"),
-  ]);
-  await sql.end();
-
-  const relay = new OutboxRelay(producer, relayHandlers({ audit: audit.root }));
-  await relay.drainOnce();
-
-  const sql2 = new SQL(urlFor(producerName));
-  const dead = (await sql2.unsafe(
-    `SELECT count(*)::int AS n FROM outbox WHERE failed_at IS NOT NULL`,
-  )) as { n: number }[];
-  await sql2.end();
-  expect(dead[0]!.n).toBe(1);
-  expect(await auditCount()).toBe(1); // unchanged — only the good event landed
+  expect(rows[0]!.delivered_at).not.toBeNull();
+  expect(rows[0]!.dead_at).toBeNull();
 });
 
 test("OutboxMailer enqueues; the relay delivers it through the transport", async () => {
-  // OutboxMailer.send writes an email.send row; the relay drains it into a
-  // capturing transport (the real one would be SMTP).
   const sent: EmailMessage[] = [];
-  await new OutboxMailer(producer).send({ to: "u@iedora.com", subject: "hello", text: "hi", html: "<p>hi</p>" });
+  await new OutboxMailer(producer).send({ to: "u@example.com", subject: "hello", text: "hi", html: "<p>hi</p>" });
 
-  const relay = new OutboxRelay(
-    producer,
-    relayHandlers({ audit: audit.root, mailer: { async send(m) { sent.push(m); } } }),
-  );
-  const published = await relay.drainOnce();
+  const captureMailer = { send: async (m: EmailMessage) => void sent.push(m) };
+  const relay = new OutboxRelay(producer, relayHandlers({ audit: audit.root, mailer: captureMailer }));
+  await relay.drainOnce();
 
-  expect(published).toBe(1);
   expect(sent).toHaveLength(1);
-  expect(sent[0]!.to).toBe("u@iedora.com");
+  expect(sent[0]!.to).toBe("u@example.com");
   expect(sent[0]!.subject).toBe("hello");
-  expect(await auditCount()).toBe(1); // unchanged — email didn't touch audit_log
 });

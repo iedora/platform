@@ -1,78 +1,28 @@
-import { readdirSync, readFileSync } from "node:fs";
-import { join } from "node:path";
-
-import { SQL } from "bun";
-
-// Ensure the database exists, take a
-// Postgres advisory lock so concurrent deploys serialize, then apply each
-// *.sql file (in filename order) that hasn't run yet, recording it in
-// schema_migrations. Each *.sql file applies verbatim: Bun's SQL.unsafe(text)
-// runs the whole multi-statement file (dollar-quoted bodies included) in one call.
-
-const LOCK_KEY = 4_021_977; // stable, single-purpose migration advisory lock
+// Menu services' migration entrypoint, now backed by @iedora/db's advisory-lock
+// runner (raw *.sql files, session-level pg_advisory_lock on a reserved
+// connection, one transaction per file). Same shape services already call.
+//
+// PROD NOTE: @iedora/db records applied files in schema_migrations(name); menu's
+// previous in-house runner used schema_migrations(version). An EXISTING database
+// needs a one-time `ALTER TABLE schema_migrations RENAME COLUMN version TO name`
+// before the first run on this version. Fresh databases are unaffected.
+import { ensureDatabase, migrate } from "@iedora/db"
 
 export interface MigrateOptions {
-  url: string; // DSN of the target database
-  dir: string; // directory of *.sql migrations, applied in filename order
-  createDatabase?: boolean; // CREATE the target DB if missing (connects to /postgres)
+  /** DSN of the target database. */
+  url: string
+  /** Directory of *.sql migrations, applied in filename order. */
+  dir: string
+  /** CREATE the target DB if missing (connects to /postgres). */
+  createDatabase?: boolean
+  /** Apply into a schema of a shared DB (search_path), created if missing.
+   *  Omit for the DB's default. Splittable onto its own DB later. */
+  schema?: string
 }
 
-function dbName(url: string): string {
-  return new URL(url).pathname.replace(/^\//, "");
+/** Apply pending migrations; returns the filenames applied. */
+export function runMigrations(opts: MigrateOptions): Promise<string[]> {
+  return migrate(opts.url, opts.dir, { createDatabase: opts.createDatabase, schema: opts.schema })
 }
 
-function adminUrl(url: string): string {
-  const u = new URL(url);
-  u.pathname = "/postgres";
-  return u.toString();
-}
-
-async function ensureDatabase(url: string): Promise<void> {
-  const name = dbName(url);
-  const admin = new SQL(adminUrl(url));
-  try {
-    const rows = (await admin.unsafe("SELECT 1 FROM pg_database WHERE datname = $1", [
-      name,
-    ])) as unknown[];
-    if (rows.length === 0) await admin.unsafe(`CREATE DATABASE "${name}"`);
-  } finally {
-    await admin.end();
-  }
-}
-
-/** Applies pending migrations and returns the filenames that were applied. */
-export async function runMigrations(opts: MigrateOptions): Promise<string[]> {
-  if (opts.createDatabase) await ensureDatabase(opts.url);
-
-  const pool = new SQL(opts.url);
-  const conn = await pool.reserve(); // one dedicated connection holds the lock
-  const applied: string[] = [];
-  try {
-    await conn.unsafe(`SELECT pg_advisory_lock(${LOCK_KEY})`);
-    await conn.unsafe(
-      `CREATE TABLE IF NOT EXISTS schema_migrations (
-         version    text PRIMARY KEY,
-         applied_at timestamptz NOT NULL DEFAULT now()
-       )`,
-    );
-    const doneRows = (await conn.unsafe("SELECT version FROM schema_migrations")) as {
-      version: string;
-    }[];
-    const done = new Set(doneRows.map((r) => r.version));
-
-    const files = readdirSync(opts.dir)
-      .filter((f) => f.endsWith(".sql"))
-      .sort();
-    for (const file of files) {
-      if (done.has(file)) continue;
-      await conn.unsafe(readFileSync(join(opts.dir, file), "utf8"));
-      await conn.unsafe("INSERT INTO schema_migrations (version) VALUES ($1)", [file]);
-      applied.push(file);
-    }
-  } finally {
-    await conn.unsafe(`SELECT pg_advisory_unlock(${LOCK_KEY})`).catch(() => {});
-    conn.release();
-    await pool.end();
-  }
-  return applied;
-}
+export { ensureDatabase }

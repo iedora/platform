@@ -81,9 +81,10 @@ export async function seedEvents(
 ): Promise<void> {
   const sql = new SQL(h.url);
   for (const r of rows) {
+    // @iedora/audit schema: occurred_at (was `at`), entity_id (was target_id).
     await sql.unsafe(
-      `INSERT INTO audit_log (message_id, at, source, action, outcome, actor_type, target_id)
-       VALUES (gen_random_uuid(), now() - ($1 || ' seconds')::interval, $2, $3, $4, $5, $6)`,
+      `INSERT INTO audit_log (occurred_at, source, action, outcome, actor_type, entity_id)
+       VALUES (now() - ($1 || ' seconds')::interval, $2, $3, $4, $5, $6)`,
       [String(r.ageSeconds ?? 0), r.source, r.action, r.outcome ?? "success", r.actorType ?? "user", r.targetId ?? null],
     );
   }

@@ -1,3 +1,4 @@
+import { sql } from "kysely";
 import { expect, test } from "bun:test";
 
 import { type AuthConfig, grantedRole } from "../src/config";
@@ -41,9 +42,9 @@ test("a ROLE_GRANTS address gets its role on register", async () => {
 
 test("the grant writes an auth.user.role_granted audit event", async () => {
   await h.app.request("/auth/register", json({ email: "audited-admin@iedora.com", password: PASSWORD, name: "Aud" }));
-  const rows = await h.db.db.selectFrom("outbox").select(["payload"]).execute();
-  const events = rows.map((r: { payload: Buffer }) => JSON.parse(Buffer.from(r.payload).toString("utf8")) as { action: string; meta?: { role?: string } });
-  expect(events.find((e) => e.action === "auth.user.role_granted" && e.meta?.role === "admin")).toBeTruthy();
+  const rows = await sql<{ payload: string }>`SELECT payload::text AS payload FROM outbox_message`.execute(h.db.root);
+  const events = rows.rows.map((r) => JSON.parse(r.payload) as { action: string; metadata?: { role?: string } });
+  expect(events.find((e) => e.action === "auth.user.role_granted" && e.metadata?.role === "admin")).toBeTruthy();
 });
 
 test("a non-matching address is NOT promoted, and the role persists across login", async () => {

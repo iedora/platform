@@ -17,7 +17,8 @@
   "dependencies": {
     "@iedora/contracts": "workspace:*",
     "@iedora/service-menu": "workspace:*",
-    "hono": "catalog:"
+    "hono": "catalog:",
+    "openapi-fetch": "^0.17.0"
   },
   "peerDependencies": {
     "next": "^16.2.6"
