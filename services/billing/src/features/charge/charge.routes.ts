@@ -1,3 +1,4 @@
+import { PaymentError } from "@iedora/billing";
 import { type ServiceEnv, serviceAuth } from "@iedora/menu-kit";
 import { Hono } from "hono";
 import { z } from "zod";
@@ -32,6 +33,9 @@ export function chargeRoutes(deps: BillingDeps) {
         return c.json(await createCharge(deps, parsed.data, c.get("clientId")));
       } catch (err) {
         if (err instanceof ChargeRejected) return c.json({ error: err.code, message: err.message }, 400);
+        // A processor decline / SCA / provider error — a structured 402 with the
+        // stable code so callers branch without sniffing messages.
+        if (err instanceof PaymentError) return c.json({ error: err.code, message: err.message }, 402);
         throw err;
       }
     })
