@@ -17,6 +17,11 @@ export interface BillingConfig {
   serviceJwtIssuer: string;
   serviceAudience: string;
   periodMs: number; // billing period length (default 30d)
+  // Stripe. Empty secret key = the `stripe` method is off and the service runs
+  // manual-only. apiHost/apiPort point at stripe-mock for local/dev.
+  stripeSecretKey: string;
+  stripeApiHost: string;
+  stripeApiPort: number;
 }
 
 // Var names match the deployed env/secrets, so the prod config maps over
@@ -33,5 +38,8 @@ export function loadConfig(): BillingConfig {
     serviceJwtIssuer: requireEnv("SERVICE_JWT_ISSUER"),
     serviceAudience: env("SERVICE_AUDIENCE", "iedora-internal"),
     periodMs: durationMs(env("BILLING_PERIOD", "30d"), 30 * 864e5),
+    stripeSecretKey: env("STRIPE_SECRET_KEY", ""),
+    stripeApiHost: env("STRIPE_API_HOST", ""),
+    stripeApiPort: Number(env("STRIPE_API_PORT", "12111")),
   };
 }

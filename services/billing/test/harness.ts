@@ -6,7 +6,7 @@ import { SignJWT, generateKeyPair } from "jose";
 
 import { buildApp } from "../src/app";
 import type { BillingConfig } from "../src/config";
-import { ManualGateway } from "../src/gateway";
+import { ManualKind } from "../src/kinds";
 import type { BillingDB } from "../src/schema";
 
 // Shared test harness for every billing vertical slice. Each slice test owns its
@@ -56,13 +56,15 @@ export async function createHarness(): Promise<Harness> {
     serviceJwtIssuer: ISS,
     serviceAudience: AUD,
     periodMs: 30 * 864e5,
+    stripeSecretKey: "",
+    stripeApiHost: "",
+    stripeApiPort: 12111,
   };
   const app = buildApp({
     db,
     verifier,
     auditor: new OutboxWriter(db, "billing"),
-    gateway: new ManualGateway(),
-    gatewayProvider: "manual",
+    kinds: { manual: new ManualKind() },
     cfg,
   });
 

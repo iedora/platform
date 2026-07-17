@@ -12,8 +12,9 @@ import {
 import { buildApp } from "./app";
 import { loadConfig } from "./config";
 import { expireDueSubscriptions } from "./features/expiry/expire.service";
-import { ManualGateway, MANUAL_PROVIDER } from "./gateway";
+import { ManualKind, type PaymentKinds } from "./kinds";
 import type { BillingDB } from "./schema";
+import { createStripeKind } from "./stripe-gateway";
 
 const EXPIRY_SWEEP_MS = 60 * 60 * 1000; // hourly
 
@@ -53,15 +54,15 @@ runRelayService({
       );
     void sweep();
     setInterval(() => void sweep(), EXPIRY_SWEEP_MS).unref();
-    // Payment gateway: ManualGateway (cash/manual, instant-settle) is the default
-    // seam — a StripeGateway drops in here unchanged when real processing is wired.
-    return buildApp({
-      db,
-      verifier,
-      auditor,
-      gateway: new ManualGateway(),
-      gatewayProvider: MANUAL_PROVIDER,
-      cfg,
+    // Payment kinds: manual (register-only) is always available; stripe is added
+    // when a secret key is configured. Each charge explicitly names its kind.
+    const stripe = createStripeKind({
+      secretKey: cfg.stripeSecretKey,
+      apiHost: cfg.stripeApiHost || undefined,
+      apiPort: cfg.stripeApiPort,
     });
+    const kinds: PaymentKinds = { manual: new ManualKind(), ...(stripe ? { stripe } : {}) };
+
+    return buildApp({ db, verifier, auditor, kinds, cfg });
   },
 });

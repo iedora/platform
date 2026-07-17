@@ -8,7 +8,7 @@
     "./app": "./src/app.ts",
     "./config": "./src/config.ts",
     "./expire": "./src/features/expiry/expire.service.ts",
-    "./gateway": "./src/gateway.ts",
+    "./kinds": "./src/kinds.ts",
     "./schema": "./src/schema.ts"
   },
   "scripts": {
@@ -27,6 +27,7 @@
     "@hono/zod-validator": "catalog:",
     "hono": "catalog:",
     "kysely": "catalog:",
+    "stripe": "^22.3.1",
     "zod": "catalog:"
   },
   "devDependencies": {
