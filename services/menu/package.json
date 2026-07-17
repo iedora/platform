@@ -18,6 +18,7 @@
     "test": "bun test"
   },
   "dependencies": {
+    "@iedora/billing-sdk": "^0.2.0",
     "@iedora/contracts": "workspace:*",
     "@iedora/menu-kit": "workspace:*",
     "@hono/zod-validator": "catalog:",

@@ -1,9 +1,12 @@
-// Client for the billing service's plan lookups. The menu service authenticates
-// with a service token it mints via auth's client-credentials grant (/auth/token),
-// caches it until shortly before expiry, and presents it as a Bearer to billing.
+// Menu's billing surface — now backed by @iedora/billing-sdk (the shared client
+// for the billing service). Menu still mints a service token via auth's
+// client-credentials grant and hands it to the SDK. The local PlanSource /
+// BillingReader / BillingWriter interfaces + plan cache stay so nothing that
+// depends on BillingClient has to change.
 
+import { BillingClient as SdkBillingClient } from "@iedora/billing-sdk";
 import type { Invoice, Subscription } from "@iedora/contracts";
-import { ServiceClient, ServiceTokenSource, type TokenSource } from "@iedora/menu-kit";
+import { ServiceTokenSource, type TokenSource } from "@iedora/menu-kit";
 
 // Re-exported for existing local importers (audit-read, auth-client, index).
 export { ServiceTokenSource };
@@ -37,12 +40,12 @@ export interface BillingWriter {
 
 // BillingClient reads the tenant's menu subscription from the billing service.
 export class BillingClient implements PlanSource, BillingReader, BillingWriter {
-  private readonly client: ServiceClient;
+  private readonly sdk: SdkBillingClient;
 
   // Depends on the TokenSource interface (ServiceTokenSource satisfies it in
   // prod; a stub token source wires it in integration tests).
   constructor(base: string, tokens: TokenSource) {
-    this.client = new ServiceClient(base, tokens, "billing");
+    this.sdk = new SdkBillingClient({ baseUrl: base, tokens });
   }
 
   // The plan gate calls planCode on every gated write, but a tenant's plan
@@ -62,24 +65,18 @@ export class BillingClient implements PlanSource, BillingReader, BillingWriter {
     return code;
   }
 
-  async subscriptions(tenantId: string): Promise<Subscription[]> {
-    const out = await this.client.get<{ subscriptions: Subscription[] }>(
-      `/billing/subscriptions?tenant=${encodeURIComponent(tenantId)}`,
-    );
-    return out.subscriptions;
+  subscriptions(tenantId: string): Promise<Subscription[]> {
+    return this.sdk.listSubscriptions(tenantId);
   }
 
-  async invoices(tenantId: string): Promise<Invoice[]> {
-    const out = await this.client.get<{ invoices: Invoice[] }>(
-      `/billing/invoices?tenant=${encodeURIComponent(tenantId)}`,
-    );
-    return out.invoices;
+  invoices(tenantId: string): Promise<Invoice[]> {
+    return this.sdk.listInvoices(`tenant=${encodeURIComponent(tenantId)}`);
   }
 
   // Record a manual (cash) payment as a paid invoice. The plan code changes
   // rarely, so drop the cached value for this tenant to keep the next read fresh.
   async recordPayment(input: RecordPaymentInput): Promise<Invoice> {
-    const out = await this.client.post<{ invoice: Invoice }>("/billing/invoices", {
+    const invoice = await this.sdk.recordPayment({
       tenant: input.tenantId,
       product: "menu",
       planCode: input.planCode,
@@ -90,6 +87,6 @@ export class BillingClient implements PlanSource, BillingReader, BillingWriter {
       ...(input.actorId ? { actorId: input.actorId } : {}),
     });
     this.planCache.delete(input.tenantId);
-    return out.invoice;
+    return invoice;
   }
 }
