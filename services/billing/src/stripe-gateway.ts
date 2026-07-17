@@ -13,7 +13,7 @@ import {
 } from "@iedora/billing";
 import Stripe from "stripe";
 
-import type { PaymentKind, SettleInput, Settlement } from "./kinds";
+import type { PaymentKind, RefundRequest, RefundResult, SettleInput, Settlement } from "./kinds";
 
 // The Stripe adapter — implements @iedora/billing's PaymentGateway against
 // Stripe PaymentIntents / SetupIntents / Refunds / Transfers. Lives in the
@@ -144,6 +144,21 @@ export class StripeKind implements PaymentKind {
       metadata: input.metadata,
     });
     return { providerRef: charge.id, status: charge.status, clientSecret: charge.clientSecret };
+  }
+
+  async refund(input: RefundRequest): Promise<RefundResult> {
+    if (!input.payment) throw new PaymentError("provider_error", "stripe refund needs a provider payment id");
+    const r = await this.gateway.refund({
+      payment: input.payment,
+      amount: input.amount,
+      reason: input.reason,
+      idempotencyKey: input.idempotencyKey,
+    });
+    return { providerRef: r.id, amount: r.amount, status: r.status };
+  }
+
+  setupPaymentMethod(input: SetupInput): Promise<Setup> {
+    return this.gateway.setupPaymentMethod(input);
   }
 }
 

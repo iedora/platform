@@ -1,4 +1,4 @@
-import type { Money, PaymentStatus } from "@iedora/billing";
+import type { Money, PaymentStatus, Setup, SetupInput } from "@iedora/billing";
 
 // Payment KINDS — the pluggable registry the billing service settles through.
 // A kind is either RECORD-ONLY (manual: money moved off-platform, we just record
@@ -29,11 +29,36 @@ export interface Settlement {
   clientSecret?: string;
 }
 
+/** A refund's terminal/known state. manual settles `refunded`; stripe reports
+ *  the provider's `pending | succeeded | failed`. */
+export type RefundStatus = "refunded" | "pending" | "succeeded" | "failed";
+
+/** What a kind needs to refund. `payment` is the original charge's provider ref
+ *  (null for manual); `amount` is resolved explicitly by the caller. */
+export interface RefundRequest {
+  payment: string | null;
+  amount: Money;
+  reason?: string;
+  idempotencyKey?: string;
+}
+
+export interface RefundResult {
+  providerRef: string | null;
+  amount: Money;
+  status: RefundStatus;
+}
+
 export interface PaymentKind {
   /** Validate the request for this kind. Return an error message to reject, or
    *  null to proceed. Enforces the explicit contract (no inference). */
   validate(input: SettleInput): string | null;
   settle(input: SettleInput): Promise<Settlement>;
+  /** Optional: refund a settled charge. Present only on kinds that support it
+   *  (manual records; stripe processes). Absence = not supported. */
+  refund?(input: RefundRequest): Promise<RefundResult>;
+  /** Optional: begin saving a payment method for later off-session charges
+   *  (a SetupIntent). Present only on kinds that support it (stripe). */
+  setupPaymentMethod?(input: SetupInput): Promise<Setup>;
 }
 
 /** kind name → handler. A name absent here is not configured (→ 400). */
@@ -48,4 +73,9 @@ export class ManualKind implements PaymentKind {
   async settle(): Promise<Settlement> {
     return { providerRef: null, status: "paid" };
   }
+  // A manual refund records the reversal off-platform; no processor.
+  async refund(input: RefundRequest): Promise<RefundResult> {
+    return { providerRef: null, amount: input.amount, status: "refunded" };
+  }
+  // Manual has no setupPaymentMethod — cards can't be saved off-platform.
 }

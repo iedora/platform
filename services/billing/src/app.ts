@@ -5,6 +5,9 @@ import type { BillingDeps } from "./deps";
 import { cancelRoutes } from "./features/cancel/cancel.routes";
 import { chargeRoutes } from "./features/charge/charge.routes";
 import { invoicesRoutes } from "./features/invoices/invoices.routes";
+import { payoutsRoutes } from "./features/payouts/payouts.routes";
+import { refundRoutes } from "./features/refund/refund.routes";
+import { setupRoutes } from "./features/setup/setup.routes";
 import { subscribeRoutes } from "./features/subscribe/subscribe.routes";
 import { subscriptionsRoutes } from "./features/subscriptions/subscriptions.routes";
 
@@ -17,7 +20,10 @@ export function buildApp(deps: BillingDeps) {
     .route("/", cancelRoutes(deps))
     .route("/", subscriptionsRoutes(deps))
     .route("/", invoicesRoutes(deps))
-    .route("/", chargeRoutes(deps));
+    .route("/", chargeRoutes(deps))
+    .route("/", setupRoutes(deps))
+    .route("/", payoutsRoutes(deps))
+    .route("/", refundRoutes(deps));
 
   return createServiceApp()
     .route("/", healthRoutes(() => deps.db.ping()))
