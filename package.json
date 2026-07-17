@@ -58,6 +58,6 @@
     "postcss": "^8.5.14"
   },
   "dependencies": {
-    "@iedora/db": "^0.5.0"
+    "@iedora/db": "^0.8.0"
   }
 }

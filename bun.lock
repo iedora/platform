@@ -5,7 +5,7 @@
     "": {
       "name": "iedora",
       "dependencies": {
-        "@iedora/db": "^0.5.0",
+        "@iedora/db": "^0.8.0",
       },
       "devDependencies": {
         "@typescript/native-preview": "^7.0.0-dev.20260527.2",
@@ -201,7 +201,7 @@
         "@hono/otel": "^1.1.2",
         "@iedora/audit": "^0.2.1",
         "@iedora/config": "^0.1.0",
-        "@iedora/db": "^0.5.0",
+        "@iedora/db": "^0.8.0",
         "@iedora/email": "^0.1.1",
         "@iedora/messaging": "^0.2.1",
         "@iedora/observability": "^0.1.1",
@@ -280,6 +280,7 @@
         "@iedora/menu-kit": "workspace:*",
         "hono": "catalog:",
         "kysely": "catalog:",
+        "zod": "catalog:",
       },
       "devDependencies": {
         "@iedora/eslint-config": "workspace:*",
@@ -643,7 +644,7 @@
 
     "@iedora/contracts": ["@iedora/contracts@workspace:packages/platform/contracts"],
 
-    "@iedora/db": ["@iedora/db@0.5.0", "https://npm.pkg.github.com/download/@iedora/db/0.5.0/3a7ceace01bee9f4bc5f87609e13896a5fd125a5", { "dependencies": { "kysely-postgres-js": "^3.0.0" }, "peerDependencies": { "kysely": ">=0.27" } }, "sha512-W0q8YjNFK8dfwZu2yJ3t8BlloyscnAMnWYRkIK+yeYCK3vXF0p3E6YMDjSSZpS3VuGgry64wTkuaN8HEdGnpsA=="],
+    "@iedora/db": ["@iedora/db@0.8.0", "https://npm.pkg.github.com/download/@iedora/db/0.8.0/c95332218113a0fdedb01a05e314117fc37be4d2", { "dependencies": { "kysely-postgres-js": "^3.0.0" }, "peerDependencies": { "kysely": ">=0.27", "postgres": "^3.4.0" } }, "sha512-18XyUJTdXjb1aiNQmxcB3TKY1dPJWmHvSwN+Wq6WyOH4rEZu/g0ec3W6IumWqiBQ+wuOUL6Qn9/vMSWzS67EyQ=="],
 
     "@iedora/email": ["@iedora/email@0.1.1", "https://npm.pkg.github.com/download/@iedora/email/0.1.1/0ace8fb4f660150efd5bf487b8bb0f05a1ace3d6", { "dependencies": { "@types/nodemailer": "^8.0.1", "nodemailer": "^9.0.3" } }, "sha512-mVXztTY8IQyqOeNIftyAhgSYM72FU7uFQj7li9KQ8zUIhntpR7uvG3iaYLRiHCInet+PcqxXDjmkZL11yZL+QQ=="],
 
@@ -1980,6 +1981,8 @@
     "postcss": ["postcss@8.5.15", "", { "dependencies": { "nanoid": "^3.3.12", "picocolors": "^1.1.1", "source-map-js": "^1.2.1" } }, "sha512-FfR8sjd4em2T6fb3I2MwAJU7HWVMr9zba+enmQeeWFfCbm+UOC/0X4DS8XtpUTMwWMGbjKYP7xjfNekzyGmB3A=="],
 
     "postcss-selector-parser": ["postcss-selector-parser@7.1.4", "", { "dependencies": { "cssesc": "^3.0.0", "util-deprecate": "^1.0.2" } }, "sha512-HeP7D2wyhkR+XaK6v4W8oRF62Dsz4flyuczALJp61GckGm42u1saSSJ/0auvcBqxs3jMRFEcPK34At/0JBKdOg=="],
+
+    "postgres": ["postgres@3.4.9", "", {}, "sha512-GD3qdB0x1z9xgFI6cdRD6xu2Sp2WCOEoe3mtnyB5Ee0XrrL5Pe+e4CCnJrRMnL1zYtRDZmQQVbvOttLnKDLnaw=="],
 
     "postgres-array": ["postgres-array@2.0.0", "", {}, "sha512-VpZrUqU5A69eQyW2c5CA1jtLecCsN2U/bD6VilrFDWq5+5UIEVO7nazS3TEcHf1zuPYO/sqGvUvW62g86RXZuA=="],
 
