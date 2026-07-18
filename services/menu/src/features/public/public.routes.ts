@@ -1,12 +1,6 @@
 import type { PublicPayload } from "@iedora/contracts";
-import {
-  IEDORA_RESTAURANT_ID,
-  IEDORA_TENANT_ID,
-  SpanStatusCode,
-  tenantContext,
-  trace,
-  tracer,
-} from "@iedora/menu-kit";
+import { SpanStatusCode, trace, tracer } from "@iedora/menu-kit";
+import { IEDORA_RESTAURANT_ID, IEDORA_TENANT_ID, tenantContext } from "@iedora/observability";
 import { type Context, Hono } from "hono";
 import { getConnInfo } from "hono/bun";
 import { getCookie, setCookie } from "hono/cookie";

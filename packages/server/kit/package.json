@@ -6,20 +6,9 @@
   "description": "Shared backend runtime for the iedora Hono services (Bun): env loading with the _FILE secret convention, graceful Bun.serve bootstrap, and the Kysely connection + transaction-in-context plumbing.",
   "exports": {
     ".": "./src/index.ts",
-    "./env": "./src/env.ts",
-    "./boot": "./src/boot.ts",
-    "./db": "./src/db.ts",
-    "./http": "./src/http.ts",
-    "./otel": "./src/otel.ts",
-    "./jwt": "./src/jwt.ts",
     "./mailer": "./src/mailer.ts",
     "./audit": "./src/audit.ts",
     "./outbox": "./src/outbox.ts",
-    "./password": "./src/password.ts",
-    "./tokens": "./src/tokens.ts",
-    "./migrate": "./src/migrate.ts",
-    "./serviceauth": "./src/serviceauth.ts",
-    "./userauth": "./src/userauth.ts",
     "./testkit": "./src/testkit.ts"
   },
   "scripts": {
@@ -39,6 +28,7 @@
     "kysely": "catalog:",
     "kysely-postgres-js": "catalog:",
     "nodemailer": "^6.10.1",
+    "@iedora/service-kit": "^0.1.1",
     "@iedora/service-tokens": "^0.1.0",
     "@iedora/server-kit": "^0.2.0",
     "@iedora/observability": "^0.1.1",

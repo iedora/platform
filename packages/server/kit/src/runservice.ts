@@ -1,8 +1,8 @@
 import type { Hono } from "hono";
 
 import type { Auditor } from "./audit";
-import { serve } from "./boot";
-import type { Database } from "./db";
+import { serve } from "@iedora/service-kit";
+import type { Database } from "@iedora/service-kit";
 import type { Mailer } from "./mailer";
 import { type AuditSink, OutboxRelay, OutboxWriter, relayHandlers } from "./outbox";
 
