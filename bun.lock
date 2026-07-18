@@ -206,6 +206,7 @@
         "@iedora/messaging": "^0.2.1",
         "@iedora/observability": "^0.1.1",
         "@iedora/server-kit": "^0.2.0",
+        "@iedora/service-tokens": "^0.1.0",
         "@node-rs/argon2": "catalog:",
         "@opentelemetry/api": "^1.9.1",
         "@opentelemetry/sdk-trace-base": "^2.9.0",
@@ -678,6 +679,8 @@
     "@iedora/service-billing": ["@iedora/service-billing@workspace:services/billing"],
 
     "@iedora/service-menu": ["@iedora/service-menu@workspace:services/menu"],
+
+    "@iedora/service-tokens": ["@iedora/service-tokens@0.1.0", "https://npm.pkg.github.com/download/@iedora/service-tokens/0.1.0/c0de3aee7056f4c8328e79bdda0bee1bde14fa0b", {}, "sha512-5cy7mvxPqSpAVCYLqkWNBZMZHao9TUVhpAm6k7JoLmv3g4+u35gKVhA1kOhmhGbP0EPJDXTSqovWS3ti+0ATSQ=="],
 
     "@iedora/ui": ["@iedora/ui@workspace:packages/platform/ui"],
 
