@@ -4,7 +4,7 @@ import { ServiceClient } from "@iedora/server-kit";
 import type { Kysely } from "kysely";
 
 import { type AuditEvent, type Auditor, buildEnvelope } from "./audit";
-import type { Database } from "./db";
+import type { Database } from "@iedora/service-kit";
 import type { EmailMessage, Mailer } from "./mailer";
 
 // Transactional outbox, now backed by @iedora/messaging (topic-based
