@@ -28,7 +28,7 @@
     "kysely": "catalog:",
     "kysely-postgres-js": "catalog:",
     "nodemailer": "^6.10.1",
-    "@iedora/service-kit": "^0.1.1",
+    "@iedora/service-kit": "^0.1.2",
     "@iedora/service-tokens": "^0.1.0",
     "@iedora/server-kit": "^0.2.0",
     "@iedora/observability": "^0.1.1",

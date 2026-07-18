@@ -206,7 +206,7 @@
         "@iedora/messaging": "^0.2.1",
         "@iedora/observability": "^0.1.1",
         "@iedora/server-kit": "^0.2.0",
-        "@iedora/service-kit": "^0.1.1",
+        "@iedora/service-kit": "^0.1.2",
         "@iedora/service-tokens": "^0.1.0",
         "@node-rs/argon2": "catalog:",
         "@opentelemetry/api": "^1.9.1",
@@ -679,7 +679,7 @@
 
     "@iedora/service-billing": ["@iedora/service-billing@workspace:services/billing"],
 
-    "@iedora/service-kit": ["@iedora/service-kit@0.1.1", "https://npm.pkg.github.com/download/@iedora/service-kit/0.1.1/063b8ae174600e23016b5f8e6917ecce6c295f3a", { "dependencies": { "@hono/otel": "^1.1.2", "@iedora/config": "^0.1.0", "@iedora/db": "^0.8.0", "@iedora/observability": "^0.1.1", "@iedora/server-kit": "^0.2.0", "@iedora/service-tokens": "^0.1.0", "@opentelemetry/api": "^1.9.1", "@opentelemetry/sdk-trace-base": "^2.9.0" }, "peerDependencies": { "hono": ">=4", "kysely": ">=0.27" } }, "sha512-acoK3TjZUG2vpQXjb0f6vzCANdLW8Wb6icOGt1rtMJBW8jYCFtiAFCtHyDB3lUaaibd0pOzhQY3gh+CvrmqYAQ=="],
+    "@iedora/service-kit": ["@iedora/service-kit@0.1.2", "https://npm.pkg.github.com/download/@iedora/service-kit/0.1.2/99e4e715f9266572a554072dc3bd641d59b20292", { "dependencies": { "@hono/otel": "^1.1.2", "@iedora/config": "^0.1.0", "@iedora/db": "^0.8.0", "@iedora/observability": "^0.1.1", "@iedora/server-kit": "^0.2.0", "@iedora/service-tokens": "^0.1.0", "@opentelemetry/api": "^1.9.1", "@opentelemetry/sdk-trace-base": "^2.9.0" }, "peerDependencies": { "hono": ">=4", "kysely": ">=0.27" } }, "sha512-Wahs5GLJ/E+0/qXnhro12wfZhkB3pZ5IAykuDlIk8MSrYV3DrLa6fjEitPIqSOO/dlz/wqWlCCUlS9uirzFvUA=="],
 
     "@iedora/service-menu": ["@iedora/service-menu@workspace:services/menu"],
 

@@ -22,7 +22,7 @@ import { Uploads } from "./uploads";
 expandFileSecrets();
 const cfg = loadConfig();
 
-const db = new Database<MenuDB>(cfg.menuDatabaseUrl);
+const db = new Database<MenuDB>(cfg.menuDatabaseUrl, { camelCase: false });
 
 const userVerifier = newUserVerifier(
   await parseEd25519PublicKey(cfg.apiJwtPublicKey),

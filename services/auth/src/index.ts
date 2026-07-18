@@ -23,7 +23,7 @@ import type { AuthDB } from "./schema";
 expandFileSecrets();
 const cfg = loadConfig();
 
-const db = new Database<AuthDB>(cfg.authDatabaseUrl);
+const db = new Database<AuthDB>(cfg.authDatabaseUrl, { camelCase: false });
 
 const keys = parseEd25519Seed(cfg.jwtSeed);
 const issuer = new JwtIssuer({

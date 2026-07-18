@@ -37,7 +37,7 @@ export async function createHarness(): Promise<Harness> {
     prefix: "auth_test",
     migrationsDir: `${import.meta.dir}/../migrations`,
   });
-  const db = new Database<AuthDB>(scratch.url);
+  const db = new Database<AuthDB>(scratch.url, { camelCase: false });
   const sentResets: { to: string; url: string }[] = [];
   const sentChanged: string[] = [];
   const cfg: AuthConfig = {

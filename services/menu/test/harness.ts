@@ -117,7 +117,7 @@ export async function createHarness(
     prefix,
     migrationsDir: `${import.meta.dir}/../migrations`,
   });
-  const db = new Database<MenuDB>(scratch.url);
+  const db = new Database<MenuDB>(scratch.url, { camelCase: false });
   const kp = await generateKeyPair("EdDSA");
   const planStub = { code: "menu_pro" };
   const billingStub: { subscriptions: Subscription[]; invoices: Invoice[] } = {

@@ -13,7 +13,7 @@ import type { AuditDB } from "./schema";
 
 expandFileSecrets();
 
-const database = new Database<AuditDB>(requireEnv("AUDIT_DATABASE_URL"));
+const database = new Database<AuditDB>(requireEnv("AUDIT_DATABASE_URL"), { camelCase: false });
 const verifier = newServiceVerifier(
   await parseEd25519PublicKey(requireEnv("SERVICE_JWT_PUBLIC_KEY")),
   requireEnv("SERVICE_JWT_ISSUER"),

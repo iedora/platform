@@ -21,7 +21,7 @@ const EXPIRY_SWEEP_MS = 60 * 60 * 1000; // hourly
 expandFileSecrets();
 const cfg = loadConfig();
 
-const db = new Database<BillingDB>(cfg.billingDatabaseUrl);
+const db = new Database<BillingDB>(cfg.billingDatabaseUrl, { camelCase: false });
 
 const verifier = newServiceVerifier(
   await parseEd25519PublicKey(cfg.serviceJwtPublicKey),

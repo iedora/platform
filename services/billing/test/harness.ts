@@ -43,7 +43,7 @@ export async function createHarness(): Promise<Harness> {
     .setExpirationTime("10m")
     .sign(privateKey);
 
-  const db = new Database<BillingDB>(url);
+  const db = new Database<BillingDB>(url, { camelCase: false });
   const cfg: BillingConfig = {
     port: 0,
     billingDatabaseUrl: url,

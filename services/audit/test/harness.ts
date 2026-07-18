@@ -40,7 +40,7 @@ export async function createHarness(): Promise<Harness> {
     .setExpirationTime("10m")
     .sign(privateKey);
 
-  const db = new Database<AuditDB>(scratch.url);
+  const db = new Database<AuditDB>(scratch.url, { camelCase: false });
   const app = buildApp({ database: db, verifier });
 
   return {
