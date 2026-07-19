@@ -345,7 +345,7 @@
       "version": "0.1.0",
       "dependencies": {
         "@hono/zod-validator": "catalog:",
-        "@iedora/billing-sdk": "^0.2.0",
+        "@iedora/billing-sdk": "^0.4.0",
         "@iedora/contracts": "workspace:*",
         "@iedora/menu-kit": "workspace:*",
         "hono": "catalog:",
@@ -645,7 +645,7 @@
 
     "@iedora/billing": ["@iedora/billing@0.1.0", "https://npm.pkg.github.com/download/@iedora/billing/0.1.0/339b420ce1adf5042ad0ed0d4a786a95460b8416", {}, "sha512-tlEv01cMVveB1MY0Cn/uQ6weGxAZkWpQFh12j+fyXJfuLsT35oWfje4AioJf9brAieYhzOhVRoJnovofwHVB+w=="],
 
-    "@iedora/billing-sdk": ["@iedora/billing-sdk@0.2.0", "https://npm.pkg.github.com/download/@iedora/billing-sdk/0.2.0/7dacf5ac22e8f60a5a6d4d295d712c731b58742f", {}, "sha512-W2vN1LHK36ccdoveTVBPIIgyqjTKluzVsfTLbdfl7SX9YA8JUGvHWSF06pTBEjMTt1RCDJtjg6arc7koA+GQMw=="],
+    "@iedora/billing-sdk": ["@iedora/billing-sdk@0.4.0", "https://npm.pkg.github.com/download/@iedora/billing-sdk/0.4.0/7d77d83c4ba67ec182e943701656ee520fb0cddf", {}, "sha512-Pead7JCueYem4UQajX1s3divnBO5jFiuQClzCO2tjI8VcqFI2/5OQYxBeKMv5aRLH4Bfc8eDcATvhzdIhfLwjQ=="],
 
     "@iedora/brand": ["@iedora/brand@workspace:packages/platform/brand"],
 
