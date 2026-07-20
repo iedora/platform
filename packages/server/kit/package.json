@@ -17,7 +17,7 @@
     "test": "bun test"
   },
   "dependencies": {
-    "@iedora/audit": "^0.2.1",
+    "@iedora/audit-sdk": "^0.3.0",
     "@iedora/config": "^0.1.0",
     "@iedora/db": "^0.8.0",
     "@iedora/email-sdk": "^0.1.0",
