@@ -67,6 +67,7 @@ function mockRefreshDead() {
     ok: false,
     status: 401,
     statusText: 'Unauthorized',
+    json: async () => ({ error: 'dead' }),
     text: async () => JSON.stringify({ error: 'dead' }),
     headers: { getSetCookie: () => [] },
   }))

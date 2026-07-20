@@ -59,10 +59,10 @@ export async function getSession(): Promise<Session | null> {
 
   const result = await refreshTokens(refreshToken)
   if (!result) return null
-  for (const c of authCookies(result.tokens)) {
+  for (const c of authCookies(result)) {
     store.set(c.name, c.value, c.options)
   }
-  return sessionFromToken(result.tokens.accessToken)
+  return sessionFromToken(result.accessToken)
 }
 
 /**

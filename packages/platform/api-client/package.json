@@ -15,6 +15,7 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
+    "@iedora/auth-sdk": "^0.1.1",
     "@iedora/contracts": "workspace:*",
     "@iedora/service-menu": "workspace:*",
     "hono": "catalog:",

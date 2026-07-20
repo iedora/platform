@@ -71,6 +71,7 @@
       "name": "@iedora/api-client",
       "version": "0.1.0",
       "dependencies": {
+        "@iedora/auth-sdk": "^0.1.1",
         "@iedora/contracts": "workspace:*",
         "@iedora/service-menu": "workspace:*",
         "hono": "catalog:",
@@ -642,6 +643,8 @@
     "@iedora/api-client": ["@iedora/api-client@workspace:packages/platform/api-client"],
 
     "@iedora/audit": ["@iedora/audit@0.2.1", "https://npm.pkg.github.com/download/@iedora/audit/0.2.1/618e5f0f65a20402c944b7ed75ab4eed9f6ed5fa", { "dependencies": { "@iedora/messaging": "^0.2.0" }, "peerDependencies": { "kysely": ">=0.27" } }, "sha512-TQTyCLT+sGVG4WRHX2va5Xd400AMcWckuqhvt5OOtcghdlAmuDmzW9OJPCBfCRMocEid5X0l5QsEVFmhI7b9xw=="],
+
+    "@iedora/auth-sdk": ["@iedora/auth-sdk@0.1.1", "https://npm.pkg.github.com/download/@iedora/auth-sdk/0.1.1/8423c8e39f3ffe1dae882ce5824ec0bd71518cde", { "dependencies": { "jose": "^5.9.6" } }, "sha512-epU1eDwulGAwJUOJy1nFY0euRnIPF7FCMMQMOm7QWYXZdGaWGQGM6WA5+0wpsrGlw4uDZmC2X+v+GrPe6NdMIw=="],
 
     "@iedora/billing": ["@iedora/billing@0.1.0", "https://npm.pkg.github.com/download/@iedora/billing/0.1.0/339b420ce1adf5042ad0ed0d4a786a95460b8416", {}, "sha512-tlEv01cMVveB1MY0Cn/uQ6weGxAZkWpQFh12j+fyXJfuLsT35oWfje4AioJf9brAieYhzOhVRoJnovofwHVB+w=="],
 
@@ -2368,6 +2371,8 @@
     "@grpc/proto-loader/yargs": ["yargs@17.7.3", "", { "dependencies": { "cliui": "^8.0.1", "escalade": "^3.1.1", "get-caller-file": "^2.0.5", "require-directory": "^2.1.1", "string-width": "^4.2.3", "y18n": "^5.0.5", "yargs-parser": "^21.1.1" } }, "sha512-GZtjxm/J/4TSxuL3FNYjCmLktBTnIw/rVmKSIyKeYAZpmJB2ig9VauCC5xsa82GNKVKDAqpOn3KVzNt0zmrU0g=="],
 
     "@hono/otel/@opentelemetry/semantic-conventions": ["@opentelemetry/semantic-conventions@1.41.1", "", {}, "sha512-/UhIkaZgPutTFmQ7RnIJGgDXZmtEJ7Dvi86xNTFWcnRxVRNk/aotsqDJYeEvDP+FSMB2SdW+pQzNMcWP0rwuNA=="],
+
+    "@iedora/auth-sdk/jose": ["jose@5.10.0", "", {}, "sha512-s+3Al/p9g32Iq+oqXxkW//7jk2Vig6FF1CFqzVXoTUXt2qz89YWbL+OwS17NFYEvxC35n0FKeGO2LGYSxeM2Gg=="],
 
     "@iedora/email/@types/nodemailer": ["@types/nodemailer@8.0.1", "", { "dependencies": { "@types/node": "*" } }, "sha512-PxpaInm8V1JQDd4j0ds5HfvWQk8JupS1C0Picb96QJsrrRDjBH+DlK7L4ZdNSqNULhiZRQHc40nLVShaGxXAMw=="],
 

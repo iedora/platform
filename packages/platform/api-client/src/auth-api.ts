@@ -1,152 +1,125 @@
 /**
- * Server-to-server calls against the auth service. Token-minting calls return
- * the parsed JSON body — which now carries the refresh token (auth-sdk
- * TokenBundle style); the BFF owns the cookies (see cookies.ts).
+ * Server-to-server calls against the auth service — now the @iedora/auth-sdk
+ * client for the standard surface (login/register/refresh/logout/whoami/
+ * password), plus a few thin menu-specific calls (tenants, my-sessions) that the
+ * shared client doesn't model. Menu's auth service is mounted at /auth, so the
+ * client's tenant is "auth" → it hits `${AUTH_URL}/auth/*`.
  */
+import { AuthError, createAuthClient } from '@iedora/auth-sdk'
+import type { AuthSession, TokenBundle } from '@iedora/auth-sdk'
 import type { AdminUserSession } from '@iedora/contracts'
 
 import { AUTH_URL } from './config'
-import type { TokenResponse } from './cookies'
-import { ApiError, errorMessageFromResponse } from './error'
+import { ApiError } from './error'
 
-export type AuthResult = {
-  tokens: TokenResponse
-}
+const client = createAuthClient({
+  baseUrl: AUTH_URL,
+  tenant: 'auth',
+  // BFF calls are never cached; auth responses are per-request.
+  fetch: ((url, init) => fetch(url, { ...init, cache: "no-store" })) as typeof fetch,
+})
 
-async function tokenCall(path: string, init: RequestInit): Promise<AuthResult> {
-  const res = await fetch(`${AUTH_URL}${path}`, { ...init, cache: 'no-store' })
-  if (!res.ok) {
-    throw new ApiError(res.status, await errorMessageFromResponse(res))
+/** Run a client call, mapping the sdk's AuthError to menu's ApiError so callers
+ *  keep catching one error type. */
+async function wrap<T>(p: Promise<T>): Promise<T> {
+  try {
+    return await p
+  } catch (e) {
+    if (e instanceof AuthError) throw new ApiError(e.status, e.message)
+    throw e
   }
-  return { tokens: (await res.json()) as TokenResponse }
 }
 
-/** fetch against the auth service that throws ApiError on non-2xx and decodes
- *  the JSON body (undefined for 204). The single home for the `no-store` +
- *  error-handling boilerplate every non-token auth endpoint shares. */
-async function authCall<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${AUTH_URL}${path}`, { ...init, cache: 'no-store' })
-  if (!res.ok) throw new ApiError(res.status, await errorMessageFromResponse(res))
-  return (res.status === 204 ? undefined : await res.json()) as T
+export function login(email: string, password: string): Promise<AuthSession> {
+  return wrap(client.login({ email, password }))
 }
 
-export function login(email: string, password: string): Promise<AuthResult> {
-  return tokenCall('/auth/login', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password }),
-  })
-}
-
-export function register(email: string, password: string, name: string): Promise<AuthResult> {
-  return tokenCall('/auth/register', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password, name }),
-  })
+export function register(email: string, password: string, name: string): Promise<AuthSession> {
+  return wrap(client.register({ email, password, name }))
 }
 
 /**
  * Rotates the refresh token. Returns null when the token is dead
  * (expired / revoked / reused) — callers clear cookies and re-auth.
  */
-export async function refreshTokens(refreshToken: string): Promise<AuthResult | null> {
+export async function refreshTokens(refreshToken: string): Promise<TokenBundle | null> {
   try {
-    return await tokenCall('/auth/refresh', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ refreshToken }),
-    })
-  } catch (err) {
-    if (err instanceof ApiError && err.status === 401) return null
-    throw err
+    return await client.refresh(refreshToken)
+  } catch (e) {
+    if (e instanceof AuthError && e.status === 401) return null
+    throw e
   }
 }
 
 /** Revokes the session family; idempotent server-side. */
-export async function logout(refreshToken: string): Promise<void> {
-  await fetch(`${AUTH_URL}/auth/logout`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ refreshToken }),
-    cache: 'no-store',
-  })
+export function logout(refreshToken: string): Promise<void> {
+  return wrap(client.logout(refreshToken)).then(() => {})
 }
 
-/**
- * Requests a password-reset email. The auth service always answers 200
- * (no account enumeration), so this resolves regardless of whether the
- * address exists — surface a neutral "check your inbox" either way.
- */
-export async function forgotPassword(email: string): Promise<void> {
-  await fetch(`${AUTH_URL}/auth/forgot-password`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email }),
-    cache: 'no-store',
-  })
+/** Requests a password-reset email. Always resolves (never reveals the email). */
+export function forgotPassword(email: string): Promise<void> {
+  return wrap(client.forgotPassword(email)).then(() => {})
 }
 
-/**
- * Sets a new password from the opaque token in the emailed link. No
- * auto-login (the user signs in afterwards). Throws ApiError on a bad or
- * expired token (the auth service returns 400).
- */
+/** Completes a reset with the emailed token. */
 export function resetPassword(token: string, password: string): Promise<void> {
-  return authCall('/auth/reset-password', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ token, password }),
-  })
+  return wrap(client.resetPassword(token, password)).then(() => {})
 }
-
-/**
- * Provisions a tenant owned by the authenticated user. The caller must
- * refresh afterwards so the access token picks up the new tenant id.
- */
-export function createTenant(accessToken: string, name: string): Promise<{ tenantId: string }> {
-  return authCall('/auth/tenants', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
-    body: JSON.stringify({ name }),
-  })
-}
-
-// --- authenticated self-service (Bearer access token) ---
 
 /** The signed-in user's identity incl. the LIVE force-change flag (DB-read). */
 export async function whoami(accessToken: string): Promise<{ mustChangePassword: boolean }> {
-  const body = await authCall<{ mustChangePassword?: boolean }>('/auth/whoami', {
-    headers: { Authorization: `Bearer ${accessToken}` },
-  })
-  return { mustChangePassword: body.mustChangePassword ?? false }
+  const w = await wrap(client.whoami(accessToken))
+  return { mustChangePassword: w.mustChangePassword }
 }
 
 /** Change the signed-in user's password. `currentPassword` is required for a
- *  voluntary change but omitted for a forced one (just authenticated). Throws
- *  ApiError on 403 (wrong current) / 422 (missing current). */
+ *  voluntary change but omitted for a forced one. Throws ApiError on 403/422. */
 export function changePassword(
   accessToken: string,
   input: { currentPassword?: string; newPassword: string },
 ): Promise<void> {
-  return authCall('/auth/change-password', {
+  return wrap(client.changePassword(accessToken, input)).then(() => {})
+}
+
+/* ---- menu-specific (not in the auth-sdk standard surface) ---- */
+
+const authFetch = async <T>(path: string, init: RequestInit & { accessToken: string }): Promise<T> => {
+  const { accessToken, ...rest } = init
+  const res = await fetch(`${AUTH_URL}${path}`, {
+    ...rest,
+    cache: 'no-store',
+    headers: { ...rest.headers, authorization: `Bearer ${accessToken}` },
+  })
+  if (!res.ok) throw new ApiError(res.status, res.statusText)
+  return (res.status === 204 ? undefined : await res.json()) as T
+}
+
+/**
+ * Provisions a tenant owned by the authenticated user. The caller must refresh
+ * afterwards so the access token picks up the new org. Menu's own endpoint —
+ * auth-sdk's createOrganization models a different (member/role) surface.
+ */
+export function createTenant(accessToken: string, name: string): Promise<{ tenantId: string }> {
+  return authFetch('/auth/tenants', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
-    body: JSON.stringify(input),
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ name }),
+    accessToken,
   })
 }
 
-/** The signed-in user's own devices (sessions). */
+/** The signed-in user's own devices (sessions). Menu's AdminUserSession shape
+ *  (shared with the admin CRM), not auth-sdk's SessionView. */
 export async function mySessions(accessToken: string): Promise<AdminUserSession[]> {
-  const body = await authCall<{ sessions: AdminUserSession[] }>('/auth/sessions', {
-    headers: { Authorization: `Bearer ${accessToken}` },
-  })
+  const body = await authFetch<{ sessions: AdminUserSession[] }>('/auth/sessions', { accessToken })
   return body.sessions
 }
 
 /** Sign out one of my devices (session family), or all the others (`'*'`). */
 export function revokeMyDevice(accessToken: string, family: string): Promise<void> {
   const path =
-    family === '*' ? '/auth/sessions/revoke-others' : `/auth/sessions/${encodeURIComponent(family)}/revoke`
-  return authCall(path, { method: 'POST', headers: { Authorization: `Bearer ${accessToken}` } })
+    family === '*'
+      ? '/auth/sessions/revoke-others'
+      : `/auth/sessions/${encodeURIComponent(family)}/revoke`
+  return authFetch(path, { method: 'POST', accessToken })
 }
