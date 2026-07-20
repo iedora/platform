@@ -43,8 +43,8 @@ describe("metrics surface", () => {
       const attrs = tenantAttributes({ restaurantId: "r_only" });
       expect(attrs).toEqual({ [IEDORA_RESTAURANT_ID]: "r_only" });
       // Important: we OMIT the key rather than set it to undefined. Setting
-      // undefined would create a phantom label in OpenObserve and break
-      // dashboards that group by organization_id.
+      // undefined would create a phantom label and break dashboards that
+      // group by organization_id.
       expect(IEDORA_TENANT_ID in attrs).toBe(false);
     });
 

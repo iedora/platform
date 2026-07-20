@@ -226,7 +226,7 @@ export async function mintUserToken(
   opts: { tenant?: string | null; roles?: string[] } = {},
 ): Promise<string> {
   const claims: Record<string, unknown> = { typ: "access", roles: opts.roles ?? [] };
-  if (opts.tenant !== null) claims.tid = opts.tenant ?? TENANT;
+  if (opts.tenant !== null) claims.org = opts.tenant ?? TENANT;
   return new SignJWT(claims)
     .setProtectedHeader({ alg: "EdDSA", kid: "k1" })
     .setSubject(USER)

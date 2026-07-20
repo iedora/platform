@@ -102,7 +102,7 @@ export async function completeOnboarding(
     const refreshToken = store.get(REFRESH_COOKIE)?.value
     const refreshed = refreshToken ? await refreshTokens(refreshToken) : null
     if (!refreshed) redirect(signInTarget)
-    for (const c of authCookies(refreshed.tokens, refreshed.setCookies)) {
+    for (const c of authCookies(refreshed)) {
       store.set(c.name, c.value, c.options)
     }
   }

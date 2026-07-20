@@ -14,7 +14,7 @@ import {
   logout,
   register,
   resetPassword,
-  type AuthResult,
+  type AuthSession,
 } from '@iedora/api-client'
 import { brandUrl, isSameIedoraOrigin } from '@iedora/brand'
 import { forgotPasswordSchema, resetPasswordSchema, signInSchema, signUpSchema } from './schemas'
@@ -34,7 +34,7 @@ export async function signInAction(
 ): Promise<SubmissionResult> {
   const submission = parseWithZod(formData, { schema: signInSchema })
   if (submission.status !== 'success') return submission.reply()
-  let result: AuthResult
+  let result: AuthSession
   try {
     result = await login(submission.value.email, submission.value.password)
   } catch {
@@ -57,7 +57,7 @@ export async function signUpAction(
 ): Promise<SubmissionResult> {
   const submission = parseWithZod(formData, { schema: signUpSchema })
   if (submission.status !== 'success') return submission.reply()
-  let result: AuthResult
+  let result: AuthSession
   try {
     result = await register(submission.value.email, submission.value.password, submission.value.name)
   } catch (err) {
@@ -129,9 +129,9 @@ export async function signOutAction(next?: string): Promise<void> {
   redirect(isSameIedoraOrigin(next) ? next! : brandUrl())
 }
 
-async function persistAuth(result: AuthResult): Promise<void> {
+async function persistAuth(result: AuthSession): Promise<void> {
   const store = await cookies()
-  for (const c of authCookies(result.tokens, result.setCookies)) {
+  for (const c of authCookies(result)) {
     store.set(c.name, c.value, c.options)
   }
 }

@@ -1,8 +1,12 @@
-import type { Mailer } from "@iedora/menu-kit";
+import type { EmailMessage } from "@iedora/menu-kit";
 
-// Password-reset / account emails, formatted once and sent through the generic
-// {@link Mailer} contract (server-kit). The transport (MailHog, Resend, …) is
-// chosen at the composition root; this file owns only the message content.
+/** The send-only contract this module needs — fulfilled by the OutboxMailer
+ *  (enqueue) at the composition root; delivery happens later via @iedora/email. */
+type EmailSender = { send(msg: EmailMessage): Promise<void> };
+
+// Password-reset / account emails, formatted once and enqueued through an
+// EmailSender. This file owns only the message content; the raw reset URL/token
+// only ever passes THROUGH here in memory (never persisted).
 //
 // Security: the raw reset URL/token only ever passes THROUGH here in memory —
 // it's never persisted (the token is hashed at rest).
@@ -66,8 +70,8 @@ function para(text: string): string {
   return `<p style="margin:0 0 12px;font-family:${FONT};font-size:15px;line-height:1.6;color:${INK};">${text}</p>`;
 }
 
-/** Builds the {@link ResetMailer} over any {@link Mailer} transport. */
-export function makeResetMailer(mailer: Mailer): ResetMailer {
+/** Builds the {@link ResetMailer} over any {@link EmailSender} (the OutboxMailer). */
+export function makeResetMailer(mailer: EmailSender): ResetMailer {
   return {
     async sendPasswordReset(to, resetUrl) {
       await mailer.send({

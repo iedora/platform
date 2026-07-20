@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 
-import { json, lastResetToken, PASSWORD, refreshCookie, registerUser, useHarness, withCookie } from "./harness";
+import { json, lastResetToken, PASSWORD, refreshTokenOf, registerUser, useHarness, withRefresh } from "./harness";
 
 const h = useHarness();
 
@@ -35,7 +35,7 @@ test("a valid token changes the password, revokes all sessions, and does NOT aut
 
   await registerUser(h, email);
   const live = await h.app.request("/auth/login", json({ email, password: PASSWORD }));
-  const oldRefresh = refreshCookie(live)!;
+  const oldRefresh = (await refreshTokenOf(live))!;
 
   await h.app.request("/auth/forgot-password", json({ email }));
   const token = lastResetToken(h);
@@ -44,12 +44,13 @@ test("a valid token changes the password, revokes all sessions, and does NOT aut
 
   expect(reset.status).toBe(200);
   // No auto-login: no access token in the body, no refresh cookie set.
-  expect(((await reset.json()) as { accessToken?: string }).accessToken).toBeUndefined();
-  expect(refreshCookie(reset)).toBeUndefined();
+  const resetBody = (await reset.json()) as { accessToken?: string; refreshToken?: string };
+  expect(resetBody.accessToken).toBeUndefined();
+  expect(resetBody.refreshToken).toBeUndefined();
   // Referer leak guard.
   expect(reset.headers.get("referrer-policy")).toBe("no-referrer");
   // Pre-existing session revoked (logged out everywhere).
-  expect((await h.app.request("/auth/refresh", withCookie(oldRefresh))).status).toBe(401);
+  expect((await h.app.request("/auth/refresh", withRefresh(oldRefresh))).status).toBe(401);
   // Old password rejected; the new one works.
   expect((await h.app.request("/auth/login", json({ email, password: PASSWORD }))).status).toBe(401);
   expect((await h.app.request("/auth/login", json({ email, password: newPassword }))).status).toBe(200);

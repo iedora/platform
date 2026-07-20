@@ -106,7 +106,7 @@ describe("registerIedoraOtel", () => {
 
     process.env.NODE_ENV = "production";
     process.env.OTEL_EXPORTER_OTLP_ENDPOINT =
-      "http://infra-openobserve.test:5080/api/default";
+      "http://otel-collector.test:4318";
     process.env.GIT_SHA = "abc1234deadbeef";
     process.env.HOST_NAME = "homelab-pt-01";
     process.env.DEPLOYMENT_ENV = "staging";
@@ -177,7 +177,7 @@ describe("registerIedoraOtel", () => {
 
     process.env.NODE_ENV = "production";
     process.env.OTEL_EXPORTER_OTLP_ENDPOINT =
-      "http://infra-openobserve.test:5080/api/default";
+      "http://otel-collector.test:4318";
     delete process.env.DEPLOYMENT_ENV;
 
     vi.resetModules();
@@ -213,7 +213,7 @@ describe("registerIedoraOtel", () => {
   it("omits service.version and host.name when their env vars are unset (no phantom empty labels)", async () => {
     // Local dev or first-boot edge case: GIT_SHA + HOST_NAME aren't set.
     // The package omits those keys (rather than setting them to empty
-    // string) so OO dashboards don't grow a "(empty)" bucket. Pinned
+    // string) so dashboards don't grow a "(empty)" bucket. Pinned
     // here against a future "always set everything to ''" refactor.
     const originalNodeEnv = process.env.NODE_ENV;
     const originalEndpoint = process.env.OTEL_EXPORTER_OTLP_ENDPOINT;
@@ -222,7 +222,7 @@ describe("registerIedoraOtel", () => {
 
     process.env.NODE_ENV = "production";
     process.env.OTEL_EXPORTER_OTLP_ENDPOINT =
-      "http://infra-openobserve.test:5080/api/default";
+      "http://otel-collector.test:4318";
     delete process.env.GIT_SHA;
     delete process.env.HOST_NAME;
 
@@ -273,7 +273,7 @@ describe("registerIedoraOtel", () => {
     const originalEndpoint = process.env.OTEL_EXPORTER_OTLP_ENDPOINT;
     process.env.NODE_ENV = "production";
     process.env.OTEL_EXPORTER_OTLP_ENDPOINT =
-      "http://infra-openobserve.test:5080/api/default";
+      "http://otel-collector.test:4318";
 
     vi.resetModules();
     const registerOtelSpy = vi.fn();
@@ -316,7 +316,7 @@ describe("registerIedoraOtel", () => {
     const originalEndpoint = process.env.OTEL_EXPORTER_OTLP_ENDPOINT;
     process.env.NODE_ENV = "production";
     process.env.OTEL_EXPORTER_OTLP_ENDPOINT =
-      "http://infra-openobserve.test:5080/api/default";
+      "http://otel-collector.test:4318";
 
     vi.resetModules();
     const registerOtelSpy = vi.fn();
@@ -369,7 +369,7 @@ describe("registerIedoraOtel", () => {
     const originalEndpoint = process.env.OTEL_EXPORTER_OTLP_ENDPOINT;
     process.env.NODE_ENV = "production";
     process.env.OTEL_EXPORTER_OTLP_ENDPOINT =
-      "http://infra-openobserve.test:5080/api/default";
+      "http://otel-collector.test:4318";
 
     vi.resetModules();
     const registerOtelSpy = vi.fn();
@@ -409,7 +409,7 @@ describe("registerIedoraOtel", () => {
   });
 
   it("does NOT wire log processors when OTLP endpoint is unset and no override is provided", async () => {
-    // Local dev without an OO instance running: the SDK should not
+    // Local dev without a collector running: the SDK should not
     // try to batch logs against a non-existent endpoint. Empty array
     // is the expected shape — @vercel/otel skips global LoggerProvider
     // installation in that case, which is fine for dev.
@@ -457,7 +457,7 @@ describe("registerIedoraOtel", () => {
     const originalEndpoint = process.env.OTEL_EXPORTER_OTLP_ENDPOINT;
     process.env.NODE_ENV = "production";
     process.env.OTEL_EXPORTER_OTLP_ENDPOINT =
-      "http://infra-openobserve.test:5080/api/default";
+      "http://otel-collector.test:4318";
 
     vi.resetModules();
     const registerOtelSpy = vi.fn();
@@ -503,18 +503,18 @@ describe("registerIedoraOtel", () => {
     }
   });
 
-  it("constructs the OTLP metric exporter with DELTA temporality (counters are sum-aggregatable)", async () => {
-    // Pinned against the OTLP exporter default (CUMULATIVE). Caught by
-    // Codex on PR #14: a CUMULATIVE counter sends process-lifetime totals
-    // on every flush, so every documented `sum(value)` query in
-    // docs/observability.md would re-count the same events for the
-    // lifetime of the container. DELTA reports "events since last flush"
-    // — sum() over a window then gives the right answer.
+  it("constructs the OTLP metric exporter with no temporality override (defaults to cumulative for Prometheus)", async () => {
+    // Prometheus is cumulative-native and the collector's prometheusremotewrite
+    // exporter SILENTLY DROPS delta counters/histograms — so we pass NO
+    // temporalityPreference, leaving the exporter's env default (CUMULATIVE,
+    // overridable via OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE). This
+    // pins against a regression back to a hardcoded DELTA (which was dropping
+    // every app metric except gauges in prod, a leftover from OpenObserve).
     const originalNodeEnv = process.env.NODE_ENV;
     const originalEndpoint = process.env.OTEL_EXPORTER_OTLP_ENDPOINT;
     process.env.NODE_ENV = "production";
     process.env.OTEL_EXPORTER_OTLP_ENDPOINT =
-      "http://infra-openobserve.test:5080/api/default";
+      "http://otel-collector.test:4318";
 
     // Spy on the exporter constructor through a module mock. Reset module
     // graph so the spy applies to the import chain register.ts uses.
@@ -562,11 +562,11 @@ describe("registerIedoraOtel", () => {
       const passedOptions = exporterSpy.mock.calls[0]?.[0] as
         | { temporalityPreference?: number }
         | undefined;
-      // AggregationTemporalityPreference.DELTA === 0 per the enum definition
-      // in @opentelemetry/exporter-metrics-otlp-proto. We assert the value
-      // explicitly because importing the enum from the mocked module is
-      // intentionally awkward; the numeric pin is the contract.
-      expect(passedOptions?.temporalityPreference).toBe(0);
+      // No temporalityPreference is passed → the exporter falls back to the env
+      // var / its cumulative default. Asserting `undefined` is the contract: any
+      // hardcoded value here would override the env and risk re-introducing the
+      // delta-drop bug.
+      expect(passedOptions?.temporalityPreference).toBeUndefined();
     } finally {
       vi.doUnmock("@opentelemetry/exporter-metrics-otlp-proto");
       process.env.NODE_ENV = originalNodeEnv;

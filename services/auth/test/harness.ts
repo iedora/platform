@@ -133,15 +133,17 @@ export const json = (body: unknown) => ({
   headers: { "content-type": "application/json" },
   body: JSON.stringify(body),
 });
-export const withCookie = (token: string) => ({ method: "POST", headers: { cookie: `iedora_refresh=${token}` } });
+/** POST body carrying the refresh token (the auth service reads it from the body now). */
+export const withRefresh = (token: string) => ({
+  method: "POST",
+  headers: { "content-type": "application/json" },
+  body: JSON.stringify({ refreshToken: token }),
+});
 export const bearer = (access: string) => ({ headers: { authorization: `Bearer ${access}` } });
 
-/** Extracts the iedora_refresh cookie value from a response's Set-Cookie. */
-export function refreshCookie(res: Response): string | undefined {
-  for (const c of res.headers.getSetCookie()) {
-    if (c.startsWith("iedora_refresh=")) return c.slice("iedora_refresh=".length).split(";")[0];
-  }
-  return undefined;
+/** The refresh token from a token-response BODY (clone so the caller can read it too). */
+export async function refreshTokenOf(res: Response): Promise<string | undefined> {
+  return ((await res.clone().json()) as { refreshToken?: string }).refreshToken;
 }
 
 /** Decodes a JWT payload (no verification) to read its claims. */
@@ -163,7 +165,7 @@ export async function registerUser(
   password = PASSWORD,
 ): Promise<{ status: number; access: string; cookie?: string }> {
   const res = await h.app.request("/auth/register", json({ email, password, name: email }));
-  const cookie = refreshCookie(res);
+  const cookie = await refreshTokenOf(res);
   const access = res.status === 200 ? ((await res.json()) as { accessToken: string }).accessToken : "";
   return { status: res.status, access, cookie };
 }

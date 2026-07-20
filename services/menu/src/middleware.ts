@@ -19,7 +19,7 @@ export interface MenuEnv {
 // requireTenant rejects a tenant-less token up front: every dashboard route reads
 // the caller's tenant.
 export const requireTenant = createMiddleware<MenuEnv>(async (c, next) => {
-  if (!c.get("user").tenantId) return c.json({ error: "tenant required" }, 403);
+  if (!c.get("user").org) return c.json({ error: "tenant required" }, 403);
   await next();
 });
 
@@ -41,7 +41,7 @@ export function scoped(deps: MenuDeps) {
     const rest = await restaurantBySlug(deps.db.db, c.req.param("slug") ?? "");
     if (!rest) throw notFound();
     const user = c.get("user");
-    if (rest.tenantId !== user.tenantId && !hasRole(user, STAFF_ROLE)) throw notFound();
+    if (rest.tenantId !== user.org && !hasRole(user, STAFF_ROLE)) throw notFound();
     c.set("restaurant", rest);
     await next();
   });

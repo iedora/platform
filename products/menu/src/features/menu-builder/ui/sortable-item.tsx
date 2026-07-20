@@ -21,6 +21,8 @@ import {
   FieldTextarea,
 } from '@iedora/ui/components/field'
 import { SectionHeader } from '@iedora/ui/components/section-header'
+import { cn } from '@iedora/ui/lib/utils'
+import { CaretDownIcon } from '@phosphor-icons/react'
 import { useTranslations } from 'next-intl'
 import { formatPrice, parsePriceCents } from '../../../shared/format'
 import { GripIcon } from './grip-icon'
@@ -60,6 +62,16 @@ import { ItemTranslations } from './item-translations'
  *     disclosure keeps the form short enough to fit the viewport without
  *     internal scrolling.
  */
+
+/** Does the dish carry anything that lives under "More options" (variants or
+ *  existing translations)? Used to decide whether that disclosure starts open. */
+function itemHasExtras(item: BuilderItem): boolean {
+  return (
+    item.variants.length > 0 ||
+    Object.keys(item.nameI18n ?? {}).length > 0 ||
+    Object.keys(item.descriptionI18n ?? {}).length > 0
+  )
+}
 
 function variantsToEditable(
   variants: ReadonlyArray<BuilderVariant>,
@@ -112,7 +124,13 @@ export function SortableItem({
   // Label of the variant row whose price failed to parse (marks that row).
   const [variantErrorLabel, setVariantErrorLabel] = useState<string | null>(null)
   const [confirmDelete, setConfirmDelete] = useState(false)
+  // "More options" disclosure (variants, translations, delete). Basics +
+  // Save stay pinned; the extras collapse so the form fits a phone without
+  // scrolling. Opens pre-expanded when the dish already carries any extras,
+  // so an edit never hides existing data behind a tap.
+  const [showMore, setShowMore] = useState(() => itemHasExtras(item))
   const errId = `item-error-${item.id}`
+  const moreId = `item-more-${item.id}`
 
   // Row-level availability toggle: flip the status badge instantly, persist in
   // the background, and let useOptimistic reconcile with server truth after the
@@ -157,6 +175,7 @@ export function SortableItem({
       setAvailable(item.available)
       setVariants(variantsToEditable(item.variants))
       setImageUrl(item.imageUrl)
+      setShowMore(itemHasExtras(item))
     }
   }
 
@@ -189,6 +208,8 @@ export function SortableItem({
     if (!cleaned.ok) {
       setError(t('itemBadVariantPrice', { label: cleaned.label }))
       setVariantErrorLabel(cleaned.label)
+      // Variants live under the disclosure — open it so the flagged row shows.
+      setShowMore(true)
       return
     }
 
@@ -322,24 +343,35 @@ export function SortableItem({
         </span>
       </button>
 
+      {/*
+        Mobile-first shell: on a phone the dialog is a full-height sheet
+        (mobileFullScreen) laid out as header / scroll / footer, so the
+        title and the Save button stay pinned while only the middle
+        scrolls — the operator never has to scroll to the bottom of a long
+        form to save. At sm+ it's the usual centered modal. The <form>
+        owns the flex column so the submit button lives in the pinned
+        footer.
+      */}
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent aria-describedby={undefined}>
-          <DialogHeader>
-            <p className="text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">
-              {t('itemEditEyebrow')}
-            </p>
-            <DialogTitle>{t('editItem')}</DialogTitle>
-          </DialogHeader>
+        <DialogContent mobileFullScreen aria-describedby={undefined}>
           <form
             onSubmit={onSave}
-            className="grid gap-6"
+            className="flex min-h-0 flex-1 flex-col"
             data-test-id={`menu-item-edit-form-${item.id}`}
           >
+            <DialogHeader className="flex-none gap-1 border-b border-border px-4 py-4 sm:px-6">
+              <p className="text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">
+                {t('itemEditEyebrow')}
+              </p>
+              <DialogTitle>{t('editItem')}</DialogTitle>
+            </DialogHeader>
+
+            <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto overscroll-contain px-4 py-5 sm:px-6">
             {/* ─── Part 1 · Dish ─────────────────────────────────────
                 The basics every dish needs: name + description in the
                 source/default language, price, availability, photo.
-                Description always lives here (source) — translations
-                of it live in Part 3 alongside the name translations. */}
+                Always visible — this is the 90% path. Description lives
+                here (source); its translations sit under More options. */}
             <section className="grid gap-4" data-test-id={`menu-item-part-dish-${item.id}`}>
               <SectionHeader title={t('partDishTitle')} hint={t('partDishHint')} />
               <Field>
@@ -427,6 +459,32 @@ export function SortableItem({
               </Field>
             </section>
 
+            {/* ─── More options ─────────────────────────────────────
+                Variants, translations, and delete collapse under one
+                disclosure so the form fits a 320px screen without
+                scrolling. Starts open when the dish already has extras
+                (see itemHasExtras) so editing never hides existing data. */}
+            <div data-test-id={`menu-item-more-${item.id}`}>
+              <button
+                type="button"
+                onClick={() => setShowMore((v) => !v)}
+                aria-expanded={showMore}
+                aria-controls={moreId}
+                className="flex w-full items-center justify-between gap-2 border-t border-border pt-4 text-left text-sm font-semibold tracking-wide text-foreground uppercase"
+                data-test-id={`menu-item-more-toggle-${item.id}`}
+              >
+                <span>{t('itemMoreOptions')}</span>
+                <CaretDownIcon
+                  aria-hidden
+                  className={cn(
+                    'size-4 shrink-0 text-muted-foreground transition-transform',
+                    showMore && 'rotate-180',
+                  )}
+                />
+              </button>
+
+              {showMore && (
+                <div id={moreId} className="grid gap-6 pt-4">
             {/* ─── Part 2 · Variants ────────────────────────────────
                 Operator-defined priced tiers — ½ dose, alcohol-free,
                 large… labels are in the default language (Part 3 will
@@ -525,6 +583,9 @@ export function SortableItem({
                 </Button>
               )}
             </section>
+                </div>
+              )}
+            </div>
 
             {error && (
               <p
@@ -536,8 +597,9 @@ export function SortableItem({
                 {error}
               </p>
             )}
+            </div>
 
-            <DialogFooter>
+            <DialogFooter className="flex-none flex-row justify-end gap-2 border-t border-border px-4 py-3 sm:px-6">
               <Button
                 type="button"
                 variant="secondary"

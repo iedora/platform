@@ -70,14 +70,14 @@ async function tryRefresh(): Promise<string | null> {
   const result = await refreshTokens(refreshToken)
   if (!result) return null
   try {
-    for (const c of authCookies(result.tokens, result.setCookies)) {
+    for (const c of authCookies(result)) {
       writeCookie(store, c)
     }
   } catch {
     // RSC context: cookies are read-only here. The new token is still
     // good for THIS request's retry; middleware persists on the next.
   }
-  return result.tokens.accessToken
+  return result.accessToken
 }
 
 function writeCookie(store: Awaited<ReturnType<typeof cookies>>, c: CookieWrite): void {

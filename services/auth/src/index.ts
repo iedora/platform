@@ -1,12 +1,11 @@
 import {
   AuditClient,
+  createMailer,
   Database,
   JwtIssuer,
   ServiceClient,
   ServiceTokenIssuer,
   expandFileSecrets,
-  isProd,
-  mailerFromConfig,
   newServiceVerifier,
   newUserVerifier,
   OutboxMailer,
@@ -46,7 +45,8 @@ const serviceVerifier = newServiceVerifier(keys.publicKey, cfg.jwtIssuer, cfg.se
 // ENQUEUE into the outbox (in the same tx as the business change) via the
 // OutboxMailer; the relay drains `email.send` rows and DELIVERS them through the
 // real transport below — chosen from config (MailHog dev / Resend prod / noop).
-const mailTransport = mailerFromConfig(cfg.smtp, { prod: isProd() });
+// Delivery transport: @iedora/email (no host → its own dev/JSON transport).
+const mailTransport = createMailer(cfg.smtp);
 const resetMailer = makeResetMailer(new OutboxMailer(db));
 
 // Audit sink: auth POSTs events to the audit service (never its DB). Auth holds

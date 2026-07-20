@@ -1,22 +1,22 @@
 import { type UserEnv, userAuth } from "@iedora/menu-kit";
 import { Hono } from "hono";
-import { getCookie } from "hono/cookie";
 
 import type { AuthDeps } from "../../deps";
-import { clearRefreshCookie, metaFrom } from "../../session";
+import { metaFrom } from "../../session";
 import { logout, logoutAll } from "./logout.service";
 
 export function logoutRoutes(deps: AuthDeps) {
   return new Hono<UserEnv>()
     .post("/logout", async (c) => {
-      const token = getCookie(c, deps.cfg.refreshCookieName);
-      if (token) await logout(deps, token, metaFrom(c));
-      clearRefreshCookie(c, deps.cfg);
+      // Refresh token in the body; the BFF clears its own cookies.
+      const body = await c.req
+        .json<{ refreshToken?: string }>()
+        .catch(() => ({}) as { refreshToken?: string });
+      if (body.refreshToken) await logout(deps, body.refreshToken, metaFrom(c));
       return c.json({ ok: true });
     })
     .post("/logout-all", userAuth(deps.userVerifier), async (c) => {
       await logoutAll(deps, c.get("user").userId, metaFrom(c));
-      clearRefreshCookie(c, deps.cfg);
       return c.json({ ok: true });
     });
 }

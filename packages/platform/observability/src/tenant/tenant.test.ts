@@ -10,7 +10,7 @@ import { IEDORA_TENANT_ID, IEDORA_RESTAURANT_ID, withTenantSpan } from "./tenant
  *   1. `fn` runs and its return value is forwarded.
  *   2. Throws are re-raised (the wrapper must not swallow).
  *   3. The attribute key constants stay stable (they're consumed by
- *      OpenObserve dashboards by literal name).
+ *      dashboards by literal name).
  */
 describe("withTenantSpan", () => {
   it("returns the wrapped function's value", async () => {

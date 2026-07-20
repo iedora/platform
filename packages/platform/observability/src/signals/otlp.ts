@@ -1,7 +1,7 @@
 // OTLP header parsing, shared by both register paths (kept dependency-free of
-// @vercel/otel so register-node.ts can use it). OpenObserve authenticates OTLP
-// ingestion with `Authorization: Basic <base64(email:password)>`, supplied via
-// the standard OTEL_EXPORTER_OTLP_HEADERS env as "Authorization=Basic%20<b64>".
+// @vercel/otel so register-node.ts can use it). Turns the standard
+// OTEL_EXPORTER_OTLP_HEADERS env ("Key=Value,Key2=Value2", values URL-decoded)
+// into a headers object — e.g. a backend that needs "Authorization=Basic%20<b64>".
 export function parseOtlpHeaders(raw: string | undefined): Record<string, string> | undefined {
   if (!raw) return undefined;
   const out: Record<string, string> = {};

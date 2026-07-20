@@ -1,22 +1,22 @@
 /**
- * The two auth cookies the Next server owns, both HttpOnly:
+ * The two auth cookies the Next server owns, both HttpOnly. The auth service
+ * returns the tokens in the JSON body (@iedora/auth-sdk TokenBundle); the BFF
+ * owns the cookies under `Path=/`:
  *
- *  - `iedora_access`  — the access JWT (15 min), mirrored out of the
- *    auth-service JSON response so middleware/RSCs can read it.
- *  - `iedora_refresh` — the opaque refresh token. The service sets it
- *    with `Path=/auth` (its own surface); we terminate the browser
- *    connection, so we re-issue it under `Path=/` with our attributes.
+ *  - `iedora_access`  — the access JWT; expires with the bundle's `expiresIn`.
+ *  - `iedora_refresh` — the opaque refresh token; the bundle carries no refresh
+ *    expiry, so the cookie gets a fixed lifetime matching the server's refresh
+ *    TTL. A refresh that outlives the server session just 401s → re-auth.
  */
 
-import type { TokenResponse } from '@iedora/contracts'
+import type { TokenBundle } from '@iedora/auth-sdk'
 
 export const ACCESS_COOKIE = 'iedora_access'
 export const REFRESH_COOKIE = 'iedora_refresh'
 
-/** JSON body of the auth endpoints (register/login/refresh) — the shared
- *  @iedora/contracts schema the auth service validates against. Re-exported
- *  for the existing consumers that import it from this module. */
-export type { TokenResponse }
+/** Fixed refresh-cookie lifetime (seconds) — matches the auth service's 30-day
+ *  refresh TTL (a shorter server session simply 401s the stale cookie). */
+const REFRESH_MAX_AGE_S = 30 * 24 * 60 * 60
 
 /** Cookie write in a shape both `cookies()` and NextResponse accept. */
 export type CookieWrite = {
@@ -27,7 +27,6 @@ export type CookieWrite = {
     secure: boolean
     sameSite: 'lax'
     path: string
-    expires?: Date
     maxAge?: number
   }
 }
@@ -39,28 +38,21 @@ const baseOptions = {
   path: '/',
 } as const
 
-/**
- * Builds the cookie writes for a successful auth response: the access
- * token (expiring with the JWT) and the refresh token extracted from
- * the auth-service `Set-Cookie` header (keeping its expiry, swapping the path).
- */
-export function authCookies(tokens: TokenResponse, setCookieHeaders: string[]): CookieWrite[] {
-  const writes: CookieWrite[] = [
+/** Builds the cookie writes for a successful auth response (a TokenBundle from
+ *  login/register/refresh). */
+export function authCookies(tokens: TokenBundle): CookieWrite[] {
+  return [
     {
       name: ACCESS_COOKIE,
       value: tokens.accessToken,
-      options: { ...baseOptions, expires: new Date(tokens.expiresAt) },
+      options: { ...baseOptions, maxAge: tokens.expiresIn },
+    },
+    {
+      name: REFRESH_COOKIE,
+      value: tokens.refreshToken,
+      options: { ...baseOptions, maxAge: REFRESH_MAX_AGE_S },
     },
   ]
-  const refresh = parseRefreshCookie(setCookieHeaders)
-  if (refresh) {
-    writes.push({
-      name: REFRESH_COOKIE,
-      value: refresh.value,
-      options: { ...baseOptions, expires: refresh.expires },
-    })
-  }
-  return writes
 }
 
 /** Cookie writes that delete both auth cookies (sign-out / dead refresh). */
@@ -72,25 +64,3 @@ export function clearedAuthCookies(): CookieWrite[] {
   }))
 }
 
-/** Pulls the refresh token value + expiry out of the auth-service Set-Cookie headers. */
-function parseRefreshCookie(headers: string[]): { value: string; expires?: Date } | null {
-  for (const header of headers) {
-    const [pair, ...attrs] = header.split(';')
-    const eq = (pair ?? '').indexOf('=')
-    if (eq < 0) continue
-    const name = pair!.slice(0, eq).trim()
-    if (name !== REFRESH_COOKIE) continue
-    const value = pair!.slice(eq + 1).trim()
-    if (!value) return null // cleared cookie
-    let expires: Date | undefined
-    for (const attr of attrs) {
-      const [k, v] = attr.split('=')
-      if (k?.trim().toLowerCase() === 'expires' && v) {
-        const d = new Date(v)
-        if (!Number.isNaN(d.getTime())) expires = d
-      }
-    }
-    return { value, expires }
-  }
-  return null
-}

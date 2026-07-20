@@ -88,10 +88,11 @@ export class OutboxWriter<DB> implements Auditor {
   }
 }
 
-/** A {@link Mailer} whose `send` ENQUEUES the email into the same outbox (and the
- *  caller's transaction) instead of delivering it, so a request enqueues the
- *  email atomically with its business change and the relay delivers it later. */
-export class OutboxMailer<DB> implements Mailer {
+/** ENQUEUES an email into the same outbox (and the caller's transaction) instead
+ *  of delivering it — so a request enqueues the email atomically with its business
+ *  change and the relay delivers it later via @iedora/email's handler. The enqueue
+ *  side isn't an @iedora/email Mailer (no SMTP transport); it just needs `send`. */
+export class OutboxMailer<DB> {
   constructor(private readonly database: Database<DB>) {}
 
   async send(msg: EmailMessage): Promise<void> {
@@ -113,10 +114,9 @@ export function relayHandlers(opts: {
   const handlers: Record<string, Handler> = {
     [AUDIT_TOPIC]: (msg) => opts.audit.ingest([{ messageId: msg.id, payload: msg.payload }]),
   };
-  if (opts.mailer) {
-    const mailer = opts.mailer;
-    handlers[EMAIL_TOPIC] = (msg) => mailer.send(msg.payload as unknown as EmailMessage);
-  }
+  // @iedora/email's Mailer ships a message-handler that sends the payload as an
+  // email — register it directly for the email topic (no custom send wrapper).
+  if (opts.mailer) handlers[EMAIL_TOPIC] = opts.mailer.handler;
   return handlers;
 }
 

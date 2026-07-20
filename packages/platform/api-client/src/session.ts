@@ -24,7 +24,7 @@ export function sessionFromToken(token: string): Session | null {
   if (claims.exp * 1000 <= Date.now()) return null
   return {
     userId: claims.sub,
-    tenantId: claims.tid ?? null,
+    tenantId: claims.org ?? null,
     roles: claims.roles ?? [],
     email: claims.email ?? null,
     mustChangePassword: claims.mcp === true,
@@ -59,10 +59,10 @@ export async function getSession(): Promise<Session | null> {
 
   const result = await refreshTokens(refreshToken)
   if (!result) return null
-  for (const c of authCookies(result.tokens, result.setCookies)) {
+  for (const c of authCookies(result)) {
     store.set(c.name, c.value, c.options)
   }
-  return sessionFromToken(result.tokens.accessToken)
+  return sessionFromToken(result.accessToken)
 }
 
 /**

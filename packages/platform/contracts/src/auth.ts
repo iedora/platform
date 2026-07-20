@@ -7,6 +7,10 @@ import { z } from "zod";
 export const tokenResponse = z.object({
   accessToken: z.string(),
   expiresAt: z.string(), // RFC3339
+  // The refresh token is returned in the BODY (auth-sdk TokenBundle style); the
+  // BFF owns the cookie. `refreshExpiresAt` lets the BFF set the cookie lifetime.
+  refreshToken: z.string(),
+  refreshExpiresAt: z.string(), // RFC3339
   userId: z.string(),
   tenantId: z.string().optional(),
   // Set after a sign-in when an admin has flagged the account: the client must
@@ -187,7 +191,8 @@ export type ServiceTokenResponse = z.infer<typeof serviceTokenResponse>;
 // Access-token claims (EdDSA).
 export const accessClaims = z.object({
   sub: z.string(),
-  tid: z.string().optional(),
+  tenant: z.string().optional(),
+  org: z.string().optional(),
   sid: z.string().optional(),
   roles: z.array(z.string()).default([]),
   email: z.string().optional(),

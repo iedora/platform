@@ -2,7 +2,6 @@ import { randomUUID } from "node:crypto";
 
 import { type AuditEvent, type Auditor, newRefreshToken } from "@iedora/menu-kit";
 import type { Context } from "hono";
-import { deleteCookie, setCookie } from "hono/cookie";
 
 import type { AuthConfig } from "./config";
 import type { NewSession, Session } from "./data/sessions";
@@ -49,6 +48,8 @@ export interface Tokens {
   refreshToken: string;
   refreshExpiresAt: Date;
   userId: string;
+  email: string;
+  name: string | null;
   tenantId: string;
   /** True when the account is flagged for a forced password change — the client
    *  routes the user to the change-password screen after this sign-in. */
@@ -119,7 +120,10 @@ export async function mintTokens(
   const accessToken = await deps.issuer.issueAccess({
     userId: user.id,
     email: user.email,
-    tenantId: tenantId ?? undefined,
+    // auth-sdk claim vocabulary: `tenant` = the product slug, `org` = the active
+    // organization (menu's restaurant tenant).
+    tenant: "menu",
+    org: tenantId ?? undefined,
     sessionId: familyId,
     roles: user.role ? [user.role] : [],
     mustChangePassword: user.must_change_password,
@@ -130,39 +134,36 @@ export async function mintTokens(
     refreshToken,
     refreshExpiresAt,
     userId: user.id,
+    email: user.email,
+    name: user.name,
     tenantId: tenantId ?? "",
     mustChangePassword: user.must_change_password,
   };
 }
 
-/** The JSON body returned by token-minting endpoints (matches @iedora/contracts tokenResponse). */
-export function tokenJson(t: Tokens): {
+/** The @iedora/auth-sdk TokenBundle — what /refresh returns. `tenantId` + `mcp`
+ *  are NOT in the body; the BFF reads them from the access-token claims. */
+export function tokenBundle(t: Tokens): {
   accessToken: string;
-  expiresAt: string;
-  userId: string;
-  tenantId?: string;
-  mustChangePassword?: boolean;
+  refreshToken: string;
+  tokenType: "Bearer";
+  expiresIn: number;
 } {
   return {
     accessToken: t.accessToken,
-    expiresAt: t.accessExpiresAt.toISOString(),
-    userId: t.userId,
-    ...(t.tenantId ? { tenantId: t.tenantId } : {}),
-    ...(t.mustChangePassword ? { mustChangePassword: true } : {}),
+    refreshToken: t.refreshToken,
+    tokenType: "Bearer",
+    expiresIn: Math.max(0, Math.round((t.accessExpiresAt.getTime() - Date.now()) / 1000)),
   };
 }
 
-export function setRefreshCookie(c: Context, cfg: AuthConfig, token: string, expires: Date): void {
-  setCookie(c, cfg.refreshCookieName, token, {
-    path: "/auth",
-    httpOnly: true,
-    secure: cfg.cookieSecure,
-    sameSite: "Lax",
-    domain: cfg.cookieDomain || undefined,
-    expires,
-  });
+/** The @iedora/auth-sdk AuthSession — what /login and /register return. */
+export function authSession(t: Tokens): {
+  user: { id: string; email: string; name: string | null };
+} & ReturnType<typeof tokenBundle> {
+  return {
+    user: { id: t.userId, email: t.email, name: t.name },
+    ...tokenBundle(t),
+  };
 }
 
-export function clearRefreshCookie(c: Context, cfg: AuthConfig): void {
-  deleteCookie(c, cfg.refreshCookieName, { path: "/auth", domain: cfg.cookieDomain || undefined });
-}

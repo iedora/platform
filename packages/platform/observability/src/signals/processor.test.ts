@@ -64,9 +64,9 @@ describe("TenantContextSpanProcessor", () => {
 
     const [exported] = exporter.getFinishedSpans();
     expect(exported?.attributes[IEDORA_RESTAURANT_ID]).toBe("r_no_org");
-    // Important: omit, not set-to-undefined. OpenObserve treats undefined
-    // attributes as the literal string "undefined" in dashboards — would
-    // show up as a fake "(undefined)" bucket on every org-grouped chart.
+    // Important: omit, not set-to-undefined. A stringified `undefined`
+    // attribute would show up as a fake "(undefined)" bucket on every
+    // org-grouped dashboard chart.
     expect(IEDORA_TENANT_ID in (exported?.attributes ?? {})).toBe(false);
   });
 

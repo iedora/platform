@@ -50,12 +50,14 @@ function mockRefreshOk(newRefresh = 'rt2', newAccess = accessToken(future())) {
   const f = vi.fn(async () => ({
     ok: true,
     status: 200,
-    json: async () => ({ accessToken: newAccess, expiresAt: new Date(Date.now() + 9e5).toISOString(), userId: 'u1' }),
-    headers: {
-      getSetCookie: () => [
-        `${REFRESH_COOKIE}=${newRefresh}; Path=/auth; Expires=${new Date(Date.now() + 30 * 864e5).toUTCString()}; HttpOnly; SameSite=Lax`,
-      ],
-    },
+    json: async () => ({
+      accessToken: newAccess,
+      expiresAt: new Date(Date.now() + 9e5).toISOString(),
+      refreshToken: newRefresh,
+      refreshExpiresAt: new Date(Date.now() + 30 * 864e5).toISOString(),
+      userId: 'u1',
+    }),
+    headers: { getSetCookie: () => [] },
   }))
   vi.stubGlobal('fetch', f)
   return f
@@ -65,6 +67,7 @@ function mockRefreshDead() {
     ok: false,
     status: 401,
     statusText: 'Unauthorized',
+    json: async () => ({ error: 'dead' }),
     text: async () => JSON.stringify({ error: 'dead' }),
     headers: { getSetCookie: () => [] },
   }))
@@ -226,8 +229,14 @@ test('serverFetch refreshes on a 401 and retries with the rotated token', async 
       return {
         ok: true,
         status: 200,
-        json: async () => ({ accessToken: accessToken(future()), expiresAt: new Date(Date.now() + 9e5).toISOString(), userId: 'u1' }),
-        headers: { getSetCookie: () => [`${REFRESH_COOKIE}=rt2; Path=/auth; HttpOnly; SameSite=Lax`] },
+        json: async () => ({
+          accessToken: accessToken(future()),
+          expiresAt: new Date(Date.now() + 9e5).toISOString(),
+          refreshToken: 'rt2',
+          refreshExpiresAt: new Date(Date.now() + 30 * 864e5).toISOString(),
+          userId: 'u1',
+        }),
+        headers: { getSetCookie: () => [] },
       }
     }
     menuCalls += 1

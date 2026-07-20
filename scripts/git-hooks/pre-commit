@@ -1,12 +1,20 @@
 #!/usr/bin/env bash
-# Pre-commit hook — mirrors the [security] Workflow policy CI job locally.
-# Runs actionlint on ALL workflow files + shellcheck on ALL CI scripts.
+# Pre-commit hook — local mirror of the CI policy gates.
+#   Gate: actionlint on CI workflow files.
 # Installed by `bun install` (via root postinstall script).
 set -euo pipefail
 
 [ -n "${CI:-}" ] && exit 0
 
-# ── Step 1: ensure actionlint is on PATH (download if missing, like CI) ──
+changed=$(git diff --cached --name-only --diff-filter=ACM)
+
+# ── Gate: actionlint on CI files ──
+ci_changed=$(echo "$changed" | grep -E '^\.gitea/(workflows|actions)/' || true)
+if [ -z "$ci_changed" ]; then
+  exit 0
+fi
+
+# Ensure actionlint is on PATH (download if missing, like CI).
 if ! command -v actionlint &>/dev/null; then
   if [ -f ./actionlint ]; then
     PATH="$PWD:$PATH"
@@ -17,16 +25,9 @@ if ! command -v actionlint &>/dev/null; then
   fi
 fi
 
-# ── Step 2: only run when CI files changed ──
-changed=$(git diff --cached --name-only --diff-filter=ACM | grep -E '^\.gitea/(workflows|actions)/' || true)
-if [ -z "$changed" ]; then
-  exit 0
-fi
-
 echo "pre-commit: linting CI files..."
-echo "$changed" | while read -r f; do echo "  $f"; done
+echo "$ci_changed" | while read -r f; do echo "  $f"; done
 
-# ── Step 3: actionlint ALL workflow files ──
 # -config-file explícito: actionlint auto-detecta project root via
 # .github/workflows/ que não temos (estamos em .gitea/), por isso o
 # config co-habita com os workflows: .gitea/actionlint.yaml.

@@ -11,7 +11,8 @@
 /** Claims minted by the auth service. */
 export type AccessClaims = {
   sub: string // user id
-  tid?: string // active tenant id (absent until the user has one)
+  tenant?: string // product slug
+  org?: string // active organization id (absent until the user has one)
   sid?: string // session family id
   roles?: string[]
   email?: string

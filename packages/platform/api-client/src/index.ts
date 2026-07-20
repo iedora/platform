@@ -5,7 +5,6 @@ export {
   authCookies,
   clearedAuthCookies,
   type CookieWrite,
-  type TokenResponse,
 } from './cookies'
 export { ApiError } from './error'
 export {
@@ -20,7 +19,7 @@ export {
   changePassword,
   mySessions,
   revokeMyDevice,
-  type AuthResult,
 } from './auth-api'
+export type { AuthSession, TokenBundle } from '@iedora/auth-sdk'
 export { getSession, sessionFromToken, type Session } from './session'
 export { serverFetch, apiJson } from './server-fetch'

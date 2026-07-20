@@ -120,15 +120,14 @@ export function loadConfig(): AuthConfig {
 // SMTP from env. `SMTP_SECURE` defaults to true only on the implicit-TLS port
 // (465); MailHog (1025) and STARTTLS (587) are non-secure. `SMTP_USER` empty =
 // no auth (MailHog).
+// @iedora/email's createMailer derives implicit TLS from port 465 itself, so
+// there's no `secure` to set here.
 function loadSmtp(): SmtpConfig {
-  const port = Number(env("SMTP_PORT", "587"));
-  const secureRaw = env("SMTP_SECURE", "");
   return {
     host: env("SMTP_HOST", ""),
-    port,
+    port: Number(env("SMTP_PORT", "587")),
     user: env("SMTP_USER", ""),
     pass: env("SMTP_PASS", ""),
-    secure: secureRaw ? secureRaw === "true" : port === 465,
     from: env("MAIL_FROM", "iedora <no-reply@iedora.com>"),
   };
 }

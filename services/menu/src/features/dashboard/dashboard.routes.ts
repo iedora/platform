@@ -14,7 +14,7 @@ export function dashboardRoutes(deps: MenuDeps) {
   const db = () => deps.db.db;
   return new Hono<MenuEnv>()
     .get("/restaurants", async (c) =>
-      c.json({ restaurants: await listRestaurantsWithCounts(db(), c.get("user").tenantId!) }),
+      c.json({ restaurants: await listRestaurantsWithCounts(db(), c.get("user").org!) }),
     )
     .post(
       "/restaurants",
@@ -23,15 +23,15 @@ export function dashboardRoutes(deps: MenuDeps) {
         const user = c.get("user");
         await deps.limiter.allow("onboarding", `user:${user.userId}`);
         const { name, defaultLanguage } = c.req.valid("json");
-        const rest = await createRestaurant(deps, user.tenantId!, user.userId, name, defaultLanguage ?? "");
+        const rest = await createRestaurant(deps, user.org!, user.userId, name, defaultLanguage ?? "");
         return c.json(rest);
       },
     )
-    .get("/plan", async (c) => c.json(await deps.plans.plan(c.get("user").tenantId!)))
+    .get("/plan", async (c) => c.json(await deps.plans.plan(c.get("user").org!)))
     .get("/analytics", async (c) =>
-      c.json(await analytics(db(), c.get("user").tenantId!, c.req.query("range") ?? "", new Date())),
+      c.json(await analytics(db(), c.get("user").org!, c.req.query("range") ?? "", new Date())),
     )
     .get("/views/month", async (c) =>
-      c.json({ count: await monthlyViews(db(), c.get("user").tenantId!, new Date()) }),
+      c.json({ count: await monthlyViews(db(), c.get("user").org!, new Date()) }),
     );
 }

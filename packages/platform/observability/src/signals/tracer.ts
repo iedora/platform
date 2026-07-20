@@ -9,8 +9,8 @@ import { trace, type Tracer } from "@opentelemetry/api";
  *   await tracer.startActiveSpan('publish-menu', async (span) => { ... })
  *
  * The tracer name `iedora` is what the iedora-emitted spans get tagged
- * with under `otel.scope.name` — useful in OpenObserve when filtering
- * iedora's own spans away from Next 16's auto-instrumented ones.
+ * with under `otel.scope.name` — useful when filtering iedora's own spans
+ * away from Next 16's auto-instrumented ones.
  *
  * Before `registerIedoraOtel()` runs, this is the global no-op tracer
  * from `@opentelemetry/api` (safe to use, just doesn't emit).

@@ -9,16 +9,10 @@
 // backend entirely.
 import { trace, metrics } from "@opentelemetry/api";
 import { logs } from "@opentelemetry/api-logs";
-// Proto here too, for consistency with the trace exporter below — not
-// because metrics-JSON was observed failing against OpenObserve (it wasn't;
-// tested clean in isolation). One serializer end-to-end reduces the surface
-// for a repeat of the trace-JSON deserializer bug turning up here later.
-// AggregationTemporalityPreference is a plain numeric enum (DELTA=0,
-// CUMULATIVE=1, LOWMEMORY=2) that only the -http package happens to export —
-// the -proto package re-exports just OTLPMetricExporter. Importing the enum
-// from -http has no runtime/transport implication; it's the same values
-// either way, so -http stays a dependency for this import alone.
-import { AggregationTemporalityPreference } from "@opentelemetry/exporter-metrics-otlp-http";
+// Proto here too, for consistency with the trace exporter below — one
+// serializer end-to-end. Metric temporality is left to the exporter's env
+// default (CUMULATIVE): no `temporalityPreference` is passed, so it honors
+// OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE — see the reader below.
 import { OTLPMetricExporter } from "@opentelemetry/exporter-metrics-otlp-proto";
 import { OTLPLogExporter } from "@opentelemetry/exporter-logs-otlp-http";
 import { PinoInstrumentation } from "@opentelemetry/instrumentation-pino";
@@ -77,7 +71,7 @@ export type RegisterOptions = {
   /**
    * Required. The per-product service name (e.g. `iedora-menu`, `iedora-genkan`).
    * Becomes the `service.name` resource attribute on every emitted span; this
-   * is what OpenObserve uses to group spans by product.
+   * is what the backend (Grafana/Tempo/Prometheus) uses to group by product.
    */
   serviceName: string;
   /**
@@ -144,7 +138,7 @@ export type RegisterOptions = {
  *     tenant.restaurant_id / tenant.organization_id from the active
  *     Context onto every span — see processor.ts.
  *   - Metrics via PeriodicExportingMetricReader + OTLPMetricExporter,
- *     DELTA temporality (load-bearing for OpenObserve sum() queries).
+ *     CUMULATIVE temporality (Prometheus-native; the collector drops delta).
  *   - Logs via BatchLogRecordProcessor + OTLPLogExporter, plus
  *     PinoInstrumentation bridging pino records to the global
  *     LoggerProvider (injects trace_id/span_id automatically).
@@ -173,7 +167,7 @@ export function registerIedoraOtel(opts: RegisterOptions): void {
     // Visible at boot, not on every request. Without an OTLP endpoint
     // @vercel/otel falls back to a no-op (off-Vercel), so traces AND
     // metrics AND logs silently vanish. One line in the logs is cheaper
-    // than wondering why OpenObserve is empty. The `metricReaders` /
+    // than wondering why Grafana is empty. The `metricReaders` /
     // `logRecordProcessors` escape hatches suppress the warning for
     // tests that inject a reader/processor.
     console.warn(
@@ -203,22 +197,19 @@ export function registerIedoraOtel(opts: RegisterOptions): void {
   // is "[]" by default. The exporter consults OTEL_EXPORTER_OTLP_ENDPOINT
   // and OTEL_EXPORTER_OTLP_HEADERS itself.
   //
-  // `temporalityPreference: DELTA` is load-bearing. The OTLP exporter
-  // defaults to CUMULATIVE — every 60s flush would resend the
-  // process-lifetime counter total, and the documented `sum(value)` queries
-  // in docs/observability.md would re-count the same events on every
-  // flush until the process restarts. DELTA exports only "events since
-  // last flush" — sum() over a window then gives the right answer. Per
-  // the OTLP metrics spec, DELTA is the recommended preference for
-  // dashboards that aggregate via sum(). Pinned here against the default.
+  // Temporality is CUMULATIVE — the OTLP exporter's default, kept by passing NO
+  // `temporalityPreference` so it stays env-overridable via
+  // OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE. Cumulative is required for
+  // a Prometheus backend: the collector's prometheusremotewrite exporter SILENTLY
+  // DROPS delta counters/histograms, so the previous hardcoded DELTA (a leftover
+  // from the dead OpenObserve backend) was discarding every app metric except
+  // gauges. `rate()`/`increase()` in the dashboards assume cumulative counters.
   const metricReaders =
     opts.metricReaders ??
     (process.env.OTEL_EXPORTER_OTLP_ENDPOINT
       ? [
           new PeriodicExportingMetricReader({
-            exporter: new OTLPMetricExporter({
-              temporalityPreference: AggregationTemporalityPreference.DELTA,
-            }),
+            exporter: new OTLPMetricExporter(),
             exportIntervalMillis:
               opts.metricExportIntervalMs ?? DEFAULT_METRIC_EXPORT_INTERVAL_MS,
           }),
@@ -232,8 +223,8 @@ export function registerIedoraOtel(opts: RegisterOptions): void {
   // finds the global provider on first emit. The Batch processor is
   // important: BatchLogRecordProcessor flushes at most every 5s by
   // default vs SimpleLogRecordProcessor's per-record export — at our
-  // log volume the difference is the difference between OO ingest
-  // keeping up and not.
+  // log volume the difference is the difference between the collector's
+  // ingest keeping up and not.
   const logRecordProcessors =
     opts.logRecordProcessors ??
     (process.env.OTEL_EXPORTER_OTLP_ENDPOINT
@@ -256,14 +247,15 @@ export function registerIedoraOtel(opts: RegisterOptions): void {
   // standard OTEL_EXPORTER_OTLP_ENDPOINT/v1/traces. @vercel/otel's "auto"
   // default is supposed to construct this when the env var is set, but
   // in practice (non-Vercel runtime, plain Node + Next 16 dev) it skips
-  // wiring traces silently — only /v1/metrics POSTs landed in OO until
-  // we set the exporter explicitly. Pinned to remove the ambiguity.
+  // wiring traces silently — only /v1/metrics POSTs reached the collector
+  // until we set the exporter explicitly. Pinned to remove the ambiguity.
   //
   // Headers: the metrics exporter picks up OTEL_EXPORTER_OTLP_HEADERS
   // automatically via its env-driven config; the @vercel/otel trace
   // exporter does NOT — it needs an explicit `headers` map. Parse the
-  // standard `Key=Value,Key2=Value2` shape ourselves so OO Basic-Auth
-  // headers reach the trace ingest endpoint and we don't get 401s.
+  // standard `Key=Value,Key2=Value2` shape ourselves so any auth header
+  // (prod uses one; local doesn't) reaches the trace ingest endpoint and
+  // we don't get 401s.
   const traceExporter = process.env.OTEL_EXPORTER_OTLP_ENDPOINT
     ? new OTLPHttpProtoTraceExporter({
         url: `${process.env.OTEL_EXPORTER_OTLP_ENDPOINT.replace(/\/$/, "")}/v1/traces`,

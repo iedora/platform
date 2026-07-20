@@ -16,10 +16,6 @@ export {
   shutdownIedoraOtel,
   type RegisterOptions,
 } from "./register";
-export {
-  registerIedoraOtelNode,
-  type RegisterNodeOptions,
-} from "./register-node";
 export { tracer } from "./signals/tracer";
 export { meter } from "./signals/meter";
 export { logger } from "./signals/logger";

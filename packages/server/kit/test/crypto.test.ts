@@ -28,7 +28,7 @@ test("JwtIssuer mints an EdDSA access token verifiable via its JWKS", async () =
   const token = await issuer.issueAccess({
     userId: "u-1",
     email: "a@b.c",
-    tenantId: "t-1",
+    org: "t-1",
     roles: ["staff"],
   });
 
@@ -39,7 +39,7 @@ test("JwtIssuer mints an EdDSA access token verifiable via its JWKS", async () =
   });
   expect(payload.sub).toBe("u-1");
   expect(payload.typ).toBe("access");
-  expect(payload.tid).toBe("t-1");
+  expect(payload.org).toBe("t-1");
   expect(payload.roles).toEqual(["staff"]);
 
   // JWKS is well-formed and its key matches the dev public key (cross-verify).
