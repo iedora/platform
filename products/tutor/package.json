@@ -1,0 +1,25 @@
+{
+  "name": "@iedora/product-tutor",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Tutor product — UI slices + shared domain over the tutor service (services/tutor in the tutor-marketplace repo). Being migrated into the platform monorepo as the tutor surface; routes live in apps/web/src/app/tutor/. This package starts with the pure display domain (pricing/status/time + enums) the UI needs.",
+  "exports": {
+    ".": "./src/index.ts",
+    "./enums": "./src/enums.ts",
+    "./domain/pricing": "./src/domain/pricing.ts",
+    "./domain/status": "./src/domain/status.ts",
+    "./domain/time": "./src/domain/time.ts"
+  },
+  "scripts": {
+    "typecheck": "tsgo --build",
+    "lint": "eslint --cache --cache-location node_modules/.cache/.eslintcache"
+  },
+  "devDependencies": {
+    "@iedora/eslint-config": "workspace:*",
+    "@types/node": "^22.19.19",
+    "eslint": "catalog:",
+    "typescript": "catalog:",
+    "typescript-eslint": "catalog:"
+  }
+}
