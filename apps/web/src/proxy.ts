@@ -1,10 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { publicUrl } from '@iedora/product-menu/shared/url'
-import { signInUrl } from '@iedora/product-menu/shared/auth-urls'
-import { resolveAuth, applyCookies } from '@iedora/api-client/middleware'
+import { resolveRefresh, applyCookieWrites } from '@iedora/auth-sdk-nextjs/middleware'
 import { surfaces, surfaceByHost } from './generated/surfaces'
-
-const protectedPrefixes = ['/menu/dashboard', '/menu/onboarding']
+import { surfaceAuthFor, surfaceSignInUrl } from './surface-auth'
 
 /**
  * Three jobs in order of precedence:
@@ -99,23 +97,26 @@ export default async function proxy(req: NextRequest) {
     return new NextResponse('Not Found', { status: 404 })
   }
 
-  // 3. Auth gate on the INTERNAL path (covers rewritten visits too).
-  const isProtected = protectedPrefixes.some((p) => internalPath.startsWith(p))
-  if (!isProtected) {
+  // 3. Auth gate on the INTERNAL path (covers rewritten visits too). Per-surface:
+  //    each surface refreshes its OWN cookie/tenant via the shared resolveRefresh
+  //    primitive — the one place a page-load refresh happens (RSCs can't set
+  //    cookies), so downstream server components always read a valid token.
+  const sa = surfaceAuthFor(internalPath)
+  const isProtected = sa?.protectedPrefixes.some((p) => internalPath.startsWith(p)) ?? false
+  if (!sa || !isProtected) {
     return respond(req, internalPath, rewrite)
   }
 
-  const auth = await resolveAuth(req)
-  if (!auth.session) {
-    // Redirect to the menu surface's sign-in. `next` is an
-    // absolute URL on THIS host (built via publicUrl) so after auth the
-    // user lands back on the protected route they tried to reach.
-    const res = NextResponse.redirect(signInUrl(publicUrl(path).toString()))
-    return applyCookies(res, auth.cookieWrites) // clears dead cookies
+  const auth = await resolveRefresh(sa.config, req)
+  if (!auth.access) {
+    // No session → the surface's sign-in, with `next` (an absolute URL on THIS
+    // host) so after auth the user lands back on the route they tried to reach.
+    const res = NextResponse.redirect(surfaceSignInUrl(sa, publicUrl(path).toString()))
+    return applyCookieWrites(res, auth.cookieWrites) // also clears dead cookies
   }
 
   const res = respond(req, internalPath, rewrite, auth.requestHeaders)
-  return applyCookies(res, auth.cookieWrites)
+  return applyCookieWrites(res, auth.cookieWrites)
 }
 
 /** Builds the pass-through/rewrite response, optionally swapping the
