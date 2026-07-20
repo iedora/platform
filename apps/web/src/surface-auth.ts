@@ -8,7 +8,13 @@ import { PRODUCTS, type ProductId, productUrl } from "@iedora/brand"
 //
 // One auth convention for all surfaces: @iedora/auth-sdk-nextjs + an AuthNextConfig.
 
-const AUTH_BASE = process.env.AUTH_URL ?? process.env.AUTH_BASE_URL ?? "http://localhost:4000"
+// Each surface can target a DIFFERENT auth service — menu authenticates against
+// the menu backend's auth role (AUTH_URL, tenant "auth", cookie iedora_access);
+// tutor against the standalone iedora-auth (AUTH_BASE_URL, tenant "tutor", cookie
+// tutor_access). They share nothing (separate user pools), so keep the base URLs
+// per-surface rather than one shared value.
+const MENU_AUTH = process.env.AUTH_URL ?? "http://localhost:4000"
+const TUTOR_AUTH = process.env.AUTH_BASE_URL ?? process.env.AUTH_URL ?? "http://localhost:4000"
 
 export type SurfaceAuth = {
   productId: ProductId
@@ -20,12 +26,12 @@ export type SurfaceAuth = {
 export const SURFACE_AUTH: Record<string, SurfaceAuth> = {
   [PRODUCTS.menu]: {
     productId: PRODUCTS.menu,
-    config: { baseUrl: AUTH_BASE, tenant: "auth", cookiePrefix: "iedora" },
+    config: { baseUrl: MENU_AUTH, tenant: "auth", cookiePrefix: "iedora" },
     protectedPrefixes: ["/menu/dashboard", "/menu/onboarding"],
   },
   [PRODUCTS.tutor]: {
     productId: PRODUCTS.tutor,
-    config: { baseUrl: AUTH_BASE, tenant: "tutor", cookiePrefix: "tutor" },
+    config: { baseUrl: TUTOR_AUTH, tenant: "tutor", cookiePrefix: "tutor" },
     protectedPrefixes: [
       "/tutor/chat",
       "/tutor/lessons",
