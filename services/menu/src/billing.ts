@@ -6,7 +6,7 @@
 
 import { BillingClient as SdkBillingClient } from "@iedora/billing-sdk";
 import type { Invoice, Subscription } from "@iedora/contracts";
-import { ServiceTokenSource, type TokenSource } from "@iedora/menu-kit";
+import { ServiceTokenSource, type TokenSource } from "@iedora/auth-sdk/tokens";
 
 // Re-exported for existing local importers (audit-read, auth-client, index).
 export { ServiceTokenSource };
