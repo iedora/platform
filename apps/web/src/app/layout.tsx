@@ -3,6 +3,7 @@ import {
   Geist_Mono,
   Inter,
   Lora,
+  Nunito_Sans,
   Playfair_Display,
   Plus_Jakarta_Sans,
   Space_Grotesk,
@@ -54,6 +55,11 @@ const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
 });
 
+// The base brand voice (tutor): Nunito Sans for display + body + UI, Geist Mono
+// for meta. Repointing the semantic --sans/--display/--serif vars here applies
+// tutor's typography to every surface without changing any component.
+const nunitoSans = Nunito_Sans({ variable: "--font-nunito-sans", subsets: ["latin"] });
+
 // Root layout serves every surface (menu / house) —
 // the title/description here are the brand-level fallbacks. Each
 // surface's pages override via their own `export const metadata` so
@@ -76,14 +82,14 @@ export default async function RootLayout({
     <html
       suppressHydrationWarning
       lang={locale}
-      className={`${geistMono.variable} ${playfair.variable} ${lora.variable} ${inter.variable} ${plusJakarta.variable} ${spaceGrotesk.variable} h-full antialiased`}
+      className={`${geistMono.variable} ${playfair.variable} ${lora.variable} ${inter.variable} ${plusJakarta.variable} ${spaceGrotesk.variable} ${nunitoSans.variable} h-full antialiased`}
       style={{
         ["--display" as string]:
-          "var(--font-plus-jakarta), 'Helvetica Neue', Helvetica, Arial, sans-serif",
+          "var(--font-nunito-sans), 'Helvetica Neue', Helvetica, Arial, sans-serif",
         ["--serif" as string]:
-          "var(--font-inter), 'Helvetica Neue', Helvetica, Arial, sans-serif",
+          "var(--font-nunito-sans), 'Helvetica Neue', Helvetica, Arial, sans-serif",
         ["--sans" as string]:
-          "var(--font-inter), 'Helvetica Neue', Helvetica, Arial, sans-serif",
+          "var(--font-nunito-sans), 'Helvetica Neue', Helvetica, Arial, sans-serif",
         ["--mono" as string]:
           "var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, monospace",
       }}
