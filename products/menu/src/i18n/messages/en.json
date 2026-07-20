@@ -419,6 +419,7 @@
     "partVariantsHint": "optional",
     "partTranslationsTitle": "Translations",
     "partTranslationsHint": "for each language other than the default",
+    "itemMoreOptions": "More options",
     "translationPlaceholder": "translation for {lang}",
     "itemVariantLabelTranslationAria": "Translation of \"{label}\" into {lang}",
     "itemVariantTranslationsHint": "Leave blank to fall back to the source label.",

@@ -419,6 +419,7 @@
     "partVariantsHint": "opcional",
     "partTranslationsTitle": "Traduções",
     "partTranslationsHint": "para cada idioma além do predefinido",
+    "itemMoreOptions": "Mais opções",
     "translationPlaceholder": "tradução para {lang}",
     "itemVariantLabelTranslationAria": "Tradução de \"{label}\" para {lang}",
     "itemVariantTranslationsHint": "Deixa em branco para usar a etiqueta original como fallback.",

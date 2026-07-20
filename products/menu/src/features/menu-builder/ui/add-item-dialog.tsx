@@ -142,18 +142,22 @@ export function AddItemDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent aria-describedby={undefined}>
-        <DialogHeader>
-          <p className="text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">
-            {categoryName}
-          </p>
-          <DialogTitle>{t('addItemTitle')}</DialogTitle>
-        </DialogHeader>
+      {/* Mobile-first: full-height sheet on phones (pinned header + footer,
+          scrolling middle) so the Add button stays reachable during
+          batch entry; centered modal at sm+. */}
+      <DialogContent mobileFullScreen aria-describedby={undefined}>
         <form
           onSubmit={onSubmit}
-          className="grid gap-4"
+          className="flex min-h-0 flex-1 flex-col"
           data-test-id={`menu-add-item-form-${categoryId}`}
         >
+          <DialogHeader className="flex-none gap-1 border-b border-border px-4 py-4 sm:px-6">
+            <p className="text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">
+              {categoryName}
+            </p>
+            <DialogTitle>{t('addItemTitle')}</DialogTitle>
+          </DialogHeader>
+          <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overscroll-contain px-4 py-5 sm:px-6">
           <Field>
             <FieldLabel htmlFor={nameInputId}>{t('addItemName')}</FieldLabel>
             <FieldInput
@@ -210,7 +214,8 @@ export function AddItemDialog({
               {error}
             </p>
           )}
-          <DialogFooter>
+          </div>
+          <DialogFooter className="flex-none flex-row justify-end gap-2 border-t border-border px-4 py-3 sm:px-6">
             <Button
               type="button"
               variant="secondary"
