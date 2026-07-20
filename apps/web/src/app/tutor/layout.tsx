@@ -1,4 +1,11 @@
 import { Toaster } from "@iedora/product-tutor/components/toaster"
+import type { Metadata } from "next"
+
+// The tutor surface's PWA manifest is served by a route handler (Next's root-only
+// app/manifest.ts can't be per-surface); link it here for the tutor pages.
+export const metadata: Metadata = {
+  manifest: "/manifest.webmanifest",
+}
 
 // The tutor surface. Marks the subtree for per-surface theming (inherits the
 // shared tutor base today; override under `[data-surface="tutor"]` in globals.css

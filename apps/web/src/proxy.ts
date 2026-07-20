@@ -115,8 +115,30 @@ export default async function proxy(req: NextRequest) {
     return applyCookieWrites(res, auth.cookieWrites) // also clears dead cookies
   }
 
+  // Vantage (the platform super-admin console) needs the platform:admin role, not
+  // just a session. Cheap unverified edge pre-filter — the layout's requireSuperAdmin
+  // is the real JWKS-verified gate; here we 404 non-admins before the RSC renders.
+  if (internalPath.startsWith('/tutor/vantage') && !hasPlatformAdmin(auth.access)) {
+    return applyCookieWrites(new NextResponse('Not Found', { status: 404 }), auth.cookieWrites)
+  }
+
   const res = respond(req, internalPath, rewrite, auth.requestHeaders)
   return applyCookieWrites(res, auth.cookieWrites)
+}
+
+/** Unverified decode of the `roles` claim — an edge fast-path only (real
+ *  verification is JWKS-based in the page). */
+function hasPlatformAdmin(token: string): boolean {
+  try {
+    const part = token.split('.')[1]
+    if (!part) return false
+    const claims = JSON.parse(atob(part.replace(/-/g, '+').replace(/_/g, '/'))) as {
+      roles?: string[]
+    }
+    return Array.isArray(claims.roles) && claims.roles.includes('platform:admin')
+  } catch {
+    return false
+  }
 }
 
 /** Builds the pass-through/rewrite response, optionally swapping the
