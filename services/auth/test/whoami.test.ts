@@ -10,13 +10,16 @@ test("whoami echoes the signed-in user's identity", async () => {
   const res = await h.app.request("/auth/whoami", bearer(access));
   expect(res.status).toBe(200);
   const body = (await res.json()) as {
-    userId: string;
+    sub: string;
     email: string | null;
+    tenant: string;
+    org: string | null;
     roles: string[];
-    tenantId: string | null;
+    mustChangePassword: boolean;
   };
-  expect(body.userId).toBeTruthy();
+  expect(body.sub).toBeTruthy();
   expect(body.email).toBe("who@iedora.test");
+  expect(body.tenant).toBe("menu");
   expect(Array.isArray(body.roles)).toBe(true);
 });
 

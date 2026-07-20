@@ -48,6 +48,8 @@ export interface Tokens {
   refreshToken: string;
   refreshExpiresAt: Date;
   userId: string;
+  email: string;
+  name: string | null;
   tenantId: string;
   /** True when the account is flagged for a forced password change — the client
    *  routes the user to the change-password screen after this sign-in. */
@@ -132,30 +134,36 @@ export async function mintTokens(
     refreshToken,
     refreshExpiresAt,
     userId: user.id,
+    email: user.email,
+    name: user.name,
     tenantId: tenantId ?? "",
     mustChangePassword: user.must_change_password,
   };
 }
 
-/** The JSON body returned by token-minting endpoints (matches @iedora/contracts tokenResponse). */
-export function tokenJson(t: Tokens): {
+/** The @iedora/auth-sdk TokenBundle — what /refresh returns. `tenantId` + `mcp`
+ *  are NOT in the body; the BFF reads them from the access-token claims. */
+export function tokenBundle(t: Tokens): {
   accessToken: string;
-  expiresAt: string;
   refreshToken: string;
-  refreshExpiresAt: string;
-  userId: string;
-  tenantId?: string;
-  mustChangePassword?: boolean;
+  tokenType: "Bearer";
+  expiresIn: number;
 } {
   return {
     accessToken: t.accessToken,
-    expiresAt: t.accessExpiresAt.toISOString(),
-    // Refresh token in the body (auth-sdk TokenBundle style); the BFF owns the cookie.
     refreshToken: t.refreshToken,
-    refreshExpiresAt: t.refreshExpiresAt.toISOString(),
-    userId: t.userId,
-    ...(t.tenantId ? { tenantId: t.tenantId } : {}),
-    ...(t.mustChangePassword ? { mustChangePassword: true } : {}),
+    tokenType: "Bearer",
+    expiresIn: Math.max(0, Math.round((t.accessExpiresAt.getTime() - Date.now()) / 1000)),
+  };
+}
+
+/** The @iedora/auth-sdk AuthSession — what /login and /register return. */
+export function authSession(t: Tokens): {
+  user: { id: string; email: string; name: string | null };
+} & ReturnType<typeof tokenBundle> {
+  return {
+    user: { id: t.userId, email: t.email, name: t.name },
+    ...tokenBundle(t),
   };
 }
 

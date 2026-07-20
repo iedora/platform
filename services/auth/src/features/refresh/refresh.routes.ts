@@ -2,7 +2,7 @@ import { Hono } from "hono";
 
 import type { AuthDeps } from "../../deps";
 import { unauthorized } from "../../errors";
-import { metaFrom, tokenJson } from "../../session";
+import { metaFrom, tokenBundle } from "../../session";
 import { refresh } from "./refresh.service";
 
 export function refreshRoutes(deps: AuthDeps) {
@@ -14,6 +14,6 @@ export function refreshRoutes(deps: AuthDeps) {
     if (!body.refreshToken) throw unauthorized("no refresh token");
     const refreshToken = body.refreshToken;
     const tokens = await refresh(deps, refreshToken, metaFrom(c));
-    return c.json(tokenJson(tokens));
+    return c.json(tokenBundle(tokens));
   });
 }

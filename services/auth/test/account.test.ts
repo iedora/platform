@@ -43,20 +43,20 @@ test("admin force-change: login still works, signals mustChangePassword, forced 
   const { access } = await registerUser(h, "force@iedora.com");
   expect((await svcPost(`/auth/admin/users/${uid(access)}/force-password-change`)).status).toBe(200);
 
-  // The user signs in with their CURRENT password, but the response flags it.
+  // The user signs in with their CURRENT password; the forced-change flag rides
+  // the access token's `mcp` claim (the AuthSession body carries no such field),
+  // so the dashboard guard short-circuits locally with no DB round-trip.
   const login = await h.app.request("/auth/login", json({ email: "force@iedora.com", password: PASSWORD }));
   expect(login.status).toBe(200);
-  const body = (await login.json()) as { accessToken: string; mustChangePassword?: boolean };
-  expect(body.mustChangePassword).toBe(true);
-  // The flag also rides the access token's `mcp` claim, so the dashboard guard
-  // can short-circuit locally (no DB round-trip) for the common case.
+  const body = (await login.json()) as { accessToken: string };
   expect((claims(body.accessToken) as { mcp?: boolean }).mcp).toBe(true);
 
   // Forced change needs only the new password.
   expect((await userPost(body.accessToken, "/auth/change-password", { newPassword: NEWPW })).status).toBe(200);
   // Next login is clean (flag cleared) and uses the new password.
   const after = await h.app.request("/auth/login", json({ email: "force@iedora.com", password: NEWPW }));
-  expect(((await after.json()) as { mustChangePassword?: boolean }).mustChangePassword).toBeUndefined();
+  const afterBody = (await after.json()) as { accessToken: string };
+  expect((claims(afterBody.accessToken) as { mcp?: boolean }).mcp).toBeUndefined();
 });
 
 test("admin set-password: the user signs in with the temp password and must change it", async () => {
@@ -66,7 +66,8 @@ test("admin set-password: the user signs in with the temp password and must chan
   expect((await h.app.request("/auth/login", json({ email: "setpw@iedora.com", password: PASSWORD }))).status).toBe(401);
   const login = await h.app.request("/auth/login", json({ email: "setpw@iedora.com", password: TEMP }));
   expect(login.status).toBe(200);
-  expect(((await login.json()) as { mustChangePassword?: boolean }).mustChangePassword).toBe(true);
+  const b = (await login.json()) as { accessToken: string };
+  expect((claims(b.accessToken) as { mcp?: boolean }).mcp).toBe(true);
 });
 
 test("kick a device: 200 for a live family, 404 for a bogus one", async () => {
