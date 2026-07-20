@@ -1,0 +1,21 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["dom", "dom.iterable", "es2023"],
+    "allowJs": true,
+    "jsx": "preserve",
+    // Composite project — apps/web references this via `tsc --build`. Emits only
+    // `.d.ts` to `./dist/`; runtime reads the `.ts` sources via Next's
+    // transpilePackages. Source uses RELATIVE imports between modules.
+    "composite": true,
+    "declaration": true,
+    "declarationMap": true,
+    "emitDeclarationOnly": true,
+    "noEmit": false,
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "tsBuildInfoFile": "./dist/.tsbuildinfo"
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.mts", "src/**/*.json"],
+  "exclude": ["node_modules", ".next", "dist", "src/**/*.test.ts", "src/**/*.test.tsx"]
+}
