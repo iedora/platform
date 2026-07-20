@@ -20,7 +20,7 @@
     "@iedora/audit": "^0.2.1",
     "@iedora/config": "^0.1.0",
     "@iedora/db": "^0.8.0",
-    "@iedora/email": "^0.1.1",
+    "@iedora/email-sdk": "^0.1.0",
     "@iedora/messaging": "^0.2.1",
     "@node-rs/argon2": "catalog:",
     "hono": "catalog:",

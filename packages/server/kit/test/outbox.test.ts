@@ -134,13 +134,13 @@ test("OutboxMailer enqueues; the relay delivers it through the transport", async
   const sent: EmailMessage[] = [];
   await new OutboxMailer(producer).send({ to: "u@example.com", subject: "hello", text: "hi", html: "<p>hi</p>" });
 
-  // The relay delivers via @iedora/email's `handler` (payload → email), so the
-  // fake mailer captures through handler, not send.
-  const captureMailer = {
-    send: async (m: EmailMessage) => void sent.push(m),
-    handler: async (msg: { payload: Record<string, unknown> }) => void sent.push(msg.payload as unknown as EmailMessage),
+  // The relay POSTs each queued email to the email service via the EmailSink
+  // (email-sdk `deliver`), so the fake sink captures the delivered payloads.
+  const captureSink = {
+    deliver: async (msgs: { messageId: string; payload: Record<string, unknown> }[]) =>
+      void msgs.forEach((m) => sent.push(m.payload as unknown as EmailMessage)),
   };
-  const relay = new OutboxRelay(producer, relayHandlers({ audit: localAuditSink(), mailer: captureMailer }));
+  const relay = new OutboxRelay(producer, relayHandlers({ audit: localAuditSink(), email: captureSink }));
   await relay.drainOnce();
 
   expect(sent).toHaveLength(1);

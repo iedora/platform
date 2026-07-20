@@ -187,7 +187,7 @@
         "@iedora/audit": "^0.2.1",
         "@iedora/config": "^0.1.0",
         "@iedora/db": "^0.8.0",
-        "@iedora/email": "^0.1.1",
+        "@iedora/email-sdk": "^0.1.0",
         "@iedora/messaging": "^0.2.1",
         "@iedora/observability": "^0.2.0",
         "@iedora/server-kit": "^0.4.0",
@@ -518,7 +518,7 @@
 
     "@iedora/db": ["@iedora/db@0.8.0", "https://npm.pkg.github.com/download/@iedora/db/0.8.0/c95332218113a0fdedb01a05e314117fc37be4d2", { "dependencies": { "kysely-postgres-js": "^3.0.0" }, "peerDependencies": { "kysely": ">=0.27", "postgres": "^3.4.0" } }, "sha512-18XyUJTdXjb1aiNQmxcB3TKY1dPJWmHvSwN+Wq6WyOH4rEZu/g0ec3W6IumWqiBQ+wuOUL6Qn9/vMSWzS67EyQ=="],
 
-    "@iedora/email": ["@iedora/email@0.1.1", "https://npm.pkg.github.com/download/@iedora/email/0.1.1/4a993a9853555a6aba7a31fa5f249c4b00dface8", { "dependencies": { "@types/nodemailer": "^8.0.1", "nodemailer": "^9.0.3" } }, "sha512-51iUC1tg9CHthD86E5UfGAOdkFPCBWJXFaSN255TDM8FvUlkWaUrGcuW++eKOh2Nppl23G19qD/QnQariroRoQ=="],
+    "@iedora/email-sdk": ["@iedora/email-sdk@0.1.0", "https://npm.pkg.github.com/download/@iedora/email-sdk/0.1.0/64a70d9a86989626a8b196c8d71604c3c5efc414", {}, "sha512-PA0Pqyt3H8+9HlBRpYtgTNHFwEdYH56XFdd/YaumxBp2StSVuqTqoqDiAms8FusZK3y0PNqL2Cj8jgPWcZTsrw=="],
 
     "@iedora/eslint-config": ["@iedora/eslint-config@workspace:packages/platform/eslint-config"],
 
@@ -2157,10 +2157,6 @@
     "@grpc/proto-loader/yargs": ["yargs@17.7.3", "", { "dependencies": { "cliui": "^8.0.1", "escalade": "^3.1.1", "get-caller-file": "^2.0.5", "require-directory": "^2.1.1", "string-width": "^4.2.3", "y18n": "^5.0.5", "yargs-parser": "^21.1.1" } }, "sha512-GZtjxm/J/4TSxuL3FNYjCmLktBTnIw/rVmKSIyKeYAZpmJB2ig9VauCC5xsa82GNKVKDAqpOn3KVzNt0zmrU0g=="],
 
     "@iedora/auth-sdk/jose": ["jose@5.10.0", "", {}, "sha512-s+3Al/p9g32Iq+oqXxkW//7jk2Vig6FF1CFqzVXoTUXt2qz89YWbL+OwS17NFYEvxC35n0FKeGO2LGYSxeM2Gg=="],
-
-    "@iedora/email/@types/nodemailer": ["@types/nodemailer@8.0.1", "", { "dependencies": { "@types/node": "*" } }, "sha512-PxpaInm8V1JQDd4j0ds5HfvWQk8JupS1C0Picb96QJsrrRDjBH+DlK7L4ZdNSqNULhiZRQHc40nLVShaGxXAMw=="],
-
-    "@iedora/email/nodemailer": ["nodemailer@9.0.3", "", {}, "sha512-n+YP+NKwR5zRWa60k3GiQ6Q3B4KXCoAw40dAKeCtYn020iNN74aWK2liXIC3ZEATeGql7we3tE3t8QwhY0eskw=="],
 
     "@iedora/observability/@opentelemetry/api-logs": ["@opentelemetry/api-logs@0.220.0", "", { "dependencies": { "@opentelemetry/api": "^1.3.0" } }, "sha512-CmVa4ImJ+ynfrPMNaAXHET6Bhb44SwzmfyVJFq9ni2jgXJR/l7C6gfVFddNmHP+ZOkP9cf4f9DBe68qVLTHc9w=="],
 

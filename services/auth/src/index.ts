@@ -1,7 +1,7 @@
 import {
   AuditClient,
-  createMailer,
   Database,
+  EmailClient,
   JwtIssuer,
   ServiceClient,
   ServiceTokenIssuer,
@@ -43,10 +43,13 @@ const serviceIssuer = new ServiceTokenIssuer({
 const serviceVerifier = newServiceVerifier(keys.publicKey, cfg.jwtIssuer, cfg.serviceAudience);
 // Email is a durable Postgres message, not an inline send. Request handlers
 // ENQUEUE into the outbox (in the same tx as the business change) via the
-// OutboxMailer; the relay drains `email.send` rows and DELIVERS them through the
-// real transport below — chosen from config (MailHog dev / Resend prod / noop).
-// Delivery transport: @iedora/email (no host → its own dev/JSON transport).
-const mailTransport = createMailer(cfg.smtp);
+// OutboxMailer; the relay drains `email.send` rows and POSTs them to the email
+// microservice (email-sdk), which delivers via SMTP. Auth self-mints a service
+// token (it holds the platform signing key).
+const email = new EmailClient({
+  baseUrl: cfg.emailBaseUrl,
+  tokens: { token: () => serviceIssuer.issue("auth") },
+});
 const resetMailer = makeResetMailer(new OutboxMailer(db));
 
 // Audit sink: auth POSTs events to the audit service (never its DB). Auth holds
@@ -64,7 +67,7 @@ runRelayService({
   source: "auth",
   db,
   audit,
-  mailer: mailTransport,
+  email,
   build: ({ auditor }) =>
     buildApp({ db, issuer, userVerifier, serviceIssuer, serviceVerifier, serviceClients: parseClients(cfg.serviceClients), auditor, resetMailer, cfg }),
 });

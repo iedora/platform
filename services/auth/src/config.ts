@@ -1,4 +1,4 @@
-import { durationMs, env, isProd, requireEnv, siblingUrl, type SmtpConfig } from "@iedora/menu-kit";
+import { durationMs, env, isProd, requireEnv, siblingUrl } from "@iedora/menu-kit";
 
 // Auth runs in Kamal's `web` role; siblingUrl reconstructs a sibling's versioned
 // URL from that. An explicit AUDIT_BASE_URL always wins (compose sets it).
@@ -32,9 +32,9 @@ export interface AuthConfig {
   // The reset link's base URL is built from THIS config value, never the request
   // Host header — that defeats password-reset poisoning (host-header injection).
   resetUrlBase: string;
-  // SMTP transport for account emails. `host` empty → no transport (dev logs,
-  // prod drops). MailHog locally, Resend/SES/etc. in prod — pure config.
-  smtp: SmtpConfig;
+  // The email microservice base URL — account emails are enqueued on the outbox
+  // and the relay POSTs them here (email-sdk); no in-process SMTP.
+  emailBaseUrl: string;
 }
 
 /**
@@ -94,6 +94,7 @@ export function loadConfig(): AuthConfig {
     port: Number(env("AUTH_PORT", "8080")),
     authDatabaseUrl: requireEnv("AUTH_DATABASE_URL"),
     auditBaseUrl: env("AUDIT_BASE_URL", "") || siblingUrl("audit", 8081, SELF_ROLE),
+    emailBaseUrl: env("EMAIL_BASE_URL", "") || siblingUrl("email", 8082, SELF_ROLE),
     jwtSeed: requireEnv("API_JWT_PRIVATE_KEY"),
     jwtKeyId: env("API_JWT_KEY_ID", "k1"),
     jwtIssuer: requireEnv("API_JWT_ISSUER"),
@@ -113,7 +114,6 @@ export function loadConfig(): AuthConfig {
     resetTokenTtlMs: durationMs(env("API_RESET_TOKEN_TTL", "30m"), 30 * 6e4),
     resetThrottleMs: durationMs(env("API_RESET_THROTTLE", "60s"), 6e4),
     resetUrlBase: env("RESET_URL_BASE", "https://menu.iedora.com/reset-password"),
-    smtp: loadSmtp(),
   };
 }
 
@@ -122,12 +122,3 @@ export function loadConfig(): AuthConfig {
 // no auth (MailHog).
 // @iedora/email's createMailer derives implicit TLS from port 465 itself, so
 // there's no `secure` to set here.
-function loadSmtp(): SmtpConfig {
-  return {
-    host: env("SMTP_HOST", ""),
-    port: Number(env("SMTP_PORT", "587")),
-    user: env("SMTP_USER", ""),
-    pass: env("SMTP_PASS", ""),
-    from: env("MAIL_FROM", "iedora <no-reply@iedora.com>"),
-  };
-}

@@ -3,7 +3,7 @@ import type { Hono } from "hono";
 import type { Auditor } from "./audit";
 import { serve } from "@iedora/service-kit";
 import type { Database } from "@iedora/service-kit";
-import type { Mailer } from "./mailer";
+import type { EmailSink } from "@iedora/email-sdk";
 import { type AuditSink, OutboxRelay, OutboxWriter, relayHandlers } from "./outbox";
 
 export interface RelayServiceOptions<DB> {
@@ -14,9 +14,9 @@ export interface RelayServiceOptions<DB> {
   /** HTTP sink to the audit service. HARD RULE: producers never touch the audit
    *  DB — the relay POSTs events to the audit service, which owns its schema. */
   audit: AuditSink;
-  /** Optional email transport. When given, the relay also delivers `email.send`
-   *  outbox rows (enqueued via OutboxMailer) through it. */
-  mailer?: Mailer;
+  /** Optional email sink (email-sdk). When given, the relay also delivers
+   *  `email.send` outbox rows (enqueued via OutboxMailer) to the email service. */
+  email?: EmailSink;
   /** Builds the app, given the auditor wired to this service's outbox. An
    * RPC-typed app carries its route schema in the generics, so accept any. */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -33,7 +33,7 @@ export interface RelayServiceOptions<DB> {
  */
 export function runRelayService<DB>(opts: RelayServiceOptions<DB>): void {
   const auditor = new OutboxWriter(opts.db, opts.source);
-  const relay = new OutboxRelay(opts.db, relayHandlers({ audit: opts.audit, mailer: opts.mailer }));
+  const relay = new OutboxRelay(opts.db, relayHandlers({ audit: opts.audit, email: opts.email }));
   relay.start();
 
   serve(opts.build({ auditor }), {

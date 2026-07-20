@@ -4,7 +4,8 @@ import type { Kysely } from "kysely";
 
 import { type AuditEvent, type Auditor, buildEnvelope } from "./audit";
 import type { Database } from "@iedora/service-kit";
-import type { EmailMessage, Mailer } from "./mailer";
+import type { EmailSink } from "@iedora/email-sdk";
+import type { EmailMessage } from "./mailer";
 
 // Transactional outbox, now backed by @iedora/messaging (topic-based
 // outbox_message + dispatcher, plugin-agnostic). This module keeps the same
@@ -97,14 +98,15 @@ export class OutboxMailer<DB> {
  *  audit service's inbox makes the eventual record exactly-once. */
 export function relayHandlers(opts: {
   audit: AuditSink;
-  mailer?: Mailer;
+  email?: EmailSink;
 }): Record<string, Handler> {
   const handlers: Record<string, Handler> = {
     [AUDIT_TOPIC]: (msg) => opts.audit.ingest([{ messageId: msg.id, payload: msg.payload }]),
   };
-  // @iedora/email's Mailer ships a message-handler that sends the payload as an
-  // email — register it directly for the email topic (no custom send wrapper).
-  if (opts.mailer) handlers[EMAIL_TOPIC] = opts.mailer.handler;
+  // Email is a generic microservice reached over the SDK: the relay POSTs each
+  // queued message to the email service, which delivers it via SMTP. The message
+  // id is the idempotency key the service dedupes on.
+  if (opts.email) handlers[EMAIL_TOPIC] = (msg) => opts.email!.deliver([{ messageId: msg.id, payload: msg.payload }]);
   return handlers;
 }
 

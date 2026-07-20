@@ -1,6 +1,5 @@
-// The mail transport is @iedora/email — no custom SMTP wrapper. menu-kit just
-// re-exports it so services have a single import surface. Delivery is
-// createMailer(cfg).handler registered on the outbox relay (see relayHandlers);
-// the enqueue side is OutboxMailer (see outbox.ts), which writes an EmailMessage
-// to the shared outbox in the request's transaction.
-export { createMailer, type EmailMessage, type Mailer, type SmtpConfig } from "@iedora/email";
+// Email is a generic microservice reached over @iedora/email-sdk — no in-process
+// SMTP transport. menu-kit just surfaces the EmailMessage wire type that the
+// OutboxMailer enqueues (see outbox.ts) and the relay's EmailSink delivers to the
+// email service.
+export { EmailClient, type EmailMessage, type EmailSink } from "@iedora/email-sdk";
