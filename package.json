@@ -7,8 +7,7 @@
     "packages/server/*",
     "products/*",
     "services/*",
-    "apps/*",
-    "integration"
+    "apps/*"
   ],
   "scripts": {
     "dev": "bun run --cwd apps/web dev",

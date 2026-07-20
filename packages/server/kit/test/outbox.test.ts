@@ -1,10 +1,10 @@
 import { SQL } from "bun";
 import { afterAll, beforeAll, expect, test } from "bun:test";
 
-import { up as messagingUp } from "@iedora/messaging";
+import { createAuditIngester } from "@iedora/audit";
+import { createInbox, up as messagingUp } from "@iedora/messaging";
 import {
   type AuditSink,
-  createAuditReceiver,
   Database,
   type EmailMessage,
   OutboxMailer,
@@ -99,7 +99,11 @@ async function auditCount(): Promise<number> {
 // The audit service's ingestion, driven in-process (stands in for the HTTP POST
 // the AuditClient makes in prod): dedupe by messageId + record into audit_log.
 function localAuditSink(): AuditSink {
-  const receive = createAuditReceiver(audit.root);
+  // Compose the audit service's receiver inline (createAuditReceiver used to wrap
+  // this in menu-kit; the audit service now owns it, so build it directly here).
+  const ingest = createAuditIngester(createInbox(audit.root));
+  const receive = (e: { messageId: string; payload: Record<string, unknown> }) =>
+    ingest({ id: e.messageId, topic: "audit.events", payload: e.payload, attempts: 0 });
   return { ingest: async (events) => void (await Promise.all(events.map(receive))) };
 }
 

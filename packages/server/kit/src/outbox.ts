@@ -1,5 +1,4 @@
-import { createAuditIngester } from "@iedora/audit";
-import { createDispatcher, createInbox, enqueue, type Handler } from "@iedora/messaging";
+import { createDispatcher, enqueue, type Handler } from "@iedora/messaging";
 import { ServiceClient } from "@iedora/server-kit";
 import type { Kysely } from "kysely";
 
@@ -41,17 +40,6 @@ export class AuditClient implements AuditSink {
     if (events.length === 0) return;
     await this.svc.post("/events", { events });
   }
-}
-
-/** The audit SERVICE's side of ingestion: dedupe by messageId against its own
- *  inbox and record into its own audit_log, in one transaction. Reuses the exact
- *  ingester the relay used to run in-process; only the trigger moved from
- *  draining a producer's outbox to an HTTP POST. `auditDb` is the audit
- *  service's own pool — no other service is ever passed here. */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function createAuditReceiver(auditDb: Kysely<any>): (event: AuditDelivery) => Promise<void> {
-  const ingest = createAuditIngester(createInbox(auditDb));
-  return (event) => ingest({ id: event.messageId, topic: AUDIT_TOPIC, payload: event.payload, attempts: 0 });
 }
 
 /** Records audit events into the producer's own outbox within the caller's

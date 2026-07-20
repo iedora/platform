@@ -49,30 +49,11 @@ services:
       start_period: 10s
     restart: unless-stopped
 
-  audit:
-    image: oven/bun:1.3.3-alpine
-    working_dir: /app
-    command: sh -c "bun install --frozen-lockfile && exec sh services/docker-entrypoint.sh bun run --hot services/audit/src/index.ts"
-    environment:
-      <<: *otel-env
-      DEPLOYMENT_ENV: development
-      AUDIT_PORT: "8081"
-      AUDIT_DATABASE_URL: postgres://iedora:iedora@postgres:5432/audit?sslmode=disable
-      # Verifies internal service tokens. DEV keypair, shared across the stack
-      # (auth's API_JWT_PRIVATE_KEY) so tokens cross-verify between services.
-      SERVICE_JWT_PUBLIC_KEY: M+/u/gPyq9NyuwfMjS82Y7lOJeyvGq6jpeRxMqr1Ge4=
-      SERVICE_JWT_ISSUER: https://api.iedora.com
-      SERVICE_AUDIENCE: iedora-internal
-    # Host 8181 (container 8081) to avoid colliding with a local service on 8081.
-    ports:
-      - "8181:8081"
-    volumes:
-      - .:/app
-      - node_modules:/app/node_modules
-    depends_on:
-      postgres:
-        condition: service_healthy
-    restart: unless-stopped
+  # NOTE: the audit + billing services moved to their own repos (iedora/audit,
+  # iedora/billing; email is iedora/email). Run them from those repos on the
+  # shared `iedora` docker network when you need them locally — menu/auth tolerate
+  # them being down (the audit relay retries; billing-gated staff features
+  # degrade). The *_BASE_URL vars below still resolve to those container names.
 
   auth:
     image: oven/bun:1.3.3-alpine
@@ -111,43 +92,6 @@ services:
         condition: service_healthy
       mailhog:
         condition: service_started
-      audit:
-        condition: service_started
-    restart: unless-stopped
-
-  billing:
-    image: oven/bun:1.3.3-alpine
-    working_dir: /app
-    command: sh -c "bun install --frozen-lockfile && exec sh services/docker-entrypoint.sh bun run --hot services/billing/src/index.ts"
-    environment:
-      <<: *otel-env
-      DEPLOYMENT_ENV: development
-      BILLING_PORT: "8083"
-      BILLING_DATABASE_URL: postgres://iedora:iedora@postgres:5432/billing?sslmode=disable
-      # Audit is delivered over HTTP (hard rule: no cross-service DB access).
-      # Billing mints a service token from auth and POSTs events to audit.
-      AUDIT_BASE_URL: http://audit:8081
-      AUTH_BASE_URL: http://auth:8080
-      SERVICE_CLIENT_ID: billing
-      SERVICE_CLIENT_SECRET: dev-secret
-      # Verifies internal service tokens. DEV keypair, shared across the stack
-      # (auth's API_JWT_PRIVATE_KEY) so tokens cross-verify between services.
-      SERVICE_JWT_PUBLIC_KEY: M+/u/gPyq9NyuwfMjS82Y7lOJeyvGq6jpeRxMqr1Ge4=
-      SERVICE_JWT_ISSUER: https://api.iedora.com
-      SERVICE_AUDIENCE: iedora-internal
-    # Host 8183 (container 8083) to avoid colliding with a local service on 8083.
-    ports:
-      - "8183:8083"
-    volumes:
-      - .:/app
-      - node_modules:/app/node_modules
-    depends_on:
-      postgres:
-        condition: service_healthy
-      auth:
-        condition: service_started
-      audit:
-        condition: service_started
     restart: unless-stopped
 
   menu:
@@ -181,10 +125,6 @@ services:
       postgres:
         condition: service_healthy
       auth:
-        condition: service_started
-      audit:
-        condition: service_started
-      billing:
         condition: service_started
     restart: unless-stopped
 
