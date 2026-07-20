@@ -15,6 +15,7 @@ const nextConfig: NextConfig = {
   transpilePackages: [
     '@iedora/observability',
     '@iedora/product-menu',
+    '@iedora/product-tutor',
     '@iedora/ui',
   ],
   // Version skew protection — forces hard navigation when the client

@@ -24,7 +24,8 @@
   //   2. Append `{ "path": "../../products/<name>" }` here.
   //   3. Add the package to dependencies + transpilePackages as usual.
   "references": [
-    { "path": "../../products/menu" }
+    { "path": "../../products/menu" },
+    { "path": "../../products/tutor" }
   ],
   "include": [
     "next-env.d.ts",

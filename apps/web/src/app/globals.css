@@ -19,6 +19,7 @@
 @source "../../../../products/menu/src/features/restaurant-identity/ui/**/*.{ts,tsx}";
 @source "../../../../products/menu/src/shared/ui/**/*.{ts,tsx}";
 @source "../../../../packages/platform/ui/src/**/*.{ts,tsx}";
+@source "../../../../products/tutor/src/**/*.{ts,tsx}";
 
 @theme inline {
   --font-sans: var(--sans);
