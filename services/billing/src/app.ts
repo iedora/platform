@@ -1,15 +1,15 @@
 import { createServiceApp, healthRoutes } from "@iedora/service-kit";
 import { Hono } from "hono";
 
-import type { BillingDeps } from "./deps";
-import { cancelRoutes } from "./features/cancel/cancel.routes";
-import { chargeRoutes } from "./features/charge/charge.routes";
-import { invoicesRoutes } from "./features/invoices/invoices.routes";
-import { payoutsRoutes } from "./features/payouts/payouts.routes";
-import { refundRoutes } from "./features/refund/refund.routes";
-import { setupRoutes } from "./features/setup/setup.routes";
-import { subscribeRoutes } from "./features/subscribe/subscribe.routes";
-import { subscriptionsRoutes } from "./features/subscriptions/subscriptions.routes";
+import type { BillingDeps } from "./deps.ts";
+import { cancelRoutes } from "./features/cancel/cancel.routes.ts";
+import { chargeRoutes } from "./features/charge/charge.routes.ts";
+import { invoicesRoutes } from "./features/invoices/invoices.routes.ts";
+import { payoutsRoutes } from "./features/payouts/payouts.routes.ts";
+import { refundRoutes } from "./features/refund/refund.routes.ts";
+import { setupRoutes } from "./features/setup/setup.routes.ts";
+import { subscribeRoutes } from "./features/subscribe/subscribe.routes.ts";
+import { subscriptionsRoutes } from "./features/subscriptions/subscriptions.routes.ts";
 
 // Composition root: mount each billing slice under /billing. Slices own their
 // own logic (features/<slice>/); this only wires + exposes /up. Routes are

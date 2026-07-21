@@ -2,9 +2,9 @@ import { EmailClient } from "@iedora/sdk/email"
 import { type DeliveredMessage, enqueue } from "@iedora/messaging"
 import type { Kysely } from "kysely"
 
-import { config } from "./config"
-import type { DB } from "./schema"
-import { signServiceToken } from "./tokens"
+import { config } from "./config.ts"
+import type { DB } from "./schema.ts"
+import { signServiceToken } from "./tokens.ts"
 
 export type EmailInput = {
   tenantId: string | null

@@ -19,7 +19,7 @@ import {
 } from "#db/domain/pricing"
 import type { Kysely } from "kysely"
 
-import type { TutorDB } from "../schema"
+import type { TutorDB } from "../schema.ts"
 
 // Public tutor-profile reads, ported from the app's booking.queries. Pure data
 // access over the passed Kysely handle (the service's own pool) — no singleton.

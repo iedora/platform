@@ -1,10 +1,10 @@
-import { PaymentError } from "../../money";
+import { PaymentError } from "../../money/index.ts";
 import { type ServiceEnv, serviceAuth } from "@iedora/service-kit";
 import { Hono } from "hono";
 import { z } from "zod";
 
-import type { BillingDeps } from "../../deps";
-import { ChargeRejected, createCharge, fetchCharge } from "./charge.service";
+import type { BillingDeps } from "../../deps.ts";
+import { ChargeRejected, createCharge, fetchCharge } from "./charge.service.ts";
 
 // Vertical slice: the one-off charge. Everything explicit — `kind` is required,
 // and `mode` (stripe) is validated by the kind. Body parsed in-handler to keep

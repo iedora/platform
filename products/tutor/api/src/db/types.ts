@@ -22,7 +22,7 @@ import type {
   TimezoneSource,
   SenderType,
   XpEventType,
-} from "./enums"
+} from "./enums.ts"
 
 /**
  * Hand-owned `DB` interface — the typed source of truth for Kysely. The

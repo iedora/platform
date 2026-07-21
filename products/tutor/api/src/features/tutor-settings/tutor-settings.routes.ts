@@ -8,23 +8,23 @@ import {
 import { validate } from "@iedora/service-kit"
 import { Hono } from "hono"
 
-import { tutorByUserId } from "../../data/students"
+import { tutorByUserId } from "../../data/students.ts"
 import {
   getTutorPendingChanges,
   getTutorProfile,
   getTutorQualifications,
   getTutorSettingsReviews,
-} from "../../data/tutor-settings"
+} from "../../data/tutor-settings.ts"
 import {
   addQualification,
   removeQualification,
   toggleReviewPin,
   updateProfile,
   updateRate,
-} from "../../data/tutor-settings.write"
-import type { TutorDeps } from "../../deps"
-import { forbidden, notFound } from "../../errors"
-import type { TutorEnv } from "../../middleware"
+} from "../../data/tutor-settings.write.ts"
+import type { TutorDeps } from "../../deps.ts"
+import { forbidden, notFound } from "../../errors.ts"
+import type { TutorEnv } from "../../middleware.ts"
 
 // A tutor's own settings reads. The tutor is resolved from the verified Bearer
 // principal; a caller with no tutor profile is forbidden (these are tutor-only).

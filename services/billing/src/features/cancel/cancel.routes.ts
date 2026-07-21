@@ -1,10 +1,10 @@
-import { cancelRequest } from "../../contracts";
+import { cancelRequest } from "../../contracts.ts";
 import { type ServiceEnv, serviceAuth } from "@iedora/service-kit";
 import { zValidator } from "@hono/zod-validator";
 import { Hono } from "hono";
 
-import type { BillingDeps } from "../../deps";
-import { cancel } from "./cancel.service";
+import type { BillingDeps } from "../../deps.ts";
+import { cancel } from "./cancel.service.ts";
 
 // Vertical slice: canceling a subscription. Returns a small JSON body for a
 // typed RPC result. Mounted at /billing.

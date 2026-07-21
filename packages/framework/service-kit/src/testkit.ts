@@ -1,6 +1,6 @@
 import { SQL } from "bun"
 
-import { runMigrations } from "./migrate"
+import { runMigrations } from "./migrate.ts"
 
 // Bun-native test database harness. We do NOT use testcontainers: under Bun it
 // hangs — Bun starts the container so fast that testcontainers-node attaches its

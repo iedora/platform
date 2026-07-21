@@ -1,8 +1,8 @@
 import { Hono } from "hono"
 import { z } from "zod"
 
-import { rotateRefresh } from "../../platform/accounts"
-import { type Env, HttpError, reqContext } from "../../platform/http"
+import { rotateRefresh } from "../../platform/accounts.ts"
+import { type Env, HttpError, reqContext } from "../../platform/http.ts"
 
 const schema = z.object({ refreshToken: z.string().min(1) })
 

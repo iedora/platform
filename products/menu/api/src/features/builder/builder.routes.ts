@@ -3,8 +3,8 @@ import { zValidator } from "@hono/zod-validator";
 import { Hono } from "hono";
 import { z } from "zod";
 
-import type { MenuDeps } from "../../deps";
-import type { MenuEnv } from "../../middleware";
+import type { MenuDeps } from "../../deps.ts";
+import type { MenuEnv } from "../../middleware.ts";
 import {
   createCategory,
   createItem,
@@ -17,7 +17,7 @@ import {
   updateCategory,
   updateItem,
   updateMenu,
-} from "../../service";
+} from "../../service.ts";
 
 // Local-only payloads with no contract equivalent. The menu/category/item write
 // schemas (menuUpdate/categoryUpdate/itemWrite) come from @iedora/contracts — the

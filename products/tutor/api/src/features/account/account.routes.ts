@@ -3,10 +3,10 @@ import { isValidTimezone } from "#db/domain/time"
 import { validate } from "@iedora/service-kit"
 import { Hono } from "hono"
 
-import { profileTz, setTimezone } from "../../data/account"
-import type { TutorDeps } from "../../deps"
-import { invalid, notFound } from "../../errors"
-import type { TutorEnv } from "../../middleware"
+import { profileTz, setTimezone } from "../../data/account.ts"
+import type { TutorDeps } from "../../deps.ts"
+import { invalid, notFound } from "../../errors.ts"
+import type { TutorEnv } from "../../middleware.ts"
 
 // Account mutations. Identity from the verified Bearer principal; the timezone
 // guard (don't clobber a manual choice) is enforced here.

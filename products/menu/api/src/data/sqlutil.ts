@@ -1,6 +1,6 @@
 import { sql } from "kysely";
 
-import { notFound } from "../errors";
+import { notFound } from "../errors.ts";
 
 // Write-result guards over a raw `sql\`\`.execute()` result. Every single-row
 // write repeats the same "nothing matched → 404" check; these centralize it so

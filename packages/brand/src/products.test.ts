@@ -4,7 +4,7 @@ import {
   PRODUCTS,
   productUrl,
   type ProductId,
-} from './index'
+} from './index.ts'
 
 /**
  * Contract for the cross-product registry. Three invariants matter:

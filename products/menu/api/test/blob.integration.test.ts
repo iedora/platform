@@ -1,7 +1,7 @@
 import { beforeAll, describe, expect, test } from "bun:test";
 import { AwsClient } from "aws4fetch";
 
-import { makeBlobClient, type BlobClient, type S3Config } from "../src/blob";
+import { makeBlobClient, type BlobClient, type S3Config } from "../src/blob.ts";
 
 // Integration test for the aws4fetch BlobClient against a real S3-compatible
 // server (MinIO in CI, or any endpoint via S3_TEST_ENDPOINT locally). Skips when

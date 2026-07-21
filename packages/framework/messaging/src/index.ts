@@ -1,13 +1,13 @@
-export { backoffMs, type BackoffOptions } from "./backoff"
+export { backoffMs, type BackoffOptions } from "./backoff.ts"
 export {
   createDispatcher,
   type DeliveredMessage,
   type Dispatcher,
   type DispatcherOptions,
   type Handler,
-} from "./dispatcher"
-export { createInbox, type Inbox } from "./inbox"
-export { type EnqueueInput, enqueue } from "./outbox"
+} from "./dispatcher.ts"
+export { createInbox, type Inbox } from "./inbox.ts"
+export { type EnqueueInput, enqueue } from "./outbox.ts"
 export {
   down,
   type InboxMessage,
@@ -16,4 +16,4 @@ export {
   type OutboxMessage,
   type OutboxMessageTable,
   up,
-} from "./schema"
+} from "./schema.ts"

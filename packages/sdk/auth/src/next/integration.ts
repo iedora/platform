@@ -1,8 +1,8 @@
 import { cookies } from "next/headers"
 
-import { type AuthClaims, createAuthClient } from "../index"
-import { authConfig, cookieNames } from "./config"
-import { type AuthResult, createAuthNext } from "./server"
+import { type AuthClaims, createAuthClient } from "../index.ts"
+import { authConfig, cookieNames } from "./config.ts"
+import { type AuthResult, createAuthNext } from "./server.ts"
 
 // ── THE centralized auth integration ─────────────────────────────────────────
 // Every product (menu, tutor, house) imports the session + operations from HERE —

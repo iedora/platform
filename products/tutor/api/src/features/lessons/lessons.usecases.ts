@@ -4,7 +4,7 @@ import { CANCELLATION_CUTOFF_HOURS, canTransition } from "#db/domain/status"
 import type { LessonStatus, Party, ReviewTag } from "#db/enums"
 import type { Kysely } from "kysely"
 
-import { conversationId, postSystem } from "../../data/conversations"
+import { conversationId, postSystem } from "../../data/conversations.ts"
 import {
   awardXp,
   bumpLearner,
@@ -13,12 +13,12 @@ import {
   type QuestKind,
   updateWeeklyStreak,
   type XpResult,
-} from "../../data/gamification"
-import { refundLessonPayment } from "../../data/payments"
-import type { TutorDeps } from "../../deps"
-import { invalid } from "../../errors"
-import { inngest, lessonCancelled } from "../../lib/inngest"
-import type { TutorDB } from "../../schema"
+} from "../../data/gamification.ts"
+import { refundLessonPayment } from "../../data/payments.ts"
+import type { TutorDeps } from "../../deps.ts"
+import { invalid } from "../../errors.ts"
+import { inngest, lessonCancelled } from "../../lib/inngest.ts"
+import type { TutorDB } from "../../schema.ts"
 
 type DB = Kysely<TutorDB>
 

@@ -1,7 +1,7 @@
 import { beforeAll, expect, test } from "bun:test";
 import { sql } from "kysely";
 
-import { TENANT, bearer, json, jsonPatch, mintUserToken, seedRestaurant, staffToken, useHarness } from "./harness";
+import { TENANT, bearer, json, jsonPatch, mintUserToken, seedRestaurant, staffToken, useHarness } from "./harness.ts";
 
 // Staff slice: the cross-tenant /api/staff surface (role-gated overview, QR
 // admin, directory, alerts). Seeds one restaurant tree per file.

@@ -1,8 +1,8 @@
 import type { DeliveredMessage, Handler, Inbox } from "@iedora/messaging"
 import type { Kysely } from "kysely"
 
-import { type AuditEvent, record } from "./record"
-import type { AuditLogDB } from "./schema"
+import { type AuditEvent, record } from "./record.ts"
+import type { AuditLogDB } from "./schema.ts"
 
 /** Map a delivered outbox message's payload to an audit event. Accepts the rich
  *  shape directly, and falls back to a legacy `{ type, data }` payload

@@ -2,11 +2,11 @@ import crypto from "node:crypto"
 import { Hono } from "hono"
 import { deleteCookie, getCookie, setCookie } from "hono/cookie"
 
-import { issueTokens, upsertOAuthUser } from "../../platform/accounts"
-import { config } from "../../platform/config"
-import { type Env, HttpError, reqContext } from "../../platform/http"
-import { pkce } from "../../platform/providers/oauth"
-import { resolveProvider } from "../../platform/providers/registry"
+import { issueTokens, upsertOAuthUser } from "../../platform/accounts.ts"
+import { config } from "../../platform/config.ts"
+import { type Env, HttpError, reqContext } from "../../platform/http.ts"
+import { pkce } from "../../platform/providers/oauth.ts"
+import { resolveProvider } from "../../platform/providers/registry.ts"
 
 function callbackUri(tenantSlug: string, providerId: string): string {
   return `${config.issuerUrl}/${tenantSlug}/oauth/${providerId}/callback`

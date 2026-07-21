@@ -1,6 +1,6 @@
 import { Database as BaseDatabase } from "@iedora/db";
 
-import { recordQuerySpan } from "./otel"; // one CLIENT span per query (no-op when OTel is off)
+import { recordQuerySpan } from "./otel.ts"; // one CLIENT span per query (no-op when OTel is off)
 
 // A service's tx-in-context Database (from @iedora/db), with a modest pool for
 // the shared box, an optional `schema` so services can share ONE database while

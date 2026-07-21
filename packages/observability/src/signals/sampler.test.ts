@@ -16,7 +16,7 @@ import {
   NoiseFilteringSampler,
   NOISE_PATTERNS,
   defaultSampler,
-} from "../register";
+} from "../register.ts";
 
 /**
  * Counting stub sampler — wraps the inner sampling decision behind a

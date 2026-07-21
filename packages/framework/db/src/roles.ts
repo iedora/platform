@@ -1,4 +1,4 @@
-import { makeSql } from "./driver"
+import { makeSql } from "./driver.ts"
 
 // Per-schema role isolation. In a shared database with a schema per service,
 // `search_path` keeps a service's queries in its own schema by CONVENTION — but

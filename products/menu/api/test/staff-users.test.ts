@@ -1,7 +1,7 @@
 import { beforeAll, expect, test } from "bun:test";
 
 import type { AdminUser, AdminUserDetail, AdminUserSession, AuditRecord } from "@iedora/contracts";
-import { bearer, mintUserToken, staffToken, useHarness } from "./harness";
+import { bearer, mintUserToken, staffToken, useHarness } from "./harness.ts";
 
 // Staff "Users" CRM slice: the read-only BFF fan-out the menu service does for
 // the admin user-management surface. The auth + audit services are faked via

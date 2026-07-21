@@ -1,5 +1,5 @@
 import { SpanStatusCode } from "@opentelemetry/api";
-import { tracer } from "../signals/tracer";
+import { tracer } from "../signals/tracer.ts";
 
 /**
  * Tenant attribute keys — pinned constants instead of free-text strings so

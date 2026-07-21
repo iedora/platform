@@ -29,7 +29,7 @@
  * Pure — no `server-only`, no I/O, safe for client + server.
  */
 
-import { BRAND_DOMAIN } from './index'
+import { BRAND_DOMAIN } from './index.ts'
 
 /**
  * The public hostname for a surface in THIS environment, from its runtime URL

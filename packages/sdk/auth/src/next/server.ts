@@ -1,4 +1,4 @@
-import { type AuthClaims, type AuthSession, createAuthClient, createAuthVerifier } from "../index"
+import { type AuthClaims, type AuthSession, createAuthClient, createAuthVerifier } from "../index.ts"
 import { cookies } from "next/headers"
 
 import {
@@ -7,7 +7,7 @@ import {
   cookieOptions,
   DEFAULT_ACCESS_MAX_AGE,
   DEFAULT_REFRESH_MAX_AGE,
-} from "./config"
+} from "./config.ts"
 
 export type AuthResult = { error?: { message: string } }
 
@@ -137,4 +137,4 @@ export function createAuthNext(config: AuthNextConfig, hooks: { onAuthenticated?
 }
 
 export type AuthNext = ReturnType<typeof createAuthNext>
-export type { AuthNextConfig } from "./config"
+export type { AuthNextConfig } from "./config.ts"

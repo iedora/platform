@@ -1,6 +1,6 @@
 import type { Kysely } from "kysely"
 
-import { changedFields } from "./diff"
+import { changedFields } from "./diff.ts"
 
 /** An audit event about any entity. Only `action` is required; supply
  *  `oldData`/`newData` for change auditing (before/after). */

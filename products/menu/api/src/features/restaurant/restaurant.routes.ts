@@ -3,18 +3,18 @@ import { zValidator } from "@hono/zod-validator";
 import { Hono } from "hono";
 import { z } from "zod";
 
-import { menusWithCounts } from "../../data/restaurants.write";
-import { menuTree } from "../../data/tree";
-import type { MenuDeps } from "../../deps";
-import type { MenuEnv } from "../../middleware";
-import { seedSample } from "../../seed";
+import { menusWithCounts } from "../../data/restaurants.write.ts";
+import { menuTree } from "../../data/tree.ts";
+import type { MenuDeps } from "../../deps.ts";
+import type { MenuEnv } from "../../middleware.ts";
+import { seedSample } from "../../seed.ts";
 import {
   completeOnboarding,
   deleteRestaurant,
   recordQrPrint,
   renameSlug,
   updateIdentity,
-} from "../../service";
+} from "../../service.ts";
 
 // Print-sheet options recorded on the QR audit event (mirrors the dialog).
 const qrPrintMeta = z.object({

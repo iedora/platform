@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test"
 
-import { backoffMs } from "../../src/backoff"
+import { backoffMs } from "../../src/backoff.ts"
 
 describe("backoffMs", () => {
   test("stays within [0, min(cap, base * 2^(attempt-1)))", () => {

@@ -1,6 +1,6 @@
 import crypto from "node:crypto"
 
-import type { OAuthProvider, ProviderProfile } from "./types"
+import type { OAuthProvider, ProviderProfile } from "./types.ts"
 
 /**
  * Config for a generic OAuth2 / OIDC provider. Endpoints + client credentials come

@@ -3,9 +3,9 @@ import { zValidator } from "@hono/zod-validator";
 import { Hono } from "hono";
 import { z } from "zod";
 
-import * as invoices from "../../data/invoices";
-import * as subscriptions from "../../data/subscriptions";
-import type { BillingDeps } from "../../deps";
+import * as invoices from "../../data/invoices.ts";
+import * as subscriptions from "../../data/subscriptions.ts";
+import type { BillingDeps } from "../../deps.ts";
 
 // A recorded payment activates the plan for a full year (the chosen paid period).
 const PAID_PERIOD_MS = 365 * 24 * 60 * 60 * 1000;

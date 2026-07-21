@@ -1,4 +1,4 @@
-import type { AuditEvent } from "./types"
+import type { AuditEvent } from "./types.ts"
 
 /**
  * The wire payload an audit event is enqueued/POSTed as — the rich key shape the

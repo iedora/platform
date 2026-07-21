@@ -1,8 +1,8 @@
 import type { Context, MiddlewareHandler } from "hono"
 import { createMiddleware } from "hono/factory"
 
-import { HttpError } from "./errors"
-import { readBearer } from "./request"
+import { HttpError } from "./errors.ts"
+import { readBearer } from "./request.ts"
 
 /**
  * A bearer-token middleware: pull the token, 401 if missing, run `verify`, and

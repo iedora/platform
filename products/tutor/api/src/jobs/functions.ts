@@ -1,10 +1,10 @@
 import { PAYMENT_DEADLINE_HOURS, RELEASE_CUTOFF_HOURS } from "#db/domain/status"
 import type { InngestFunction } from "inngest"
 
-import { autoReleaseLesson, chargeLessonOffSession, requestOneOffPayment } from "../data/payments"
-import type { TutorDeps } from "../deps"
-import { openLessonRoom, ROOM_OPENS_MIN_BEFORE } from "../features/lessons/lessons.room"
-import { inngest, lessonScheduled } from "../lib/inngest"
+import { autoReleaseLesson, chargeLessonOffSession, requestOneOffPayment } from "../data/payments.ts"
+import type { TutorDeps } from "../deps.ts"
+import { openLessonRoom, ROOM_OPENS_MIN_BEFORE } from "../features/lessons/lessons.room.ts"
+import { inngest, lessonScheduled } from "../lib/inngest.ts"
 
 const MS = 60_000
 const HOUR_MS = 60 * MS

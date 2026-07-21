@@ -6,7 +6,7 @@
 // relay (audit/outbox/runservice) and the SMTP mailer.
 export * from "@iedora/service-kit";
 
-export * from "./audit";
-export * from "./mailer";
-export * from "./outbox";
-export * from "./runservice";
+export * from "./audit.ts";
+export * from "./mailer.ts";
+export * from "./outbox.ts";
+export * from "./runservice.ts";

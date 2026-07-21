@@ -3,7 +3,7 @@ import { RANK_EMOJI, RANK_LABEL } from "#db/domain/pricing"
 import type { RankTier, SenderType } from "#db/enums"
 import type { Kysely } from "kysely"
 
-import type { TutorDB } from "../schema"
+import type { TutorDB } from "../schema.ts"
 
 type DB = Kysely<TutorDB>
 

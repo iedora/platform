@@ -13,13 +13,13 @@ import { afterAll, beforeAll } from "bun:test";
 import { type CryptoKey, SignJWT, generateKeyPair } from "jose";
 import { sql } from "kysely";
 
-import { buildApp } from "../src/app";
-import type { BlobClient } from "../src/blob";
-import type { MenuConfig } from "../src/config";
-import { Plans } from "../src/plans";
-import { Limiter } from "../src/ratelimit";
-import type { MenuDB } from "../src/schema";
-import { Uploads } from "../src/uploads";
+import { buildApp } from "../src/app.ts";
+import type { BlobClient } from "../src/blob.ts";
+import type { MenuConfig } from "../src/config.ts";
+import { Plans } from "../src/plans.ts";
+import { Limiter } from "../src/ratelimit.ts";
+import type { MenuDB } from "../src/schema.ts";
+import { Uploads } from "../src/uploads.ts";
 
 // Shared test harness for every menu vertical slice. Each slice test owns its
 // behaviour but reuses this setup + the request/seed helpers below, so there is

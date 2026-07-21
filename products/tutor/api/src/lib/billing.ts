@@ -1,7 +1,7 @@
 import { BillingClient } from "@iedora/sdk/billing"
 import { ServiceTokenSource } from "@iedora/auth-sdk/tokens"
 
-import type { TutorConfig } from "../config"
+import type { TutorConfig } from "../config.ts"
 
 /** Tutor's settlement currency (ISO 4217). Billing normalizes it on the wire. */
 export const CURRENCY = "gbp"

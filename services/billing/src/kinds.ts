@@ -1,4 +1,4 @@
-import type { Money, PaymentStatus, Setup, SetupInput } from "./money";
+import type { Money, PaymentStatus, Setup, SetupInput } from "./money/index.ts";
 
 // Payment KINDS — the pluggable registry the billing service settles through.
 // A kind is either RECORD-ONLY (manual: money moved off-platform, we just record

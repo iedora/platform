@@ -1,4 +1,4 @@
-import type { OAuthConfig } from "./oauth"
+import type { OAuthConfig } from "./oauth.ts"
 
 // Config presets for common OAuth2 / OIDC providers. Each returns a plain
 // OAuthConfig — the generic `oauthProvider` does the rest — so adding a NEW

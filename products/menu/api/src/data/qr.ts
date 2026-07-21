@@ -1,7 +1,7 @@
 import type { Kysely } from "kysely";
 
-import type { MenuDB } from "../schema";
-import { normalizeQRCode, validQRCode } from "../qr";
+import type { MenuDB } from "../schema.ts";
+import { normalizeQRCode, validQRCode } from "../qr.ts";
 
 // resolveQRCode returns the slug a bound code points at — the sticker-scan hot
 // path: one indexed join, no auth. Returns undefined for unknown/unbound/

@@ -1,8 +1,8 @@
 import { Hono } from "hono"
 import { z } from "zod"
 
-import { type Env, validate } from "../../platform/http"
-import { requestPasswordReset, resetPassword } from "./password-reset.service"
+import { type Env, validate } from "../../platform/http.ts"
+import { requestPasswordReset, resetPassword } from "./password-reset.service.ts"
 
 const forgotSchema = z.object({ email: z.string().email() })
 const resetSchema = z.object({

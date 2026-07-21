@@ -11,7 +11,7 @@ import {
   IEDORA_TENANT_ID,
   IEDORA_RESTAURANT_ID,
   tenantAttributes,
-} from "../tenant/tenant";
+} from "../tenant/tenant.ts";
 
 /**
  * The package's `meter` export resolves through the global MetricsAPI, which
@@ -158,7 +158,7 @@ describe("metrics surface", () => {
       // Production guarantee: importing `meter` and creating instruments
       // is safe even before the SDK is wired. Saves callers from a
       // "is the SDK ready?" check at every module load.
-      const { meter } = await import("./meter");
+      const { meter } = await import("./meter.ts");
       const counter = meter.createCounter("iedora.smoke_total");
       // Calling .add on a no-op meter must not throw. It silently drops.
       expect(() => counter.add(1, { test: "ok" })).not.toThrow();
@@ -170,7 +170,7 @@ describe("metrics surface", () => {
       // Next 16's auto-emitted ones. Pinned to catch accidental renames.
       const noopGetMeterSpy = metrics.getMeter;
       void noopGetMeterSpy; // touch to silence unused
-      const { meter } = await import("./meter");
+      const { meter } = await import("./meter.ts");
       // No way to directly read the name off the meter object (private),
       // but the smoke test above + tracer-side parity covers the contract.
       expect(meter).toBeDefined();

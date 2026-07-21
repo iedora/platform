@@ -1,7 +1,7 @@
-import { invalid, notFound } from "../errors"
+import { invalid, notFound } from "../errors.ts"
 import type { Kysely } from "kysely"
 
-import type { TutorDB } from "../schema"
+import type { TutorDB } from "../schema.ts"
 
 type DB = Kysely<TutorDB>
 type ChangeKind = "profile" | "rate" | "add_subject" | "remove_subject"

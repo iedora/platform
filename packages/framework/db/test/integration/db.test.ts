@@ -4,7 +4,7 @@ import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { type Generated, type Kysely, sql } from "kysely"
 
-import { createDb, migrate } from "../../src/index"
+import { createDb, migrate } from "../../src/index.ts"
 
 const HAS_DB = Boolean(process.env.DATABASE_URL)
 const it = test.skipIf(!HAS_DB)

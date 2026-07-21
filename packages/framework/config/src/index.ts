@@ -6,4 +6,4 @@ export {
   isProd,
   numEnv,
   requireEnv,
-} from "./env"
+} from "./env.ts"

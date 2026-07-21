@@ -1,8 +1,8 @@
 import { iso } from "@iedora/service-kit"
 import { type Kysely, sql } from "kysely"
 
-import type { AuditFilter, AuditQueryResponse, AuditRecord } from "../../contracts"
-import type { AuditDB } from "../../schema"
+import type { AuditFilter, AuditQueryResponse, AuditRecord } from "../../contracts.ts"
+import type { AuditDB } from "../../schema.ts"
 
 const DEFAULT_LIMIT = 50
 const MAX_LIMIT = 200

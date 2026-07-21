@@ -3,8 +3,8 @@ import { zValidator } from "@hono/zod-validator";
 import { Hono } from "hono";
 import { z } from "zod";
 
-import * as subscriptions from "../../data/subscriptions";
-import type { BillingDeps } from "../../deps";
+import * as subscriptions from "../../data/subscriptions.ts";
+import type { BillingDeps } from "../../deps.ts";
 
 // Vertical slice: listing a tenant's subscriptions. `tenant` is required (400 on
 // missing). Read-only — no transaction. Mounted at /billing.

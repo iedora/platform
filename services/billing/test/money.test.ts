@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test"
 
-import { add, allocate, equals, money, multiply, percentage, subtract, sum, zero } from "../src/money"
-import { splitByFee, splitByRate } from "../src/money"
+import { add, allocate, equals, money, multiply, percentage, subtract, sum, zero } from "../src/money/index.ts"
+import { splitByFee, splitByRate } from "../src/money/index.ts"
 
 describe("money", () => {
   test("rejects non-integer minor units", () => {

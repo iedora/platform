@@ -37,7 +37,7 @@ export function brandUrl(): string {
   return process.env.BRAND_URL ?? `https://${BRAND_DOMAIN}`
 }
 
-export { PRODUCTS, productUrl, surfaceHost, type ProductId } from './products'
+export { PRODUCTS, productUrl, surfaceHost, type ProductId } from './products.ts'
 
 // ─── URL validators (no env, no I/O) ────────────────────────────────────
 

@@ -1,9 +1,9 @@
-import { money } from "../../money";
+import { money } from "../../money/index.ts";
 
-import { getCharge } from "../../data/charges";
-import type { BillingDeps } from "../../deps";
-import type { RefundRequest, RefundResult } from "../../kinds";
-import { insertRefund, type RefundRecord } from "./refunds.data";
+import { getCharge } from "../../data/charges.ts";
+import type { BillingDeps } from "../../deps.ts";
+import type { RefundRequest, RefundResult } from "../../kinds.ts";
+import { insertRefund, type RefundRecord } from "./refunds.data.ts";
 
 // The refund slice. Everything explicit (project rule): the caller names the
 // charge; the refund runs through the SAME kind the charge was settled with

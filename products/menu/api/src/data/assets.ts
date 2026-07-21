@@ -1,7 +1,7 @@
 import { type Kysely, sql } from "kysely";
 
-import type { MenuDB } from "../schema";
-import { invalid, notFound } from "../errors";
+import type { MenuDB } from "../schema.ts";
+import { invalid, notFound } from "../errors.ts";
 
 type DB = Kysely<MenuDB>;
 

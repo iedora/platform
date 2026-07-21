@@ -1,6 +1,6 @@
 import { z } from "zod"
 
-import type { BookableSubject, TutorStats } from "./tutor-profile"
+import type { BookableSubject, TutorStats } from "./tutor-profile.ts"
 
 // Wire contracts for the browse-and-book surface. The bookable-tutor list is public
 // tutor data; the has-lesson gateway is student-scoped (resolved from the Bearer).

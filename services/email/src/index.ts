@@ -1,4 +1,4 @@
-import { createMailer } from "./mailer"
+import { createMailer } from "./mailer.ts"
 import {
   Database,
   env,
@@ -9,8 +9,8 @@ import {
   serve,
 } from "@iedora/service-kit"
 
-import { buildApp } from "./app"
-import type { EmailDB } from "./schema"
+import { buildApp } from "./app.ts"
+import type { EmailDB } from "./schema.ts"
 
 expandFileSecrets()
 

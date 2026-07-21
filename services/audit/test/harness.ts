@@ -4,8 +4,8 @@ import { SQL } from "bun";
 import { afterAll, beforeAll } from "bun:test";
 import { generateKeyPair, SignJWT } from "jose";
 
-import { buildApp } from "../src/app";
-import type { AuditDB } from "../src/schema";
+import { buildApp } from "../src/app.ts";
+import type { AuditDB } from "../src/schema.ts";
 
 // Shared test harness for every audit vertical slice. Each slice test owns its
 // behaviour but reuses this setup + the request helpers below, so there is one

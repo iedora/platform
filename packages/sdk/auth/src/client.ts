@@ -14,7 +14,7 @@ import {
   type SwitchResult,
   type TokenBundle,
   type WhoAmI,
-} from "./types"
+} from "./types.ts"
 
 export type AuthClientOptions = {
   /** The auth service's public URL, e.g. https://auth.example.com. */

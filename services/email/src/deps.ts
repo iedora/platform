@@ -1,7 +1,7 @@
-import type { Mailer } from "./mailer"
+import type { Mailer } from "./mailer.ts"
 import type { Database, ServiceVerifier } from "@iedora/service-kit"
 
-import type { EmailDB } from "./schema"
+import type { EmailDB } from "./schema.ts"
 
 // Cross-slice dependencies wired once at boot and handed to each feature slice.
 // The DB handle backs the idempotency inbox; the mailer is the SMTP transport;

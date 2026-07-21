@@ -1,8 +1,8 @@
-import { db } from "../db"
-import type { Tenant } from "../schema"
-import { oauthProvider, type OAuthConfig } from "./oauth"
-import { passwordProvider } from "./password"
-import type { AuthProvider } from "./types"
+import { db } from "../db.ts"
+import type { Tenant } from "../schema.ts"
+import { oauthProvider, type OAuthConfig } from "./oauth.ts"
+import { passwordProvider } from "./password.ts"
+import type { AuthProvider } from "./types.ts"
 
 /**
  * Resolve a provider instance for a tenant. Everything is DB-driven: a provider is

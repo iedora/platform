@@ -1,7 +1,7 @@
 import { beforeAll, expect, test } from "bun:test";
 import { sql } from "kysely";
 
-import { auth, json, jsonPatch, jsonPut, seedRestaurant, useHarness } from "./harness";
+import { auth, json, jsonPatch, jsonPut, seedRestaurant, useHarness } from "./harness.ts";
 
 // Builder slice: the menu-tree mutations the broad dashboard flow doesn't reach
 // — item updates with variants, item reordering, and deletes (with cascade).

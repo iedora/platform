@@ -1,4 +1,4 @@
-import { createAuthClient } from "../index"
+import { createAuthClient } from "../index.ts"
 import { type NextRequest, NextResponse } from "next/server"
 
 import {
@@ -7,7 +7,7 @@ import {
   cookieOptions,
   DEFAULT_ACCESS_MAX_AGE,
   DEFAULT_REFRESH_MAX_AGE,
-} from "./config"
+} from "./config.ts"
 
 /** Cheap, unverified expiry check (real verification is in getClaims). A 30s skew
  *  refreshes slightly early so a request never races expiry. */
@@ -125,4 +125,4 @@ export function createRefreshMiddleware(config: AuthNextConfig) {
 
 // Edge-safe re-export of the shared realm config (pure data, no next/headers) so
 // the proxy middleware runs the ONE shared refresh.
-export { authConfig } from "./config"
+export { authConfig } from "./config.ts"

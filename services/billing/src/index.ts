@@ -7,13 +7,13 @@ import {
   parseEd25519PublicKey,
 } from "@iedora/service-kit";
 
-import { buildApp } from "./app";
-import { runRelayService } from "./outbox";
-import { loadConfig } from "./config";
-import { expireDueSubscriptions } from "./features/expiry/expire.service";
-import { ManualKind, type PaymentKinds } from "./kinds";
-import type { BillingDB } from "./schema";
-import { createStripeKind } from "./stripe-gateway";
+import { buildApp } from "./app.ts";
+import { runRelayService } from "./outbox.ts";
+import { loadConfig } from "./config.ts";
+import { expireDueSubscriptions } from "./features/expiry/expire.service.ts";
+import { ManualKind, type PaymentKinds } from "./kinds.ts";
+import type { BillingDB } from "./schema.ts";
+import { createStripeKind } from "./stripe-gateway.ts";
 
 const EXPIRY_SWEEP_MS = 60 * 60 * 1000; // hourly
 

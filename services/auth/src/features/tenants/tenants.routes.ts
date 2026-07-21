@@ -1,8 +1,8 @@
 import { Hono } from "hono"
 import { z } from "zod"
 
-import { db } from "../../platform/db"
-import { HttpError, withAdmin } from "../../platform/http"
+import { db } from "../../platform/db.ts"
+import { HttpError, withAdmin } from "../../platform/http.ts"
 
 const tenantSchema = z.object({
   slug: z

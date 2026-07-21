@@ -2,7 +2,7 @@ import type { KeyObject } from "node:crypto"
 
 import { jwtVerify } from "jose"
 
-import { typedBearer } from "./bearer"
+import { typedBearer } from "./bearer.ts"
 
 // Verify USER access tokens (EdDSA). Algorithm pinned; iss/aud checked; the
 // typ=="access" guard rejects refresh/service tokens.

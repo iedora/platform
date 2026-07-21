@@ -2,7 +2,7 @@ import type { Auditor } from "@iedora/sdk/audit";
 import type { Database } from "@iedora/service-kit";
 import { sql } from "kysely";
 
-import type { BillingDB } from "../../schema";
+import type { BillingDB } from "../../schema.ts";
 
 /**
  * Sweeps active subscriptions whose period has ended: flips them to `expired`

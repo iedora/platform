@@ -1,14 +1,14 @@
 import { Database, newServiceVerifier } from "@iedora/service-kit";
-import { OutboxWriter } from "../src/outbox";
+import { OutboxWriter } from "../src/outbox.ts";
 import { createScratchDatabase } from "@iedora/service-kit/testkit";
 import { afterAll, beforeAll } from "bun:test";
 import { sql } from "kysely";
 import { SignJWT, generateKeyPair } from "jose";
 
-import { buildApp } from "../src/app";
-import type { BillingConfig } from "../src/config";
-import { ManualKind } from "../src/kinds";
-import type { BillingDB } from "../src/schema";
+import { buildApp } from "../src/app.ts";
+import type { BillingConfig } from "../src/config.ts";
+import { ManualKind } from "../src/kinds.ts";
+import type { BillingDB } from "../src/schema.ts";
 
 // Shared test harness for every billing vertical slice. Each slice test owns its
 // behaviour but reuses this setup + the request/token helpers below, so there is

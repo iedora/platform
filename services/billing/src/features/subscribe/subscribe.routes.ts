@@ -1,10 +1,10 @@
-import { subscribeRequest } from "../../contracts";
+import { subscribeRequest } from "../../contracts.ts";
 import { type ServiceEnv, serviceAuth } from "@iedora/service-kit";
 import { zValidator } from "@hono/zod-validator";
 import { Hono } from "hono";
 
-import type { BillingDeps } from "../../deps";
-import { subscribe } from "./subscribe.service";
+import type { BillingDeps } from "../../deps.ts";
+import { subscribe } from "./subscribe.service.ts";
 
 // Vertical slice: activating/changing a subscription. Owns its route, request
 // validation (shared zod contract), and the service call. Mounted at /billing.

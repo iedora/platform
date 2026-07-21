@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { tenantContext } from "./tenant-context";
+import { tenantContext } from "./tenant-context.ts";
 
 /**
  * tenantContext is the mechanism that lets entrypoints (e.g.

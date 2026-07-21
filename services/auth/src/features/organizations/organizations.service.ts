@@ -1,7 +1,7 @@
-import { db } from "../../platform/db"
-import { HttpError } from "../../platform/http"
-import type { Organization, Tenant, User } from "../../platform/schema"
-import { signAccessToken } from "../../platform/tokens"
+import { db } from "../../platform/db.ts"
+import { HttpError } from "../../platform/http.ts"
+import type { Organization, Tenant, User } from "../../platform/schema.ts"
+import { signAccessToken } from "../../platform/tokens.ts"
 
 /** Generic org roles, most-privileged first. Products can layer their own
  *  meaning on top, but owner/admin gate membership management here. */

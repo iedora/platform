@@ -1,6 +1,6 @@
 import { Hono } from "hono"
 
-import { discovery, jwks } from "../../platform/tokens"
+import { discovery, jwks } from "../../platform/tokens.ts"
 
 /** Standard discovery endpoints, mounted at the root (one issuer for all tenants).
  *  External consumers verify tokens with these — no tenant scope needed. */

@@ -1,7 +1,7 @@
 import { beforeAll, beforeEach, expect, test } from "bun:test";
 import { sql } from "kysely";
 
-import { TENANT, bearer, json, jsonPut, mintUserToken, staffToken, useHarness } from "./harness";
+import { TENANT, bearer, json, jsonPut, mintUserToken, staffToken, useHarness } from "./harness.ts";
 
 // Staff provisioning: POST /api/staff/restaurants (manual) and
 // /restaurants/import (JSON), plus GET /tenants. The interesting surface here is

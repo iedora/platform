@@ -1,9 +1,9 @@
 import type { Auditor } from "@iedora/sdk/audit";
 import type { Database, ServiceVerifier } from "@iedora/service-kit";
 
-import type { BillingConfig } from "./config";
-import type { PaymentKinds } from "./kinds";
-import type { BillingDB } from "./schema";
+import type { BillingConfig } from "./config.ts";
+import type { PaymentKinds } from "./kinds.ts";
+import type { BillingDB } from "./schema.ts";
 
 // Cross-slice dependencies wired once at boot and handed to each feature slice.
 // (Service-wide infrastructure — the DB handle, token verifier, auditor, the

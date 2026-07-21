@@ -1,8 +1,8 @@
 import type { LocalizedText, Theme } from "@iedora/contracts";
 
-import type { Variant } from "./domain";
-import { invalid } from "./errors";
-import { isLanguage } from "./i18n";
+import type { Variant } from "./domain.ts";
+import { invalid } from "./errors.ts";
+import { isLanguage } from "./i18n.ts";
 
 // Validation limits — the single source of truth for field constraints. The
 // limits match the values existing content was created under, so it stays valid.

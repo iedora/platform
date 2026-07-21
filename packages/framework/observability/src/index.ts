@@ -12,9 +12,9 @@
  * the exported tracer (@hono/otel for HTTP, a Kysely plugin for DB) — the two
  * things Bun can't auto-instrument.
  */
-export { withContextAttributes } from "./context"
-export { __resetForTest, register, type RegisterOptions, shutdown } from "./register"
-export { logger, meter, tracer } from "./signals"
+export { withContextAttributes } from "./context.ts"
+export { __resetForTest, register, type RegisterOptions, shutdown } from "./register.ts"
+export { logger, meter, tracer } from "./signals.ts"
 
 /** API types callers commonly touch. */
 export type {

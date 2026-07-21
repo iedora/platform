@@ -1,8 +1,8 @@
 import { iso } from "@iedora/service-kit"
 import { type Kysely, sql } from "kysely"
 
-import type { EmailFilter, EmailQueryResponse, EmailRecord } from "../../contracts"
-import type { EmailDB } from "../../schema"
+import type { EmailFilter, EmailQueryResponse, EmailRecord } from "../../contracts.ts"
+import type { EmailDB } from "../../schema.ts"
 
 const DEFAULT_LIMIT = 50
 const MAX_LIMIT = 200

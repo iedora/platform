@@ -1,10 +1,10 @@
 import type { LocalizedText, Theme } from "@iedora/contracts";
 import type { Kysely, Selectable } from "kysely";
 
-import type { Restaurant } from "../domain";
-import type { MenuDB } from "../schema";
-import type { Restaurants } from "../db.generated";
-import { parseJson } from "./sqlutil";
+import type { Restaurant } from "../domain.ts";
+import type { MenuDB } from "../schema.ts";
+import type { Restaurants } from "../db.generated.ts";
+import { parseJson } from "./sqlutil.ts";
 
 // Restaurant reads shared by the public path and (Stage B) the scoping
 // middleware. Mutations live in data/restaurants.write.ts (Stage B).

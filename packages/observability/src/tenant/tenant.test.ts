@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { IEDORA_TENANT_ID, IEDORA_RESTAURANT_ID, withTenantSpan } from "./tenant";
+import { IEDORA_TENANT_ID, IEDORA_RESTAURANT_ID, withTenantSpan } from "./tenant.ts";
 
 /**
  * No SDK is registered in tests (registerIedoraOtel returns early when

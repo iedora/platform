@@ -2,10 +2,10 @@ import { createDispatcher, enqueue, type Handler } from "@iedora/messaging";
 import { ServiceClient } from "@iedora/server-kit";
 import type { Kysely } from "kysely";
 
-import { type AuditEvent, type Auditor, buildEnvelope } from "./audit";
+import { type AuditEvent, type Auditor, buildEnvelope } from "./audit.ts";
 import type { Database } from "@iedora/service-kit";
 import type { EmailSink } from "@iedora/sdk/email";
-import type { EmailMessage } from "./mailer";
+import type { EmailMessage } from "./mailer.ts";
 
 // Transactional outbox, now backed by @iedora/messaging (topic-based
 // outbox_message + dispatcher, plugin-agnostic). This module keeps the same

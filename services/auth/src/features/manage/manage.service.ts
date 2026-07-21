@@ -1,6 +1,6 @@
 import type { AuditRecord } from "@iedora/sdk/audit"
 
-import { queryAudit } from "../../platform/audit"
+import { queryAudit } from "../../platform/audit.ts"
 import {
   burnFamily,
   createUser,
@@ -9,13 +9,13 @@ import {
   foldSessionFamilies,
   revokeAllUserSessions,
   writePassword,
-} from "../../platform/accounts"
-import { emitAudit } from "../../platform/audit"
-import { db } from "../../platform/db"
-import { HttpError } from "../../platform/http"
-import { passwordProvider } from "../../platform/providers/password"
-import type { Tenant } from "../../platform/schema"
-import { createOrganization } from "../organizations/organizations.service"
+} from "../../platform/accounts.ts"
+import { emitAudit } from "../../platform/audit.ts"
+import { db } from "../../platform/db.ts"
+import { HttpError } from "../../platform/http.ts"
+import { passwordProvider } from "../../platform/providers/password.ts"
+import type { Tenant } from "../../platform/schema.ts"
+import { createOrganization } from "../organizations/organizations.service.ts"
 
 /* --------------------------------- users --------------------------------- */
 

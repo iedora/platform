@@ -1,8 +1,8 @@
 import { expect, test } from "bun:test"
 import { sql } from "kysely"
 
-import { expireDueSubscriptions } from "../src/features/expiry/expire.service"
-import { bearer, post, useHarness } from "./harness"
+import { expireDueSubscriptions } from "../src/features/expiry/expire.service.ts"
+import { bearer, post, useHarness } from "./harness.ts"
 
 const h = useHarness()
 
@@ -92,7 +92,7 @@ test("the expiry sweep downgrades a past-due tenant to On Us + audits it", async
   `.execute(h.db.root)
 
   // A real outbox-backed auditor so the sweep's audit lands where we assert.
-  const { OutboxWriter } = await import("../src/outbox")
+  const { OutboxWriter } = await import("../src/outbox.ts")
   const expired = await expireDueSubscriptions(h.db, new OutboxWriter(h.db, "billing"))
   expect(expired).toBe(1)
 
@@ -111,7 +111,7 @@ test("the expiry sweep downgrades a past-due tenant to On Us + audits it", async
 })
 
 test("one sweep expires every past-due tenant + audits each", async () => {
-  const { OutboxWriter } = await import("../src/outbox")
+  const { OutboxWriter } = await import("../src/outbox.ts")
   const tenants = [freshTenant(), freshTenant(), freshTenant()]
   for (const t of tenants) {
     await sql`

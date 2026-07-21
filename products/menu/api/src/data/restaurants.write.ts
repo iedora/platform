@@ -1,11 +1,11 @@
 import type { RestaurantSummary } from "@iedora/contracts";
 import { type Kysely, sql } from "kysely";
 
-import type { Restaurant } from "../domain";
-import type { MenuDB } from "../schema";
-import { isUniqueViolation, notFound, slugTaken } from "../errors";
-import { RESTAURANT_COLS, toRestaurant } from "./restaurants";
-import { changedOrNotFound, jsonbOrNull, textArray } from "./sqlutil";
+import type { Restaurant } from "../domain.ts";
+import type { MenuDB } from "../schema.ts";
+import { isUniqueViolation, notFound, slugTaken } from "../errors.ts";
+import { RESTAURANT_COLS, toRestaurant } from "./restaurants.ts";
+import { changedOrNotFound, jsonbOrNull, textArray } from "./sqlutil.ts";
 
 // Wire DTO re-exported so existing importers (service.ts) keep resolving; the
 // shape is owned by @iedora/contracts (single source of truth).

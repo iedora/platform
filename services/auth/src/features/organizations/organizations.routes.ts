@@ -1,8 +1,8 @@
 import { Hono } from "hono"
 import { z } from "zod"
 
-import { findUserById } from "../../platform/accounts"
-import { type AuthedEnv, HttpError, validate, withUser } from "../../platform/http"
+import { findUserById } from "../../platform/accounts.ts"
+import { type AuthedEnv, HttpError, validate, withUser } from "../../platform/http.ts"
 import {
   addMember,
   createOrganization,
@@ -12,7 +12,7 @@ import {
   requireOrgRole,
   switchOrganization,
   updateMemberRole,
-} from "./organizations.service"
+} from "./organizations.service.ts"
 
 const roleEnum = z.enum(["owner", "admin", "member"])
 const createSchema = z.object({ name: z.string().min(1).max(120), slug: z.string().max(64).optional() })

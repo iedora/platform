@@ -1,13 +1,13 @@
 import type { Auditor, Database, UserVerifier } from "@iedora/service-runtime";
 
-import type { AuditReader } from "./audit-read";
-import type { TenantReader, UserReader } from "./auth-client";
-import type { BillingReader, BillingWriter } from "./billing";
-import type { MenuConfig } from "./config";
-import type { Plans } from "./plans";
-import type { Limiter } from "./ratelimit";
-import type { MenuDB } from "./schema";
-import type { Uploads } from "./uploads";
+import type { AuditReader } from "./audit-read.ts";
+import type { TenantReader, UserReader } from "./auth-client.ts";
+import type { BillingReader, BillingWriter } from "./billing.ts";
+import type { MenuConfig } from "./config.ts";
+import type { Plans } from "./plans.ts";
+import type { Limiter } from "./ratelimit.ts";
+import type { MenuDB } from "./schema.ts";
+import type { Uploads } from "./uploads.ts";
 
 // Cross-slice dependencies wired once at boot. The public surface (Stage A) uses
 // db + limiter; the authenticated surface adds the user verifier, auditor, and

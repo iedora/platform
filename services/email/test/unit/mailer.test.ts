@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test"
 
-import { createMailer } from "../../src/mailer"
+import { createMailer } from "../../src/mailer.ts"
 
 describe("createMailer (dev / jsonTransport)", () => {
   const mailer = createMailer({ from: "Acme <no-reply@acme.com>" }) // no host → jsonTransport

@@ -1,10 +1,10 @@
 import { type UserPrincipal, hasRole } from "@iedora/service-runtime";
 import { createMiddleware } from "hono/factory";
 
-import { restaurantBySlug } from "./data/restaurants";
-import type { MenuDeps } from "./deps";
-import type { Restaurant } from "./domain";
-import { notFound } from "./errors";
+import { restaurantBySlug } from "./data/restaurants.ts";
+import type { MenuDeps } from "./deps.ts";
+import type { Restaurant } from "./domain.ts";
+import { notFound } from "./errors.ts";
 
 // Staff role. A staff caller may reach any tenant's
 // restaurant (the scoped check below) and the cross-tenant /staff surface.

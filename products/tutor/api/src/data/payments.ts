@@ -5,9 +5,9 @@ import type { LessonStatus } from "#db/enums"
 import type { Kysely } from "kysely"
 
 import type { SavedCardDTO } from "#contracts/payments"
-import type { TutorDB } from "../schema"
-import { WIRE_CURRENCY } from "../lib/billing"
-import { conversationId, postSystem } from "./conversations"
+import type { TutorDB } from "../schema.ts"
+import { WIRE_CURRENCY } from "../lib/billing.ts"
+import { conversationId, postSystem } from "./conversations.ts"
 
 type DB = Kysely<TutorDB>
 

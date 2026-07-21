@@ -11,7 +11,7 @@ import {
   OutboxRelay,
   OutboxWriter,
   relayHandlers,
-} from "../src";
+} from "../src/index.ts";
 
 // Bun-runtime integration test against a real Postgres. Provisions ONE throwaway
 // producer DB (outbox_message via @iedora/messaging) and drives the relay against

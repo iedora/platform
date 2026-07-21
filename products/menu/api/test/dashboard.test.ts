@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import { sql } from "kysely";
 
-import { OTHER_TENANT, TENANT, auth, json, jsonPatch, jsonPut, mintUserToken, useHarness } from "./harness";
+import { OTHER_TENANT, TENANT, auth, json, jsonPatch, jsonPut, mintUserToken, useHarness } from "./harness.ts";
 
 // Dashboard slice: the tenant-scoped /api surface (restaurants, plan gate, tree,
 // builder edits, reorder, tenancy). Tests run in order against one scratch DB.

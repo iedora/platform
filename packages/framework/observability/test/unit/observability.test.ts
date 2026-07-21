@@ -18,7 +18,7 @@ import {
   shutdown,
   tracer,
   withContextAttributes,
-} from "../../src/index"
+} from "../../src/index.ts"
 
 afterEach(() => {
   __resetForTest()

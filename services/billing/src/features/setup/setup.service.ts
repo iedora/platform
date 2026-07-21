@@ -1,7 +1,7 @@
-import type { Setup } from "../../money";
+import type { Setup } from "../../money/index.ts";
 
-import type { BillingDeps } from "../../deps";
-import type { SavedCardInfo } from "../../kinds";
+import type { BillingDeps } from "../../deps.ts";
+import type { SavedCardInfo } from "../../kinds.ts";
 
 // The "save a card" slice — begin a Stripe SetupIntent the client confirms to
 // attach a payment method for later off-session charges. Everything explicit:

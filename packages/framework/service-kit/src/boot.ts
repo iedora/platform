@@ -1,7 +1,7 @@
 import { serve as nodeServe } from "@hono/node-server";
 import type { Hono } from "hono";
 
-import { emitLog, initOtel, shutdownOtel } from "./otel";
+import { emitLog, initOtel, shutdownOtel } from "./otel.ts";
 
 export interface ServeOptions {
   name: string;

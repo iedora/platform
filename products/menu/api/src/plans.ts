@@ -1,9 +1,9 @@
 import type { Database } from "@iedora/service-runtime";
 
-import type { PlanSource } from "./billing";
-import { countRestaurants } from "./data/restaurants.write";
-import { invalid } from "./errors";
-import type { MenuDB } from "./schema";
+import type { PlanSource } from "./billing.ts";
+import { countRestaurants } from "./data/restaurants.write.ts";
+import { invalid } from "./errors.ts";
+import type { MenuDB } from "./schema.ts";
 
 // Plan entitlements. The DB stores raw billing
 // codes; this registry interprets them, so renaming plans never breaks gates.

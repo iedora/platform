@@ -1,6 +1,6 @@
 import { beforeAll, expect, test } from "bun:test";
 
-import { TENANT, json, seedRestaurant, useHarness } from "./harness";
+import { TENANT, json, seedRestaurant, useHarness } from "./harness.ts";
 
 // Uploads slice — the configured-storage path. The harness wires a real
 // `Uploads` over an in-memory blob (`withUploads`), so we exercise the full

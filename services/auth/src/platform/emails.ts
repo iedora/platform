@@ -1,4 +1,4 @@
-import { button, htmlShell, paragraph } from "./email-template"
+import { button, htmlShell, paragraph } from "./email-template.ts"
 
 // Auth's transactional-email copy, composed from @iedora/email's HTML primitives.
 // Branding is just the tenant name. Each returns subject + html + text.

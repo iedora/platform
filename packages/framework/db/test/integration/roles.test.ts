@@ -4,7 +4,7 @@ import { mkdtemp, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 
-import { createDb, ensureDatabaseRole, ensureSchemaRole, migrate } from "../../src/index"
+import { createDb, ensureDatabaseRole, ensureSchemaRole, migrate } from "../../src/index.ts"
 
 // Proves the hard rule at the engine level: a role scoped to schema A cannot
 // read schema B — Postgres denies it, not a code convention.

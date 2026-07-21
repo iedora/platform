@@ -1,6 +1,6 @@
 import { type Kysely, sql } from "kysely";
 
-import type { MenuDB } from "../schema";
+import type { MenuDB } from "../schema.ts";
 
 // promoteDefaultLanguage rotates content when the restaurant's default language
 // changes from `from` to `to`: every plain column (which by invariant holds the

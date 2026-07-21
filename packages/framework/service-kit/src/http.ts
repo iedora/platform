@@ -4,7 +4,7 @@ import type { ContentfulStatusCode } from "hono/utils/http-status";
 
 import { HttpError, type ServiceEnv } from "@iedora/server-kit";
 
-import { otelHttp, traceIds } from "./otel";
+import { otelHttp, traceIds } from "./otel.ts";
 
 // createServiceApp returns a Hono app with one consistent global error handler:
 // a Hono HTTPException renders its own response; a server-kit HttpError is shaped

@@ -1,8 +1,8 @@
 import { sql } from "kysely"
 
-import { db } from "./client"
-import { RANK_COMMISSION_RATE, RANK_LABEL, RANK_MIN_XP, RANK_ORDER } from "./domain/pricing"
-import type { ReviewTag } from "./enums"
+import { db } from "./client.ts"
+import { RANK_COMMISSION_RATE, RANK_LABEL, RANK_MIN_XP, RANK_ORDER } from "./domain/pricing.ts"
+import type { ReviewTag } from "./enums.ts"
 
 /** The demo data is attached to this Better Auth account, if it exists. */
 const DEMO_EMAIL = "student@example.com"
