@@ -11,7 +11,10 @@
     "./react": "./src/react.js",
     "./typescript": "./src/typescript.js",
     "./boundaries": "./src/boundaries.js",
-    "./vitest": "./src/vitest.js"
+    "./vitest": "./src/vitest.js",
+    "./lib": "./src/lib.js",
+    "./react-lib": "./src/react-lib.js",
+    "./next-product": "./src/next-product.js"
   },
   "peerDependencies": {
     "eslint": ">=9.0.0",
@@ -25,7 +28,8 @@
   "dependencies": {
     "@eslint/js": "^9.39.4",
     "eslint-plugin-boundaries": "^6.0.2",
-    "eslint-config-next": "16.2.6"
+    "eslint-config-next": "16.2.6",
+    "eslint-plugin-oxlint": "catalog:"
   },
   "scripts": {},
   "devDependencies": {}

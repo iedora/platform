@@ -1,4 +1,5 @@
 import { defineConfig, globalIgnores } from 'eslint/config'
+import oxlint from 'eslint-plugin-oxlint'
 import { next, boundaries, vitest } from '@iedora/eslint-config'
 
 /**
@@ -59,6 +60,10 @@ const eslintConfig = defineConfig([
     },
   },
   ...vitest(),
+  // oxlint layer LAST — disables the ESLint rules the oxlint correctness
+  // pre-pass already runs (boundaries/no-restricted-imports above are not
+  // among them, so ordering after boundaries is fine).
+  ...oxlint.buildFromOxlintConfig({ categories: { correctness: 'error' } }),
   globalIgnores([
     '.next/**',
     'out/**',
