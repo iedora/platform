@@ -1,0 +1,30 @@
+{
+  "name": "@iedora/tutor-db",
+  "version": "0.0.0",
+  "type": "module",
+  "private": true,
+  "exports": {
+    ".": "./src/index.ts",
+    "./client": "./src/client.ts",
+    "./types": "./src/types.ts",
+    "./enums": "./src/enums.ts",
+    "./migrate": "./src/migrate.ts",
+    "./domain/*": "./src/domain/*.ts"
+  },
+  "scripts": {
+    "migrate": "bun run src/migrate.ts",
+    "seed": "bun run src/seed.ts",
+    "codegen": "kysely-codegen --dialect postgres --out-file ./src/types.generated.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@iedora/db": "workspace:*",
+    "kysely": "catalog:"
+  },
+  "devDependencies": {
+    "@types/bun": "catalog:",
+    "@types/node": "catalog:",
+    "kysely-codegen": "catalog:",
+    "typescript": "catalog:"
+  }
+}

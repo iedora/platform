@@ -5,6 +5,9 @@
   "workspaces": [
     "packages/platform/*",
     "packages/server/*",
+    "packages/framework/*",
+    "packages/sdk/*",
+    "packages/tutor/*",
     "products/*",
     "services/*",
     "apps/*"
@@ -57,6 +60,8 @@
     "postcss": "^8.5.14"
   },
   "dependencies": {
-    "@iedora/db": "^0.8.0"
+    "@iedora/db": "workspace:*",
+    "@iedora/service-kit": "workspace:*",
+    "next": "^16.2.10"
   }
 }

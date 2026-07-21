@@ -1,0 +1,33 @@
+{
+  "name": "@iedora/messaging",
+  "version": "0.2.1",
+  "description": "Generic transactional outbox + idempotent inbox for Postgres/Kysely: at-least-once delivery via SELECT ... FOR UPDATE SKIP LOCKED, retries with jittered exponential backoff, and dead-lettering. So services don't reimplement reliable messaging.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "files": [
+    "src",
+    "README.md"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/iedora/framework.git",
+    "directory": "packages/messaging"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "kysely": ">=0.27"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.1.14",
+    "kysely": "^0.29.3",
+    "kysely-postgres-js": "^3.0.0",
+    "typescript": "catalog:"
+  }
+}

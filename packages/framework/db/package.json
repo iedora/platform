@@ -1,0 +1,43 @@
+{
+  "name": "@iedora/db",
+  "version": "0.8.0",
+  "description": "Bun-native Kysely-over-Postgres kit: createDb + a tx-in-context Database class on Bun's SQL driver via kysely-postgres-js, a static-import migration runner (runMigrations), and shared column types.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "files": [
+    "src",
+    "README.md"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/iedora/framework.git",
+    "directory": "packages/db"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "kysely-postgres-js": "^3.0.0"
+  },
+  "peerDependencies": {
+    "kysely": ">=0.27",
+    "postgres": "^3.4.0"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.1.14",
+    "kysely": "^0.29.3",
+    "postgres": "^3.4.5",
+    "tsx": "^4.19.2",
+    "typescript": "catalog:"
+  },
+  "peerDependenciesMeta": {
+    "postgres": {
+      "optional": true
+    }
+  }
+}

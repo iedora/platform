@@ -1,0 +1,31 @@
+{
+  "name": "@iedora/service-email",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Email service (Hono/Bun): receives transactional emails from every producer over HTTP and delivers them via SMTP. Standalone, framework-direct (@iedora/service-kit + @iedora/email).",
+  "scripts": {
+    "dev": "bun run --hot src/index.ts",
+    "start": "bun run src/index.ts",
+    "migrate": "bun run src/migrate.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@iedora/db": "workspace:*",
+    "@iedora/messaging": "workspace:*",
+    "@iedora/service-kit": "workspace:*",
+    "@hono/zod-validator": "catalog:",
+    "hono": "catalog:",
+    "kysely": "catalog:",
+    "nodemailer": "^9.0.3",
+    "pg": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@types/bun": "catalog:",
+    "@types/node": "^22",
+    "@types/nodemailer": "^8.0.1",
+    "@types/pg": "^8.11.10",
+    "typescript": "catalog:"
+  }
+}
