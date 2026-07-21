@@ -1,30 +1,25 @@
-import { type UserEnv, userAuth } from "@iedora/service-runtime";
-import { Hono } from "hono";
-import { decodeJwt } from "jose";
+import { Hono } from "hono"
 
-import { findUserById } from "../../data/users";
-import type { AuthDeps } from "../../deps";
+import { findUserById } from "../../platform/accounts"
+import { type AuthedEnv, HttpError, withUser } from "../../platform/http"
 
-// The signed-in user's identity — the @iedora/auth-sdk WhoAmI shape.
-// `mustChangePassword` is read LIVE from the DB so the dashboard guard stops
-// redirecting the instant the user completes a forced change (the token claim
-// would lag); everything else comes off the verified access token.
-export function whoamiRoutes(deps: AuthDeps) {
-  return new Hono<UserEnv>().get("/whoami", userAuth(deps.userVerifier), async (c) => {
-    const u = c.get("user");
-    const row = await findUserById(deps.db.db, u.userId);
-    // The bearer is already verified by userAuth; decode (no verify) just for `exp`.
-    const bearer = (c.req.header("authorization") ?? "").replace(/^Bearer\s+/i, "");
-    const exp = bearer ? ((decodeJwt(bearer).exp as number | undefined) ?? 0) : 0;
-    return c.json({
-      sub: u.userId,
-      email: u.email ?? null,
-      name: row?.name ?? null,
-      tenant: u.tenant ?? "menu",
-      org: u.org ?? null,
-      roles: u.roles,
-      mustChangePassword: row?.must_change_password ?? false,
-      exp,
-    });
-  });
-}
+/** GET /:tenant/whoami — the verified caller, with a LIVE `mustChangePassword`
+ *  read (a forced-change set after the token was minted still takes effect).
+ *  Consumers should normally verify tokens themselves via JWKS; this is for
+ *  quick checks and the forced-change gate. */
+export const whoamiRoutes = new Hono<AuthedEnv>().use("*", withUser).get("/whoami", async (c) => {
+  const { sub, org, roles, exp } = c.var.authUser
+  const user = await findUserById(c.var.tenant.id, sub)
+  if (!user) throw new HttpError(404, "unknown_user")
+
+  return c.json({
+    sub: user.id,
+    email: user.email,
+    name: user.name,
+    tenant: c.var.tenant.slug,
+    org,
+    roles,
+    mustChangePassword: user.mustChangePassword,
+    exp,
+  })
+})

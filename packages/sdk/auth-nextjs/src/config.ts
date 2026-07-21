@@ -8,6 +8,10 @@ export type AuthNextConfig = {
   audience?: string
   /** Cookie name prefix (default "auth"): `<prefix>_access` / `<prefix>_refresh`. */
   cookiePrefix?: string
+  /** Cookie `Domain`. Set to a shared parent (e.g. `.iedora.com`) so every product
+   *  subdomain reads the same session — the basis of cross-product SSO. Omit for a
+   *  host-only cookie (single-surface). */
+  cookieDomain?: string
   /** Access-cookie lifetime (s). Default 900 (matches the access-token TTL). */
   accessMaxAge?: number
   /** Refresh-cookie lifetime (s). Default 30d. */
@@ -26,6 +30,8 @@ export function cookieOptions(config: AuthNextConfig) {
     sameSite: "lax" as const,
     secure: config.secure ?? process.env.NODE_ENV === "production",
     path: "/",
+    // Shared parent domain → SSO across subdomains; omitted = host-only.
+    ...(config.cookieDomain ? { domain: config.cookieDomain } : {}),
   }
 }
 

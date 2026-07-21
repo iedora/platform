@@ -1,102 +1,87 @@
-import { hashPassword, hashRefreshToken, newRefreshToken } from "@iedora/service-runtime";
-import { HTTPException } from "hono/http-exception";
+import { findUserByEmail, revokeAllUserSessions, writePassword } from "../../platform/accounts"
+import { config } from "../../platform/config"
+import { db } from "../../platform/db"
+import { passwordChangedEmail, passwordResetEmail } from "../../platform/emails"
+import { HttpError } from "../../platform/http"
+import { enqueueEmail } from "../../platform/mailer"
+import { passwordProvider } from "../../platform/providers/password"
+import type { Tenant } from "../../platform/schema"
+import { hashToken, newOpaqueToken } from "../../platform/tokens"
 
-import {
-  claimToken,
-  findActiveByHash,
-  hasRecentToken,
-  insertResetToken,
-  invalidateUserTokens,
-} from "../../data/passwordResets";
-import { revokeAllForUser } from "../../data/sessions";
-import { findUserByEmail, findUserById, isBanned, updatePasswordHash } from "../../data/users";
-import type { AuthDeps } from "../../deps";
-import { auditWith, type RequestMeta } from "../../session";
-
-// Builds the emailed reset link from configured base + the raw token. The base
-// comes from cfg (never the request Host header) → no reset-link poisoning.
-function resetLink(base: string, token: string): string {
-  const url = new URL(base);
-  url.searchParams.set("token", token);
-  return url.toString();
+/** Where the reset link points: the tenant's own app origin, then a config
+ *  fallback, then the issuer as a last resort. */
+function appOrigin(tenant: Tenant): string {
+  return tenant.allowedOrigins[0] ?? config.appBaseUrl ?? config.issuerUrl
 }
 
-/**
- * Forgot-password: issues a one-time reset token and hands the link to the
- * mailer. ALWAYS resolves the same way whether or not the account exists — the
- * caller returns one fixed 200, so there is no account-enumeration oracle. No
- * change is made to the account here (OWASP: don't lock/alter on request).
- */
-export async function requestReset(
-  deps: AuthDeps,
-  email: string,
-  meta: RequestMeta,
-): Promise<void> {
-  const user = await findUserByEmail(deps.db.db, email);
-  // Silently no-op for unknown or banned accounts (same external response).
-  if (!user || isBanned(user, new Date())) return;
+/** Start a reset. Always succeeds from the caller's view (never reveals whether
+ *  the email exists); when the user is real, a hashed token is stored and a
+ *  reset email is queued in the same transaction. */
+export async function requestPasswordReset(tenant: Tenant, email: string): Promise<void> {
+  const user = await findUserByEmail(tenant.id, email)
+  if (!user) return
 
-  // Anti-flood: at most one live token per account per throttle window.
-  if (await hasRecentToken(deps.db.db, user.id, deps.cfg.resetThrottleMs)) return;
+  const { token, hash } = newOpaqueToken()
+  const expiresAt = new Date(Date.now() + config.resetTtl * 1000)
+  const url = `${appOrigin(tenant)}${config.resetPath}?token=${encodeURIComponent(token)}`
+  const mail = passwordResetEmail(tenant.name, url, Math.round(config.resetTtl / 60))
 
-  const { token, hash } = newRefreshToken(); // opaque 32-byte token; only its hash is stored
-  const expiresAt = new Date(Date.now() + deps.cfg.resetTokenTtlMs);
-
-  // One transaction does everything at once: store the token, record the audit
-  // event, AND enqueue the email into the Postgres outbox. They commit together
-  // (durable — a crash can't lose the email), the request returns without
-  // waiting on SMTP, and the relay delivers in the background. The response time
-  // no longer depends on whether an email was sent, so there's no timing oracle.
-  await deps.db.runInTx(async () => {
-    await insertResetToken(deps.db.db, { userId: user.id, tokenHash: hash, expiresAt });
-    await auditWith(deps.auditor, meta).recordSync({
-      action: "auth.user.password_reset_requested",
-      actor: { type: "user", id: user.id },
-      targetType: "user",
-      targetId: user.id,
-    });
-    await deps.resetMailer.sendPasswordReset(user.email, resetLink(deps.cfg.resetUrlBase, token));
-  });
+  await db.transaction().execute(async (trx) => {
+    await trx
+      .insertInto("passwordResetToken")
+      .values({ tenantId: tenant.id, userId: user.id, tokenHash: hash, expiresAt })
+      .execute()
+    await enqueueEmail(trx, {
+      tenantId: tenant.id,
+      to: user.email,
+      subject: mail.subject,
+      html: mail.html,
+      text: mail.text,
+    })
+  })
 }
 
-/**
- * Reset-confirm: validates the token, sets the new password, then revokes EVERY
- * session and every other outstanding reset token for the user. Does NOT log the
- * user in (no tokens/cookie returned) — OWASP forbids auto-login on reset.
- */
-export async function confirmReset(
-  deps: AuthDeps,
-  input: { token: string; password: string },
-  meta: RequestMeta,
+/** Complete a reset: set the new password, revoke every session, and email a
+ *  security notice. Works for accounts with no prior password (OAuth-only or a
+ *  migrated user) — writePassword creates the identity. */
+export async function resetPassword(
+  tenant: Tenant,
+  token: string,
+  newPassword: string,
 ): Promise<void> {
-  const row = await findActiveByHash(deps.db.db, hashRefreshToken(input.token));
-  if (!row) throw new HTTPException(400, { message: "invalid or expired token" });
+  const row = await db
+    .selectFrom("passwordResetToken")
+    .selectAll()
+    .where("tenantId", "=", tenant.id)
+    .where("tokenHash", "=", hashToken(token))
+    .executeTakeFirst()
+  if (!row || row.claimedAt || row.expiresAt.getTime() < Date.now()) {
+    throw new HttpError(400, "invalid_token", "This reset link is invalid or has expired")
+  }
 
-  // Run the two independent slow/IO steps together instead of in sequence: the
-  // deliberately-expensive argon2 hash AND the user lookup (only needed for the
-  // notice email) have no dependency on each other.
-  const [passwordHash, user] = await Promise.all([
-    hashPassword(input.password),
-    findUserById(deps.db.db, row.user_id),
-  ]);
+  const user = await db
+    .selectFrom("user")
+    .select(["id", "email"])
+    .where("id", "=", row.userId)
+    .executeTakeFirstOrThrow()
+  const hash = await passwordProvider.hash(newPassword)
+  const notice = passwordChangedEmail(tenant.name)
 
-  // One transaction: claim the token, set the password, revoke sessions + sibling
-  // tokens, record the audit event, AND enqueue the "password changed" notice
-  // into the outbox — all committed together, delivery handled by the relay.
-  await deps.db.runInTx(async () => {
-    // Conditional claim is the single-use guard; a lost race means already used.
-    if (!(await claimToken(deps.db.db, row.id))) {
-      throw new HTTPException(400, { message: "invalid or expired token" });
-    }
-    await updatePasswordHash(deps.db.db, row.user_id, passwordHash);
-    await invalidateUserTokens(deps.db.db, row.user_id); // burn any sibling tokens
-    await revokeAllForUser(deps.db.db, row.user_id); // log out every device
-    await auditWith(deps.auditor, meta).recordSync({
-      action: "auth.user.password_reset_completed",
-      actor: { type: "user", id: row.user_id },
-      targetType: "user",
-      targetId: row.user_id,
-    });
-    if (user) await deps.resetMailer.sendPasswordChanged(user.email);
-  });
+  await db.transaction().execute(async (trx) => {
+    await trx
+      .updateTable("passwordResetToken")
+      .set({ claimedAt: new Date() })
+      .where("id", "=", row.id)
+      .execute()
+    await writePassword(trx, { tenantId: tenant.id, userId: user.id, email: user.email, hash })
+    // A reset invalidates every existing session.
+    await revokeAllUserSessions(trx, tenant.id, user.id)
+    await enqueueEmail(trx, {
+      tenantId: tenant.id,
+      to: user.email,
+      subject: notice.subject,
+      html: notice.html,
+      text: notice.text,
+    })
+  })
 }

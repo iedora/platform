@@ -1,19 +1,18 @@
-import { Hono } from "hono";
+import { Hono } from "hono"
+import { z } from "zod"
 
-import type { AuthDeps } from "../../deps";
-import { unauthorized } from "../../errors";
-import { metaFrom, tokenBundle } from "../../session";
-import { refresh } from "./refresh.service";
+import { rotateRefresh } from "../../platform/accounts"
+import { type Env, HttpError, reqContext } from "../../platform/http"
 
-export function refreshRoutes(deps: AuthDeps) {
-  return new Hono().post("/refresh", async (c) => {
-    // The refresh token arrives in the body (the BFF owns the cookie now).
-    const body = await c.req
-      .json<{ refreshToken?: string }>()
-      .catch(() => ({}) as { refreshToken?: string });
-    if (!body.refreshToken) throw unauthorized("no refresh token");
-    const refreshToken = body.refreshToken;
-    const tokens = await refresh(deps, refreshToken, metaFrom(c));
-    return c.json(tokenBundle(tokens));
-  });
-}
+const schema = z.object({ refreshToken: z.string().min(1) })
+
+/** POST /:tenant/refresh — exchange a refresh token for a new bundle (rotation). */
+export const refreshRoutes = new Hono<Env>().post("/refresh", async (c) => {
+  const tenant = c.get("tenant")
+  const parsed = schema.safeParse(await c.req.json().catch(() => null))
+  if (!parsed.success) throw new HttpError(422, "invalid_input")
+
+  const bundle = await rotateRefresh(tenant, parsed.data.refreshToken, reqContext(c))
+  if (!bundle) throw new HttpError(401, "invalid_grant", "Refresh token is invalid or expired")
+  return c.json(bundle)
+})

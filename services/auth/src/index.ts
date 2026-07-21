@@ -1,73 +1,63 @@
-import {
-  AuditClient,
-  Database,
-  EmailClient,
-  JwtIssuer,
-  ServiceClient,
-  ServiceTokenIssuer,
-  expandFileSecrets,
-  newServiceVerifier,
-  newUserVerifier,
-  OutboxMailer,
-  parseClients,
-  parseEd25519Seed,
-  runRelayService,
-} from "@iedora/service-runtime";
+import { Hono } from "hono"
 
-import { buildApp } from "./app";
-import { loadConfig } from "./config";
-import { makeResetMailer } from "./mailer";
-import type { AuthDB } from "./schema";
+import { accountRoutes } from "./features/account/account.routes"
+import { loginRoutes } from "./features/login/login.routes"
+import { logoutRoutes } from "./features/logout/logout.routes"
+import { manageRoutes } from "./features/manage/manage.routes"
+import { oauthRoutes } from "./features/oauth/oauth.routes"
+import { organizationRoutes } from "./features/organizations/organizations.routes"
+import { passwordResetRoutes } from "./features/password-reset/password-reset.routes"
+import { refreshRoutes } from "./features/refresh/refresh.routes"
+import { registerRoutes } from "./features/register/register.routes"
+import { tenantsRoutes } from "./features/tenants/tenants.routes"
+import { tokenRoutes } from "./features/token/token.routes"
+import { wellKnownRoutes } from "./features/well-known/well-known.routes"
+import { whoamiRoutes } from "./features/whoami/whoami.routes"
+import { createDispatcher } from "@iedora/messaging"
+import { up } from "@iedora/server-kit"
 
-expandFileSecrets();
-const cfg = loadConfig();
+import { auditHandler } from "./platform/audit"
+import { config } from "./platform/config"
+import { db } from "./platform/db"
+import { type Env, onError, withTenant } from "./platform/http"
+import { emailHandler } from "./platform/mailer"
 
-const db = new Database<AuthDB>(cfg.authDatabaseUrl, { camelCase: false });
+const app = new Hono()
+app.onError(onError)
+app.get("/up", up)
 
-const keys = parseEd25519Seed(cfg.jwtSeed);
-const issuer = new JwtIssuer({
-  keys,
-  kid: cfg.jwtKeyId,
-  issuer: cfg.jwtIssuer,
-  audience: cfg.jwtAudience,
-  accessTtl: cfg.accessTtl,
-});
-const userVerifier = newUserVerifier(keys.publicKey, cfg.jwtIssuer, cfg.jwtAudience);
-const serviceIssuer = new ServiceTokenIssuer({
-  privateKey: keys.privateKey,
-  kid: cfg.jwtKeyId,
-  issuer: cfg.jwtIssuer,
-  audience: cfg.serviceAudience,
-  ttl: cfg.serviceTokenTtl,
-});
-const serviceVerifier = newServiceVerifier(keys.publicKey, cfg.jwtIssuer, cfg.serviceAudience);
-// Email is a durable Postgres message, not an inline send. Request handlers
-// ENQUEUE into the outbox (in the same tx as the business change) via the
-// OutboxMailer; the relay drains `email.send` rows and POSTs them to the email
-// microservice (email-sdk), which delivers via SMTP. Auth self-mints a service
-// token (it holds the platform signing key).
-const email = new EmailClient({
-  baseUrl: cfg.emailBaseUrl,
-  tokens: { token: () => serviceIssuer.issue("auth") },
-});
-const resetMailer = makeResetMailer(new OutboxMailer(db));
+// Root scope: discovery + admin provisioning (no tenant in the path).
+app.route("/", wellKnownRoutes)
+app.route("/", tenantsRoutes)
+app.route("/", tokenRoutes)
+app.route("/", manageRoutes)
 
-// Audit sink: auth POSTs events to the audit service (never its DB). Auth holds
-// the platform signing key, so it self-mints its own service token rather than
-// fetching one from itself.
-const audit = new AuditClient(
-  new ServiceClient(cfg.auditBaseUrl, { token: () => serviceIssuer.issue("auth") }, "audit"),
-);
+// Tenant scope: every slice below runs under `/:tenant/...` with the tenant
+// resolved once by the middleware.
+const tenant = new Hono<Env>()
+tenant.use("*", withTenant)
+tenant.route("/", registerRoutes)
+tenant.route("/", loginRoutes)
+tenant.route("/", passwordResetRoutes)
+tenant.route("/", refreshRoutes)
+tenant.route("/", logoutRoutes)
+tenant.route("/", whoamiRoutes)
+tenant.route("/", accountRoutes)
+tenant.route("/", organizationRoutes)
+tenant.route("/", oauthRoutes)
+app.route("/:tenant", tenant)
 
-// runRelayService owns the outbox writer/relay (audit + email) + graceful
-// shutdown; audit is delivered over HTTP via the sink above.
-runRelayService({
-  name: "iedora-auth",
-  port: cfg.port,
-  source: "auth",
-  db,
-  audit,
-  email,
-  build: ({ auditor }) =>
-    buildApp({ db, issuer, userVerifier, serviceIssuer, serviceVerifier, serviceClients: parseClients(cfg.serviceClients), auditor, resetMailer, cfg }),
-});
+Bun.serve({ port: config.port, fetch: app.fetch })
+
+// One outbox dispatcher delivers every queued message over the SDK: email to the
+// email service, audit events to the audit service (both idempotent — the sink
+// service dedupes on the outbox message id).
+const dispatcher = createDispatcher(db, {
+  handlers: { email: emailHandler, audit: auditHandler },
+})
+dispatcher.start()
+
+console.log(`[auth] listening on :${config.port} — issuer ${config.issuerUrl}`)
+
+// Named (not default) so Bun doesn't auto-serve a second instance; handy for tests.
+export { app }

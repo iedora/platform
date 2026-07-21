@@ -1,0 +1,30 @@
+name: publish-sdk
+
+# Publishes the auth client SDK (sdk/, @iedora/auth-sdk) to GitHub Packages.
+# Dispatch manually or cut a Release. Re-publishing an existing version is
+# skipped — bump sdk/package.json's version to release.
+on:
+  workflow_dispatch:
+  release:
+    types: [published]
+
+concurrency:
+  group: publish-sdk
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      packages: write
+    env:
+      NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: oven-sh/setup-bun@v2
+      # The SDK ships source (exports ./src/index.ts) — no build, no install.
+      - name: Publish sdk
+        working-directory: sdk
+        run: bun publish || echo "!! skipped (version already published?)"

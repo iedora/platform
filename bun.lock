@@ -511,21 +511,23 @@
       "name": "@iedora/service-auth",
       "version": "0.1.0",
       "dependencies": {
-        "@hono/zod-validator": "catalog:",
-        "@iedora/contracts": "workspace:*",
-        "@iedora/service-runtime": "workspace:*",
-        "hono": "catalog:",
-        "kysely": "catalog:",
+        "@hono/zod-validator": "^0.9.0",
+        "@iedora/audit-sdk": "workspace:*",
+        "@iedora/db": "workspace:*",
+        "@iedora/email-sdk": "workspace:*",
+        "@iedora/messaging": "workspace:*",
+        "@iedora/server-kit": "workspace:*",
+        "hono": "^4.12.30",
+        "jose": "^5.9.6",
+        "kysely": "^0.29.3",
+        "pg": "^8.13.1",
+        "zod": "^4.4.3",
       },
       "devDependencies": {
-        "@iedora/eslint-config": "workspace:*",
-        "@types/bun": "catalog:",
-        "eslint": "catalog:",
-        "jose": "catalog:",
-        "kysely-codegen": "catalog:",
-        "pg": "catalog:",
-        "typescript": "catalog:",
-        "typescript-eslint": "catalog:",
+        "@types/bun": "^1.1.14",
+        "@types/node": "^22.19.19",
+        "@types/pg": "^8.11.10",
+        "typescript": "^5.9.3",
       },
     },
     "services/billing": {
@@ -2799,9 +2801,7 @@
 
     "@iedora/service-audit/typescript": ["typescript@5.9.3", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw=="],
 
-    "@iedora/service-auth/@hono/zod-validator": ["@hono/zod-validator@0.8.0", "", { "peerDependencies": { "hono": ">=4.10.0", "zod": "^3.25.0 || ^4.0.0" } }, "sha512-5uS4S1/LKtZQYvD4BtpPUFkOv8d1wNxHHrChm26buMiEYc1FrHWvDUaKVBwkiVtvSExHSpLGDvcnpI2Copyj9w=="],
-
-    "@iedora/service-auth/jose": ["jose@6.2.3", "", {}, "sha512-YYVDInQKFJfR/xa3ojUTl8c2KoTwiL1R5Wg9YCydwH0x0B9grbzlg5HC7mMjCtUJjbQ/YnGEZIhI5tCgfTb4Hw=="],
+    "@iedora/service-auth/typescript": ["typescript@5.9.3", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw=="],
 
     "@iedora/service-billing/typescript": ["typescript@5.9.3", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw=="],
 
