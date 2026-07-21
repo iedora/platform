@@ -8,11 +8,20 @@ name: ci
 
 on:
   push:
+    branches: [main]
   pull_request:
   workflow_dispatch:
 
 permissions:
   contents: read
+
+# One run per ref. A new push to a PR cancels the superseded run (saves
+# free-tier minutes); main runs are never cancelled. github.workflow scopes the
+# group so other workflows aren't affected. Pairing `push: [main]` with
+# `pull_request` also means a PR gets ONE run, not the push+PR double-run.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   changes:
@@ -21,10 +30,10 @@ jobs:
       code: ${{ steps.f.outputs.code }}
       docker: ${{ steps.f.outputs.docker }}
     steps:
-      - uses: actions/checkout@9f698171ed81b15d1823a05fc7211befd50c8ae0 # v6.0.3
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 2
-      - uses: dorny/paths-filter@fbd0ab8f3e69293af611ebaee6363fc25e6d187d # v4.0.1
+      - uses: dorny/paths-filter@7b450fff21473bca461d4b92ce414b9d0420d706 # v4.0.2
         id: f
         with:
           filters: |
@@ -41,6 +50,7 @@ jobs:
               - '**/eslint.config.*'
               - '.oxlintrc.json'
               - 'turbo.json'
+              - '.github/workflows/**'
             docker:
               - '**/Dockerfile'
 
@@ -57,33 +67,31 @@ jobs:
     # Test Postgres: the integration harnesses (billing/auth/server-kit) call
     # createScratchDatabase(), which CREATE DATABASEs a throwaway DB per suite on
     # this server and migrates it — no pre-provisioned schemas needed, just a
-    # superuser. TEST_DATABASE_URL points ADMIN_URL at it. DATABASE_URL stays
-    # unset, so the HAS_DB-gated framework/db suites skip (as they do locally).
-    #
-    # NB: Postgres runs on the HOST network (docker run --network host in a step),
-    # NOT a `services:` container. bun:sql's connection handshake (bun#16691) is
-    # closed by the service-container NAT on GitHub-hosted runners — the identical
-    # image + bun connect fine locally and over host networking. Host network puts
-    # Postgres directly on the runner's localhost:5432, bypassing the NAT.
+    # superuser. TEST_DATABASE_URL points ADMIN_URL at it (127.0.0.1 to force IPv4
+    # to the service). DATABASE_URL stays unset, so the HAS_DB-gated framework/db
+    # suites skip (as they do locally). It reaches `bun test` via turbo.json
+    # passThroughEnv — turbo strips undeclared env from tasks otherwise.
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: iedora
+          POSTGRES_PASSWORD: iedora
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     env:
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
       TURBO_TEAM: ${{ vars.TURBO_TEAM }}
       TURBO_API: ${{ vars.TURBO_API }}
-      TEST_DATABASE_URL: postgres://iedora:iedora@127.0.0.1:5432/postgres?sslmode=disable
+      TEST_DATABASE_URL: postgres://iedora:iedora@127.0.0.1:5432/postgres
     steps:
-      - uses: actions/checkout@9f698171ed81b15d1823a05fc7211befd50c8ae0 # v6.0.3
-      - name: Start Postgres on the host network
-        run: |
-          docker run -d --name ci-postgres --network host \
-            -e POSTGRES_USER=iedora -e POSTGRES_PASSWORD=iedora -e POSTGRES_DB=postgres \
-            postgres:18-alpine
-          for _ in $(seq 1 30); do
-            docker exec ci-postgres pg_isready -U iedora -h 127.0.0.1 && exit 0
-            sleep 1
-          done
-          echo "postgres did not become ready" >&2
-          docker logs ci-postgres || true
-          exit 1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
           bun-version: '1.3.3'
@@ -91,13 +99,20 @@ jobs:
       # packages skip typecheck/lint/test even without a remote cache. Keyed on
       # the lockfile + configs; the run's own hash is the restore fallback so
       # partial reuse survives most PRs. Redundant once a remote cache is set.
-      - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: .turbo
           key: turbo-${{ runner.os }}-${{ hashFiles('bun.lock', 'turbo.json', '.oxlintrc.json') }}-${{ github.sha }}
           restore-keys: |
             turbo-${{ runner.os }}-${{ hashFiles('bun.lock', 'turbo.json', '.oxlintrc.json') }}-
             turbo-${{ runner.os }}-
+      # Cache Bun's global module store so `bun install` links from disk instead
+      # of re-downloading every package. Keyed on the lockfile.
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.bun/install/cache
+          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+          restore-keys: bun-${{ runner.os }}-
       - run: bun install --frozen-lockfile
       - run: bun run typecheck
       - run: bun run lint
@@ -113,7 +128,7 @@ jobs:
       GITLEAKS_VERSION: 8.30.1
       OSV_VERSION: 2.3.8
     steps:
-      - uses: actions/checkout@9f698171ed81b15d1823a05fc7211befd50c8ae0 # v6.0.3
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0 # gitleaks scans the whole history
 
