@@ -13,7 +13,7 @@ import {
   CardTitle,
 } from '@iedora/ui/components/ui/card'
 import { QrViewer } from './qr-viewer'
-import { QrPrintSheet } from '../../qr-codes/qr-generation/qr-print-sheet'
+import { QrPrintSheet } from '../../qr-codes/ui/qr-print-sheet'
 import { logQrPrintAction } from '../../qr-codes/actions'
 
 /**

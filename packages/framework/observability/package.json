@@ -6,7 +6,10 @@
   "exports": {
     ".": "./src/index.ts"
   },
-  "files": ["src", "README.md"],
+  "files": [
+    "src",
+    "README.md"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/iedora/framework.git",
@@ -16,7 +19,9 @@
     "registry": "https://npm.pkg.github.com"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsgo --noEmit",
+    "test": "bun test",
+    "lint": "eslint . --cache --cache-location node_modules/.cache/.eslintcache"
   },
   "dependencies": {
     "@opentelemetry/baggage-span-processor": "^0.5.0",
@@ -39,6 +44,9 @@
     "@opentelemetry/api-logs": "^0.220.0",
     "@opentelemetry/context-async-hooks": "^2.9.0",
     "@types/bun": "^1.1.14",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "@iedora/eslint-config": "workspace:*",
+    "eslint": "catalog:",
+    "typescript-eslint": "catalog:"
   }
 }

@@ -4,7 +4,6 @@ import {
   type AdminUserDetail,
   AuthError,
   type AuthSession,
-  type AuthUser,
   type Organization,
   type OrgMember,
   type OrgWithOwner,

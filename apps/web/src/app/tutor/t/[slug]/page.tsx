@@ -643,8 +643,8 @@ const TEACHING_LEVELS = [
  * only exists so the marquee can loop without a visible seam. Under reduced
  * motion it simply sits still.
  */
-function LevelTicker() {
-  const Row = ({ hidden }: { hidden?: boolean }) => (
+function LevelTickerRow({ hidden }: { hidden?: boolean }) {
+  return (
     <ul className="flex shrink-0 items-center" aria-hidden={hidden || undefined}>
       {TEACHING_LEVELS.map((level) => (
         <li
@@ -659,14 +659,17 @@ function LevelTicker() {
       ))}
     </ul>
   )
+}
+
+function LevelTicker() {
   return (
     <div
       className="marquee relative overflow-hidden border-b border-border bg-muted/20 py-3"
       aria-label="Levels I teach"
     >
       <div className="marquee-track flex w-max">
-        <Row />
-        <Row hidden />
+        <LevelTickerRow />
+        <LevelTickerRow hidden />
       </div>
       <div className="pointer-events-none absolute inset-y-0 left-0 w-16 bg-gradient-to-r from-background to-transparent" />
       <div className="pointer-events-none absolute inset-y-0 right-0 w-16 bg-gradient-to-l from-background to-transparent" />

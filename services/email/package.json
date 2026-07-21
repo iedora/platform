@@ -8,7 +8,9 @@
     "dev": "bun run --hot src/index.ts",
     "start": "bun run src/index.ts",
     "migrate": "bun run src/migrate.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsgo --noEmit",
+    "test": "bun test",
+    "lint": "eslint . --cache --cache-location node_modules/.cache/.eslintcache"
   },
   "dependencies": {
     "@iedora/db": "workspace:*",
@@ -26,6 +28,9 @@
     "@types/node": "^22",
     "@types/nodemailer": "^8.0.1",
     "@types/pg": "^8.11.10",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "@iedora/eslint-config": "workspace:*",
+    "eslint": "catalog:",
+    "typescript-eslint": "catalog:"
   }
 }

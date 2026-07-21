@@ -6,7 +6,7 @@ import { useAction } from "next-safe-action/hooks"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
 
-import { describeZone, formatLessonTime, formatTime } from "@iedora/product-tutor/lib/time"
+import { formatTime } from "@iedora/product-tutor/lib/time"
 import { bookRecurring } from "../booking.actions"
 import type { BookableSubject } from "../booking.queries"
 import { weekdayPlural, type WeeklyOption } from "../booking.slots"
@@ -35,7 +35,6 @@ export function RecurringBooking({
   subjects,
   weeklyOptions,
   viewerTz,
-  tutorTz,
 }: {
   tutorId: string
   subjects: BookableSubject[]

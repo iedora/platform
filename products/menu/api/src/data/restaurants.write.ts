@@ -1,4 +1,4 @@
-import type { LocalizedText, RestaurantSummary, Theme } from "@iedora/contracts";
+import type { RestaurantSummary } from "@iedora/contracts";
 import { type Kysely, sql } from "kysely";
 
 import type { Restaurant } from "../domain";

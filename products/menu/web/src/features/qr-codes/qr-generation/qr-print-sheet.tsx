@@ -347,8 +347,8 @@ function PrintTips() {
       </p>
       <ul className="mt-1.5 list-disc space-y-1 pl-4 text-[12px] text-[var(--muted-foreground)]">
         <li>
-          Print at <strong>100% scale</strong>. Turn off "Fit to page" or "Shrink
-          oversized pages" so 1&nbsp;mm here stays 1&nbsp;mm on paper.
+          Print at <strong>100% scale</strong>. Turn off “Fit to page” or “Shrink
+          oversized pages” so 1&nbsp;mm here stays 1&nbsp;mm on paper.
         </li>
         <li>
           Keep codes <strong>20&nbsp;mm or bigger</strong>. A rough guide is 1/10th of

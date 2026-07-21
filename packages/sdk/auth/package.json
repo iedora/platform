@@ -10,9 +10,13 @@
     "./next/middleware": "./src/next/middleware.ts",
     "./next/client": "./src/next/client.ts"
   },
-  "files": ["src", "README.md"],
+  "files": [
+    "src",
+    "README.md"
+  ],
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsgo --noEmit",
+    "lint": "eslint . --cache --cache-location node_modules/.cache/.eslintcache"
   },
   "dependencies": {
     "jose": "^5.9.6"
@@ -23,6 +27,9 @@
   "devDependencies": {
     "@types/bun": "catalog:",
     "next": "catalog:",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "@iedora/eslint-config": "workspace:*",
+    "eslint": "catalog:",
+    "typescript-eslint": "catalog:"
   }
 }

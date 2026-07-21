@@ -90,7 +90,8 @@
   },
   "scripts": {
     "typecheck": "tsgo --build",
-    "lint": "eslint --cache --cache-location node_modules/.cache/.eslintcache"
+    "lint": "eslint . --cache --cache-location node_modules/.cache/.eslintcache",
+    "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
     "@iedora/sdk": "workspace:*",
@@ -121,6 +122,8 @@
     "next": "catalog:",
     "react": "catalog:",
     "typescript": "catalog:",
-    "typescript-eslint": "catalog:"
+    "typescript-eslint": "catalog:",
+    "vitest": "catalog:",
+    "jsdom": "catalog:"
   }
 }

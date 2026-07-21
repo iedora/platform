@@ -95,12 +95,12 @@ export class FakeBlob
   put(key: string, contentType: string, size: number): void {
     this.objects.set(key, { contentType, size });
   }
-  // eslint-disable-next-line @typescript-eslint/require-await
+   
   async stat(key: string) {
     const o = this.objects.get(key);
     return o ? { exists: true, ...o } : { exists: false, contentType: "", size: 0 };
   }
-  // eslint-disable-next-line @typescript-eslint/require-await
+   
   async delete(key: string): Promise<void> {
     this.deleted.push(key);
     this.objects.delete(key);

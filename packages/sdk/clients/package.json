@@ -10,10 +10,14 @@
     "./email": "./src/email/index.ts"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsgo --noEmit",
+    "lint": "eslint . --cache --cache-location node_modules/.cache/.eslintcache"
   },
   "devDependencies": {
     "@types/bun": "catalog:",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "@iedora/eslint-config": "workspace:*",
+    "eslint": "catalog:",
+    "typescript-eslint": "catalog:"
   }
 }

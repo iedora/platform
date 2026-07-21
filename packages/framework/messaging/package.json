@@ -19,7 +19,9 @@
     "registry": "https://npm.pkg.github.com"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsgo --noEmit",
+    "test": "bun test",
+    "lint": "eslint . --cache --cache-location node_modules/.cache/.eslintcache"
   },
   "peerDependencies": {
     "kysely": ">=0.27"
@@ -28,6 +30,9 @@
     "@types/bun": "^1.1.14",
     "kysely": "^0.29.3",
     "kysely-postgres-js": "^3.0.0",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "@iedora/eslint-config": "workspace:*",
+    "eslint": "catalog:",
+    "typescript-eslint": "catalog:"
   }
 }

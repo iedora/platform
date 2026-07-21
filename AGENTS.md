@@ -204,7 +204,35 @@ Every string a user reads in the chrome — button labels, headings, placeholder
 | `bun run api:reset` | Pára + apaga volumes (**perde dados locais**). |
 | `bun run typecheck` | TS check paralelo em todos os workspaces. |
 | `bun run lint` | ESLint paralelo em todos os workspaces. |
-| `bun run test` | Vitest em todos os workspaces. |
+| `bun run test` | Testes de todos os workspaces (ver Workspace standard). |
+
+### Workspace standard
+
+Every workspace follows the same shape so tooling is predictable across
+products and packages:
+
+- **`typecheck`** — always `tsgo` (never `tsc`). `tsgo --build` for the
+  packages that orchestrate project references (`products/*/web`, `apps/web`);
+  `tsgo --noEmit` everywhere else.
+- **`lint`** — always `eslint . --cache …`, driven by a local
+  `eslint.config.mjs` that composes the `@iedora/eslint-config` factories:
+  - libs + backends (`services/*`, `products/*/api`, `packages/**`) → `base() + typescript()`
+  - React component libs (`packages/ui`) → `+ react()`
+  - Next products (`products/*/web`) → `next() + vitest()` (menu also adds `boundaries()` for its slice rules)
+  - The React-Compiler advisory rules (`react-hooks/set-state-in-effect`,
+    `react-hooks/purity`) are `warn` — they fire on valid SSR mount-guards,
+    debounce hooks, and `Date.now()` in async RSCs. Correctness rules
+    (`rules-of-hooks`, `exhaustive-deps`, `react-hooks/static-components`)
+    stay `error`.
+- **`test`** — tiered by what the code is:
+  - backends (`services/*`, `products/*/api`, runtime libs) → `bun test`
+    (bun's native runner, `bun:test`). Declared **only where tests exist** —
+    an empty backend has no `test` script, so the runner skips it.
+  - browser/React code + the libs that ship into the Next bundle
+    (`products/*/web`, `ui`, `api-client`, `brand`, `contracts`,
+    `observability`) → `vitest run --passWithNoTests`.
+  - `apps/web` keeps a passthrough — its in-package tests are Playwright e2e
+    under `apps/web/tests`, not vitest units.
 
 ### apps/web
 
