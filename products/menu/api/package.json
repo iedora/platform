@@ -1,0 +1,41 @@
+{
+  "name": "@iedora/service-menu",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Menu product service (Hono/Bun): multi-tenant restaurant digital menus (restaurant → menu → category → item), localized public rendering, QR resolution, view metrics, plan gates, S3 uploads. Vertical slices over @iedora/server-kit.",
+  "exports": {
+    "./app": "./src/app.ts",
+    "./billing": "./src/billing.ts"
+  },
+  "scripts": {
+    "dev": "bun run --hot src/index.ts",
+    "start": "bun run src/index.ts",
+    "migrate": "bun run src/migrate.ts",
+    "db:codegen": "kysely-codegen --dialect postgres --url ${MENU_DATABASE_URL:-postgres://iedora:iedora@localhost:55433/menu} --exclude-pattern '(schema_migrations)' --out-file src/db.generated.ts",
+    "typecheck": "tsgo --noEmit",
+    "lint": "eslint src --cache --cache-location node_modules/.cache/.eslintcache",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "@iedora/auth-sdk": "workspace:*",
+    "@iedora/sdk": "workspace:*",
+    "@iedora/contracts": "workspace:*",
+    "@iedora/menu-observability": "workspace:*",
+    "@iedora/service-runtime": "workspace:*",
+    "@hono/zod-validator": "catalog:",
+    "hono": "catalog:",
+    "kysely": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@iedora/eslint-config": "workspace:*",
+    "@types/bun": "catalog:",
+    "eslint": "catalog:",
+    "jose": "catalog:",
+    "kysely-codegen": "catalog:",
+    "pg": "catalog:",
+    "typescript": "catalog:",
+    "typescript-eslint": "catalog:"
+  }
+}

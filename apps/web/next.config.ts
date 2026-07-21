@@ -58,6 +58,6 @@ const nextConfig: NextConfig = {
 // next-intl's request config lives with the messages catalogues in
 // @iedora/product-menu. apps/web wires it via the relative path.
 const withNextIntl = createNextIntlPlugin(
-  '../../products/menu/src/i18n/request.ts',
+  '../../products/menu/web/src/i18n/request.ts',
 )
 export default withNextIntl(nextConfig)

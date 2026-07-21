@@ -3,13 +3,11 @@
   "private": true,
   "version": "0.0.0",
   "workspaces": [
-    "packages/platform/*",
-    "packages/server/*",
+    "products/*/*",
+    "services/*",
     "packages/framework/*",
     "packages/sdk/*",
-    "packages/tutor/*",
-    "products/*",
-    "services/*",
+    "packages/*",
     "apps/*"
   ],
   "scripts": {

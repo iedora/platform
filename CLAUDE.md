@@ -25,7 +25,7 @@
 The UI is built on **shadcn/ui** with **Base UI** primitives (shadcn style `base-sera`) and **phosphor** icons, in the **`@iedora/ui`** package. The theme is the shadcn green/neutral palette with light + dark modes.
 
 ### Where the UI kit lives
-- **`packages/platform/ui/`** — `@iedora/ui`. shadcn primitives at `@iedora/ui/components/ui/*` (Base UI, `@base-ui/react`); thin form wrappers at `@iedora/ui/components/field` (`TextField` / `TextareaField` / `SelectField` / `PasswordField` / `FieldMessage` + low-level `Field`/`FieldLabel`/`FieldError`/…); editorial drop-ins at `@iedora/ui/components/{card,combobox,section-header}`. `Button` has a custom `loading` prop (phosphor `SpinnerIcon`). `cn()` helper at `@iedora/ui/lib/utils`.
+- **`packages/ui/`** — `@iedora/ui`. shadcn primitives at `@iedora/ui/components/ui/*` (Base UI, `@base-ui/react`); thin form wrappers at `@iedora/ui/components/field` (`TextField` / `TextareaField` / `SelectField` / `PasswordField` / `FieldMessage` + low-level `Field`/`FieldLabel`/`FieldError`/…); editorial drop-ins at `@iedora/ui/components/{card,combobox,section-header}`. `Button` has a custom `loading` prop (phosphor `SpinnerIcon`). `cn()` helper at `@iedora/ui/lib/utils`.
 - **`apps/web/src/app/globals.css`** — the single theme source: Tailwind v4 `@theme inline` mapping shadcn vars → utilities, `:root` (light) + `.dark` semantic tokens (`--primary` is green `oklch(0.527 0.154 150)`, `--radius` `0.625rem`, sidebar/chart sets), and the `@source` globs that scan each workspace surface. No bespoke CSS.
 - **Theme switching** — `next-themes` (`ThemeProvider` in `apps/web/src/app/layout.tsx`, `ThemeToggle` in footers).
 - **Fonts** — `--display`/`--serif`/`--sans`/`--mono` set on `<html>` via `next/font` in `layout.tsx`; surfaced as `font-heading`/`font-serif`/`font-sans`/`font-mono`.
@@ -47,6 +47,6 @@ The UI is built on **shadcn/ui** with **Base UI** primitives (shadcn style `base
 
 ## Quick reference
 - Stack/auth/slices/commands → **`AGENTS.md`**. App shell rules → **`apps/web/CLAUDE.md`**.
-- Data shapes → `packages/platform/contracts/src/*` (zod: `publicMenu` / `publicItem` / `publicCategory`, billing invoices, etc.).
+- Data shapes → `packages/contracts/src/*` (zod: `publicMenu` / `publicItem` / `publicCategory`, billing invoices, etc.).
 - Run: `bun install` → `bun run api:up` → `bun run dev` (`:3000`). Verify: `bun run typecheck`.
 - Tests: co-located Vitest (`renderToStaticMarkup`, assert on `data-test-id`), one slice per file.

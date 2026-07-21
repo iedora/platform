@@ -29,7 +29,7 @@ const concurrency = Math.max(
 	Number(process.env.CONCURRENCY) || availableParallelism(),
 );
 
-const ROOTS = ["packages/platform", "packages/framework", "packages/sdk", "packages/server", "packages/tutor", "products", "apps", "services"];
+const ROOTS = ["packages", "packages/framework", "packages/sdk", "products/menu", "products/tutor", "services", "apps"];
 const workspaces = [];
 for (const root of ROOTS) {
 	for (const name of await readdir(root, { withFileTypes: true })) {

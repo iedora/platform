@@ -13,7 +13,7 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/iedora/framework.git",
-    "directory": "packages/server-kit"
+    "directory": "packages/framework/server-kit"
   },
   "publishConfig": {
     "registry": "https://npm.pkg.github.com"

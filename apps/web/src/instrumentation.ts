@@ -1,4 +1,4 @@
-import { registerIedoraOtel } from '@iedora/observability'
+import { registerIedoraOtel } from '@iedora/menu-observability'
 
 /**
  * Next.js instrumentation entrypoint — invoked once per worker on boot.

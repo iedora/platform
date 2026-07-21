@@ -40,7 +40,7 @@ Rules:
   schema)`) using the shared **zod contracts**, and read `c.req.valid(...)`. Never
   hand-roll `safeParse`; never duplicate a payload type the frontend consumes.
 - **Shared, service-wide** concerns (DB types, the deps interface) sit at `src/`
-  root; cross-service code goes in `packages/server/*` or `packages/platform/contracts`.
+  root; cross-service code goes in `packages/service-runtime` or `packages/contracts`.
 
 ## Kysely / database
 

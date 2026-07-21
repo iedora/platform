@@ -56,6 +56,69 @@
         "typescript": "catalog:",
       },
     },
+    "packages/api-client": {
+      "name": "@iedora/api-client",
+      "version": "0.1.0",
+      "dependencies": {
+        "@iedora/auth-sdk": "workspace:*",
+        "@iedora/contracts": "workspace:*",
+      },
+      "devDependencies": {
+        "@iedora/eslint-config": "workspace:*",
+        "@types/node": "^22.19.19",
+        "eslint": "catalog:",
+        "next": "catalog:",
+        "typescript": "catalog:",
+        "typescript-eslint": "catalog:",
+        "vitest": "catalog:",
+      },
+      "peerDependencies": {
+        "next": "^16.2.6",
+      },
+    },
+    "packages/brand": {
+      "name": "@iedora/brand",
+      "version": "0.1.0",
+      "devDependencies": {
+        "@iedora/eslint-config": "workspace:*",
+        "@types/node": "^22.19.19",
+        "eslint": "catalog:",
+        "typescript": "catalog:",
+        "typescript-eslint": "catalog:",
+        "vitest": "catalog:",
+      },
+    },
+    "packages/contracts": {
+      "name": "@iedora/contracts",
+      "version": "0.1.0",
+      "dependencies": {
+        "zod": "catalog:",
+      },
+      "devDependencies": {
+        "@iedora/eslint-config": "workspace:*",
+        "eslint": "catalog:",
+        "openapi-typescript": "^7.13.0",
+        "typescript": "catalog:",
+        "typescript-eslint": "catalog:",
+        "vitest": "catalog:",
+      },
+    },
+    "packages/eslint-config": {
+      "name": "@iedora/eslint-config",
+      "version": "0.1.0",
+      "dependencies": {
+        "@eslint/js": "^9.39.4",
+        "eslint-config-next": "16.2.6",
+        "eslint-plugin-boundaries": "^6.0.2",
+      },
+      "peerDependencies": {
+        "eslint": ">=9.0.0",
+        "typescript-eslint": ">=8.0.0",
+      },
+      "optionalPeers": [
+        "typescript-eslint",
+      ],
+    },
     "packages/framework/config": {
       "name": "@iedora/config",
       "version": "0.1.0",
@@ -169,70 +232,7 @@
         "kysely": ">=0.27",
       },
     },
-    "packages/platform/api-client": {
-      "name": "@iedora/api-client",
-      "version": "0.1.0",
-      "dependencies": {
-        "@iedora/auth-sdk": "workspace:*",
-        "@iedora/contracts": "workspace:*",
-      },
-      "devDependencies": {
-        "@iedora/eslint-config": "workspace:*",
-        "@types/node": "^22.19.19",
-        "eslint": "catalog:",
-        "next": "catalog:",
-        "typescript": "catalog:",
-        "typescript-eslint": "catalog:",
-        "vitest": "catalog:",
-      },
-      "peerDependencies": {
-        "next": "^16.2.6",
-      },
-    },
-    "packages/platform/brand": {
-      "name": "@iedora/brand",
-      "version": "0.1.0",
-      "devDependencies": {
-        "@iedora/eslint-config": "workspace:*",
-        "@types/node": "^22.19.19",
-        "eslint": "catalog:",
-        "typescript": "catalog:",
-        "typescript-eslint": "catalog:",
-        "vitest": "catalog:",
-      },
-    },
-    "packages/platform/contracts": {
-      "name": "@iedora/contracts",
-      "version": "0.1.0",
-      "dependencies": {
-        "zod": "catalog:",
-      },
-      "devDependencies": {
-        "@iedora/eslint-config": "workspace:*",
-        "eslint": "catalog:",
-        "openapi-typescript": "^7.13.0",
-        "typescript": "catalog:",
-        "typescript-eslint": "catalog:",
-        "vitest": "catalog:",
-      },
-    },
-    "packages/platform/eslint-config": {
-      "name": "@iedora/eslint-config",
-      "version": "0.1.0",
-      "dependencies": {
-        "@eslint/js": "^9.39.4",
-        "eslint-config-next": "16.2.6",
-        "eslint-plugin-boundaries": "^6.0.2",
-      },
-      "peerDependencies": {
-        "eslint": ">=9.0.0",
-        "typescript-eslint": ">=8.0.0",
-      },
-      "optionalPeers": [
-        "typescript-eslint",
-      ],
-    },
-    "packages/platform/observability": {
+    "packages/observability": {
       "name": "@iedora/menu-observability",
       "version": "0.1.0",
       "dependencies": {
@@ -265,35 +265,6 @@
         "vitest": "catalog:",
       },
     },
-    "packages/platform/ui": {
-      "name": "@iedora/ui",
-      "version": "0.1.0",
-      "dependencies": {
-        "@base-ui/react": "^1.6.0",
-        "@phosphor-icons/react": "^2.1.10",
-        "class-variance-authority": "^0.7.1",
-        "clsx": "^2.1.1",
-        "cmdk": "^1.1.1",
-        "next-themes": "^0.4.6",
-        "tailwind-merge": "^3.3.1",
-      },
-      "devDependencies": {
-        "@iedora/eslint-config": "workspace:*",
-        "@types/react": "catalog:",
-        "@types/react-dom": "catalog:",
-        "eslint": "catalog:",
-        "next": "catalog:",
-        "react": "catalog:",
-        "react-dom": "catalog:",
-        "typescript": "catalog:",
-        "typescript-eslint": "catalog:",
-      },
-      "peerDependencies": {
-        "next": "^16.0.0",
-        "react": "^19.2.0",
-        "react-dom": "^19.2.0",
-      },
-    },
     "packages/sdk/auth": {
       "name": "@iedora/auth-sdk",
       "version": "0.2.0",
@@ -317,7 +288,7 @@
         "typescript": "catalog:",
       },
     },
-    "packages/server/kit": {
+    "packages/service-runtime": {
       "name": "@iedora/service-runtime",
       "version": "0.1.0",
       "dependencies": {
@@ -349,31 +320,61 @@
         "vitest": "catalog:",
       },
     },
-    "packages/tutor/contracts": {
-      "name": "@iedora/tutor-contracts",
-      "version": "0.0.0",
+    "packages/ui": {
+      "name": "@iedora/ui",
+      "version": "0.1.0",
       "dependencies": {
-        "zod": "^4.4.3",
+        "@base-ui/react": "^1.6.0",
+        "@phosphor-icons/react": "^2.1.10",
+        "class-variance-authority": "^0.7.1",
+        "clsx": "^2.1.1",
+        "cmdk": "^1.1.1",
+        "next-themes": "^0.4.6",
+        "tailwind-merge": "^3.3.1",
       },
       "devDependencies": {
-        "typescript": "5.9.3",
-      },
-    },
-    "packages/tutor/db": {
-      "name": "@iedora/tutor-db",
-      "version": "0.0.0",
-      "dependencies": {
-        "@iedora/db": "workspace:*",
-        "kysely": "catalog:",
-      },
-      "devDependencies": {
-        "@types/bun": "catalog:",
-        "@types/node": "catalog:",
-        "kysely-codegen": "catalog:",
+        "@iedora/eslint-config": "workspace:*",
+        "@types/react": "catalog:",
+        "@types/react-dom": "catalog:",
+        "eslint": "catalog:",
+        "next": "catalog:",
+        "react": "catalog:",
+        "react-dom": "catalog:",
         "typescript": "catalog:",
+        "typescript-eslint": "catalog:",
+      },
+      "peerDependencies": {
+        "next": "^16.0.0",
+        "react": "^19.2.0",
+        "react-dom": "^19.2.0",
       },
     },
-    "products/menu": {
+    "products/menu/api": {
+      "name": "@iedora/service-menu",
+      "version": "0.1.0",
+      "dependencies": {
+        "@hono/zod-validator": "catalog:",
+        "@iedora/auth-sdk": "workspace:*",
+        "@iedora/contracts": "workspace:*",
+        "@iedora/menu-observability": "workspace:*",
+        "@iedora/sdk": "workspace:*",
+        "@iedora/service-runtime": "workspace:*",
+        "hono": "catalog:",
+        "kysely": "catalog:",
+        "zod": "catalog:",
+      },
+      "devDependencies": {
+        "@iedora/eslint-config": "workspace:*",
+        "@types/bun": "catalog:",
+        "eslint": "catalog:",
+        "jose": "catalog:",
+        "kysely-codegen": "catalog:",
+        "pg": "catalog:",
+        "typescript": "catalog:",
+        "typescript-eslint": "catalog:",
+      },
+    },
+    "products/menu/web": {
       "name": "@iedora/product-menu",
       "version": "0.1.0",
       "dependencies": {
@@ -422,7 +423,53 @@
         "react-dom": "^19.2.0",
       },
     },
-    "products/tutor": {
+    "products/tutor/api": {
+      "name": "@iedora/service-tutor",
+      "version": "0.0.0",
+      "dependencies": {
+        "@iedora/auth-sdk": "workspace:*",
+        "@iedora/sdk": "workspace:*",
+        "@iedora/service-kit": "workspace:*",
+        "@iedora/tutor-contracts": "workspace:*",
+        "@iedora/tutor-db": "workspace:*",
+        "hono": "^4.12.30",
+        "inngest": "^4.12.1",
+        "kysely": "^0.29.3",
+        "luxon": "^3.7.2",
+        "zod": "^4.4.3",
+      },
+      "devDependencies": {
+        "@types/bun": "^1.3.14",
+        "@types/luxon": "^3.7.2",
+        "@types/node": "^22.20.1",
+        "typescript": "5.9.3",
+      },
+    },
+    "products/tutor/contracts": {
+      "name": "@iedora/tutor-contracts",
+      "version": "0.0.0",
+      "dependencies": {
+        "zod": "^4.4.3",
+      },
+      "devDependencies": {
+        "typescript": "5.9.3",
+      },
+    },
+    "products/tutor/db": {
+      "name": "@iedora/tutor-db",
+      "version": "0.0.0",
+      "dependencies": {
+        "@iedora/db": "workspace:*",
+        "kysely": "catalog:",
+      },
+      "devDependencies": {
+        "@types/bun": "catalog:",
+        "@types/node": "catalog:",
+        "kysely-codegen": "catalog:",
+        "typescript": "catalog:",
+      },
+    },
+    "products/tutor/web": {
       "name": "@iedora/product-tutor",
       "version": "0.1.0",
       "dependencies": {
@@ -544,52 +591,6 @@
         "@types/nodemailer": "^8.0.1",
         "@types/pg": "^8.11.10",
         "typescript": "catalog:",
-      },
-    },
-    "services/menu": {
-      "name": "@iedora/service-menu",
-      "version": "0.1.0",
-      "dependencies": {
-        "@hono/zod-validator": "catalog:",
-        "@iedora/auth-sdk": "workspace:*",
-        "@iedora/contracts": "workspace:*",
-        "@iedora/sdk": "workspace:*",
-        "@iedora/service-runtime": "workspace:*",
-        "hono": "catalog:",
-        "kysely": "catalog:",
-        "zod": "catalog:",
-      },
-      "devDependencies": {
-        "@iedora/eslint-config": "workspace:*",
-        "@types/bun": "catalog:",
-        "eslint": "catalog:",
-        "jose": "catalog:",
-        "kysely-codegen": "catalog:",
-        "pg": "catalog:",
-        "typescript": "catalog:",
-        "typescript-eslint": "catalog:",
-      },
-    },
-    "services/tutor": {
-      "name": "@iedora/service-tutor",
-      "version": "0.0.0",
-      "dependencies": {
-        "@iedora/auth-sdk": "workspace:*",
-        "@iedora/sdk": "workspace:*",
-        "@iedora/service-kit": "workspace:*",
-        "@iedora/tutor-contracts": "workspace:*",
-        "@iedora/tutor-db": "workspace:*",
-        "hono": "^4.12.30",
-        "inngest": "^4.12.1",
-        "kysely": "^0.29.3",
-        "luxon": "^3.7.2",
-        "zod": "^4.4.3",
-      },
-      "devDependencies": {
-        "@types/bun": "^1.3.14",
-        "@types/luxon": "^3.7.2",
-        "@types/node": "^22.20.1",
-        "typescript": "5.9.3",
       },
     },
   },
@@ -846,29 +847,29 @@
 
     "@humanwhocodes/retry": ["@humanwhocodes/retry@0.4.3", "", {}, "sha512-bV0Tgo9K4hfPCek+aMAn81RppFKv2ySDQeMoSZuvTASywNTnVJCArCZE2FWqpvIatKu7VMRLWlR1EazvVhDyhQ=="],
 
-    "@iedora/api-client": ["@iedora/api-client@workspace:packages/platform/api-client"],
+    "@iedora/api-client": ["@iedora/api-client@workspace:packages/api-client"],
 
     "@iedora/auth-sdk": ["@iedora/auth-sdk@workspace:packages/sdk/auth"],
 
-    "@iedora/brand": ["@iedora/brand@workspace:packages/platform/brand"],
+    "@iedora/brand": ["@iedora/brand@workspace:packages/brand"],
 
     "@iedora/config": ["@iedora/config@workspace:packages/framework/config"],
 
-    "@iedora/contracts": ["@iedora/contracts@workspace:packages/platform/contracts"],
+    "@iedora/contracts": ["@iedora/contracts@workspace:packages/contracts"],
 
     "@iedora/db": ["@iedora/db@workspace:packages/framework/db"],
 
-    "@iedora/eslint-config": ["@iedora/eslint-config@workspace:packages/platform/eslint-config"],
+    "@iedora/eslint-config": ["@iedora/eslint-config@workspace:packages/eslint-config"],
 
-    "@iedora/menu-observability": ["@iedora/menu-observability@workspace:packages/platform/observability"],
+    "@iedora/menu-observability": ["@iedora/menu-observability@workspace:packages/observability"],
 
     "@iedora/messaging": ["@iedora/messaging@workspace:packages/framework/messaging"],
 
     "@iedora/observability": ["@iedora/observability@workspace:packages/framework/observability"],
 
-    "@iedora/product-menu": ["@iedora/product-menu@workspace:products/menu"],
+    "@iedora/product-menu": ["@iedora/product-menu@workspace:products/menu/web"],
 
-    "@iedora/product-tutor": ["@iedora/product-tutor@workspace:products/tutor"],
+    "@iedora/product-tutor": ["@iedora/product-tutor@workspace:products/tutor/web"],
 
     "@iedora/sdk": ["@iedora/sdk@workspace:packages/sdk/clients"],
 
@@ -884,17 +885,17 @@
 
     "@iedora/service-kit": ["@iedora/service-kit@workspace:packages/framework/service-kit"],
 
-    "@iedora/service-menu": ["@iedora/service-menu@workspace:services/menu"],
+    "@iedora/service-menu": ["@iedora/service-menu@workspace:products/menu/api"],
 
-    "@iedora/service-runtime": ["@iedora/service-runtime@workspace:packages/server/kit"],
+    "@iedora/service-runtime": ["@iedora/service-runtime@workspace:packages/service-runtime"],
 
-    "@iedora/service-tutor": ["@iedora/service-tutor@workspace:services/tutor"],
+    "@iedora/service-tutor": ["@iedora/service-tutor@workspace:products/tutor/api"],
 
-    "@iedora/tutor-contracts": ["@iedora/tutor-contracts@workspace:packages/tutor/contracts"],
+    "@iedora/tutor-contracts": ["@iedora/tutor-contracts@workspace:products/tutor/contracts"],
 
-    "@iedora/tutor-db": ["@iedora/tutor-db@workspace:packages/tutor/db"],
+    "@iedora/tutor-db": ["@iedora/tutor-db@workspace:products/tutor/db"],
 
-    "@iedora/ui": ["@iedora/ui@workspace:packages/platform/ui"],
+    "@iedora/ui": ["@iedora/ui@workspace:packages/ui"],
 
     "@iedora/web": ["@iedora/web@workspace:apps/web"],
 
