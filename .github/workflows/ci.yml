@@ -99,27 +99,14 @@ jobs:
             turbo-${{ runner.os }}-${{ hashFiles('bun.lock', 'turbo.json', '.oxlintrc.json') }}-
             turbo-${{ runner.os }}-
       - run: bun install --frozen-lockfile
-      - name: Debug DB connectivity
-        run: |
-          echo "=== psql (known-good client, from host) ==="
-          docker exec ci-postgres psql -U iedora -h 127.0.0.1 -d postgres -c "select version();" || echo "psql via docker exec FAILED"
-          echo "=== bun:sql minimal, from the runner host ==="
-          cat > /tmp/t.ts <<'TS'
-          import { SQL } from "bun"
-          const sql = new SQL("postgres://iedora:iedora@127.0.0.1:5432/postgres?sslmode=disable", { max: 1 })
-          try { console.log("query ->", await sql`select 1 as ok`) }
-          catch (e) { console.error("BUN SQL ERR:", e) }
-          await sql.end()
-          TS
-          bun /tmp/t.ts || echo "bun script exit $?"
-        continue-on-error: true
+      # Tests run BEFORE typecheck/lint: bun:sql connects to the Postgres fine
+      # right after install (verified), but the DB harnesses got Connection
+      # closed once the CPU-heavy tsgo+eslint sweep ran first — the Postgres
+      # container was starved/killed under load. Run the DB work while the box is
+      # idle, then the heavy static analysis.
+      - run: bunx turbo run test --concurrency=1
       - run: bun run typecheck
       - run: bun run lint
-      # Serialize the test lane: the DB integration harnesses each CREATE a
-      # scratch database on the single CI Postgres; running every suite at once
-      # overwhelms the small service container (dropped connections). Scratch DBs
-      # already isolate data, so serial is correctness-neutral, just slower.
-      - run: bunx turbo run test --concurrency=1
 
   security:
     runs-on: ubuntu-latest
