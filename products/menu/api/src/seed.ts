@@ -1,8 +1,8 @@
 import type { LocalizedText } from "@iedora/contracts";
 
-import * as builder from "./data/builder";
-import type { MenuDeps } from "./deps";
-import type { Restaurant, Variant } from "./domain";
+import * as builder from "./data/builder.ts";
+import type { MenuDeps } from "./deps.ts";
+import type { Restaurant, Variant } from "./domain.ts";
 
 // Sample content seeded for new restaurants so the builder never starts blank.
 // At seed time the restaurant's default language is picked into the plain

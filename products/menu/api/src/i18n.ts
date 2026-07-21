@@ -1,6 +1,6 @@
 import type { LocalizedText, PublicMenu } from "@iedora/contracts";
 
-import type { Node } from "./domain";
+import type { Node } from "./domain.ts";
 
 // Localization. The i18n model stores the
 // restaurant's default language in plain columns and non-default overrides in

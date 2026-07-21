@@ -20,8 +20,8 @@ export {
   subtract,
   sum,
   zero,
-} from "./money"
-export { type FeeSplit, splitByFee, splitByRate } from "./split"
+} from "./money.ts"
+export { type FeeSplit, splitByFee, splitByRate } from "./split.ts"
 export {
   type Charge,
   type ChargeInput,
@@ -35,4 +35,4 @@ export {
   type SetupInput,
   type Transfer,
   type TransferInput,
-} from "./gateway"
+} from "./gateway.ts"

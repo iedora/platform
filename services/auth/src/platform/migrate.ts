@@ -1,6 +1,6 @@
 import { migrate } from "@iedora/db"
 
-import { config } from "./config"
+import { config } from "./config.ts"
 
 // Raw *.sql files under ./migrations_sql, applied in filename order by the
 // framework's advisory-lock runner (one transaction per file, session-level

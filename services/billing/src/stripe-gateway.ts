@@ -10,10 +10,10 @@ import {
   type SetupInput,
   type Transfer,
   type TransferInput,
-} from "./money";
+} from "./money/index.ts";
 import Stripe from "stripe";
 
-import type { PaymentKind, RefundRequest, RefundResult, SavedCardInfo, SettleInput, Settlement } from "./kinds";
+import type { PaymentKind, RefundRequest, RefundResult, SavedCardInfo, SettleInput, Settlement } from "./kinds.ts";
 
 // The Stripe adapter — implements @iedora/billing's PaymentGateway against
 // Stripe PaymentIntents / SetupIntents / Refunds / Transfers. Lives in the

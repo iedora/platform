@@ -1,11 +1,11 @@
 import type { Kysely } from "kysely"
 
-import { emitAudit } from "./audit"
-import { db } from "./db"
-import type { DB, Identity, Session, Tenant, User } from "./schema"
-import { hashRefreshToken, newRefreshToken, signAccessToken } from "./tokens"
-import type { ProviderProfile } from "./providers/types"
-import { config } from "./config"
+import { emitAudit } from "./audit.ts"
+import { db } from "./db.ts"
+import type { DB, Identity, Session, Tenant, User } from "./schema.ts"
+import { hashRefreshToken, newRefreshToken, signAccessToken } from "./tokens.ts"
+import type { ProviderProfile } from "./providers/types.ts"
+import { config } from "./config.ts"
 
 /** A DB executor: the shared `db` or an open transaction (`Transaction<DB>`
  *  satisfies `Kysely<DB>`), so kernel helpers run inside or outside a tx. */

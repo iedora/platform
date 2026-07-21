@@ -1,9 +1,9 @@
 import { type Kysely, sql } from "kysely";
 
-import type { MenuDB } from "../schema";
-import { invalid } from "../errors";
-import { Languages } from "../i18n";
-import { addDays, dayString } from "./sqlutil";
+import type { MenuDB } from "../schema.ts";
+import { invalid } from "../errors.ts";
+import { Languages } from "../i18n.ts";
+import { addDays, dayString } from "./sqlutil.ts";
 
 // Dashboard analytics + the AI-quota ledger.
 

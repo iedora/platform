@@ -1,9 +1,9 @@
 import type { LocalizedText } from "@iedora/contracts";
 import { type Kysely, sql } from "kysely";
 
-import type { Variant } from "../domain";
-import type { MenuDB } from "../schema";
-import { invalid, notFound } from "../errors";
+import type { Variant } from "../domain.ts";
+import type { MenuDB } from "../schema.ts";
+import { invalid, notFound } from "../errors.ts";
 import {
   affectedOrNotFound,
   changedOrNotFound,
@@ -11,7 +11,7 @@ import {
   returnedOrNotFound,
   textArray,
   uuidArray,
-} from "./sqlutil";
+} from "./sqlutil.ts";
 
 // Builder mutations. Parent ownership
 // is enforced inside each statement (INSERT … SELECT FROM parent / UPDATE …

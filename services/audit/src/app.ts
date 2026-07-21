@@ -1,8 +1,8 @@
 import { createServiceApp, healthRoutes } from "@iedora/service-kit"
 
-import type { AuditDeps } from "./deps"
-import { eventsRoutes } from "./features/events/events.routes"
-import { ingestRoutes } from "./features/ingest/ingest.routes"
+import type { AuditDeps } from "./deps.ts"
+import { eventsRoutes } from "./features/events/events.routes.ts"
+import { ingestRoutes } from "./features/ingest/ingest.routes.ts"
 
 // Composition root: a service app (shared Env + global onError) with routes
 // chained so the exported type carries the full route tree for Hono RPC.

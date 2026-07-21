@@ -1,6 +1,6 @@
 import { type Kysely, sql } from "kysely"
 
-import { backoffMs } from "./backoff"
+import { backoffMs } from "./backoff.ts"
 
 /** A delivered message as seen by a handler. */
 export type DeliveredMessage = {

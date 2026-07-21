@@ -1,7 +1,7 @@
 import { beforeAll, expect, test } from "bun:test";
 
-import { Policies } from "../src/ratelimit";
-import { TENANT, json, seedRestaurant, useHarness } from "./harness";
+import { Policies } from "../src/ratelimit.ts";
+import { TENANT, json, seedRestaurant, useHarness } from "./harness.ts";
 
 // Rate-limit enforcement — the real sliding-window limiter (rateLimitDisabled
 // false) backed by the scratch DB, exercised through the presign route. Most

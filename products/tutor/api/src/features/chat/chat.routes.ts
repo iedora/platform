@@ -2,11 +2,11 @@ import { sendMessageInput } from "#contracts/chat"
 import { validate } from "@iedora/service-kit"
 import { Hono } from "hono"
 
-import { getThread, getUnreadCount, insertMessage, listConversations, senderFor } from "../../data/chat"
-import { studentByUserId, tutorByUserId } from "../../data/students"
-import type { TutorDeps } from "../../deps"
-import { forbidden, notFound } from "../../errors"
-import type { TutorEnv } from "../../middleware"
+import { getThread, getUnreadCount, insertMessage, listConversations, senderFor } from "../../data/chat.ts"
+import { studentByUserId, tutorByUserId } from "../../data/students.ts"
+import type { TutorDeps } from "../../deps.ts"
+import { forbidden, notFound } from "../../errors.ts"
+import type { TutorEnv } from "../../middleware.ts"
 
 // Chat reads. Identity comes from the verified Bearer principal; the student/tutor
 // is resolved server-side (never a client id). Conversations + threads are

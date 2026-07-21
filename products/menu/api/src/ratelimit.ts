@@ -1,7 +1,7 @@
 import type { Database } from "@iedora/service-runtime";
 import { sql } from "kysely";
 
-import { RateLimitError } from "./errors";
+import { RateLimitError } from "./errors.ts";
 
 // Sliding-window rate limiter backed by Postgres. Each check runs in one
 // transaction under a per-key advisory lock: prune expired events, count the

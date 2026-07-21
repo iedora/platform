@@ -6,15 +6,15 @@ import { getConnInfo } from "hono/bun";
 import { getCookie, setCookie } from "hono/cookie";
 import type { Kysely } from "kysely";
 
-import { resolveQRCode } from "../../data/qr";
-import { restaurantBySlug } from "../../data/restaurants";
-import { menuContentVersion, menuTree } from "../../data/tree";
-import { recordItemViews, recordSession, recordView } from "../../data/views";
-import type { MenuDeps } from "../../deps";
-import type { Restaurant } from "../../domain";
-import { notFound } from "../../errors";
-import { localize, pick, pickLanguage } from "../../i18n";
-import type { MenuDB } from "../../schema";
+import { resolveQRCode } from "../../data/qr.ts";
+import { restaurantBySlug } from "../../data/restaurants.ts";
+import { menuContentVersion, menuTree } from "../../data/tree.ts";
+import { recordItemViews, recordSession, recordView } from "../../data/views.ts";
+import type { MenuDeps } from "../../deps.ts";
+import type { Restaurant } from "../../domain.ts";
+import { notFound } from "../../errors.ts";
+import { localize, pick, pickLanguage } from "../../i18n.ts";
+import type { MenuDB } from "../../schema.ts";
 
 // Public surface: unauthenticated, slug-addressed, read-only (plus the
 // fire-and-forget view beacon). The React app renders straight from these.

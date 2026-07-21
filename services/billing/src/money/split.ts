@@ -1,4 +1,4 @@
-import { allocate, type Money, money, multiply, subtract, zero } from "./money"
+import { allocate, type Money, money, multiply, subtract, zero } from "./money.ts"
 
 // Marketplace fee splits. The platform charges the payer a GROSS amount and keeps
 // a FEE; the payee (tutor, seller, creator) receives the NET. This is the generic

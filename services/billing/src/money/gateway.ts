@@ -1,4 +1,4 @@
-import type { Money } from "./money"
+import type { Money } from "./money.ts"
 
 // The provider-agnostic payment gateway. One interface over any processor —
 // Stripe (tutor), a manual/cash ledger (menu), a mock (tests), or whatever comes

@@ -7,7 +7,7 @@ import type {
 } from "@iedora/contracts";
 import { ServiceClient } from "@iedora/service-runtime";
 
-import type { ServiceTokenSource } from "./billing";
+import type { ServiceTokenSource } from "./billing.ts";
 
 // User administration for the staff "Users" CRM. `getUser` returns null on 404
 // so the detail page can 404 cleanly. The write methods drive the account

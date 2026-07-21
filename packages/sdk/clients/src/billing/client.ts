@@ -16,7 +16,7 @@ import {
   type SubscribeInput,
   type Subscription,
   type TokenSource,
-} from "./types"
+} from "./types.ts"
 
 export type BillingClientOptions = {
   /** The billing service's public URL, e.g. https://billing.iedora.com. */

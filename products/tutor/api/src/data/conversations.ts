@@ -1,7 +1,7 @@
 import type { MessageType } from "#db/enums"
 import type { Kysely } from "kysely"
 
-import type { TutorDB } from "../schema"
+import type { TutorDB } from "../schema.ts"
 
 type DB = Kysely<TutorDB>
 

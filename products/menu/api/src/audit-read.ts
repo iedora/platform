@@ -1,7 +1,7 @@
 import type { AuditRecord } from "@iedora/contracts";
 import { ServiceClient } from "@iedora/service-runtime";
 
-import type { ServiceTokenSource } from "./billing";
+import type { ServiceTokenSource } from "./billing.ts";
 
 // Reads audit trails from the audit service's query API (service-token authed).
 // Going over HTTP rather than reading the audit_log table directly keeps the

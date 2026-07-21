@@ -1,8 +1,8 @@
 import { type Context, Hono } from "hono"
 import { z } from "zod"
 
-import { HttpError, validate, withAdmin } from "../../platform/http"
-import { mintServiceToken, registerServiceClient } from "./token.service"
+import { HttpError, validate, withAdmin } from "../../platform/http.ts"
+import { mintServiceToken, registerServiceClient } from "./token.service.ts"
 
 const registerSchema = z.object({
   clientId: z.string().min(1).max(120),

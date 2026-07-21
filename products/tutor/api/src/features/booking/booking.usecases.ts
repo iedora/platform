@@ -6,13 +6,13 @@ import {
 } from "#db/domain/status"
 import type { Kysely } from "kysely"
 
-import { bumpConversation, ensureConversation } from "../../data/conversations"
-import { tutorTimezone } from "../../data/booking"
-import type { TutorDeps } from "../../deps"
-import { invalid } from "../../errors"
-import { inngest, lessonScheduled } from "../../lib/inngest"
-import { nextOccurrences } from "../../lib/slots"
-import type { TutorDB } from "../../schema"
+import { bumpConversation, ensureConversation } from "../../data/conversations.ts"
+import { tutorTimezone } from "../../data/booking.ts"
+import type { TutorDeps } from "../../deps.ts"
+import { invalid } from "../../errors.ts"
+import { inngest, lessonScheduled } from "../../lib/inngest.ts"
+import { nextOccurrences } from "../../lib/slots.ts"
+import type { TutorDB } from "../../schema.ts"
 
 type DB = Kysely<TutorDB>
 

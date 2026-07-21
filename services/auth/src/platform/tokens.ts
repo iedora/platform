@@ -8,8 +8,8 @@ import {
   SignJWT,
 } from "jose"
 
-import { config } from "./config"
-import type { Tenant, User } from "./schema"
+import { config } from "./config.ts"
+import type { Tenant, User } from "./schema.ts"
 
 type SigningKey = {
   kid: string

@@ -1,6 +1,6 @@
 import { createRemoteJWKSet, jwtVerify } from "jose"
 
-import type { AuthClaims } from "./types"
+import type { AuthClaims } from "./types.ts"
 
 export type VerifierOptions = {
   /** The auth service's public URL, e.g. https://auth.example.com. Also the `iss`. */

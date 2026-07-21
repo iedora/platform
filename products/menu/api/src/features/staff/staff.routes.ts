@@ -17,20 +17,20 @@ import {
   listQRCodes,
   listRestaurantRefs,
   unbindQRCode,
-} from "../../data/qr.write";
-import { restaurantById } from "../../data/restaurants";
-import { staffAlerts, staffDirectory, staffOverview, staffRestaurantById } from "../../data/staff";
-import type { MenuDeps } from "../../deps";
-import { type MenuEnv, STAFF_ROLE, requireRole } from "../../middleware";
-import { generateQRCode, normalizeQRCode, validQRCode } from "../../qr";
-import { invalid, notFound } from "../../errors";
-import { previewSlug, staffSetName, transferEligibility, transferRestaurant } from "../../service";
+} from "../../data/qr.write.ts";
+import { restaurantById } from "../../data/restaurants.ts";
+import { staffAlerts, staffDirectory, staffOverview, staffRestaurantById } from "../../data/staff.ts";
+import type { MenuDeps } from "../../deps.ts";
+import { type MenuEnv, STAFF_ROLE, requireRole } from "../../middleware.ts";
+import { generateQRCode, normalizeQRCode, validQRCode } from "../../qr.ts";
+import { invalid, notFound } from "../../errors.ts";
+import { previewSlug, staffSetName, transferEligibility, transferRestaurant } from "../../service.ts";
 import {
   staffCreateRestaurant as provisionRestaurant,
   staffExportMenus,
   staffImportRestaurant as provisionImport,
   staffReplaceMenus,
-} from "./provision";
+} from "./provision.ts";
 
 const MAX_BULK_QR = 500;
 

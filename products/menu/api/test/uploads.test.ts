@@ -1,6 +1,6 @@
 import { beforeAll, expect, test } from "bun:test";
 
-import { TENANT, json, seedRestaurant, useHarness } from "./harness";
+import { TENANT, json, seedRestaurant, useHarness } from "./harness.ts";
 
 // Uploads slice (scoped, under /restaurants/{slug}): presign → commit → clear.
 // The harness wires storage as unconfigured (deps.uploads === null), so every

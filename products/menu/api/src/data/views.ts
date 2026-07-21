@@ -1,8 +1,8 @@
 import { type Kysely, sql } from "kysely";
 
-import type { Restaurant } from "../domain";
-import type { MenuDB } from "../schema";
-import { dayString } from "./sqlutil";
+import type { Restaurant } from "../domain.ts";
+import type { MenuDB } from "../schema.ts";
+import { dayString } from "./sqlutil.ts";
 
 // Public-view metrics, two-table atomic pattern. view_seen dedups one count per
 // visitor/restaurant/hour; daily_view

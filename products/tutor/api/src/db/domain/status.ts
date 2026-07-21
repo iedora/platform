@@ -1,5 +1,5 @@
-import { XP_EVENT_TYPES } from "../enums"
-import type { LessonStatus, NegotiationState, Party, XpEventType } from "../enums"
+import { XP_EVENT_TYPES } from "../enums.ts"
+import type { LessonStatus, NegotiationState, Party, XpEventType } from "../enums.ts"
 
 /** XP awarded per action — single source of truth, shared prod + tests. */
 export const XP: Record<XpEventType, number> = {

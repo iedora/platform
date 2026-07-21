@@ -1,7 +1,7 @@
-import type { Money } from "../money";
+import type { Money } from "../money/index.ts";
 import { type Kysely, sql } from "kysely";
 
-import { iso } from "./dates";
+import { iso } from "./dates.ts";
 
 // Raw-SQL data access for the payouts ledger. Kept off kysely-codegen so a new
 // table doesn't require regenerating types; the row shape is explicit here.

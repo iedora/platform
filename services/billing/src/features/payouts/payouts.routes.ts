@@ -2,8 +2,8 @@ import { type ServiceEnv, serviceAuth } from "@iedora/service-kit";
 import { Hono } from "hono";
 import { z } from "zod";
 
-import type { BillingDeps } from "../../deps";
-import { createPayout, fetchPayout, PayoutRejected } from "./payouts.service";
+import type { BillingDeps } from "../../deps.ts";
+import { createPayout, fetchPayout, PayoutRejected } from "./payouts.service.ts";
 
 // Vertical slice: the payout. Everything explicit — payee + amountCents +
 // currency are required; NO `kind` (this only RECORDS the payout, execution is a

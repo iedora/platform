@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test"
 import type { Context } from "hono"
 
-import { readBearer, reqContext } from "../../src/request"
+import { readBearer, reqContext } from "../../src/request.ts"
 
 const ctx = (headers: Record<string, string>) =>
   ({ req: { header: (k: string) => headers[k.toLowerCase()] } }) as unknown as Context

@@ -15,19 +15,19 @@ export {
   registerIedoraOtel,
   shutdownIedoraOtel,
   type RegisterOptions,
-} from "./register";
-export { tracer } from "./signals/tracer";
-export { meter } from "./signals/meter";
-export { logger } from "./signals/logger";
+} from "./register.ts";
+export { tracer } from "./signals/tracer.ts";
+export { meter } from "./signals/meter.ts";
+export { logger } from "./signals/logger.ts";
 export {
   withTenantSpan,
   tenantAttributes,
   IEDORA_RESTAURANT_ID,
   IEDORA_TENANT_ID,
   type TenantAttrs,
-} from "./tenant/tenant";
-export { tenantContext } from "./tenant/tenant-context";
-export { TenantContextSpanProcessor } from "./signals/processor";
+} from "./tenant/tenant.ts";
+export { tenantContext } from "./tenant/tenant-context.ts";
+export { TenantContextSpanProcessor } from "./signals/processor.ts";
 
 /** Re-export the API types callers will actually touch. */
 export type {

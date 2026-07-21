@@ -1,12 +1,12 @@
-import { findUserByEmail, revokeAllUserSessions, writePassword } from "../../platform/accounts"
-import { config } from "../../platform/config"
-import { db } from "../../platform/db"
-import { passwordChangedEmail, passwordResetEmail } from "../../platform/emails"
-import { HttpError } from "../../platform/http"
-import { enqueueEmail } from "../../platform/mailer"
-import { passwordProvider } from "../../platform/providers/password"
-import type { Tenant } from "../../platform/schema"
-import { hashToken, newOpaqueToken } from "../../platform/tokens"
+import { findUserByEmail, revokeAllUserSessions, writePassword } from "../../platform/accounts.ts"
+import { config } from "../../platform/config.ts"
+import { db } from "../../platform/db.ts"
+import { passwordChangedEmail, passwordResetEmail } from "../../platform/emails.ts"
+import { HttpError } from "../../platform/http.ts"
+import { enqueueEmail } from "../../platform/mailer.ts"
+import { passwordProvider } from "../../platform/providers/password.ts"
+import type { Tenant } from "../../platform/schema.ts"
+import { hashToken, newOpaqueToken } from "../../platform/tokens.ts"
 
 /** Where the reset link points: the tenant's own app origin, then a config
  *  fallback, then the issuer as a last resort. */

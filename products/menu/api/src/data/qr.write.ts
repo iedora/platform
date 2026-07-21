@@ -1,9 +1,9 @@
 import type { RestaurantRef } from "@iedora/contracts";
 import { type Kysely, sql } from "kysely";
 
-import type { MenuDB } from "../schema";
-import { normalizeQRCode } from "../qr";
-import { changedOrNotFound, textArray } from "./sqlutil";
+import type { MenuDB } from "../schema.ts";
+import { normalizeQRCode } from "../qr.ts";
+import { changedOrNotFound, textArray } from "./sqlutil.ts";
 
 type DB = Kysely<MenuDB>;
 

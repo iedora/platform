@@ -2,7 +2,7 @@ import { SQL } from "bun"
 import { CamelCasePlugin, Kysely, sql } from "kysely"
 import { PostgresJSDialect } from "kysely-postgres-js"
 
-import { type MessagingDB, up } from "../../src/index"
+import { type MessagingDB, up } from "../../src/index.ts"
 
 export const HAS_DB = Boolean(process.env.DATABASE_URL)
 

@@ -2,7 +2,7 @@ import { AsyncLocalStorage } from "node:async_hooks"
 
 import { type Kysely, sql, type Transaction } from "kysely"
 
-import { createDb, type CreateDbOptions } from "./client"
+import { createDb, type CreateDbOptions } from "./client.ts"
 
 // Transaction-in-context: the active transaction is carried implicitly so
 // repositories transparently join the caller's unit of work, and nested runInTx

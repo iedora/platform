@@ -8,16 +8,16 @@ import {
   ServiceClient,
 } from "@iedora/service-runtime";
 
-import { buildApp } from "./app";
-import { AuditHttpReader } from "./audit-read";
-import { AuthClient } from "./auth-client";
-import { BillingClient, ServiceTokenSource } from "./billing";
-import { makeBlobClient } from "./blob";
-import { loadConfig } from "./config";
-import { Plans } from "./plans";
-import { Limiter } from "./ratelimit";
-import type { MenuDB } from "./schema";
-import { Uploads } from "./uploads";
+import { buildApp } from "./app.ts";
+import { AuditHttpReader } from "./audit-read.ts";
+import { AuthClient } from "./auth-client.ts";
+import { BillingClient, ServiceTokenSource } from "./billing.ts";
+import { makeBlobClient } from "./blob.ts";
+import { loadConfig } from "./config.ts";
+import { Plans } from "./plans.ts";
+import { Limiter } from "./ratelimit.ts";
+import type { MenuDB } from "./schema.ts";
+import { Uploads } from "./uploads.ts";
 
 expandFileSecrets();
 const cfg = loadConfig();

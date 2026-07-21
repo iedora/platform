@@ -1,8 +1,8 @@
 import { Hono } from "hono"
 
-import { resolveSession } from "../../data/session"
-import type { TutorDeps } from "../../deps"
-import type { TutorEnv } from "../../middleware"
+import { resolveSession } from "../../data/session.ts"
+import type { TutorDeps } from "../../deps.ts"
+import type { TutorEnv } from "../../middleware.ts"
 
 // The viewer's profile. Identity + email come from the verified Bearer principal;
 // the service owns the tutor/student membership the web can't derive, and bootstraps

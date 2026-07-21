@@ -1,10 +1,10 @@
 import { type Kysely, sql } from "kysely";
 
-import type { MenuDB } from "../schema";
-import type { DailyPoint } from "./analytics";
-import { notFound } from "../errors";
-import { type MenuSummary, menusWithCounts } from "./restaurants.write";
-import { addDays, dayString } from "./sqlutil";
+import type { MenuDB } from "../schema.ts";
+import type { DailyPoint } from "./analytics.ts";
+import { notFound } from "../errors.ts";
+import { type MenuSummary, menusWithCounts } from "./restaurants.write.ts";
+import { addDays, dayString } from "./sqlutil.ts";
 
 // Cross-tenant read models for the staff admin console. Every query spans all
 // tenants by design (staff oversight); pure reads, no writes.

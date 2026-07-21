@@ -1,7 +1,7 @@
-import { money } from "../../money";
+import { money } from "../../money/index.ts";
 
-import { getPayout, insertPayout, type PayoutRecord } from "../../data/payouts";
-import type { BillingDeps } from "../../deps";
+import { getPayout, insertPayout, type PayoutRecord } from "../../data/payouts.ts";
+import type { BillingDeps } from "../../deps.ts";
 
 // The payout — money OWED to a marketplace payee. Per design this slice only
 // RECORDS the payout (status 'pending'); EXECUTION (the actual transfer) is a

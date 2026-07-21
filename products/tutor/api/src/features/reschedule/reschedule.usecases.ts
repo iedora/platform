@@ -6,19 +6,19 @@ import {
 import type { Party } from "#db/enums"
 import type { Kysely } from "kysely"
 
-import { bumpConversation, conversationId, postSystem } from "../../data/conversations"
+import { bumpConversation, conversationId, postSystem } from "../../data/conversations.ts"
 import {
   activeProposalOrThrow,
   conversationParties,
   nextReschedulableLesson,
   threadContext,
   tutorAvailability,
-} from "../../data/reschedule"
-import type { TutorDeps } from "../../deps"
-import { conflict, invalid, notFound } from "../../errors"
-import { inngest, lessonCancelled, lessonScheduled } from "../../lib/inngest"
-import { generateSlots, type Slot } from "../../lib/slots"
-import type { TutorDB } from "../../schema"
+} from "../../data/reschedule.ts"
+import type { TutorDeps } from "../../deps.ts"
+import { conflict, invalid, notFound } from "../../errors.ts"
+import { inngest, lessonCancelled, lessonScheduled } from "../../lib/inngest.ts"
+import { generateSlots, type Slot } from "../../lib/slots.ts"
+import type { TutorDB } from "../../schema.ts"
 
 type DB = Kysely<TutorDB>
 

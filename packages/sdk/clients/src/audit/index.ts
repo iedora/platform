@@ -1,3 +1,3 @@
-export * from "./types"
-export * from "./envelope"
-export * from "./client"
+export * from "./types.ts"
+export * from "./envelope.ts"
+export * from "./client.ts"

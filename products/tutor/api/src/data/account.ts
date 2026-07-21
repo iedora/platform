@@ -2,7 +2,7 @@ import type { UpdateTimezoneResult } from "#contracts/account"
 import type { TimezoneSource } from "#db/enums"
 import type { Kysely } from "kysely"
 
-import type { TutorDB } from "../schema"
+import type { TutorDB } from "../schema.ts"
 
 type DB = Kysely<TutorDB>
 

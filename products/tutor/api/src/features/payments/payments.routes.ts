@@ -8,11 +8,11 @@ import {
   getSavedCard,
   saveDefaultPaymentMethod,
   startOneOffCheckout,
-} from "../../data/payments"
-import { studentByUserId } from "../../data/students"
-import type { TutorDeps } from "../../deps"
-import { notFound } from "../../errors"
-import type { TutorEnv } from "../../middleware"
+} from "../../data/payments.ts"
+import { studentByUserId } from "../../data/students.ts"
+import type { TutorDeps } from "../../deps.ts"
+import { notFound } from "../../errors.ts"
+import type { TutorEnv } from "../../middleware.ts"
 
 // The student's own payment surface: saved card + one-off checkout. Billing owns
 // Stripe; the student is resolved from the Bearer principal. The recurring off-

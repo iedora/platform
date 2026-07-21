@@ -1,6 +1,6 @@
 import type { Kysely } from "kysely"
 
-import type { TutorDB } from "../schema"
+import type { TutorDB } from "../schema.ts"
 
 // Gateway rule: paid weekly lessons unlock once an intro exists with a tutor.
 export async function hasLessonWith(

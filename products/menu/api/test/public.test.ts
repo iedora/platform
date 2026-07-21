@@ -1,7 +1,7 @@
 import { beforeAll, expect, test } from "bun:test";
 import { sql } from "kysely";
 
-import { seedRestaurant, useHarness } from "./harness";
+import { seedRestaurant, useHarness } from "./harness.ts";
 
 // Public slice: the unauthenticated /public surface (localized rendering, QR
 // resolution, view beacon). Seeds a restaurant tree once per file.

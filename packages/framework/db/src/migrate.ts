@@ -1,8 +1,8 @@
-import { makeSql } from "./driver"
+import { makeSql } from "./driver.ts"
 import { readdir, readFile } from "node:fs/promises"
 import { join } from "node:path"
 
-import { withSearchPath } from "./search-path"
+import { withSearchPath } from "./search-path.ts"
 
 // Canonical Postgres migration runner. Applies raw `*.sql` files in filename
 // order, once each, recorded in `schema_migrations`, serialized across

@@ -3,7 +3,7 @@ import { mkdtempSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 
-import { boolEnv, durationMs, env, expandFileSecrets, isProd, numEnv, requireEnv } from "../../src/index"
+import { boolEnv, durationMs, env, expandFileSecrets, isProd, numEnv, requireEnv } from "../../src/index.ts"
 
 describe("env readers", () => {
   test("requireEnv throws when missing", () => {

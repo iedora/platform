@@ -1,4 +1,4 @@
-export { BillingClient, type BillingClientOptions } from "./client"
+export { BillingClient, type BillingClientOptions } from "./client.ts"
 export {
   BillingError,
   type CancelInput,
@@ -19,4 +19,4 @@ export {
   type SubscribeInput,
   type Subscription,
   type TokenSource,
-} from "./types"
+} from "./types.ts"

@@ -2,8 +2,8 @@ import type { SessionDTO } from "#contracts/session"
 import { DEFAULT_TIMEZONE } from "#db/domain/time"
 import type { Kysely } from "kysely"
 
-import type { TutorConfig } from "../config"
-import type { TutorDB } from "../schema"
+import type { TutorConfig } from "../config.ts"
+import type { TutorDB } from "../schema.ts"
 
 type DB = Kysely<TutorDB>
 

@@ -1,8 +1,8 @@
-import type { Money } from "../../money";
+import type { Money } from "../../money/index.ts";
 import { type Kysely, sql } from "kysely";
 
-import { iso } from "../../data/dates";
-import type { RefundStatus } from "../../kinds";
+import { iso } from "../../data/dates.ts";
+import type { RefundStatus } from "../../kinds.ts";
 
 // Raw-SQL data access for the refunds ledger — the reverse leg of a charge. Same
 // style as data/charges.ts: kept off kysely-codegen so the table doesn't require

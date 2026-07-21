@@ -5,7 +5,7 @@ import {
   type AuditQueryResponse,
   type AuditSink,
   type TokenSource,
-} from "./types"
+} from "./types.ts"
 
 export type AuditClientOptions = {
   /** The audit service's public URL, e.g. https://audit.iedora.com. */

@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import { jwtVerify } from "jose";
 
-import { JwtIssuer, hashPassword, parseEd25519Seed, verifyPassword } from "../src";
+import { JwtIssuer, hashPassword, parseEd25519Seed, verifyPassword } from "../src/index.ts";
 
 // The dev keypair (auth's API_JWT_PRIVATE_KEY seed + its public key).
 const SEED = "4qiWAUBUtlk6abEM+o0urqz3tGcSVjg8f/NyRa5wWeI=";

@@ -8,13 +8,13 @@ import { REVIEW_TAGS, type ReviewTag } from "#db/enums"
 import { validate } from "@iedora/service-kit"
 import { Hono } from "hono"
 
-import { getTutorProgress, listStudentLessons } from "../../data/lessons"
-import { studentByUserId, tutorByUserId } from "../../data/students"
-import type { TutorDeps } from "../../deps"
-import { forbidden, notFound } from "../../errors"
-import type { TutorEnv } from "../../middleware"
-import { roomUrlFor } from "./lessons.room"
-import { cancelLesson, completeLesson, leaveReview, markNoShow } from "./lessons.usecases"
+import { getTutorProgress, listStudentLessons } from "../../data/lessons.ts"
+import { studentByUserId, tutorByUserId } from "../../data/students.ts"
+import type { TutorDeps } from "../../deps.ts"
+import { forbidden, notFound } from "../../errors.ts"
+import type { TutorEnv } from "../../middleware.ts"
+import { roomUrlFor } from "./lessons.room.ts"
+import { cancelLesson, completeLesson, leaveReview, markNoShow } from "./lessons.usecases.ts"
 
 // The authenticated student's lessons dashboard + the lesson mutations. Identity
 // comes from the verified Bearer principal; the student is resolved server-side

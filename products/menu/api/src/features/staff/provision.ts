@@ -7,15 +7,15 @@ import {
 } from "@iedora/contracts";
 import { ServiceClientError } from "@iedora/service-runtime";
 
-import { deleteAllMenus } from "../../data/builder";
-import { restaurantById } from "../../data/restaurants";
-import { menuTree } from "../../data/tree";
-import type { ItemNode, Node, Restaurant } from "../../domain";
-import type { MenuDeps } from "../../deps";
-import { invalid, notFound } from "../../errors";
-import { Languages } from "../../i18n";
-import { createCategory, createItems, createMenu, createRestaurant } from "../../service";
-import { validLanguages } from "../../validate";
+import { deleteAllMenus } from "../../data/builder.ts";
+import { restaurantById } from "../../data/restaurants.ts";
+import { menuTree } from "../../data/tree.ts";
+import type { ItemNode, Node, Restaurant } from "../../domain.ts";
+import type { MenuDeps } from "../../deps.ts";
+import { invalid, notFound } from "../../errors.ts";
+import { Languages } from "../../i18n.ts";
+import { createCategory, createItems, createMenu, createRestaurant } from "../../service.ts";
+import { validLanguages } from "../../validate.ts";
 
 // Staff provisioning of a restaurant (admin "New restaurant"): resolve the
 // target tenant (existing, or a brand-new one owned by the acting admin), then

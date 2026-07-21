@@ -5,8 +5,8 @@ import type {
   SpanProcessor,
 } from "@opentelemetry/sdk-trace-base";
 
-import { IEDORA_TENANT_ID, IEDORA_RESTAURANT_ID } from "../tenant/tenant";
-import { tenantContext } from "../tenant/tenant-context";
+import { IEDORA_TENANT_ID, IEDORA_RESTAURANT_ID } from "../tenant/tenant.ts";
+import { tenantContext } from "../tenant/tenant-context.ts";
 
 /**
  * Span processor that stamps tenant attribution onto every span started

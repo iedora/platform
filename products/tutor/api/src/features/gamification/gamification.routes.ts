@@ -2,10 +2,10 @@ import { tutorBadgesInput } from "#contracts/gamification"
 import { validate } from "@iedora/service-kit"
 import { Hono } from "hono"
 
-import { getStreak, listQuests, tutorBadges } from "../../data/gamification"
-import { studentByUserId } from "../../data/students"
-import type { TutorDeps } from "../../deps"
-import type { TutorEnv } from "../../middleware"
+import { getStreak, listQuests, tutorBadges } from "../../data/gamification.ts"
+import { studentByUserId } from "../../data/students.ts"
+import type { TutorDeps } from "../../deps.ts"
+import type { TutorEnv } from "../../middleware.ts"
 
 // Gamification reads. Streak + quests are scoped to the authenticated student
 // (resolved from the Bearer principal, never a client id); an absent student

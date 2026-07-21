@@ -5,9 +5,9 @@ import {
   SimpleSpanProcessor,
 } from "@opentelemetry/sdk-trace-base";
 
-import { TenantContextSpanProcessor } from "./processor";
-import { tenantContext } from "../tenant/tenant-context";
-import { IEDORA_TENANT_ID, IEDORA_RESTAURANT_ID } from "../tenant/tenant";
+import { TenantContextSpanProcessor } from "./processor.ts";
+import { tenantContext } from "../tenant/tenant-context.ts";
+import { IEDORA_TENANT_ID, IEDORA_RESTAURANT_ID } from "../tenant/tenant.ts";
 
 /**
  * TenantContextSpanProcessor stamps tenant.restaurant_id /

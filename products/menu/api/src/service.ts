@@ -2,8 +2,8 @@ import type { LocalizedText, StaffTransferOwnership } from "@iedora/contracts";
 import { Currencies } from "@iedora/contracts";
 import { sql } from "kysely";
 
-import * as builder from "./data/builder";
-import { promoteDefaultLanguage } from "./data/language";
+import * as builder from "./data/builder.ts";
+import { promoteDefaultLanguage } from "./data/language.ts";
 import {
   type RestaurantSummary,
   completeOnboarding as completeOnboardingRow,
@@ -12,13 +12,13 @@ import {
   renameSlug as renameSlugRow,
   setRestaurantTenant,
   updateIdentityRow,
-} from "./data/restaurants.write";
-import { restaurantById, restaurantBySlug } from "./data/restaurants";
-import type { MenuDeps } from "./deps";
-import type { Restaurant, Variant } from "./domain";
-import { invalid, notFound } from "./errors";
-import { Languages } from "./i18n";
-import { numbered, slugify, validSlug } from "./slug";
+} from "./data/restaurants.write.ts";
+import { restaurantById, restaurantBySlug } from "./data/restaurants.ts";
+import type { MenuDeps } from "./deps.ts";
+import type { Restaurant, Variant } from "./domain.ts";
+import { invalid, notFound } from "./errors.ts";
+import { Languages } from "./i18n.ts";
+import { numbered, slugify, validSlug } from "./slug.ts";
 import {
   MAX_ITEM_NAME,
   MAX_SHORT_NAME,
@@ -30,7 +30,7 @@ import {
   validPrice,
   validTheme,
   validVariants,
-} from "./validate";
+} from "./validate.ts";
 
 // Menu use-cases — input validation, orchestration over the data layer, and
 // audit on restaurant lifecycle events. Builder edits are too noisy to audit;

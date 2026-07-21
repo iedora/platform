@@ -1,6 +1,6 @@
-import * as subscriptions from "../../data/subscriptions";
-import type { BillingDeps } from "../../deps";
-import { noSubscription } from "../../errors";
+import * as subscriptions from "../../data/subscriptions.ts";
+import type { BillingDeps } from "../../deps.ts";
+import { noSubscription } from "../../errors.ts";
 
 // cancel ends a tenant's subscription for a product — the cancel + its audit
 // event commit together. Throws when no active subscription matched.

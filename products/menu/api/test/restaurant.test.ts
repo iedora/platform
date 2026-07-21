@@ -1,7 +1,7 @@
 import { beforeAll, expect, test } from "bun:test";
 import { sql } from "kysely";
 
-import { auth, json, jsonPatch, seedRestaurant, staffToken, useHarness } from "./harness";
+import { auth, json, jsonPatch, seedRestaurant, staffToken, useHarness } from "./harness.ts";
 
 // Restaurant-identity slice: theme, slug rename, and delete — the
 // per-restaurant settings, asserted through the public read model.

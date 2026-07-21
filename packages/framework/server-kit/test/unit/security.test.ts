@@ -13,7 +13,7 @@ import {
   verifyAccessToken,
   verifyPassword,
   verifyServiceToken,
-} from "../../src/index"
+} from "../../src/index.ts"
 
 const SEED = Buffer.from(new Uint8Array(32).fill(7)).toString("base64")
 

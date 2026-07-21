@@ -2,11 +2,11 @@ import { zValidator } from "@hono/zod-validator";
 import { Hono } from "hono";
 import { z } from "zod";
 
-import { analytics, monthlyViews } from "../../data/analytics";
-import { listRestaurantsWithCounts } from "../../data/restaurants.write";
-import type { MenuDeps } from "../../deps";
-import type { MenuEnv } from "../../middleware";
-import { createRestaurant } from "../../service";
+import { analytics, monthlyViews } from "../../data/analytics.ts";
+import { listRestaurantsWithCounts } from "../../data/restaurants.write.ts";
+import type { MenuDeps } from "../../deps.ts";
+import type { MenuEnv } from "../../middleware.ts";
+import { createRestaurant } from "../../service.ts";
 
 // Tenant-level dashboard slice: the caller's own restaurants, plan entitlements,
 // and analytics. Mounted under /api (userAuth + requireTenant).

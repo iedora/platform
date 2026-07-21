@@ -1,8 +1,8 @@
 import { CamelCasePlugin, Kysely, type KyselyConfig, type KyselyPlugin } from "kysely"
 import { PostgresJSDialect } from "kysely-postgres-js"
 
-import { makeSql } from "./driver"
-import { withSearchPath } from "./search-path"
+import { makeSql } from "./driver.ts"
+import { withSearchPath } from "./search-path.ts"
 
 export type CreateDbOptions = {
   /** Isolate this connection to a Postgres schema (search_path) in a shared

@@ -6,7 +6,7 @@ import {
   type EmailQueryResponse,
   type EmailSink,
   type TokenSource,
-} from "./types"
+} from "./types.ts"
 
 export type EmailClientOptions = {
   /** The email service's public URL, e.g. https://email.iedora.com. */

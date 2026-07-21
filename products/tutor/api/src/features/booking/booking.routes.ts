@@ -2,12 +2,12 @@ import { bookIntroInput, bookRecurringInput } from "#contracts/booking"
 import { validate } from "@iedora/service-kit"
 import { Hono } from "hono"
 
-import { hasLessonWith } from "../../data/booking"
-import { studentByUserId } from "../../data/students"
-import type { TutorDeps } from "../../deps"
-import { notFound } from "../../errors"
-import type { TutorEnv } from "../../middleware"
-import { bookIntroLesson, bookRecurringSeries } from "./booking.usecases"
+import { hasLessonWith } from "../../data/booking.ts"
+import { studentByUserId } from "../../data/students.ts"
+import type { TutorDeps } from "../../deps.ts"
+import { notFound } from "../../errors.ts"
+import type { TutorEnv } from "../../middleware.ts"
+import { bookIntroLesson, bookRecurringSeries } from "./booking.usecases.ts"
 
 // Booking gateway reads + the booking mutations. Student-scoped: the student is
 // resolved from the verified Bearer principal (never a client-supplied id).

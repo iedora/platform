@@ -1,6 +1,6 @@
 import { createDb } from "@iedora/db"
 
-import type { DB } from "./types"
+import type { DB } from "./types.ts"
 
 // The shared database, via @iedora/db (postgres.js under Node/Next.js, Bun SQL
 // under bun). Used by the seed script; the running service builds its own

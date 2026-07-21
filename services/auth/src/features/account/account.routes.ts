@@ -1,13 +1,13 @@
 import { Hono } from "hono"
 import { z } from "zod"
 
-import { type AuthedEnv, validate, withUser } from "../../platform/http"
+import { type AuthedEnv, validate, withUser } from "../../platform/http.ts"
 import {
   changePassword,
   listSessions,
   revokeOtherSessions,
   revokeSession,
-} from "./account.service"
+} from "./account.service.ts"
 
 const changePasswordSchema = z.object({
   currentPassword: z.string().min(1).max(200).optional(),

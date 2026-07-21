@@ -1,8 +1,8 @@
 import { Hono } from "hono"
 import { z } from "zod"
 
-import { revokeRefresh } from "../../platform/accounts"
-import { type Env, HttpError } from "../../platform/http"
+import { revokeRefresh } from "../../platform/accounts.ts"
+import { type Env, HttpError } from "../../platform/http.ts"
 
 const schema = z.object({ refreshToken: z.string().min(1) })
 

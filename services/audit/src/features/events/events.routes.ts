@@ -2,9 +2,9 @@ import { zValidator } from "@hono/zod-validator"
 import { type ServiceEnv, serviceAuth } from "@iedora/service-kit"
 import { Hono } from "hono"
 
-import { auditFilter } from "../../contracts"
-import type { AuditDeps } from "../../deps"
-import { queryAudit } from "./events.query"
+import { auditFilter } from "../../contracts.ts"
+import type { AuditDeps } from "../../deps.ts"
+import { queryAudit } from "./events.query.ts"
 
 // Vertical slice: querying the audit log. Owns its route, its request validation
 // (the zod contract, via @hono/zod-validator), and its data access

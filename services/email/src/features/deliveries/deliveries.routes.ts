@@ -2,9 +2,9 @@ import { zValidator } from "@hono/zod-validator"
 import { type ServiceEnv, serviceAuth } from "@iedora/service-kit"
 import { Hono } from "hono"
 
-import { emailFilter } from "../../contracts"
-import type { EmailDeps } from "../../deps"
-import { queryDeliveries } from "./deliveries.query"
+import { emailFilter } from "../../contracts.ts"
+import type { EmailDeps } from "../../deps.ts"
+import { queryDeliveries } from "./deliveries.query.ts"
 
 // Vertical slice: reading the delivery log. The platform (Vantage super-admin)
 // answers "was this email sent?" over the SDK by hitting this endpoint with a

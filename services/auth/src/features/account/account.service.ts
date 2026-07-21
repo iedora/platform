@@ -4,12 +4,12 @@ import {
   foldSessionFamilies,
   revokeOtherFamilies,
   writePassword,
-} from "../../platform/accounts"
-import { db } from "../../platform/db"
-import { passwordChangedEmail } from "../../platform/emails"
-import { HttpError } from "../../platform/http"
-import { enqueueEmail } from "../../platform/mailer"
-import { passwordProvider } from "../../platform/providers/password"
+} from "../../platform/accounts.ts"
+import { db } from "../../platform/db.ts"
+import { passwordChangedEmail } from "../../platform/emails.ts"
+import { HttpError } from "../../platform/http.ts"
+import { enqueueEmail } from "../../platform/mailer.ts"
+import { passwordProvider } from "../../platform/providers/password.ts"
 
 /** One row per active refresh family — a "device" in the account UI. */
 export type SessionView = {

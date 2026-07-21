@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { SeverityNumber } from "@opentelemetry/api-logs";
 
-import { logger } from "./logger";
+import { logger } from "./logger.ts";
 
 /**
  * The `logger` export resolves through the global LogsAPI. No SDK is

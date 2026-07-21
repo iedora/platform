@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test"
 
-import { emitLog, traceIds } from "../src/otel"
+import { emitLog, traceIds } from "../src/otel.ts"
 
 // The OTel SDK wiring comes from @iedora/observability (NodeSDK) and the HTTP span
 // from @hono/otel — both tested upstream. Tenant attribution lives in

@@ -2,8 +2,8 @@ import { zValidator } from "@hono/zod-validator";
 import { type Context, Hono } from "hono";
 import { z } from "zod";
 
-import type { MenuDeps } from "../../deps";
-import type { MenuEnv } from "../../middleware";
+import type { MenuDeps } from "../../deps.ts";
+import type { MenuEnv } from "../../middleware.ts";
 
 const uploadInput = z.object({
   target: z.string(),

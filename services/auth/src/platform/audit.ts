@@ -2,9 +2,9 @@ import { type AuditFilter, type AuditRecord, AuditClient } from "@iedora/sdk/aud
 import { type DeliveredMessage, enqueue } from "@iedora/messaging"
 import type { Kysely } from "kysely"
 
-import { config } from "./config"
-import type { DB } from "./schema"
-import { signServiceToken } from "./tokens"
+import { config } from "./config.ts"
+import type { DB } from "./schema.ts"
+import { signServiceToken } from "./tokens.ts"
 
 /** An audit event, mirroring the audit service's ingest shape. Enqueued onto the
  *  outbox (topic "audit") and POSTed to the audit service by the relay. */

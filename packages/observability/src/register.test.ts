@@ -24,7 +24,7 @@ describe("registerIedoraOtel", () => {
   });
 
   it("does nothing when NODE_ENV === 'test'", async () => {
-    const { registerIedoraOtel } = await import("./register");
+    const { registerIedoraOtel } = await import("./register.ts");
     // Vitest sets NODE_ENV=test by default — confirm the assumption then
     // call. No throw, no console output. The fact that this test exists
     // at all means @vercel/otel was importable without side-effects.
@@ -43,7 +43,7 @@ describe("registerIedoraOtel", () => {
     const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 
     try {
-      const { registerIedoraOtel } = await import("./register");
+      const { registerIedoraOtel } = await import("./register.ts");
       await registerIedoraOtel({ serviceName: "iedora-test-missing-endpoint" });
       expect(consoleSpy).toHaveBeenCalledWith(
         expect.stringContaining("OTEL_EXPORTER_OTLP_ENDPOINT not set"),
@@ -68,7 +68,7 @@ describe("registerIedoraOtel", () => {
     const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 
     try {
-      const { registerIedoraOtel } = await import("./register");
+      const { registerIedoraOtel } = await import("./register.ts");
       const {
         InMemoryMetricExporter,
         PeriodicExportingMetricReader,
@@ -121,7 +121,7 @@ describe("registerIedoraOtel", () => {
     }));
 
     try {
-      const { registerIedoraOtel } = await import("./register");
+      const { registerIedoraOtel } = await import("./register.ts");
       await registerIedoraOtel({ serviceName: "iedora-test-resource" });
       expect(registerOtelSpy).toHaveBeenCalledTimes(1);
       const config = registerOtelSpy.mock.calls[0]?.[0] as {
@@ -190,7 +190,7 @@ describe("registerIedoraOtel", () => {
     }));
 
     try {
-      const { registerIedoraOtel } = await import("./register");
+      const { registerIedoraOtel } = await import("./register.ts");
       await registerIedoraOtel({ serviceName: "iedora-test-fallback" });
       const config = registerOtelSpy.mock.calls[0]?.[0] as {
         attributes: Record<string, string>;
@@ -236,7 +236,7 @@ describe("registerIedoraOtel", () => {
     }));
 
     try {
-      const { registerIedoraOtel } = await import("./register");
+      const { registerIedoraOtel } = await import("./register.ts");
       await registerIedoraOtel({ serviceName: "iedora-test-min-env" });
       const config = registerOtelSpy.mock.calls[0]?.[0] as {
         attributes: Record<string, string>;
@@ -287,8 +287,8 @@ describe("registerIedoraOtel", () => {
     }));
 
     try {
-      const { registerIedoraOtel } = await import("./register");
-      const { TenantContextSpanProcessor } = await import("./signals/processor");
+      const { registerIedoraOtel } = await import("./register.ts");
+      const { TenantContextSpanProcessor } = await import("./signals/processor.ts");
       await registerIedoraOtel({ serviceName: "iedora-test-spanproc" });
 
       const config = registerOtelSpy.mock.calls[0]?.[0] as {
@@ -330,8 +330,8 @@ describe("registerIedoraOtel", () => {
     }));
 
     try {
-      const { registerIedoraOtel } = await import("./register");
-      const { TenantContextSpanProcessor } = await import("./signals/processor");
+      const { registerIedoraOtel } = await import("./register.ts");
+      const { TenantContextSpanProcessor } = await import("./signals/processor.ts");
       const extraProcessor = {
         onStart: () => {},
         onEnd: () => {},
@@ -383,7 +383,7 @@ describe("registerIedoraOtel", () => {
     }));
 
     try {
-      const { registerIedoraOtel } = await import("./register");
+      const { registerIedoraOtel } = await import("./register.ts");
       await registerIedoraOtel({ serviceName: "iedora-test-logs" });
 
       const config = registerOtelSpy.mock.calls[0]?.[0] as {
@@ -432,7 +432,7 @@ describe("registerIedoraOtel", () => {
     vi.spyOn(console, "warn").mockImplementation(() => {});
 
     try {
-      const { registerIedoraOtel } = await import("./register");
+      const { registerIedoraOtel } = await import("./register.ts");
       await registerIedoraOtel({ serviceName: "iedora-test-no-logs" });
 
       const config = registerOtelSpy.mock.calls[0]?.[0] as {
@@ -471,7 +471,7 @@ describe("registerIedoraOtel", () => {
     }));
 
     try {
-      const { registerIedoraOtel } = await import("./register");
+      const { registerIedoraOtel } = await import("./register.ts");
       await registerIedoraOtel({ serviceName: "iedora-test-pino" });
 
       const config = registerOtelSpy.mock.calls[0]?.[0] as {
@@ -556,7 +556,7 @@ describe("registerIedoraOtel", () => {
     });
 
     try {
-      const { registerIedoraOtel } = await import("./register");
+      const { registerIedoraOtel } = await import("./register.ts");
       await registerIedoraOtel({ serviceName: "iedora-test-delta" });
       expect(exporterSpy).toHaveBeenCalledTimes(1);
       const passedOptions = exporterSpy.mock.calls[0]?.[0] as

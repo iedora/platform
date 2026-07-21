@@ -3,8 +3,8 @@ import { type ServiceEnv, serviceAuth } from "@iedora/service-kit"
 import { Hono } from "hono"
 import { z } from "zod"
 
-import type { EmailDeps } from "../../deps"
-import { recordDelivery } from "../deliveries/deliveries.query"
+import type { EmailDeps } from "../../deps.ts"
+import { recordDelivery } from "../deliveries/deliveries.query.ts"
 
 // Vertical slice: DELIVERING transactional emails. Producers never send SMTP
 // themselves — each producer's outbox relay POSTs queued emails here over a

@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 
-import { bearer, seedEvents, useHarness } from "./harness";
+import { bearer, seedEvents, useHarness } from "./harness.ts";
 
 const h = useHarness();
 

@@ -1,7 +1,7 @@
-import { config } from "../../platform/config"
-import { db } from "../../platform/db"
-import { HttpError } from "../../platform/http"
-import { hashToken, signServiceToken } from "../../platform/tokens"
+import { config } from "../../platform/config.ts"
+import { db } from "../../platform/db.ts"
+import { HttpError } from "../../platform/http.ts"
+import { hashToken, signServiceToken } from "../../platform/tokens.ts"
 
 /** Register a machine-to-machine client. Only the secret hash is stored; the
  *  audience defaults to the service audience the admin API checks. */

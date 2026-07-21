@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test"
 import { Hono } from "hono"
 import { z } from "zod"
 
-import { bearerAuth, HttpError, onError, up, validate } from "../../src/index"
+import { bearerAuth, HttpError, onError, up, validate } from "../../src/index.ts"
 
 function makeApp() {
   const app = new Hono()

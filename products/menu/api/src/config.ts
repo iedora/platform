@@ -1,6 +1,6 @@
 import { env, requireEnv, siblingUrl } from "@iedora/service-runtime";
 
-import type { S3Config } from "./blob";
+import type { S3Config } from "./blob.ts";
 
 // This service's Kamal role (the suffix in its container name); server-kit's
 // siblingUrl reconstructs a sibling role's versioned URL from it. An explicit

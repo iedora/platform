@@ -1,10 +1,10 @@
 import type { LocalizedText } from "@iedora/contracts";
 import { type Kysely, sql } from "kysely";
 
-import type { CategoryNode, ItemNode, Node, Snapshot, Variant } from "../domain";
-import type { MenuDB } from "../schema";
-import { restaurantBySlug } from "./restaurants";
-import { parseJson } from "./sqlutil";
+import type { CategoryNode, ItemNode, Node, Snapshot, Variant } from "../domain.ts";
+import type { MenuDB } from "../schema.ts";
+import { restaurantBySlug } from "./restaurants.ts";
+import { parseJson } from "./sqlutil.ts";
 
 // Loads the content hierarchy with three indexed queries (menus, categories,
 // items) and assembles it in memory — no N+1, no joins multiplying i18n blobs.

@@ -1,10 +1,10 @@
-import { createAuditIngester } from "../../store"
+import { createAuditIngester } from "../../store/index.ts"
 import { createInbox } from "@iedora/messaging"
 import { type ServiceEnv, serviceAuth } from "@iedora/service-kit"
 import { Hono } from "hono"
 import { z } from "zod"
 
-import type { AuditDeps } from "../../deps"
+import type { AuditDeps } from "../../deps.ts"
 
 // Vertical slice: INGESTING audit events. Producers never write audit_log
 // through the DB (hard rule: services don't communicate through the database) —

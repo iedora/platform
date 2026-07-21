@@ -1,10 +1,10 @@
 import type { Hono } from "hono";
 
-import type { Auditor } from "./audit";
+import type { Auditor } from "./audit.ts";
 import { serve } from "@iedora/service-kit";
 import type { Database } from "@iedora/service-kit";
 import type { EmailSink } from "@iedora/sdk/email";
-import { type AuditSink, OutboxRelay, OutboxWriter, relayHandlers } from "./outbox";
+import { type AuditSink, OutboxRelay, OutboxWriter, relayHandlers } from "./outbox.ts";
 
 export interface RelayServiceOptions<DB> {
   name: string; // service name for logs (e.g. "iedora-auth")

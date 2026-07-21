@@ -1,10 +1,10 @@
-import type { Subscription } from "../../contracts";
+import type { Subscription } from "../../contracts.ts";
 
-import * as invoices from "../../data/invoices";
-import * as subscriptions from "../../data/subscriptions";
-import type { BillingDeps } from "../../deps";
-import { unknownPlan } from "../../errors";
-import { getPlan } from "../../plans";
+import * as invoices from "../../data/invoices.ts";
+import * as subscriptions from "../../data/subscriptions.ts";
+import type { BillingDeps } from "../../deps.ts";
+import { unknownPlan } from "../../errors.ts";
+import { getPlan } from "../../plans.ts";
 
 // subscribe activates (or changes) a tenant's plan and issues an invoice for
 // paid plans — subscription upsert + invoice + audit all commit together (so an

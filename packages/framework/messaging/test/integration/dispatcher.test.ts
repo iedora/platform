@@ -1,7 +1,7 @@
 import { afterAll, beforeEach, describe, expect, test } from "bun:test"
 
-import { createDispatcher, enqueue } from "../../src/index"
-import { HAS_DB, resetSchema, testDb } from "../helpers/db"
+import { createDispatcher, enqueue } from "../../src/index.ts"
+import { HAS_DB, resetSchema, testDb } from "../helpers/db.ts"
 
 const SCHEMA = "t_dispatcher"
 const db = testDb(SCHEMA)

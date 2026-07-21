@@ -1,6 +1,6 @@
 import { hash, verify } from "@node-rs/argon2"
 
-import type { PasswordProvider } from "./types"
+import type { PasswordProvider } from "./types.ts"
 
 /** Email + password, backed by Argon2id via @node-rs/argon2 (a native addon that
  *  runs on Node and Bun alike). @node-rs/argon2 defaults to the Argon2id variant;

@@ -2,7 +2,7 @@ import { zValidator } from "@hono/zod-validator"
 import type { ValidationTargets } from "hono"
 import type { ZodType } from "zod"
 
-import { HttpError } from "./errors"
+import { HttpError } from "./errors.ts"
 
 /** One validator for every route: parse `target` (json / param / query / …) with
  *  `schema`, and on failure raise a standard 422 HttpError so error shapes stay

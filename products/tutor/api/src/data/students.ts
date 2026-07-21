@@ -1,6 +1,6 @@
 import type { Kysely } from "kysely"
 
-import type { TutorDB } from "../schema"
+import type { TutorDB } from "../schema.ts"
 
 // Resolve the student/tutor profile for an authenticated user. The user id ALWAYS
 // comes from the verified Bearer principal (c.get("user").userId), never the client.

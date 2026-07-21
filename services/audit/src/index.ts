@@ -8,8 +8,8 @@ import {
   serve,
 } from "@iedora/service-kit"
 
-import { buildApp } from "./app"
-import type { AuditDB } from "./schema"
+import { buildApp } from "./app.ts"
+import type { AuditDB } from "./schema.ts"
 
 expandFileSecrets()
 

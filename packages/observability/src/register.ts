@@ -36,7 +36,7 @@ import {
 // is well-known and shipped on every fleet host via $HOST_NAME.
 import { ATTR_HOST_NAME } from "@opentelemetry/semantic-conventions/incubating";
 
-import { TenantContextSpanProcessor } from "./signals/processor";
+import { TenantContextSpanProcessor } from "./signals/processor.ts";
 
 /**
  * Parse the standard `OTEL_EXPORTER_OTLP_HEADERS` env-var format
@@ -63,8 +63,8 @@ const DEFAULT_METRIC_EXPORT_INTERVAL_MS = 60_000;
 // Sampling (no head sampling) + the infra noise filter live in their own
 // dependency-free module so register-node.ts can share them without pulling in
 // @vercel/otel. Imported for internal use + re-exported for back-compat.
-import { defaultSampler, NoiseFilteringSampler, NOISE_PATTERNS } from "./signals/sampler";
-import { parseOtlpHeaders } from "./signals/otlp";
+import { defaultSampler, NoiseFilteringSampler, NOISE_PATTERNS } from "./signals/sampler.ts";
+import { parseOtlpHeaders } from "./signals/otlp.ts";
 export { defaultSampler, NoiseFilteringSampler, NOISE_PATTERNS };
 
 export type RegisterOptions = {

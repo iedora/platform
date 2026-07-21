@@ -2,8 +2,8 @@ import { type ServiceEnv, serviceAuth } from "@iedora/service-kit";
 import { Hono } from "hono";
 import { z } from "zod";
 
-import type { BillingDeps } from "../../deps";
-import { RefundRejected, refundCharge } from "./refund.service";
+import type { BillingDeps } from "../../deps.ts";
+import { RefundRejected, refundCharge } from "./refund.service.ts";
 
 // Vertical slice: refund a charge. POST /billing/charges/:id/refund. Everything
 // explicit — the kind is taken from the original charge, `amountCents` (partial)

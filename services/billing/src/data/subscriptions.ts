@@ -1,9 +1,9 @@
-import type { Subscription } from "../contracts";
+import type { Subscription } from "../contracts.ts";
 import { type Kysely, type Selectable, sql } from "kysely";
 
-import type { Subscriptions } from "../db.generated";
-import type { BillingDB } from "../schema";
-import { iso, isoOpt } from "./dates";
+import type { Subscriptions } from "../db.generated.ts";
+import type { BillingDB } from "../schema.ts";
+import { iso, isoOpt } from "./dates.ts";
 
 const COLUMNS = [
   "id",

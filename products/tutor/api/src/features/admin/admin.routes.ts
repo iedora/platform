@@ -2,11 +2,11 @@ import { rejectChangeInput } from "#contracts/admin"
 import { validate } from "@iedora/service-kit"
 import { Hono } from "hono"
 
-import { adminByEmail, listPendingChanges } from "../../data/admin"
-import { approveChange, rejectChange } from "../../data/admin.write"
-import type { TutorDeps } from "../../deps"
-import { forbidden } from "../../errors"
-import type { TutorEnv } from "../../middleware"
+import { adminByEmail, listPendingChanges } from "../../data/admin.ts"
+import { approveChange, rejectChange } from "../../data/admin.write.ts"
+import type { TutorDeps } from "../../deps.ts"
+import { forbidden } from "../../errors.ts"
+import type { TutorEnv } from "../../middleware.ts"
 
 // The admin approvals queue. Admin is decided server-side from the verified
 // principal's email: the ADMIN_EMAILS allowlist OR a row in the admin table.

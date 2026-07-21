@@ -1,9 +1,9 @@
 import { Hono } from "hono"
 import { z } from "zod"
 
-import { findIdentity, findUserByEmail, issueTokens } from "../../platform/accounts"
-import { type Env, HttpError, reqContext } from "../../platform/http"
-import { listEnabledProviders, resolveProvider } from "../../platform/providers/registry"
+import { findIdentity, findUserByEmail, issueTokens } from "../../platform/accounts.ts"
+import { type Env, HttpError, reqContext } from "../../platform/http.ts"
+import { listEnabledProviders, resolveProvider } from "../../platform/providers/registry.ts"
 
 const schema = z.object({
   email: z.email(),

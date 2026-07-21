@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 
-import { TENANT, listInvoices, outboxCount, post, subscribe, useHarness } from "./harness";
+import { TENANT, listInvoices, outboxCount, post, subscribe, useHarness } from "./harness.ts";
 
 const h = useHarness();
 

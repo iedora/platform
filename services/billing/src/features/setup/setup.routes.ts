@@ -1,10 +1,10 @@
-import { PaymentError } from "../../money";
+import { PaymentError } from "../../money/index.ts";
 import { type ServiceEnv, serviceAuth } from "@iedora/service-kit";
 import { Hono } from "hono";
 import { z } from "zod";
 
-import type { BillingDeps } from "../../deps";
-import { createSetup, getPaymentMethod, SetupRejected } from "./setup.service";
+import type { BillingDeps } from "../../deps.ts";
+import { createSetup, getPaymentMethod, SetupRejected } from "./setup.service.ts";
 
 // Vertical slice: "save a card". POST /billing/payment-methods/setup starts a
 // Stripe SetupIntent; the returned clientSecret is confirmed on the client to

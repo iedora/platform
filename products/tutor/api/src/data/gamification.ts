@@ -4,7 +4,7 @@ import type { OwnerType, RankTier, XpEventType } from "#db/enums"
 import type { Kysely } from "kysely"
 import { DateTime } from "luxon"
 
-import type { TutorDB } from "../schema"
+import type { TutorDB } from "../schema.ts"
 
 type DB = Kysely<TutorDB>
 

@@ -6,13 +6,13 @@ export {
   type ManageClient,
   type ManageClientOptions,
   mintServiceToken,
-} from "./client"
+} from "./client.ts"
 export {
   jwtExpiryMs,
   ServiceTokenSource,
   type TokenSource,
-} from "./tokens"
-export { createAuthVerifier, type VerifierOptions } from "./verify"
+} from "./tokens.ts"
+export { createAuthVerifier, type VerifierOptions } from "./verify.ts"
 export {
   type AdminSession,
   type AdminUser,
@@ -31,4 +31,4 @@ export {
   type SwitchResult,
   type TokenBundle,
   type WhoAmI,
-} from "./types"
+} from "./types.ts"

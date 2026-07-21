@@ -1,9 +1,9 @@
 import { isTerminal } from "#db/domain/status"
 import type { Kysely } from "kysely"
 
-import { bumpConversation, findConversationId } from "../../data/conversations"
-import type { TutorDeps } from "../../deps"
-import type { TutorDB } from "../../schema"
+import { bumpConversation, findConversationId } from "../../data/conversations.ts"
+import type { TutorDeps } from "../../deps.ts"
+import type { TutorDB } from "../../schema.ts"
 
 type DB = Kysely<TutorDB>
 

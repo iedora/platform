@@ -1,15 +1,15 @@
 import { createServiceApp, healthRoutes, userAuth } from "@iedora/service-runtime";
 import { Hono } from "hono";
 
-import type { MenuDeps } from "./deps";
-import { handleError } from "./errors";
-import { builderRoutes } from "./features/builder/builder.routes";
-import { dashboardRoutes } from "./features/dashboard/dashboard.routes";
-import { publicRoutes } from "./features/public/public.routes";
-import { restaurantRoutes } from "./features/restaurant/restaurant.routes";
-import { staffRoutes } from "./features/staff/staff.routes";
-import { uploadsRoutes } from "./features/uploads/uploads.routes";
-import { type MenuEnv, requireTenant, scoped } from "./middleware";
+import type { MenuDeps } from "./deps.ts";
+import { handleError } from "./errors.ts";
+import { builderRoutes } from "./features/builder/builder.routes.ts";
+import { dashboardRoutes } from "./features/dashboard/dashboard.routes.ts";
+import { publicRoutes } from "./features/public/public.routes.ts";
+import { restaurantRoutes } from "./features/restaurant/restaurant.routes.ts";
+import { staffRoutes } from "./features/staff/staff.routes.ts";
+import { uploadsRoutes } from "./features/uploads/uploads.routes.ts";
+import { type MenuEnv, requireTenant, scoped } from "./middleware.ts";
 
 // Composition root: the unauthenticated /public surface + the authenticated /api
 // dashboard surface (the cross-tenant /staff surface + uploads land in Stage C).

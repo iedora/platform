@@ -1,15 +1,15 @@
 import { Hono } from "hono"
 import { z } from "zod"
 
-import { db } from "../../platform/db"
+import { db } from "../../platform/db.ts"
 import {
   HttpError,
   type ServiceEnv,
   serviceTenantId,
   validate,
   withService,
-} from "../../platform/http"
-import type { Tenant } from "../../platform/schema"
+} from "../../platform/http.ts"
+import type { Tenant } from "../../platform/schema.ts"
 import {
   forcePasswordChange,
   getOrganization,
@@ -23,7 +23,7 @@ import {
   setUserBan,
   setUserPassword,
   transferToNewOwner,
-} from "./manage.service"
+} from "./manage.service.ts"
 
 const setPasswordSchema = z.object({ password: z.string().min(8).max(200) })
 const banSchema = z.object({

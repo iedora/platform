@@ -1,10 +1,10 @@
-export { bearerAuth } from "./auth"
-export { HttpError, onError } from "./errors"
-export { up } from "./health"
-export { readBearer, reqContext } from "./request"
-export { validate } from "./validation"
-export { typedBearer } from "./bearer"
-export { hashPassword, verifyPassword } from "./password"
+export { bearerAuth } from "./auth.ts"
+export { HttpError, onError } from "./errors.ts"
+export { up } from "./health.ts"
+export { readBearer, reqContext } from "./request.ts"
+export { validate } from "./validation.ts"
+export { typedBearer } from "./bearer.ts"
+export { hashPassword, verifyPassword } from "./password.ts"
 export {
   type AccessTokenInput,
   type Ed25519Keys,
@@ -12,7 +12,7 @@ export {
   JwtIssuer,
   type JwtIssuerConfig,
   parseEd25519Seed,
-} from "./jwt"
+} from "./jwt.ts"
 export {
   newServiceVerifier,
   parseClients,
@@ -23,7 +23,7 @@ export {
   type ServiceIssuerConfig,
   type ServiceVerifier,
   verifyServiceToken,
-} from "./service-auth"
+} from "./service-auth.ts"
 export {
   hasRole,
   newUserVerifier,
@@ -32,10 +32,10 @@ export {
   type UserPrincipal,
   type UserVerifier,
   verifyAccessToken,
-} from "./user-auth"
+} from "./user-auth.ts"
 export {
   type HeaderTransform,
   ServiceClient,
   ServiceClientError,
   type TokenSource,
-} from "./service-client"
+} from "./service-client.ts"

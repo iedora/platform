@@ -1,9 +1,9 @@
-import type { Invoice } from "../contracts";
+import type { Invoice } from "../contracts.ts";
 import type { Kysely, Selectable } from "kysely";
 
-import type { Invoices } from "../db.generated";
-import type { BillingDB } from "../schema";
-import { iso } from "./dates";
+import type { Invoices } from "../db.generated.ts";
+import type { BillingDB } from "../schema.ts";
+import { iso } from "./dates.ts";
 
 const DEFAULT_LIMIT = 50;
 const MAX_LIMIT = 200;

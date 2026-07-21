@@ -1,4 +1,4 @@
-import type { RankTier } from "../enums"
+import type { RankTier } from "../enums.ts"
 
 /** The rank ladder — single source of truth for both seeding and logic. */
 export const RANK_ORDER = ["bronze", "silver", "gold", "platinum", "elite"] as const

@@ -1,7 +1,7 @@
 import { Hono } from "hono"
 
-import { findUserById } from "../../platform/accounts"
-import { type AuthedEnv, HttpError, withUser } from "../../platform/http"
+import { findUserById } from "../../platform/accounts.ts"
+import { type AuthedEnv, HttpError, withUser } from "../../platform/http.ts"
 
 /** GET /:tenant/whoami — the verified caller, with a LIVE `mustChangePassword`
  *  read (a forced-change set after the token was minted still takes effect).

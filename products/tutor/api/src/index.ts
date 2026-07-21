@@ -7,13 +7,13 @@ import {
 } from "@iedora/service-kit"
 import { connect } from "inngest/connect"
 
-import { buildApp } from "./app"
-import { loadConfig } from "./config"
-import { makeFunctions } from "./jobs/functions"
-import { makeBilling } from "./lib/billing"
-import { inngest } from "./lib/inngest"
-import { makeLessonspace } from "./lib/lessonspace"
-import type { TutorDB } from "./schema"
+import { buildApp } from "./app.ts"
+import { loadConfig } from "./config.ts"
+import { makeFunctions } from "./jobs/functions.ts"
+import { makeBilling } from "./lib/billing.ts"
+import { inngest } from "./lib/inngest.ts"
+import { makeLessonspace } from "./lib/lessonspace.ts"
+import type { TutorDB } from "./schema.ts"
 
 // Process entrypoint: expand _FILE secrets, load config, wire deps, serve.
 expandFileSecrets()

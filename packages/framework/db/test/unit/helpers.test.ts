@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test"
 
-import { isInvalidText, iso, isoOpt, isUniqueViolation, sqlState } from "../../src/index"
+import { isInvalidText, iso, isoOpt, isUniqueViolation, sqlState } from "../../src/index.ts"
 
 describe("pg error helpers", () => {
   test("sqlState reads errno", () => {
@@ -27,7 +27,7 @@ describe("date helpers", () => {
   })
 })
 
-import { withSearchPath } from "../../src/index"
+import { withSearchPath } from "../../src/index.ts"
 
 describe("withSearchPath", () => {
   test("appends search_path option", () => {

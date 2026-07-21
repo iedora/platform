@@ -1,8 +1,8 @@
 import { describe, expect, test } from "bun:test"
 import crypto from "node:crypto"
 
-import { oauthProvider, pkce } from "./oauth"
-import { facebook, github, google, microsoft, oauthPresets } from "./presets"
+import { oauthProvider, pkce } from "./oauth.ts"
+import { facebook, github, google, microsoft, oauthPresets } from "./presets.ts"
 
 function b64url(buf: Buffer): string {
   return buf.toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "")

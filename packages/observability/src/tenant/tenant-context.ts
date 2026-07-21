@@ -1,6 +1,6 @@
 import { AsyncLocalStorage } from "node:async_hooks";
 
-import type { TenantAttrs } from "./tenant";
+import type { TenantAttrs } from "./tenant.ts";
 
 /**
  * Tenant attribution carried on an AsyncLocalStorage store. Modeled on

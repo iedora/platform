@@ -6,9 +6,9 @@ import {
 import { validate } from "@iedora/service-kit"
 import { Hono } from "hono"
 
-import type { TutorDeps } from "../../deps"
-import type { TutorEnv } from "../../middleware"
-import { confirmReschedule, counterReschedule, openReschedule } from "./reschedule.usecases"
+import type { TutorDeps } from "../../deps.ts"
+import type { TutorEnv } from "../../middleware.ts"
+import { confirmReschedule, counterReschedule, openReschedule } from "./reschedule.usecases.ts"
 
 // Reschedule negotiation. The service resolves the lesson, generates the offered
 // slots, enforces the turn-taking rule, and resets the charge timer. Identity is

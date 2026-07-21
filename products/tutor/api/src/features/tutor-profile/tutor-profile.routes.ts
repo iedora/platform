@@ -1,15 +1,15 @@
 import { Hono } from "hono"
 
-import type { TutorDeps } from "../../deps"
-import { notFound } from "../../errors"
-import type { TutorEnv } from "../../middleware"
+import type { TutorDeps } from "../../deps.ts"
+import { notFound } from "../../errors.ts"
+import type { TutorEnv } from "../../middleware.ts"
 import {
   getTutorBooking,
   getTutorIdBySlug,
   getTutorReviews,
   listBookableTutors,
   listPublicTutorSlugs,
-} from "../../data/tutor-profile"
+} from "../../data/tutor-profile.ts"
 
 // Public tutor-profile surface (no auth): the /t/[slug] landing page, its reviews
 // page, and the sitemap all read through here. Mounted under /public.

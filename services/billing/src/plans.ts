@@ -1,4 +1,4 @@
-import type { Plan } from "./contracts";
+import type { Plan } from "./contracts.ts";
 
 // The billing plan registry — code-defined (not a DB table) so it's versioned
 // with the service. Invoices snapshot plan_code + amount for history, so

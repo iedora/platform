@@ -1,8 +1,8 @@
-import { money, splitByRate, zero } from "../../money";
+import { money, splitByRate, zero } from "../../money/index.ts";
 
-import { type ChargeRecord, getCharge, insertCharge } from "../../data/charges";
-import type { BillingDeps } from "../../deps";
-import type { SettleInput } from "../../kinds";
+import { type ChargeRecord, getCharge, insertCharge } from "../../data/charges.ts";
+import type { BillingDeps } from "../../deps.ts";
+import type { SettleInput } from "../../kinds.ts";
 
 // The one-off charge. Everything explicit: the caller names the `kind`; the kind
 // validates its own request (stripe's `mode`) and rejects a bad combo. Manual

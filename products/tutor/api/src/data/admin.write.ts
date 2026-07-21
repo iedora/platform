@@ -1,7 +1,7 @@
 import type { Kysely } from "kysely"
 
-import { conflict, notFound } from "../errors"
-import type { TutorDB } from "../schema"
+import { conflict, notFound } from "../errors.ts"
+import type { TutorDB } from "../schema.ts"
 
 type DB = Kysely<TutorDB>
 

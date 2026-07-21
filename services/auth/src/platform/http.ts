@@ -1,10 +1,10 @@
 import { HttpError, readBearer } from "@iedora/server-kit"
 import { createMiddleware } from "hono/factory"
 
-import { getTenantBySlug } from "./accounts"
-import { config } from "./config"
-import type { Tenant } from "./schema"
-import { verifyAccessToken } from "./tokens"
+import { getTenantBySlug } from "./accounts.ts"
+import { config } from "./config.ts"
+import type { Tenant } from "./schema.ts"
+import { verifyAccessToken } from "./tokens.ts"
 
 // The shared Hono kernel, re-exported so every slice imports it from one place.
 export { HttpError, onError, reqContext, validate } from "@iedora/server-kit"

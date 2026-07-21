@@ -1,10 +1,10 @@
 import type { Database } from "@iedora/service-runtime";
 
-import type { BlobClient } from "./blob";
-import { itemInRestaurant, setItemImage, setRestaurantAsset } from "./data/assets";
-import type { Restaurant } from "./domain";
-import { invalid } from "./errors";
-import type { MenuDB } from "./schema";
+import type { BlobClient } from "./blob.ts";
+import { itemInRestaurant, setItemImage, setRestaurantAsset } from "./data/assets.ts";
+import type { Restaurant } from "./domain.ts";
+import { invalid } from "./errors.ts";
+import type { MenuDB } from "./schema.ts";
 
 // Presigned browser PUTs to S3-compatible storage.
 // Flow: presign → client PUT → commit (verify the object landed,
