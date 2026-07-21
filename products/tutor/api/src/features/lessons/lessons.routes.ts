@@ -3,8 +3,8 @@ import {
   completeLessonInput,
   leaveReviewInput,
   markNoShowInput,
-} from "@iedora/tutor-contracts/lessons"
-import { REVIEW_TAGS, type ReviewTag } from "@iedora/tutor-db/enums"
+} from "#contracts/lessons"
+import { REVIEW_TAGS, type ReviewTag } from "#db/enums"
 import { validate } from "@iedora/service-kit"
 import { Hono } from "hono"
 

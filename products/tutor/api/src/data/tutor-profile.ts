@@ -1,4 +1,4 @@
-import type { BookableTutorDTO } from "@iedora/tutor-contracts/booking"
+import type { BookableTutorDTO } from "#contracts/booking"
 import type {
   AvailabilityRule,
   BookableSubject,
@@ -8,15 +8,15 @@ import type {
   TutorReviewDTO,
   TutorReviewsDTO,
   TutorStats,
-} from "@iedora/tutor-contracts/tutor-profile"
-import { REVIEW_TAG_LABEL, type ReviewTag, type RankTier } from "@iedora/tutor-db/enums"
+} from "#contracts/tutor-profile"
+import { REVIEW_TAG_LABEL, type ReviewTag, type RankTier } from "#db/enums"
 import {
   computePricePennies,
   formatPennies,
   isSuperTutor,
   RANK_EMOJI,
   RANK_LABEL,
-} from "@iedora/tutor-db/domain/pricing"
+} from "#db/domain/pricing"
 import type { Kysely } from "kysely"
 
 import type { TutorDB } from "../schema"

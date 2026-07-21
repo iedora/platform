@@ -1,4 +1,4 @@
-import { rejectChangeInput } from "@iedora/tutor-contracts/admin"
+import { rejectChangeInput } from "#contracts/admin"
 import { validate } from "@iedora/service-kit"
 import { Hono } from "hono"
 

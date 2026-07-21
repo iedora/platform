@@ -1,6 +1,6 @@
-import { XP } from "@iedora/tutor-db/domain/status"
-import { promoteRank } from "@iedora/tutor-db/domain/pricing"
-import type { OwnerType, RankTier, XpEventType } from "@iedora/tutor-db/enums"
+import { XP } from "#db/domain/status"
+import { promoteRank } from "#db/domain/pricing"
+import type { OwnerType, RankTier, XpEventType } from "#db/enums"
 import type { Kysely } from "kysely"
 import { DateTime } from "luxon"
 

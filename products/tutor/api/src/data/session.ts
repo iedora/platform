@@ -1,5 +1,5 @@
-import type { SessionDTO } from "@iedora/tutor-contracts/session"
-import { DEFAULT_TIMEZONE } from "@iedora/tutor-db/domain/time"
+import type { SessionDTO } from "#contracts/session"
+import { DEFAULT_TIMEZONE } from "#db/domain/time"
 import type { Kysely } from "kysely"
 
 import type { TutorConfig } from "../config"

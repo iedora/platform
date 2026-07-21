@@ -4,7 +4,7 @@ import { migrate } from "@iedora/db"
 // advisory-lock runner). This module owns the directory; tutor-api applies them
 // before boot via @iedora/service-kit's `runMigrations`
 // (products/tutor/api/src/migrate.ts). Kept runnable directly for local use.
-export const MIGRATIONS_DIR = new URL("./migrations_sql", import.meta.url).pathname
+export const MIGRATIONS_DIR = new URL("../../migrations", import.meta.url).pathname
 
 if (import.meta.main) {
   // Same DSN the service reads (products/tutor/api/src/config.ts) so `bun --cwd

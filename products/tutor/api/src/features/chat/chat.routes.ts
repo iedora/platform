@@ -1,4 +1,4 @@
-import { sendMessageInput } from "@iedora/tutor-contracts/chat"
+import { sendMessageInput } from "#contracts/chat"
 import { validate } from "@iedora/service-kit"
 import { Hono } from "hono"
 

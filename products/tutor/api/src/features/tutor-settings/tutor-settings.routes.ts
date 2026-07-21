@@ -4,7 +4,7 @@ import {
   toggleReviewPinInput,
   updateProfileInput,
   updateRateInput,
-} from "@iedora/tutor-contracts/tutor-settings"
+} from "#contracts/tutor-settings"
 import { validate } from "@iedora/service-kit"
 import { Hono } from "hono"
 

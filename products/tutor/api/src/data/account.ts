@@ -1,5 +1,5 @@
-import type { UpdateTimezoneResult } from "@iedora/tutor-contracts/account"
-import type { TimezoneSource } from "@iedora/tutor-db/enums"
+import type { UpdateTimezoneResult } from "#contracts/account"
+import type { TimezoneSource } from "#db/enums"
 import type { Kysely } from "kysely"
 
 import type { TutorDB } from "../schema"

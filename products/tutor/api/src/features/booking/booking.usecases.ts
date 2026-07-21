@@ -1,9 +1,9 @@
-import { computePricePennies, formatPennies } from "@iedora/tutor-db/domain/pricing"
+import { computePricePennies, formatPennies } from "#db/domain/pricing"
 import {
   INTRO_DURATION_MIN,
   STANDARD_BUFFER_MIN,
   STANDARD_DURATION_MIN,
-} from "@iedora/tutor-db/domain/status"
+} from "#db/domain/status"
 import type { Kysely } from "kysely"
 
 import { bumpConversation, ensureConversation } from "../../data/conversations"

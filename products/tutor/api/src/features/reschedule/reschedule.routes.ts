@@ -2,7 +2,7 @@ import {
   confirmRescheduleInput,
   counterRescheduleInput,
   openRescheduleInput,
-} from "@iedora/tutor-contracts/reschedule"
+} from "#contracts/reschedule"
 import { validate } from "@iedora/service-kit"
 import { Hono } from "hono"
 

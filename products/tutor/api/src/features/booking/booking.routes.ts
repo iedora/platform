@@ -1,4 +1,4 @@
-import { bookIntroInput, bookRecurringInput } from "@iedora/tutor-contracts/booking"
+import { bookIntroInput, bookRecurringInput } from "#contracts/booking"
 import { validate } from "@iedora/service-kit"
 import { Hono } from "hono"
 

@@ -1,4 +1,4 @@
-import type { LessonRowDTO, TutorProgressDTO } from "@iedora/tutor-contracts/lessons"
+import type { LessonRowDTO, TutorProgressDTO } from "#contracts/lessons"
 import {
   computePricePennies,
   formatPennies,
@@ -7,8 +7,8 @@ import {
   RANK_LABEL,
   RANK_MIN_XP,
   RANK_ORDER,
-} from "@iedora/tutor-db/domain/pricing"
-import type { RankTier } from "@iedora/tutor-db/enums"
+} from "#db/domain/pricing"
+import type { RankTier } from "#db/enums"
 import type { Kysely } from "kysely"
 
 import type { TutorDB } from "../schema"

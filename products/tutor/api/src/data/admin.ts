@@ -1,4 +1,4 @@
-import type { AdminChangeDTO } from "@iedora/tutor-contracts/admin"
+import type { AdminChangeDTO } from "#contracts/admin"
 import type { Kysely } from "kysely"
 
 import type { TutorDB } from "../schema"

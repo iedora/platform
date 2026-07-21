@@ -2,8 +2,8 @@ import {
   negotiationTurn,
   STANDARD_BUFFER_MIN,
   STANDARD_DURATION_MIN,
-} from "@iedora/tutor-db/domain/status"
-import type { Party } from "@iedora/tutor-db/enums"
+} from "#db/domain/status"
+import type { Party } from "#db/enums"
 import type { Kysely } from "kysely"
 
 import { bumpConversation, conversationId, postSystem } from "../../data/conversations"

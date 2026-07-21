@@ -1,6 +1,6 @@
-import type { ChatSummaryDTO, SentMessageDTO, ThreadDTO } from "@iedora/tutor-contracts/chat"
-import { RANK_EMOJI, RANK_LABEL } from "@iedora/tutor-db/domain/pricing"
-import type { RankTier, SenderType } from "@iedora/tutor-db/enums"
+import type { ChatSummaryDTO, SentMessageDTO, ThreadDTO } from "#contracts/chat"
+import { RANK_EMOJI, RANK_LABEL } from "#db/domain/pricing"
+import type { RankTier, SenderType } from "#db/enums"
 import type { Kysely } from "kysely"
 
 import type { TutorDB } from "../schema"

@@ -1,4 +1,4 @@
-import { tutorBadgesInput } from "@iedora/tutor-contracts/gamification"
+import { tutorBadgesInput } from "#contracts/gamification"
 import { validate } from "@iedora/service-kit"
 import { Hono } from "hono"
 

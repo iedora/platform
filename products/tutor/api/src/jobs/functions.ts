@@ -1,4 +1,4 @@
-import { PAYMENT_DEADLINE_HOURS, RELEASE_CUTOFF_HOURS } from "@iedora/tutor-db/domain/status"
+import { PAYMENT_DEADLINE_HOURS, RELEASE_CUTOFF_HOURS } from "#db/domain/status"
 import type { InngestFunction } from "inngest"
 
 import { autoReleaseLesson, chargeLessonOffSession, requestOneOffPayment } from "../data/payments"

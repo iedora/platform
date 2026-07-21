@@ -1,7 +1,7 @@
-import type { ProgressionResult } from "@iedora/tutor-contracts/progression"
-import { RANK_EMOJI, RANK_LABEL } from "@iedora/tutor-db/domain/pricing"
-import { CANCELLATION_CUTOFF_HOURS, canTransition } from "@iedora/tutor-db/domain/status"
-import type { LessonStatus, Party, ReviewTag } from "@iedora/tutor-db/enums"
+import type { ProgressionResult } from "#contracts/progression"
+import { RANK_EMOJI, RANK_LABEL } from "#db/domain/pricing"
+import { CANCELLATION_CUTOFF_HOURS, canTransition } from "#db/domain/status"
+import type { LessonStatus, Party, ReviewTag } from "#db/enums"
 import type { Kysely } from "kysely"
 
 import { conversationId, postSystem } from "../../data/conversations"

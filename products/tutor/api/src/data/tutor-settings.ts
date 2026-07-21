@@ -5,9 +5,9 @@ import type {
   SubjectOptionDTO,
   TutorProfileDTO,
   TutorQualificationDTO,
-} from "@iedora/tutor-contracts/tutor-settings"
-import { commissionPct, RANK_LABEL } from "@iedora/tutor-db/domain/pricing"
-import type { RankTier } from "@iedora/tutor-db/enums"
+} from "#contracts/tutor-settings"
+import { commissionPct, RANK_LABEL } from "#db/domain/pricing"
+import type { RankTier } from "#db/enums"
 import type { Kysely } from "kysely"
 
 import type { TutorDB } from "../schema"

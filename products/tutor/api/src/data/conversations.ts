@@ -1,4 +1,4 @@
-import type { MessageType } from "@iedora/tutor-db/enums"
+import type { MessageType } from "#db/enums"
 import type { Kysely } from "kysely"
 
 import type { TutorDB } from "../schema"

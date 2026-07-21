@@ -1,4 +1,4 @@
-import { MIGRATIONS_DIR } from "@iedora/tutor-db/migrate"
+import { MIGRATIONS_DIR } from "#db/migrate"
 import { env, expandFileSecrets, requireEnv, runMigrations } from "@iedora/service-kit"
 
 // tutor-api owns the tutor database, so it migrates before boot (the Bun

@@ -1,4 +1,4 @@
-import { isTerminal } from "@iedora/tutor-db/domain/status"
+import { isTerminal } from "#db/domain/status"
 import type { Kysely } from "kysely"
 
 import { bumpConversation, findConversationId } from "../../data/conversations"

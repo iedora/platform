@@ -1,4 +1,4 @@
-import { confirmCardSetupInput, lessonPaymentInput } from "@iedora/tutor-contracts/payments"
+import { confirmCardSetupInput, lessonPaymentInput } from "#contracts/payments"
 import { validate } from "@iedora/service-kit"
 import { Hono } from "hono"
 

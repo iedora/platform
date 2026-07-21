@@ -428,10 +428,9 @@
       "version": "0.0.0",
       "dependencies": {
         "@iedora/auth-sdk": "workspace:*",
+        "@iedora/db": "workspace:*",
         "@iedora/sdk": "workspace:*",
         "@iedora/service-kit": "workspace:*",
-        "@iedora/tutor-contracts": "workspace:*",
-        "@iedora/tutor-db": "workspace:*",
         "hono": "^4.12.30",
         "inngest": "^4.12.1",
         "kysely": "^0.29.3",
@@ -443,30 +442,6 @@
         "@types/luxon": "^3.7.2",
         "@types/node": "^22.20.1",
         "typescript": "5.9.3",
-      },
-    },
-    "products/tutor/contracts": {
-      "name": "@iedora/tutor-contracts",
-      "version": "0.0.0",
-      "dependencies": {
-        "zod": "^4.4.3",
-      },
-      "devDependencies": {
-        "typescript": "5.9.3",
-      },
-    },
-    "products/tutor/db": {
-      "name": "@iedora/tutor-db",
-      "version": "0.0.0",
-      "dependencies": {
-        "@iedora/db": "workspace:*",
-        "kysely": "catalog:",
-      },
-      "devDependencies": {
-        "@types/bun": "catalog:",
-        "@types/node": "catalog:",
-        "kysely-codegen": "catalog:",
-        "typescript": "catalog:",
       },
     },
     "products/tutor/web": {
@@ -890,10 +865,6 @@
     "@iedora/service-runtime": ["@iedora/service-runtime@workspace:packages/service-runtime"],
 
     "@iedora/service-tutor": ["@iedora/service-tutor@workspace:products/tutor/api"],
-
-    "@iedora/tutor-contracts": ["@iedora/tutor-contracts@workspace:products/tutor/contracts"],
-
-    "@iedora/tutor-db": ["@iedora/tutor-db@workspace:products/tutor/db"],
 
     "@iedora/ui": ["@iedora/ui@workspace:packages/ui"],
 
@@ -2774,8 +2745,6 @@
     "@iedora/service-runtime/nodemailer": ["nodemailer@6.10.1", "", {}, "sha512-Z+iLaBGVaSjbIzQ4pX6XV41HrooLsQ10ZWPUehGmuantvzWoDVBnmsdUcOIDM1t+yPor5pDhVlDESgOMEGxhHA=="],
 
     "@iedora/service-tutor/typescript": ["typescript@5.9.3", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw=="],
-
-    "@iedora/tutor-contracts/typescript": ["typescript@5.9.3", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw=="],
 
     "@iedora/ui/next": ["next@16.2.6", "", { "dependencies": { "@next/env": "16.2.6", "@swc/helpers": "0.5.15", "baseline-browser-mapping": "^2.9.19", "caniuse-lite": "^1.0.30001579", "postcss": "8.4.31", "styled-jsx": "5.1.6" }, "optionalDependencies": { "@next/swc-darwin-arm64": "16.2.6", "@next/swc-darwin-x64": "16.2.6", "@next/swc-linux-arm64-gnu": "16.2.6", "@next/swc-linux-arm64-musl": "16.2.6", "@next/swc-linux-x64-gnu": "16.2.6", "@next/swc-linux-x64-musl": "16.2.6", "@next/swc-win32-arm64-msvc": "16.2.6", "@next/swc-win32-x64-msvc": "16.2.6", "sharp": "^0.34.5" }, "peerDependencies": { "@opentelemetry/api": "^1.1.0", "@playwright/test": "^1.51.1", "babel-plugin-react-compiler": "*", "react": "^18.2.0 || 19.0.0-rc-de68d2f4-20241204 || ^19.0.0", "react-dom": "^18.2.0 || 19.0.0-rc-de68d2f4-20241204 || ^19.0.0", "sass": "^1.3.0" }, "optionalPeers": ["@opentelemetry/api", "@playwright/test", "babel-plugin-react-compiler", "sass"], "bin": { "next": "dist/bin/next" } }, "sha512-qOVgKJg1+At15NpeUP+eJgCHvTCgXsogweq87Ri/Ix7PkqQHg4sdaXmSFqKlgaIXE4kW0g25LE68W87UANlHtw=="],
 

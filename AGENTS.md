@@ -35,7 +35,7 @@ every API call. The browser NEVER calls the services directly.
 - **Backend services** (`services/`) — Bun + Hono, Kysely on Bun's native `SQL`, jose for EdDSA JWTs. Postgres 18, one database per service, migrations owned by each service. See [`services/AGENTS.md`](./services/AGENTS.md).
 - **Next.js 16** (App Router, Turbopack default) — UI only: RSC reads via `serverFetch`, mutations via server actions.
 - **TypeScript** strict, every workspace.
-- **`@iedora/ui`** + Tailwind v4 — shadcn/ui on Base UI primitives (style `base-sera`), phosphor icons. Components at `@iedora/ui/components/ui/*` plus editorial drop-ins (`card`, `combobox`, `field`, `section-header`). **Design every UI change in the Pencil files (`design/iedora.pen` / `design/iedora.lib.pen`) FIRST — see [`CLAUDE.md`](./CLAUDE.md).**
+- **`@iedora/ui`** + Tailwind v4 — shadcn/ui on Base UI primitives (style `base-sera`), phosphor icons. Components at `@iedora/ui/components/ui/*` plus editorial drop-ins (`card`, `combobox`, `field`, `section-header`).
 - **@dnd-kit** — menu's drag-and-drop builder.
 - **Bun** — package manager, test runner, dev orchestrator. **Production runtime is Node** — `bun + next build` is unstable as of 2026 (oven-sh/bun#23944).
 - **Deploy** — owned by the `iedora-infra` repo (Kamal 2 + OpenTofu, one Proxmox VM). This repo ships images: root `Dockerfile` (the `iedora-web` UI, all surfaces — Kamal builds from the repo root) and `services/Dockerfile` (the `iedora-api` backend services).
@@ -48,7 +48,6 @@ iedora/
   package.json                           workspaces: products/*/* + services/* + packages/framework/* + packages/sdk/* + packages/* + apps/*
   compose.yaml                           FULL local backend: services + Postgres
   Dockerfile                             Multi-stage Node build for apps/web (iedora/web image; Kamal builds from root)
-  design/                                iedora.pen + iedora.lib.pen — Pencil design source (screens + UI kit)
 
   products/                              Per-product cohesion — a product's web + backend (+ db/contracts) live together
     menu/
@@ -56,9 +55,8 @@ iedora/
       api/                               @iedora/service-menu — menu backend (Bun + Hono): public menu, staff, plans, uploads
     tutor/
       web/                               @iedora/product-tutor — tutor UI slices + BFF wrappers + vantage
-      api/                               @iedora/service-tutor — tutor backend (Bun + Hono, internal): bookings, lessons, admin
-      db/                                @iedora/tutor-db — tutor Kysely schema + migrations
-      contracts/                         @iedora/tutor-contracts — shared tutor zod contracts
+      api/                               @iedora/service-tutor — tutor backend (Bun + Hono, internal): bookings, lessons,
+                                         admin; self-contained DB (src/db + migrations/) + contracts (src/contracts, via #db / #contracts)
 
   services/                              Standalone shared backends (Bun + Hono) — SSO-style microservices
     auth/                                @iedora/service-auth — multi-tenant OIDC/JWKS; the shared `iedora` realm (SSO)

@@ -21,7 +21,7 @@ const cfg = loadConfig()
 
 const db = new Database<TutorDB>(cfg.tutorDatabaseUrl, {
   schema: cfg.dbSchema || undefined, // empty → default search_path (public)
-  camelCase: true, // snake_case DB, camelCase TS (matches @iedora/tutor-db)
+  camelCase: true, // snake_case DB, camelCase TS (matches #db)
 })
 
 const userVerifier = newUserVerifier(

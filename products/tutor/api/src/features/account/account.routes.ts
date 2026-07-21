@@ -1,5 +1,5 @@
-import { updateTimezoneInput } from "@iedora/tutor-contracts/account"
-import { isValidTimezone } from "@iedora/tutor-db/domain/time"
+import { updateTimezoneInput } from "#contracts/account"
+import { isValidTimezone } from "#db/domain/time"
 import { validate } from "@iedora/service-kit"
 import { Hono } from "hono"
 

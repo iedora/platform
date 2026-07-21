@@ -7,6 +7,11 @@
     ".": "./src/index.ts",
     "./app": "./src/app.ts"
   },
+  "imports": {
+    "#db": "./src/db/index.ts",
+    "#db/*": "./src/db/*.ts",
+    "#contracts/*": "./src/contracts/*.ts"
+  },
   "scripts": {
     "dev": "bun run --hot src/index.ts",
     "start": "bun run src/index.ts",
@@ -17,8 +22,7 @@
     "@iedora/service-kit": "workspace:*",
     "@iedora/auth-sdk": "workspace:*",
     "@iedora/sdk": "workspace:*",
-    "@iedora/tutor-db": "workspace:*",
-    "@iedora/tutor-contracts": "workspace:*",
+    "@iedora/db": "workspace:*",
     "hono": "^4.12.30",
     "inngest": "^4.12.1",
     "kysely": "^0.29.3",
