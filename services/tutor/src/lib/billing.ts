@@ -1,4 +1,4 @@
-import { BillingClient } from "@iedora/billing-sdk"
+import { BillingClient } from "@iedora/sdk/billing"
 import { ServiceTokenSource } from "@iedora/auth-sdk/tokens"
 
 import type { TutorConfig } from "../config"

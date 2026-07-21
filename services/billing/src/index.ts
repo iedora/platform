@@ -1,4 +1,4 @@
-import { AuditClient } from "@iedora/audit-sdk";
+import { AuditClient } from "@iedora/sdk/audit";
 import { ServiceTokenSource } from "@iedora/auth-sdk/tokens";
 import {
   Database,

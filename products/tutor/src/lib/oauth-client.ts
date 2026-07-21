@@ -1,4 +1,4 @@
-import { oauthAuthorizeUrl as build } from "@iedora/auth-sdk-nextjs/client"
+import { oauthAuthorizeUrl as build } from "@iedora/auth-sdk/next/client"
 
 const AUTH_BASE_URL = process.env.NEXT_PUBLIC_AUTH_BASE_URL ?? "http://localhost:4000"
 const AUTH_TENANT = process.env.NEXT_PUBLIC_AUTH_TENANT ?? "tutor"

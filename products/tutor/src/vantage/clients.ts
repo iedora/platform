@@ -12,10 +12,10 @@
 // access is gated on the platform:admin role at the edge + in the layout. So a
 // tutor-web compromise can only read, never mutate. No plan to relocate.
 
-import { AuditClient } from "@iedora/audit-sdk"
+import { AuditClient } from "@iedora/sdk/audit"
 import { createManageClient } from "@iedora/auth-sdk"
 import { ServiceTokenSource } from "@iedora/auth-sdk/tokens"
-import { EmailClient } from "@iedora/email-sdk"
+import { EmailClient } from "@iedora/sdk/email"
 
 function req(name: string): string {
   const v = process.env[name]

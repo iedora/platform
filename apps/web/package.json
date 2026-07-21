@@ -20,7 +20,7 @@
     "@conform-to/react": "^1.19.4",
     "@conform-to/zod": "^1.19.4",
     "@iedora/api-client": "workspace:*",
-    "@iedora/auth-sdk-nextjs": "workspace:*",
+    "@iedora/auth-sdk": "workspace:*",
     "@iedora/brand": "workspace:*",
     "@iedora/contracts": "workspace:*",
     "@iedora/menu-observability": "workspace:*",

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { publicUrl } from '@iedora/product-menu/shared/url'
-import { resolveRefresh, applyCookieWrites } from '@iedora/auth-sdk-nextjs/middleware'
+import { resolveRefresh, applyCookieWrites, authConfig } from '@iedora/auth-sdk/next/middleware'
+
 import { surfaces, surfaceByHost } from './generated/surfaces'
 import { surfaceAuthFor, surfaceSignInUrl } from './surface-auth'
 
@@ -107,7 +108,7 @@ export default async function proxy(req: NextRequest) {
     return respond(req, internalPath, rewrite)
   }
 
-  const auth = await resolveRefresh(sa.config, req)
+  const auth = await resolveRefresh(authConfig, req)
   if (!auth.access) {
     // No session → the surface's sign-in, with `next` (an absolute URL on THIS
     // host) so after auth the user lands back on the route they tried to reach.

@@ -1,4 +1,4 @@
-import type { Auditor } from "@iedora/audit-sdk";
+import type { Auditor } from "@iedora/sdk/audit";
 import type { Database, ServiceVerifier } from "@iedora/service-kit";
 
 import type { BillingConfig } from "./config";

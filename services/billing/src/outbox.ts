@@ -5,15 +5,15 @@ import {
   type Auditor,
   AUDIT_TOPIC,
   buildEnvelope,
-} from "@iedora/audit-sdk"
-import { type EmailSink, EMAIL_TOPIC } from "@iedora/email-sdk"
+} from "@iedora/sdk/audit"
+import { type EmailSink, EMAIL_TOPIC } from "@iedora/sdk/email"
 import { createDispatcher, enqueue, type Handler } from "@iedora/messaging"
 import { type Database, serve } from "@iedora/service-kit"
 import type { Hono } from "hono"
 import type { Kysely } from "kysely"
 
 // Billing's own transactional outbox + relay, composed directly on the framework
-// (@iedora/messaging transport + @iedora/audit-sdk / @iedora/email-sdk HTTP
+// (@iedora/messaging transport + @iedora/sdk/audit / @iedora/sdk/email HTTP
 // sinks). No shared server kit: the framework IS the shared surface, and each
 // service owns its outbox/relay. Producers never write another service's DB —
 // audit/email cross the wire as HTTP; the message id is the idempotency key the

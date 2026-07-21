@@ -2,7 +2,7 @@
 // auth. A service (or a product's server) that calls a peer over HTTP obtains a
 // service token by presenting its client id + secret to auth's client-credentials
 // grant, caches it until shortly before expiry, and hands it to an authed client
-// (e.g. @iedora/billing-sdk, @iedora/audit-sdk) as the outbound Bearer.
+// (e.g. @iedora/sdk/billing, @iedora/sdk/audit) as the outbound Bearer.
 //
 // Lives here (not the auth service, not framework runtime) because minting is an
 // auth-client concern: it only talks to auth's client-credentials grant at

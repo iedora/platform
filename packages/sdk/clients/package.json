@@ -1,0 +1,19 @@
+{
+  "name": "@iedora/sdk",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "The one service-client SDK: typed clients (+ contracts) for the audit, billing, and email microservices, as subpaths. Framework-agnostic (Node/Bun/edge). Auth has its own @iedora/auth-sdk (the auth realm integration).",
+  "exports": {
+    "./audit": "./src/audit/index.ts",
+    "./billing": "./src/billing/index.ts",
+    "./email": "./src/email/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/bun": "catalog:",
+    "typescript": "catalog:"
+  }
+}

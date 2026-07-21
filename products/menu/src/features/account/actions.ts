@@ -1,32 +1,21 @@
 'use server'
 
-import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
-import type { AdminUserSession } from '@iedora/contracts'
-import {
-  ACCESS_COOKIE,
-  ApiError,
-  changePassword,
-  getSession,
-  mySessions,
-  revokeMyDevice,
-} from '@iedora/api-client'
+import { AuthError, type SessionView } from '@iedora/auth-sdk'
+import { authClient, getAccessToken } from '@iedora/auth-sdk/next'
 import { signInUrl } from '../../shared/auth-urls'
 import { publicUrl } from '../../shared/url'
 
 /**
  * Self-service account-security actions — the signed-in owner managing THEIR
- * OWN account (change password, see/kick their devices). All run as Server
- * Actions so the fresh access token (self-healed by `getSession`) is available
- * to authorize the call against the auth service.
+ * OWN account (change password, see/kick their devices), against the shared auth
+ * realm via the centralized auth client.
  */
 
-/** A fresh Bearer access token for the current user, or bounce to sign-in.
- *  `getSession` self-heals an expired token in a Server Action (writes allowed),
- *  so the access cookie is valid right after it resolves. */
+/** A fresh Bearer access token for the current user, or bounce to sign-in. The
+ *  middleware refreshes the SSO cookie on page load, so it's valid here. */
 async function accessToken(): Promise<string> {
-  const session = await getSession()
-  const token = session ? (await cookies()).get(ACCESS_COOKIE)?.value : undefined
+  const token = await getAccessToken()
   if (!token) redirect(signInUrl(publicUrl('/menu/dashboard').toString()))
   return token
 }
@@ -43,10 +32,10 @@ export async function changePasswordAction(input: {
 }): Promise<ChangePwResult> {
   const token = await accessToken()
   try {
-    await changePassword(token, input)
+    await authClient.changePassword(token, input)
     return { ok: true }
   } catch (err) {
-    if (err instanceof ApiError) {
+    if (err instanceof AuthError) {
       if (err.status === 403) return { ok: false, error: 'wrongCurrent' }
       if (err.status === 422) return { ok: false, error: 'currentRequired' }
     }
@@ -55,8 +44,8 @@ export async function changePasswordAction(input: {
 }
 
 /** The current user's own devices (sessions), newest first. */
-export async function listMyDevicesAction(): Promise<AdminUserSession[]> {
-  return mySessions(await accessToken())
+export async function listMyDevicesAction(): Promise<SessionView[]> {
+  return (await authClient.listSessions(await accessToken())).sessions
 }
 
 /** Sign out one of my devices (a session family), or `'*'` for all the others. */
@@ -66,7 +55,8 @@ export async function revokeMyDeviceAction(family: string): Promise<{ ok: boolea
   // would otherwise swallow (leaving the user stranded with a silent {ok:false}).
   const token = await accessToken()
   try {
-    await revokeMyDevice(token, family)
+    if (family === '*') await authClient.revokeOtherSessions(token)
+    else await authClient.revokeSession(token, family)
     return { ok: true }
   } catch {
     return { ok: false }

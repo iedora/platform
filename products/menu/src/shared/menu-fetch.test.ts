@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 
-import { ACCESS_COOKIE } from '@iedora/api-client'
+import { cookieNames, authConfig } from '@iedora/auth-sdk/next'
+const ACCESS_COOKIE = cookieNames(authConfig.cookiePrefix).access
 
 // next/headers can't load in a plain node test; mock a controllable cookie store.
 const hoist = vi.hoisted(() => ({ store: null as unknown }))

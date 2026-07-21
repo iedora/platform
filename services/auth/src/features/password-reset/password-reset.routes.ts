@@ -1,24 +1,24 @@
-import { forgotPasswordRequest, resetPasswordRequest } from "@iedora/contracts";
-import { zValidator } from "@hono/zod-validator";
-import { Hono } from "hono";
+import { Hono } from "hono"
+import { z } from "zod"
 
-import type { AuthDeps } from "../../deps";
-import { metaFrom } from "../../session";
-import { confirmReset, requestReset } from "./password-reset.service";
+import { type Env, validate } from "../../platform/http"
+import { requestPasswordReset, resetPassword } from "./password-reset.service"
 
-export function passwordResetRoutes(deps: AuthDeps) {
-  return new Hono()
-    // Forgot: ALWAYS 200 with a fixed body, existence aside — no enumeration.
-    .post("/forgot-password", zValidator("json", forgotPasswordRequest), async (c) => {
-      await requestReset(deps, c.req.valid("json").email, metaFrom(c));
-      return c.json({ ok: true });
-    })
-    // Confirm: 200 on success (no tokens/cookie — no auto-login), 400 on a bad
-    // or expired token. Referrer-Policy avoids leaking the token via Referer if
-    // the page makes onward requests.
-    .post("/reset-password", zValidator("json", resetPasswordRequest), async (c) => {
-      await confirmReset(deps, c.req.valid("json"), metaFrom(c));
-      c.header("Referrer-Policy", "no-referrer");
-      return c.json({ ok: true });
-    });
-}
+const forgotSchema = z.object({ email: z.string().email() })
+const resetSchema = z.object({
+  token: z.string().min(1),
+  password: z.string().min(8).max(200),
+})
+
+/** Public password-reset flow. `forgot-password` always returns 200 so it never
+ *  reveals whether an email is registered. */
+export const passwordResetRoutes = new Hono<Env>()
+  .post("/forgot-password", validate("json", forgotSchema), async (c) => {
+    await requestPasswordReset(c.var.tenant, c.req.valid("json").email)
+    return c.json({ ok: true })
+  })
+  .post("/reset-password", validate("json", resetSchema), async (c) => {
+    const { token, password } = c.req.valid("json")
+    await resetPassword(c.var.tenant, token, password)
+    return c.json({ ok: true })
+  })

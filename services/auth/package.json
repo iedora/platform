@@ -3,34 +3,29 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Authentication service (Hono/Bun): registration, login, refresh-token rotation with reuse detection, logout, tenants, the EdDSA JWKS, and the client-credentials token endpoint. Vertical slices over @iedora/server-kit.",
-  "exports": {
-    "./app": "./src/app.ts"
-  },
+  "description": "Multi-tenant authentication service. Provider-agnostic (email/password + any OAuth2/OIDC), issues Ed25519 JWTs with JWKS + OIDC discovery. Shared across iedora services and usable by any external domain.",
   "scripts": {
-    "dev": "bun run --hot src/index.ts",
-    "start": "bun run src/index.ts",
-    "migrate": "bun run src/migrate.ts",
-    "db:codegen": "kysely-codegen --dialect postgres --url ${AUTH_DATABASE_URL:-postgres://iedora:iedora@localhost:55433/auth} --exclude-pattern '(schema_migrations)' --out-file src/db.generated.ts",
-    "typecheck": "tsgo --noEmit",
-    "lint": "eslint src --cache --cache-location node_modules/.cache/.eslintcache",
-    "test": "bun test"
+    "dev": "bun --watch src/index.ts",
+    "start": "bun src/index.ts",
+    "migrate": "bun src/platform/migrate.ts",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@iedora/contracts": "workspace:*",
-    "@iedora/service-runtime": "workspace:*",
-    "@hono/zod-validator": "catalog:",
-    "hono": "catalog:",
-    "kysely": "catalog:"
+    "@hono/zod-validator": "^0.9.0",
+    "@iedora/sdk": "workspace:*",
+    "@iedora/db": "workspace:*",
+    "@iedora/messaging": "workspace:*",
+    "@iedora/server-kit": "workspace:*",
+    "hono": "^4.12.30",
+    "jose": "^5.9.6",
+    "kysely": "^0.29.3",
+    "pg": "^8.13.1",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@iedora/eslint-config": "workspace:*",
-    "@types/bun": "catalog:",
-    "eslint": "catalog:",
-    "jose": "catalog:",
-    "kysely-codegen": "catalog:",
-    "pg": "catalog:",
-    "typescript": "catalog:",
-    "typescript-eslint": "catalog:"
+    "@types/bun": "^1.1.14",
+    "@types/pg": "^8.11.10",
+    "@types/node": "^22.19.19",
+    "typescript": "^5.9.3"
   }
 }

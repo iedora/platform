@@ -5,8 +5,7 @@
   "type": "module",
   "description": "Server-only HTTP client for the Hono backend (BFF-lite): auth cookie handling, access-token session decode, and a Bearer-attaching fetch with one-shot refresh. Edge-compatible — importable from Next middleware, RSCs, server actions, and route handlers. The browser never calls the services directly.",
   "exports": {
-    ".": "./src/index.ts",
-    "./middleware": "./src/middleware.ts"
+    ".": "./src/index.ts"
   },
   "scripts": {
     "typecheck": "tsgo --noEmit",

@@ -19,7 +19,7 @@
   },
   "dependencies": {
     "@iedora/auth-sdk": "workspace:*",
-    "@iedora/billing-sdk": "workspace:*",
+    "@iedora/sdk": "workspace:*",
     "@iedora/contracts": "workspace:*",
     "@iedora/service-runtime": "workspace:*",
     "@hono/zod-validator": "catalog:",

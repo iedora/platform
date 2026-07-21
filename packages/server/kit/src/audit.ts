@@ -1,4 +1,4 @@
-// The audit emitter contract + the envelope mapping now live in @iedora/audit-sdk
+// The audit emitter contract + the envelope mapping now live in @iedora/sdk/audit
 // (the shared surface every producer uses to POST to the audit microservice).
 // service-runtime re-exports them so services keep a single import surface;
 // buildEnvelope maps an emitter event to the audit service's wire payload (target → entity;
@@ -9,4 +9,4 @@ export {
   type AuditOutcome,
   type Auditor,
   buildEnvelope,
-} from "@iedora/audit-sdk";
+} from "@iedora/sdk/audit";

@@ -1,34 +1,42 @@
-import { timingSafeEqual } from "node:crypto";
+import { type Context, Hono } from "hono"
+import { z } from "zod"
 
-import { Hono } from "hono";
-import { HTTPException } from "hono/http-exception";
+import { HttpError, validate, withAdmin } from "../../platform/http"
+import { mintServiceToken, registerServiceClient } from "./token.service"
 
-import type { AuthDeps } from "../../deps";
+const registerSchema = z.object({
+  clientId: z.string().min(1).max(120),
+  secret: z.string().min(16).max(200),
+  audience: z.string().max(120).optional(),
+  tenantId: z.string().uuid().optional(),
+  name: z.string().min(1).max(120),
+})
 
-function safeEqual(a: string, b: string): boolean {
-  const ab = Buffer.from(a);
-  const bb = Buffer.from(b);
-  return ab.length === bb.length && timingSafeEqual(ab, bb);
+/** Read `client_id:secret` from an HTTP Basic header, else from the JSON body. */
+async function readCredentials(
+  c: Context,
+): Promise<{ clientId: string; secret: string } | null> {
+  const header = c.req.header("authorization")
+  if (header?.startsWith("Basic ")) {
+    const [clientId, secret] = Buffer.from(header.slice(6), "base64").toString("utf8").split(":")
+    if (clientId && secret) return { clientId, secret }
+  }
+  const body = (await c.req.json().catch(() => ({}))) as {
+    clientId?: string
+    clientSecret?: string
+  }
+  if (body.clientId && body.clientSecret) return { clientId: body.clientId, secret: body.clientSecret }
+  return null
 }
 
-// Client-credentials grant: HTTP Basic clientId:secret → an internal service
-// token (typ="service", aud=internal). Ports service-auth TokenHandler.
-export function tokenRoutes(deps: AuthDeps) {
-  return new Hono().post("/token", async (c) => {
-    const header = c.req.header("authorization") ?? "";
-    if (!header.startsWith("Basic ")) {
-      throw new HTTPException(401, { message: "basic auth required" });
-    }
-    const [clientId, secret] = Buffer.from(header.slice(6), "base64").toString("utf8").split(":");
-    const expected = clientId ? deps.serviceClients.get(clientId) : undefined;
-    if (!clientId || !secret || !expected || !safeEqual(secret, expected)) {
-      throw new HTTPException(401, { message: "invalid client credentials" });
-    }
-    const accessToken = await deps.serviceIssuer.issue(clientId);
-    return c.json({
-      accessToken,
-      expiresAt: new Date(Date.now() + deps.cfg.serviceTokenTtlMs).toISOString(),
-      tokenType: "Bearer" as const,
-    });
-  });
-}
+/** Machine-to-machine tokens (root scope, no tenant). Registration is admin-only;
+ *  `/token` is the client-credentials grant used by backend services. */
+export const tokenRoutes = new Hono()
+  .post("/admin/service-clients", withAdmin, validate("json", registerSchema), async (c) => {
+    return c.json(await registerServiceClient(c.req.valid("json")), 201)
+  })
+  .post("/token", async (c) => {
+    const creds = await readCredentials(c)
+    if (!creds) throw new HttpError(400, "invalid_request", "client id + secret required")
+    return c.json(await mintServiceToken(creds.clientId, creds.secret))
+  })

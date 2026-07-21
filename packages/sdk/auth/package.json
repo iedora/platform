@@ -1,29 +1,28 @@
 {
   "name": "@iedora/auth-sdk",
   "version": "0.2.0",
-  "description": "TypeScript client + JWKS token verifier + cached service-token source for @iedora/auth. Framework-agnostic, works in Node, Bun, and edge runtimes.",
+  "description": "The one auth SDK: TypeScript client + JWKS verifier + service-token source (framework-agnostic, at '.'/'./tokens') AND the Next.js integration ('./next') — pre-wired for the shared iedora realm (getAccount, login/register/logout, SSO cookies). Products import auth from here; there is no separate nextjs package.",
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./tokens": "./src/tokens.ts"
+    "./tokens": "./src/tokens.ts",
+    "./next": "./src/next/index.ts",
+    "./next/middleware": "./src/next/middleware.ts",
+    "./next/client": "./src/next/client.ts"
   },
   "files": ["src", "README.md"],
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/iedora/auth.git",
-    "directory": "sdk"
-  },
-  "publishConfig": {
-    "registry": "https://npm.pkg.github.com"
-  },
   "scripts": {
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "jose": "^5.9.6"
   },
+  "peerDependencies": {
+    "next": "^16.2.6"
+  },
   "devDependencies": {
-    "@types/bun": "^1.1.14",
-    "typescript": "^5.9.3"
+    "@types/bun": "catalog:",
+    "next": "catalog:",
+    "typescript": "catalog:"
   }
 }

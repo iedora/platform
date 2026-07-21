@@ -1,10 +1,10 @@
-// Menu's billing surface — now backed by @iedora/billing-sdk (the shared client
+// Menu's billing surface — now backed by @iedora/sdk/billing (the shared client
 // for the billing service). Menu still mints a service token via auth's
 // client-credentials grant and hands it to the SDK. The local PlanSource /
 // BillingReader / BillingWriter interfaces + plan cache stay so nothing that
 // depends on BillingClient has to change.
 
-import { BillingClient as SdkBillingClient } from "@iedora/billing-sdk";
+import { BillingClient as SdkBillingClient } from "@iedora/sdk/billing";
 import type { Invoice, Subscription } from "@iedora/contracts";
 import { ServiceTokenSource, type TokenSource } from "@iedora/auth-sdk/tokens";
 

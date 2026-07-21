@@ -5,14 +5,16 @@ import { redirect } from 'next/navigation'
 import { getLocale } from 'next-intl/server'
 import { z } from 'zod'
 import { friendlyZodMessage } from '../_components/zod-message'
+import { ApiError } from '@iedora/api-client'
 import {
-  ACCESS_COOKIE,
-  ApiError,
-  REFRESH_COOKIE,
-  authCookies,
-  createTenant,
-  refreshTokens,
-} from '@iedora/api-client'
+  authClient,
+  authConfig,
+  cookieNames,
+  cookieOptions,
+  DEFAULT_ACCESS_MAX_AGE,
+  DEFAULT_REFRESH_MAX_AGE,
+  getAccessToken,
+} from '@iedora/auth-sdk/next'
 import { getSession } from '@iedora/product-menu/features/auth'
 import {
   ONBOARDING_STEPS,
@@ -85,26 +87,33 @@ export async function completeOnboarding(
 
   if (!session.tenantId) {
     const store = await cookies()
+    const names = cookieNames(authConfig.cookiePrefix)
 
-    // 1. Provision the tenant, named after the first restaurant.
-    const accessToken = store.get(ACCESS_COOKIE)?.value
+    // 1. Provision the organization (the owner's first restaurant) in the shared
+    //    realm — the caller becomes its owner.
+    const accessToken = await getAccessToken()
     if (!accessToken) redirect(signInTarget)
     try {
-      await createTenant(accessToken, restaurantName)
+      await authClient.createOrganization(accessToken, { name: restaurantName })
     } catch (err) {
-      console.error('[onboarding] tenant creation failed', err)
-      return { error: 'Could not create tenant. Please try again.' }
+      console.error('[onboarding] organization creation failed', err)
+      return { error: 'Could not create your restaurant workspace. Please try again.' }
     }
 
-    // 2. Rotate the token pair so the access token picks up the new
-    //    tenant id, then persist both cookies. Subsequent `cookies()`
-    //    reads in this same action observe the new values.
-    const refreshToken = store.get(REFRESH_COOKIE)?.value
-    const refreshed = refreshToken ? await refreshTokens(refreshToken) : null
-    if (!refreshed) redirect(signInTarget)
-    for (const c of authCookies(refreshed)) {
-      store.set(c.name, c.value, c.options)
+    // 2. Rotate the token pair so the access token picks up the new `org` claim,
+    //    then persist both SSO cookies. Subsequent `cookies()` reads in this same
+    //    action observe the new values.
+    const refreshToken = store.get(names.refresh)?.value
+    let refreshed
+    try {
+      refreshed = refreshToken ? await authClient.refresh(refreshToken) : null
+    } catch {
+      refreshed = null
     }
+    if (!refreshed) redirect(signInTarget)
+    const opts = cookieOptions(authConfig)
+    store.set(names.access, refreshed.accessToken, { ...opts, maxAge: DEFAULT_ACCESS_MAX_AGE })
+    store.set(names.refresh, refreshed.refreshToken, { ...opts, maxAge: DEFAULT_REFRESH_MAX_AGE })
   }
 
   // 3. Create the restaurant (in the owner's chosen primary language)

@@ -2,7 +2,7 @@ import type { AuthClaims } from "@iedora/auth-sdk"
 import { notFound } from "next/navigation"
 import { cache } from "react"
 
-import { authNext } from "@iedora/product-tutor/auth"
+import { authNext } from "@iedora/auth-sdk/next"
 
 // The global super-admin role, minted by the auth service (PLATFORM_ADMINS) and
 // carried in the access-token `roles` claim. Vantage gates on THIS — verified

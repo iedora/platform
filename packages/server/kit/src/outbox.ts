@@ -4,7 +4,7 @@ import type { Kysely } from "kysely";
 
 import { type AuditEvent, type Auditor, buildEnvelope } from "./audit";
 import type { Database } from "@iedora/service-kit";
-import type { EmailSink } from "@iedora/email-sdk";
+import type { EmailSink } from "@iedora/sdk/email";
 import type { EmailMessage } from "./mailer";
 
 // Transactional outbox, now backed by @iedora/messaging (topic-based

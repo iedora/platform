@@ -3,7 +3,7 @@ import type { Hono } from "hono";
 import type { Auditor } from "./audit";
 import { serve } from "@iedora/service-kit";
 import type { Database } from "@iedora/service-kit";
-import type { EmailSink } from "@iedora/email-sdk";
+import type { EmailSink } from "@iedora/sdk/email";
 import { type AuditSink, OutboxRelay, OutboxWriter, relayHandlers } from "./outbox";
 
 export interface RelayServiceOptions<DB> {

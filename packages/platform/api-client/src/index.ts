@@ -1,25 +1,5 @@
-export { AUTH_URL } from './config'
-export {
-  ACCESS_COOKIE,
-  REFRESH_COOKIE,
-  authCookies,
-  clearedAuthCookies,
-  type CookieWrite,
-} from './cookies'
+// Product-neutral BFF fetch helpers. Auth (session, login, cookies) lives in the
+// centralized @iedora/auth-sdk/next; this package is just the Bearer-attaching
+// fetch + the error type products' typed clients throw.
 export { ApiError, errorMessageFromResponse } from './error'
-export {
-  login,
-  register,
-  refreshTokens,
-  logout,
-  createTenant,
-  forgotPassword,
-  resetPassword,
-  whoami,
-  changePassword,
-  mySessions,
-  revokeMyDevice,
-} from './auth-api'
-export type { AuthSession, TokenBundle } from '@iedora/auth-sdk'
-export { getSession, sessionFromToken, type Session } from './session'
 export { authedFetch } from './authed-fetch'

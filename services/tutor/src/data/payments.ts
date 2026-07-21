@@ -1,4 +1,4 @@
-import { BillingError, type BillingClient } from "@iedora/billing-sdk"
+import { BillingError, type BillingClient } from "@iedora/sdk/billing"
 import { formatPennies, RANK_COMMISSION_RATE } from "@iedora/tutor-db/domain/pricing"
 import { canTransition, PAYMENT_DEADLINE_HOURS } from "@iedora/tutor-db/domain/status"
 import type { LessonStatus } from "@iedora/tutor-db/enums"

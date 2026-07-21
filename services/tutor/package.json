@@ -16,7 +16,7 @@
   "dependencies": {
     "@iedora/service-kit": "workspace:*",
     "@iedora/auth-sdk": "workspace:*",
-    "@iedora/billing-sdk": "workspace:*",
+    "@iedora/sdk": "workspace:*",
     "@iedora/tutor-db": "workspace:*",
     "@iedora/tutor-contracts": "workspace:*",
     "hono": "^4.12.30",

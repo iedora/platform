@@ -1,31 +1,18 @@
 'use server'
 
-import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { parseWithZod } from '@conform-to/zod/v4'
 import type { SubmissionResult } from '@conform-to/dom'
-import {
-  ApiError,
-  REFRESH_COOKIE,
-  authCookies,
-  clearedAuthCookies,
-  forgotPassword,
-  login,
-  logout,
-  register,
-  resetPassword,
-  type AuthSession,
-} from '@iedora/api-client'
+import { forgotPassword, login, logout, register, resetPassword } from '@iedora/auth-sdk/next'
 import { brandUrl, isSameIedoraOrigin } from '@iedora/brand'
 import { forgotPasswordSchema, resetPasswordSchema, signInSchema, signUpSchema } from './schemas'
 
 /**
- * Auth server actions — the only code that exchanges credentials with
- * the auth service and writes the auth cookies. The sign-in / sign-up
- * forms submit here via Conform + useActionState: the action validates
- * with the SAME Zod schema the form uses (no drift), returns a Conform
- * `submission.reply()` on failure (field/form error keys the form
- * translates), and redirects to the validated `next` target on success.
+ * Auth server actions — thin Conform wrappers over the ONE centralized auth
+ * integration (@iedora/auth-sdk/next). The integration owns the credential
+ * exchange with the shared iedora realm AND writes the SSO cookies; these
+ * actions only validate the form (same Zod schema the form uses) and translate
+ * failures into the Conform reply the form renders.
  */
 
 export async function signInAction(
@@ -34,20 +21,12 @@ export async function signInAction(
 ): Promise<SubmissionResult> {
   const submission = parseWithZod(formData, { schema: signInSchema })
   if (submission.status !== 'success') return submission.reply()
-  let result: AuthSession
-  try {
-    result = await login(submission.value.email, submission.value.password)
-  } catch {
-    // Wrong email/password (or any auth failure) — never leak which.
-    return submission.reply({ formErrors: ['invalidCredentials'] })
-  }
-  await persistAuth(result)
-  // Don't redirect from inside the action. Setting the auth cookies AND
-  // redirect()-ing in the same Server Action triggers a soft RSC navigation
-  // whose first render can race the just-written cookies — the destination
-  // renders without a session and throws a transient error that an F5 (a full,
-  // cookie-carrying load) clears. Returning success lets the form do that full
-  // navigation itself, so the fresh cookies are always present at the target.
+  const result = await login(submission.value)
+  // Wrong email/password (or any auth failure) — never leak which.
+  if (result.error) return submission.reply({ formErrors: ['invalidCredentials'] })
+  // Don't redirect from inside the action (racing the just-written cookies); the
+  // form does the full-page navigation on success so the fresh SSO cookies are
+  // always present at the destination.
   return submission.reply()
 }
 
@@ -57,28 +36,15 @@ export async function signUpAction(
 ): Promise<SubmissionResult> {
   const submission = parseWithZod(formData, { schema: signUpSchema })
   if (submission.status !== 'success') return submission.reply()
-  let result: AuthSession
-  try {
-    result = await register(submission.value.email, submission.value.password, submission.value.name)
-  } catch (err) {
-    // A 409 means the email is taken — surface it on the email field;
-    // anything else is a generic, form-level failure.
-    if (err instanceof ApiError && err.status === 409) {
-      return submission.reply({ fieldErrors: { email: ['emailTaken'] } })
-    }
-    return submission.reply({ formErrors: ['signupFailed'] })
-  }
-  await persistAuth(result)
-  // See signInAction: the form does the full-page navigation on success so the
-  // freshly-written auth cookies are guaranteed present at the destination.
+  const result = await register(submission.value)
+  if (result.error) return submission.reply({ formErrors: ['signupFailed'] })
   return submission.reply()
 }
 
 /**
- * Forgot-password: kicks off a reset email. The auth service never
- * reveals whether the address exists, so on a valid email this ALWAYS
- * reports success (swallowing errors) — the form reads the success status
- * and shows a neutral "check your inbox" screen.
+ * Forgot-password: kicks off a reset email. The auth service never reveals
+ * whether the address exists, so this ALWAYS reports success (swallowing errors)
+ * — the form shows a neutral "check your inbox" screen.
  */
 export async function forgotPasswordAction(
   _prev: unknown,
@@ -91,15 +57,13 @@ export async function forgotPasswordAction(
   } catch {
     // no enumeration, no error surface — still report success
   }
-  return submission.reply() // status 'success' → form shows the "sent" screen
+  return submission.reply()
 }
 
 /**
- * Reset-password: sets a new password from the emailed token. The schema
- * validates the password policy + confirmation match (client + server);
- * the auth service rejects a bad / expired token (surfaced as a form
- * error). No auto-login — the form's success screen sends the user to
- * sign in afterwards.
+ * Reset-password: sets a new password from the emailed token. A bad / expired
+ * token is surfaced as a form error; no auto-login (the success screen sends the
+ * user to sign in).
  */
 export async function resetPasswordAction(
   _prev: unknown,
@@ -113,25 +77,11 @@ export async function resetPasswordAction(
   } catch {
     return submission.reply({ formErrors: ['resetLinkInvalid'] })
   }
-  return submission.reply() // status 'success' → form shows the "done" screen
+  return submission.reply()
 }
 
-/** Revokes the session server-side and clears both auth cookies. */
+/** Revokes the session server-side and clears the SSO cookies. */
 export async function signOutAction(next?: string): Promise<void> {
-  const store = await cookies()
-  const refreshToken = store.get(REFRESH_COOKIE)?.value
-  if (refreshToken) {
-    await logout(refreshToken)
-  }
-  for (const c of clearedAuthCookies()) {
-    store.set(c.name, c.value, c.options)
-  }
+  await logout()
   redirect(isSameIedoraOrigin(next) ? next! : brandUrl())
-}
-
-async function persistAuth(result: AuthSession): Promise<void> {
-  const store = await cookies()
-  for (const c of authCookies(result)) {
-    store.set(c.name, c.value, c.options)
-  }
 }

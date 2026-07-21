@@ -1,4 +1,4 @@
-import type { BillingClient } from "@iedora/billing-sdk"
+import type { BillingClient } from "@iedora/sdk/billing"
 import type { Database, UserVerifier } from "@iedora/service-kit"
 
 import type { TutorConfig } from "./config"

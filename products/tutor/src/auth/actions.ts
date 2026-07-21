@@ -1,25 +1,25 @@
 "use server"
 
-import type { AuthResult } from "@iedora/auth-sdk-nextjs"
+import { completeOAuth, login, logout, register, type AuthResult } from "@iedora/auth-sdk/next"
 
-import { authNext } from "./index"
-
+// Thin product-facing wrappers over the ONE centralized auth integration. The
+// SSO cookie + JWKS + shared iedora realm all live in @iedora/auth-sdk/next.
 export async function loginAction(input: { email: string; password: string }): Promise<AuthResult> {
-  return authNext.actions.login(input)
+  return login(input)
 }
 export async function registerAction(input: {
   email: string
   password: string
   name?: string
 }): Promise<AuthResult> {
-  return authNext.actions.register(input)
+  return register(input)
 }
 export async function logoutAction(): Promise<void> {
-  return authNext.actions.logout()
+  return logout()
 }
 export async function completeOAuthAction(
   accessToken: string,
   refreshToken: string,
 ): Promise<AuthResult> {
-  return authNext.actions.completeOAuth(accessToken, refreshToken)
+  return completeOAuth(accessToken, refreshToken)
 }

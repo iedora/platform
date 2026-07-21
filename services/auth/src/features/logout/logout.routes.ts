@@ -1,22 +1,18 @@
-import { type UserEnv, userAuth } from "@iedora/service-runtime";
-import { Hono } from "hono";
+import { Hono } from "hono"
+import { z } from "zod"
 
-import type { AuthDeps } from "../../deps";
-import { metaFrom } from "../../session";
-import { logout, logoutAll } from "./logout.service";
+import { revokeRefresh } from "../../platform/accounts"
+import { type Env, HttpError } from "../../platform/http"
 
-export function logoutRoutes(deps: AuthDeps) {
-  return new Hono<UserEnv>()
-    .post("/logout", async (c) => {
-      // Refresh token in the body; the BFF clears its own cookies.
-      const body = await c.req
-        .json<{ refreshToken?: string }>()
-        .catch(() => ({}) as { refreshToken?: string });
-      if (body.refreshToken) await logout(deps, body.refreshToken, metaFrom(c));
-      return c.json({ ok: true });
-    })
-    .post("/logout-all", userAuth(deps.userVerifier), async (c) => {
-      await logoutAll(deps, c.get("user").userId, metaFrom(c));
-      return c.json({ ok: true });
-    });
-}
+const schema = z.object({ refreshToken: z.string().min(1) })
+
+/** POST /:tenant/logout — revoke a refresh session. Access tokens expire on their
+ *  own (short TTL); this stops the session from being refreshed. */
+export const logoutRoutes = new Hono<Env>().post("/logout", async (c) => {
+  const tenant = c.get("tenant")
+  const parsed = schema.safeParse(await c.req.json().catch(() => null))
+  if (!parsed.success) throw new HttpError(422, "invalid_input")
+
+  await revokeRefresh(tenant, parsed.data.refreshToken)
+  return c.json({ ok: true })
+})

@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Billing service (Hono/Bun): subscriptions + the append-only invoice ledger over a code-defined plan registry, Stripe/manual payment kinds, and marketplace payouts/refunds. Standalone, framework-direct (@iedora/service-kit); owns its money math (src/money); audit crosses the wire via @iedora/audit-sdk.",
+  "description": "Billing service (Hono/Bun): subscriptions + the append-only invoice ledger over a code-defined plan registry, Stripe/manual payment kinds, and marketplace payouts/refunds. Standalone, framework-direct (@iedora/service-kit); owns its money math (src/money); audit crosses the wire via @iedora/sdk/audit.",
   "scripts": {
     "dev": "bun run --hot src/index.ts",
     "start": "bun run src/index.ts",
@@ -13,10 +13,9 @@
   },
   "dependencies": {
     "@hono/zod-validator": "^0.9.0",
-    "@iedora/audit-sdk": "workspace:*",
+    "@iedora/sdk": "workspace:*",
     "@iedora/auth-sdk": "workspace:*",
     "@iedora/db": "workspace:*",
-    "@iedora/email-sdk": "workspace:*",
     "@iedora/messaging": "workspace:*",
     "@iedora/service-kit": "workspace:*",
     "hono": "^4.12.30",

@@ -1,8 +1,9 @@
 import { redirect } from "next/navigation"
 import { cache } from "react"
 
+import { authNext } from "@iedora/auth-sdk/next"
+
 import { getSession } from "../api/session"
-import { authNext } from "./index"
 
 export type Viewer = {
   userId: string

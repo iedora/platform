@@ -1,4 +1,4 @@
-import { cookieNames } from "@iedora/auth-sdk-nextjs"
+import { cookieNames } from "@iedora/auth-sdk/next"
 
 // Where the tutor backend service lives. The browser NEVER calls it directly —
 // every request goes through Next server code (RSC reads + server actions), which

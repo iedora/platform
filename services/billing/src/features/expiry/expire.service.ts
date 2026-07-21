@@ -1,4 +1,4 @@
-import type { Auditor } from "@iedora/audit-sdk";
+import type { Auditor } from "@iedora/sdk/audit";
 import type { Database } from "@iedora/service-kit";
 import { sql } from "kysely";
 
