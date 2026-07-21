@@ -21,7 +21,8 @@
   },
   "scripts": {
     "typecheck": "tsgo --noEmit",
-    "test": "bun test"
+    "test": "bun test",
+    "lint": "eslint . --cache --cache-location node_modules/.cache/.eslintcache"
   },
   "dependencies": {
     "@iedora/config": "workspace:*",
@@ -41,6 +42,9 @@
     "@types/node": "^22",
     "hono": "^4.12.30",
     "kysely": "^0.29.3",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "@iedora/eslint-config": "workspace:*",
+    "eslint": "catalog:",
+    "typescript-eslint": "catalog:"
   }
 }

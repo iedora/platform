@@ -35,7 +35,7 @@ export function TutorAvatar({
   const style = viewTransitionName ? ({ viewTransitionName } as React.CSSProperties) : undefined
 
   if (url) {
-    // eslint-disable-next-line @next/next/no-img-element
+     
     return (
       <img
         src={url}

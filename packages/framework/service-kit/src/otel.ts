@@ -62,8 +62,8 @@ export function emitLog(
 }
 
 /** One SERVER span per request via @hono/otel (idiomatic for Hono/Bun). */
-// biome-ignore lint/suspicious/noExplicitAny: matches the previous Env-generic signature
-export function otelHttp<E extends Env = any>(_opts?: {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- matches the previous Env-generic signature
+export function otelHttp<_E extends Env = any>(_opts?: {
   captureRequestHeaders?: string[];
   captureResponseHeaders?: string[];
 }) {

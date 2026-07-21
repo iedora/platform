@@ -14,7 +14,7 @@ const it = test.skipIf(!HAS_DB)
 const ADMIN = process.env.DATABASE_URL ?? "postgres://x/y"
 const PW = "role_iso_pw"
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 function roleUrl(role: string, schema: string): string {
   const u = new URL(ADMIN)
   u.username = role

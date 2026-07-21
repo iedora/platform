@@ -8,7 +8,7 @@ import { createDb, type CreateDbOptions } from "./client"
 // repositories transparently join the caller's unit of work, and nested runInTx
 // reuses it. Stored as Kysely<any> because Kysely is invariant in its DB param —
 // each Database casts back to its own DB type on read.
-// biome-ignore lint/suspicious/noExplicitAny: invariant DB param
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- invariant DB param
 const txCtx = new AsyncLocalStorage<Kysely<any>>()
 
 /**

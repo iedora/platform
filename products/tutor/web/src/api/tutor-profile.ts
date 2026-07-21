@@ -5,7 +5,6 @@ import type {
   TutorBookingDTO,
   TutorReviewsDTO,
 } from "@iedora/product-tutor/contracts/tutor-profile"
-import type { RankTier } from "@iedora/product-tutor/enums"
 
 import type { AvailabilityRule } from "@iedora/product-tutor/features/booking/booking.slots"
 import type {

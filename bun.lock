@@ -123,8 +123,11 @@
       "name": "@iedora/config",
       "version": "0.1.0",
       "devDependencies": {
+        "@iedora/eslint-config": "workspace:*",
         "@types/bun": "^1.1.14",
+        "eslint": "catalog:",
         "typescript": "catalog:",
+        "typescript-eslint": "catalog:",
       },
     },
     "packages/framework/db": {
@@ -134,11 +137,14 @@
         "kysely-postgres-js": "^3.0.0",
       },
       "devDependencies": {
+        "@iedora/eslint-config": "workspace:*",
         "@types/bun": "^1.1.14",
+        "eslint": "catalog:",
         "kysely": "^0.29.3",
         "postgres": "^3.4.5",
         "tsx": "^4.19.2",
         "typescript": "catalog:",
+        "typescript-eslint": "catalog:",
       },
       "peerDependencies": {
         "kysely": ">=0.27",
@@ -152,10 +158,13 @@
       "name": "@iedora/messaging",
       "version": "0.2.1",
       "devDependencies": {
+        "@iedora/eslint-config": "workspace:*",
         "@types/bun": "^1.1.14",
+        "eslint": "catalog:",
         "kysely": "^0.29.3",
         "kysely-postgres-js": "^3.0.0",
         "typescript": "catalog:",
+        "typescript-eslint": "catalog:",
       },
       "peerDependencies": {
         "kysely": ">=0.27",
@@ -177,11 +186,14 @@
         "@opentelemetry/semantic-conventions": "^1.43.0",
       },
       "devDependencies": {
+        "@iedora/eslint-config": "workspace:*",
         "@opentelemetry/api": "^1.9.1",
         "@opentelemetry/api-logs": "^0.220.0",
         "@opentelemetry/context-async-hooks": "^2.9.0",
         "@types/bun": "^1.1.14",
+        "eslint": "catalog:",
         "typescript": "catalog:",
+        "typescript-eslint": "catalog:",
       },
       "peerDependencies": {
         "@opentelemetry/api": "^1.9.0",
@@ -197,10 +209,13 @@
         "jose": "^5.9.6",
       },
       "devDependencies": {
+        "@iedora/eslint-config": "workspace:*",
         "@types/bun": "^1.1.14",
         "@types/node": "^22",
+        "eslint": "catalog:",
         "hono": "^4.12.30",
         "typescript": "catalog:",
+        "typescript-eslint": "catalog:",
         "zod": "^4.4.3",
       },
       "peerDependencies": {
@@ -221,11 +236,14 @@
         "@opentelemetry/sdk-trace-base": "^2.9.0",
       },
       "devDependencies": {
+        "@iedora/eslint-config": "workspace:*",
         "@types/bun": "^1.1.14",
         "@types/node": "^22",
+        "eslint": "catalog:",
         "hono": "^4.12.30",
         "kysely": "^0.29.3",
         "typescript": "catalog:",
+        "typescript-eslint": "catalog:",
       },
       "peerDependencies": {
         "hono": ">=4",
@@ -272,9 +290,12 @@
         "jose": "^5.9.6",
       },
       "devDependencies": {
+        "@iedora/eslint-config": "workspace:*",
         "@types/bun": "catalog:",
+        "eslint": "catalog:",
         "next": "catalog:",
         "typescript": "catalog:",
+        "typescript-eslint": "catalog:",
       },
       "peerDependencies": {
         "next": "^16.2.6",
@@ -284,8 +305,11 @@
       "name": "@iedora/sdk",
       "version": "0.1.0",
       "devDependencies": {
+        "@iedora/eslint-config": "workspace:*",
         "@types/bun": "catalog:",
+        "eslint": "catalog:",
         "typescript": "catalog:",
+        "typescript-eslint": "catalog:",
       },
     },
     "packages/service-runtime": {
@@ -440,10 +464,13 @@
         "zod": "^4.4.3",
       },
       "devDependencies": {
+        "@iedora/eslint-config": "workspace:*",
         "@types/bun": "^1.3.14",
         "@types/luxon": "^3.7.2",
         "@types/node": "^22.20.1",
+        "eslint": "catalog:",
         "typescript": "5.9.3",
+        "typescript-eslint": "catalog:",
       },
     },
     "products/tutor/web": {
@@ -497,11 +524,14 @@
         "zod": "^4.4.3",
       },
       "devDependencies": {
+        "@iedora/eslint-config": "workspace:*",
         "@types/bun": "^1.1.14",
         "@types/node": "^22",
         "@types/pg": "^8.11.10",
+        "eslint": "catalog:",
         "jose": "^5.9.6",
         "typescript": "^5.9.3",
+        "typescript-eslint": "catalog:",
       },
     },
     "services/auth": {
@@ -520,10 +550,13 @@
         "zod": "^4.4.3",
       },
       "devDependencies": {
+        "@iedora/eslint-config": "workspace:*",
         "@types/bun": "^1.1.14",
         "@types/node": "^22.19.19",
         "@types/pg": "^8.11.10",
+        "eslint": "catalog:",
         "typescript": "^5.9.3",
+        "typescript-eslint": "catalog:",
       },
     },
     "services/billing": {
@@ -543,11 +576,14 @@
         "zod": "^4.4.3",
       },
       "devDependencies": {
+        "@iedora/eslint-config": "workspace:*",
         "@types/bun": "^1.1.14",
         "@types/node": "^22",
         "@types/pg": "^8.11.10",
+        "eslint": "catalog:",
         "jose": "^5.9.6",
         "typescript": "^5.9.3",
+        "typescript-eslint": "catalog:",
       },
     },
     "services/email": {
@@ -565,11 +601,14 @@
         "zod": "catalog:",
       },
       "devDependencies": {
+        "@iedora/eslint-config": "workspace:*",
         "@types/bun": "catalog:",
         "@types/node": "^22",
         "@types/nodemailer": "^8.0.1",
         "@types/pg": "^8.11.10",
+        "eslint": "catalog:",
         "typescript": "catalog:",
+        "typescript-eslint": "catalog:",
       },
     },
   },

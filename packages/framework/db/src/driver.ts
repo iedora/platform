@@ -17,12 +17,12 @@ export type DriverOptions = {
   maxLifetime?: number // seconds
 }
 
-// biome-ignore lint/suspicious/noExplicitAny: the two clients share a structural surface
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- the two clients share a structural surface
 type PostgresLike = any
 
 const nodeRequire = createRequire(import.meta.url)
 
-// biome-ignore lint/suspicious/noExplicitAny: Bun global is untyped here
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Bun global is untyped here
 const BunSQL: (new (url: string, opts: unknown) => PostgresLike) | undefined = (globalThis as any).Bun
   ?.SQL
 

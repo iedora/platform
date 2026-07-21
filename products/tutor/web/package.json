@@ -90,7 +90,7 @@
   },
   "scripts": {
     "typecheck": "tsgo --build",
-    "lint": "eslint --cache --cache-location node_modules/.cache/.eslintcache",
+    "lint": "eslint . --cache --cache-location node_modules/.cache/.eslintcache",
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {

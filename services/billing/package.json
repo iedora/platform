@@ -9,7 +9,8 @@
     "start": "bun run src/index.ts",
     "migrate": "bun run src/migrate.ts",
     "typecheck": "tsgo --noEmit",
-    "test": "bun test"
+    "test": "bun test",
+    "lint": "eslint . --cache --cache-location node_modules/.cache/.eslintcache"
   },
   "dependencies": {
     "@hono/zod-validator": "^0.9.0",
@@ -29,6 +30,9 @@
     "@types/node": "^22",
     "@types/pg": "^8.11.10",
     "jose": "^5.9.6",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "@iedora/eslint-config": "workspace:*",
+    "eslint": "catalog:",
+    "typescript-eslint": "catalog:"
   }
 }

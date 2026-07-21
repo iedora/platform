@@ -14,7 +14,7 @@
     "migrate": "bun run src/migrate.ts",
     "db:codegen": "kysely-codegen --dialect postgres --url ${MENU_DATABASE_URL:-postgres://iedora:iedora@localhost:55433/menu} --exclude-pattern '(schema_migrations)' --out-file src/db.generated.ts",
     "typecheck": "tsgo --noEmit",
-    "lint": "eslint src --cache --cache-location node_modules/.cache/.eslintcache",
+    "lint": "eslint . --cache --cache-location node_modules/.cache/.eslintcache",
     "test": "bun test"
   },
   "dependencies": {

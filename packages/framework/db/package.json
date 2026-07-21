@@ -20,7 +20,8 @@
   },
   "scripts": {
     "typecheck": "tsgo --noEmit",
-    "test": "bun test"
+    "test": "bun test",
+    "lint": "eslint . --cache --cache-location node_modules/.cache/.eslintcache"
   },
   "dependencies": {
     "kysely-postgres-js": "^3.0.0"
@@ -34,7 +35,10 @@
     "kysely": "^0.29.3",
     "postgres": "^3.4.5",
     "tsx": "^4.19.2",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "@iedora/eslint-config": "workspace:*",
+    "eslint": "catalog:",
+    "typescript-eslint": "catalog:"
   },
   "peerDependenciesMeta": {
     "postgres": {
