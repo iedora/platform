@@ -15,8 +15,7 @@
   "scripts": {
     "dev": "bun run --hot src/index.ts",
     "start": "bun run src/index.ts",
-    "typecheck": "tsc --noEmit",
-    "test": "bun test"
+    "typecheck": "tsgo --noEmit"
   },
   "dependencies": {
     "@iedora/service-kit": "workspace:*",

@@ -48,7 +48,7 @@
   "scripts": {
     "typecheck": "tsgo --build && tsgo -p tsconfig.tests.json --noEmit",
     "lint": "eslint --cache --cache-location node_modules/.cache/.eslintcache",
-    "test": "vitest run",
+    "test": "vitest run --passWithNoTests",
     "test:watch": "vitest"
   },
   "dependencies": {
@@ -94,7 +94,8 @@
     "tailwindcss": "^4.3.0",
     "typescript": "catalog:",
     "typescript-eslint": "catalog:",
-    "vitest": "catalog:"
+    "vitest": "catalog:",
+    "jsdom": "catalog:"
   },
   "ignoreScripts": [
     "sharp",

@@ -16,7 +16,8 @@
   },
   "scripts": {
     "typecheck": "tsgo --noEmit",
-    "lint": "eslint src --cache --cache-location node_modules/.cache/.eslintcache"
+    "lint": "eslint src --cache --cache-location node_modules/.cache/.eslintcache",
+    "test": "vitest run --passWithNoTests"
   },
   "peerDependencies": {
     "next": "^16.0.0",
@@ -41,6 +42,7 @@
     "react": "catalog:",
     "react-dom": "catalog:",
     "typescript": "catalog:",
-    "typescript-eslint": "catalog:"
+    "typescript-eslint": "catalog:",
+    "vitest": "catalog:"
   }
 }

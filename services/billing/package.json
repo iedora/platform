@@ -8,7 +8,7 @@
     "dev": "bun run --hot src/index.ts",
     "start": "bun run src/index.ts",
     "migrate": "bun run src/migrate.ts",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsgo --noEmit",
     "test": "bun test"
   },
   "dependencies": {

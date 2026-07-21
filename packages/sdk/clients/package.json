@@ -10,7 +10,7 @@
     "./email": "./src/email/index.ts"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsgo --noEmit"
   },
   "devDependencies": {
     "@types/bun": "catalog:",

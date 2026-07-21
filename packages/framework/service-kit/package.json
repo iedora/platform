@@ -20,7 +20,8 @@
     "registry": "https://npm.pkg.github.com"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsgo --noEmit",
+    "test": "bun test"
   },
   "dependencies": {
     "@iedora/config": "workspace:*",

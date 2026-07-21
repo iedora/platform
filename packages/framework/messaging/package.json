@@ -19,7 +19,8 @@
     "registry": "https://npm.pkg.github.com"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsgo --noEmit",
+    "test": "bun test"
   },
   "peerDependencies": {
     "kysely": ">=0.27"

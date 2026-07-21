@@ -10,9 +10,12 @@
     "./next/middleware": "./src/next/middleware.ts",
     "./next/client": "./src/next/client.ts"
   },
-  "files": ["src", "README.md"],
+  "files": [
+    "src",
+    "README.md"
+  ],
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsgo --noEmit"
   },
   "dependencies": {
     "jose": "^5.9.6"
