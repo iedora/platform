@@ -1,26 +1,28 @@
-import { trace } from "@iedora/service-runtime";
-import { isInvalidUUID } from "@iedora/service-runtime";
+import { HttpError, isInvalidUUID, isUniqueViolation, onError, trace } from "@iedora/service-runtime";
 import type { Context } from "hono";
 import { HTTPException } from "hono/http-exception";
 
 // SQLSTATE detectors live in server-kit (shared across services); re-exported so
 // the menu data layer keeps importing them from the error vocabulary.
-export { isInvalidUUID, isUniqueViolation } from "@iedora/service-runtime";
+export { isInvalidUUID, isUniqueViolation };
 
-// The menu error vocabulary — the single response chokepoint. A foreign id and
-// a missing id look identical (both 404), never a 500.
+// The menu error vocabulary — the single response chokepoint. Domain errors are
+// the SHARED @iedora/server-kit `HttpError` (not a parallel Hono HTTPException
+// set), so every service shapes errors the same way. A foreign id and a missing
+// id look identical (both 404), never a 500.
 
 /** 404 — entity absent within the caller's scope (or a malformed id). */
-export const notFound = (): HTTPException => new HTTPException(404, { message: "not found" });
+export const notFound = (): HttpError => new HttpError(404, "not_found", "not found");
 
 /** 409 — restaurant slug already in use. */
-export const slugTaken = (): HTTPException => new HTTPException(409, { message: "slug taken" });
+export const slugTaken = (): HttpError => new HttpError(409, "slug_taken", "slug taken");
 
 /** 422 — user-correctable input problem. */
-export const invalid = (message: string): HTTPException => new HTTPException(422, { message });
+export const invalid = (message: string): HttpError => new HttpError(422, "invalid", message);
 
-// 429 — rate-limit deny, carrying Retry-After. A subclass so the centralized
-// onError renders it (with its header) like any other HTTPException.
+// 429 — rate-limit deny, carrying Retry-After. Stays a Hono HTTPException because
+// HttpError can't carry a custom header/Response; handleError renders it via
+// getResponse() below.
 export class RateLimitError extends HTTPException {
   constructor(retryAfterSeconds: number) {
     const res = new Response(JSON.stringify({ error: "rate limited" }), {
@@ -31,13 +33,15 @@ export class RateLimitError extends HTTPException {
   }
 }
 
-// onErrorBody is the menu services' shared error handler: HTTPException renders
-// itself; a malformed-uuid surfaces as 404 (same as missing); anything else is
-// a logged 500. This mapping covers the cases the store raises
-// as raw Postgres errors rather than domain errors.
+// handleError is a thin adapter over the shared runtime, adding only the two
+// things the generic onError can't infer: a rate-limit HTTPException (its custom
+// Retry-After Response) and a malformed-uuid → 404 (a raw Postgres error, not a
+// domain throw). Domain HttpErrors delegate their shaping to server-kit's shared
+// `onError`; a genuinely-unexpected error keeps menu's trace-correlated 500 log.
 export function handleError(err: Error, c: Context): Response {
   if (err instanceof HTTPException) return err.getResponse();
-  if (isInvalidUUID(err)) return c.json({ error: "not found" }, 404);
+  if (isInvalidUUID(err)) return c.json({ error: "not_found" }, 404);
+  if (err instanceof HttpError) return onError(err, c) as Response;
   const sc = trace.getActiveSpan()?.spanContext();
   console.error(
     JSON.stringify({
