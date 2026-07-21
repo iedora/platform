@@ -90,8 +90,30 @@ jobs:
       TURBO_TEAM: ${{ vars.TURBO_TEAM }}
       TURBO_API: ${{ vars.TURBO_API }}
       TEST_DATABASE_URL: postgres://iedora:iedora@127.0.0.1:5432/postgres
+      # S3-compatible object storage for the aws4fetch BlobClient integration test
+      # (products/menu/api). Points at the MinIO started below; the suite skips
+      # when S3_TEST_ENDPOINT is unset (like the HAS_DB db suites).
+      S3_TEST_ENDPOINT: http://127.0.0.1:9000
+      S3_TEST_ACCESS_KEY: minio
+      S3_TEST_SECRET_KEY: minio12345
+      S3_TEST_BUCKET: uploads-test
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      # MinIO runs as a docker-run step, not a services: container, because it
+      # needs the `server /data` command (services: can't set a command). The
+      # blob test's beforeAll creates the bucket idempotently.
+      - name: Start MinIO
+        run: |
+          docker run -d --name ci-minio -p 9000:9000 \
+            -e MINIO_ROOT_USER=minio -e MINIO_ROOT_PASSWORD=minio12345 \
+            minio/minio server /data
+          for _ in $(seq 1 30); do
+            curl -sf http://127.0.0.1:9000/minio/health/live && exit 0
+            sleep 1
+          done
+          echo "minio did not become ready" >&2
+          docker logs ci-minio || true
+          exit 1
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
           bun-version: '1.3.14'
