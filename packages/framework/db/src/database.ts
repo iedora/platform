@@ -6,10 +6,11 @@ import { createDb, type CreateDbOptions } from "./client.ts"
 
 // Transaction-in-context: the active transaction is carried implicitly so
 // repositories transparently join the caller's unit of work, and nested runInTx
-// reuses it. Stored as Kysely<any> because Kysely is invariant in its DB param —
-// each Database casts back to its own DB type on read.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- invariant DB param
-const txCtx = new AsyncLocalStorage<Kysely<any>>()
+// reuses it. The store is `unknown`, not `Kysely<any>`: Kysely is invariant in
+// its DB param, so no single `Kysely<X>` accepts every DB's transaction — but
+// `unknown` accepts any value on store, and each Database casts it back to its
+// own `Kysely<DB>` on read (the DB type is known there). No `any`, no disable.
+const txCtx = new AsyncLocalStorage<unknown>()
 
 /**
  * `Database<DB>` binds a Kysely to one logical database and carries the active

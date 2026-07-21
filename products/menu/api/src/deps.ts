@@ -14,7 +14,7 @@ import type { Uploads } from "./uploads.ts";
 // plan gate.
 export interface MenuDeps {
   db: Database<MenuDB>;
-  limiter: Limiter;
+  limiter: Limiter<MenuDB>;
   userVerifier: UserVerifier; // verifies dashboard user access tokens
   auditor: Auditor; // OutboxWriter — restaurant lifecycle audit
   plans: Plans; // plan gate + entitlement lookups

@@ -1,5 +1,6 @@
 import type { Money } from "../../money/index.ts";
 import { type Kysely, sql } from "kysely";
+import type { BillingDB } from "../../schema.ts";
 
 import { iso } from "../../data/dates.ts";
 import type { RefundStatus } from "../../kinds.ts";
@@ -72,8 +73,7 @@ const RETURNING = sql`RETURNING id, charge_id, product, amount_cents, currency, 
 
 /** Insert a refund. On an idempotency-key clash returns the EXISTING row (so a
  *  retried request never double-refunds) rather than erroring — mirrors insertCharge. */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function insertRefund(db: Kysely<any>, r: NewRefund): Promise<RefundRecord> {
+export async function insertRefund(db: Kysely<BillingDB>, r: NewRefund): Promise<RefundRecord> {
   const res = await sql<Row>`
     INSERT INTO refunds (charge_id, product, amount_cents, currency, status,
                          provider, provider_ref, reason, idempotency_key, metadata)
@@ -85,8 +85,7 @@ export async function insertRefund(db: Kysely<any>, r: NewRefund): Promise<Refun
   return toRecord(res.rows[0] as Row);
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function getRefund(db: Kysely<any>, id: string): Promise<RefundRecord | undefined> {
+export async function getRefund(db: Kysely<BillingDB>, id: string): Promise<RefundRecord | undefined> {
   const res = await sql<Row>`
     SELECT id, charge_id, product, amount_cents, currency, status,
            provider, provider_ref, reason, metadata, created_at
