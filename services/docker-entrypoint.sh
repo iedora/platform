@@ -33,16 +33,10 @@ if [ -n "$svc_dir" ] && [ -f "$svc_dir/src/migrate.ts" ]; then
     *)              name=$(basename "$svc_dir") ;;
   esac
   echo "{\"level\":\"info\",\"msg\":\"running migrations before boot\",\"service\":\"iedora-$name\"}"
-  bun run "$svc_dir/src/migrate.ts"
+  node "$svc_dir/src/migrate.ts"
 fi
 
-# Serve with --smol: a leaner JSC heap (smaller steady-state RSS) at a small GC
-# cost that hides behind Postgres I/O — the right RAM trade on the shared single
-# box where these services are I/O-bound. Only the `bun run` server command is
-# rewritten; anything else (e.g. `kamal app exec sh`) execs unchanged.
-if [ "$1" = "bun" ] && [ "$2" = "run" ]; then
-  shift 2
-  exec bun --smol run "$@"
-fi
-
+# Node 26 runs the .ts entrypoint directly (stable strip-only type-stripping, no
+# build). The CMD is `node <svc>/src/index.ts`, so exec it as-is; a non-server
+# command (e.g. `kamal app exec sh`) execs unchanged too.
 exec "$@"
