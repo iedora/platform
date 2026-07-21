@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
-import { getSession } from '@iedora/api-client'
+import { getAccount as getSession } from '@iedora/auth-sdk/next'
 import { isSameIedoraOrigin, PRODUCTS, productUrl } from '@iedora/brand'
 import { forgotPasswordUrl, signUpUrl } from '@iedora/product-menu/shared/auth-urls'
 import { SignInForm } from './sign-in-form'

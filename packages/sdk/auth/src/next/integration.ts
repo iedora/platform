@@ -1,5 +1,7 @@
+import { cookies } from "next/headers"
+
 import { type AuthClaims, createAuthClient } from "../index"
-import type { AuthNextConfig } from "./config"
+import { type AuthNextConfig, cookieNames } from "./config"
 import { type AuthResult, createAuthNext } from "./server"
 
 // ── THE centralized auth integration ─────────────────────────────────────────
@@ -54,6 +56,12 @@ export async function getAccount(): Promise<Account | null> {
 /** Raw verified claims, for products needing fields beyond Account. */
 export async function getClaims(): Promise<AuthClaims | null> {
   return authNext.getClaims()
+}
+
+/** The current access token from the SSO cookie (for a live authClient call like
+ *  whoami). Prefer getAccount/getClaims — this is for the rare live-check path. */
+export async function getAccessToken(): Promise<string | undefined> {
+  return (await cookies()).get(cookieNames(authConfig.cookiePrefix).access)?.value
 }
 
 // ── Operations — products wrap these in their own forms/actions ──────────────

@@ -23,6 +23,7 @@ export {
   authNext,
   completeOAuth,
   forgotPassword,
+  getAccessToken,
   getAccount,
   getClaims,
   login,

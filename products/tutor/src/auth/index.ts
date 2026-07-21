@@ -1,8 +1,5 @@
-import { type AuthNext, createAuthNext } from "@iedora/auth-sdk/next"
-
-import { authConfig } from "./config"
-
-// Student bootstrap (every account can book/chat immediately; tutors are promoted
-// separately) is now lazy in the tutor service's `GET /api/me` — the first
-// authenticated request with no profile creates the student. The web holds no DB.
-export const authNext: AuthNext = createAuthNext(authConfig)
+// Tutor's auth surface — the product viewer/guards (session) + form actions.
+// The shared auth integration (authNext, getClaims, login/logout, config) lives
+// in @iedora/auth-sdk/next; import that directly for the centralized pieces.
+export * from "./session"
+export * from "./actions"

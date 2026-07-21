@@ -400,6 +400,7 @@
         "@dnd-kit/sortable": "^10.0.0",
         "@dnd-kit/utilities": "^3.2.2",
         "@iedora/api-client": "workspace:*",
+        "@iedora/auth-sdk": "workspace:*",
         "@iedora/brand": "workspace:*",
         "@iedora/contracts": "workspace:*",
         "@iedora/service-menu": "workspace:*",

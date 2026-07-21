@@ -1,7 +1,8 @@
 import 'server-only'
 import { cache } from 'react'
 import { notFound, redirect } from 'next/navigation'
-import { ApiError, getSession as readSession, type Session } from '@iedora/api-client'
+import { ApiError } from '@iedora/api-client'
+import { getAccount } from '@iedora/auth-sdk/next'
 import { signInUrl } from '../../shared/auth-urls'
 import { publicUrl } from '../../shared/url'
 import { getRestaurant, type MenuSummary, type Restaurant } from '../../shared/api'
@@ -18,7 +19,9 @@ import { getRestaurant, type MenuSummary, type Restaurant } from '../../shared/a
 /** Operator roles minted by the auth service. */
 const STAFF_ROLES = ['iedora-admin', 'iedora-support'] as const
 
-export type { Session }
+/** Menu's viewer — the shared iedora-realm account, with `org` surfaced as
+ *  `tenantId` (menu's word for the active restaurant organization). */
+export type Session = { userId: string; email?: string; roles: string[]; tenantId?: string }
 
 /** True when the session holds a cross-tenant operator role. */
 export function isStaff(session: Session | null): boolean {
@@ -30,7 +33,10 @@ export function isStaff(session: Session | null): boolean {
  * cookie / it's expired. Use for chrome that should render signed-in
  * vs signed-out without forcing a redirect.
  */
-export const getSession = cache(() => readSession())
+export const getSession = cache(async (): Promise<Session | null> => {
+  const a = await getAccount()
+  return a ? { userId: a.userId, email: a.email, roles: a.roles, tenantId: a.org } : null
+})
 
 /**
  * Redirecting session guard: bounces anonymous visitors to sign-in

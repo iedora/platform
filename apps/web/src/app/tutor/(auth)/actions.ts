@@ -2,7 +2,7 @@
 
 import type { AuthResult } from "@iedora/auth-sdk/next"
 
-import { authNext } from "@iedora/product-tutor/auth"
+import { authNext } from "@iedora/auth-sdk/next"
 
 export async function loginAction(input: { email: string; password: string }): Promise<AuthResult> {
   return authNext.actions.login(input)
