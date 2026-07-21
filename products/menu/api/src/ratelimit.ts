@@ -59,8 +59,10 @@ export class Limiter {
       return;
     }
 
-    let count = 0;
-    let oldest = new Date();
+    // Assigned from the transaction below; the catch always exits (throw or
+    // return), so these are definitely set before the read after the try/catch.
+    let count: number;
+    let oldest: Date;
     try {
       const r = await this.database.root.transaction().execute(async (trx) => {
         await sql`SELECT pg_advisory_xact_lock(hashtext(${key}))`.execute(trx);
