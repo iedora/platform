@@ -97,7 +97,11 @@ jobs:
       - run: bun install --frozen-lockfile
       - run: bun run typecheck
       - run: bun run lint
-      - run: bun run test
+      # Serialize the test lane: the DB integration harnesses each CREATE a
+      # scratch database on the single CI Postgres; running every suite at once
+      # overwhelms the small service container (dropped connections). Scratch DBs
+      # already isolate data, so serial is correctness-neutral, just slower.
+      - run: bunx turbo run test --concurrency=1
 
   security:
     runs-on: ubuntu-latest
