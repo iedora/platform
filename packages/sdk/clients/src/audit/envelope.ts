@@ -28,7 +28,7 @@ export interface AuditEnvelope {
  * `occurredAt` captures emit time.
  */
 export function buildEnvelope(e: AuditEvent, source: string): AuditEnvelope {
-  const metadata: Record<string, unknown> = { ...(e.meta ?? {}) }
+  const metadata: Record<string, unknown> = { ...e.meta }
   if (e.sessionId) metadata.session_id = e.sessionId
   if (e.traceId) metadata.trace_id = e.traceId
   return {

@@ -110,3 +110,6 @@ menu-taberna-do-jose.extracted.json
 
 # Tooling binaries downloaded by pre-commit hooks (platform-specific).
 /actionlint
+
+# Turborepo local cache
+.turbo/

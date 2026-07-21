@@ -9,7 +9,7 @@ set -euo pipefail
 changed=$(git diff --cached --name-only --diff-filter=ACM)
 
 # ── Gate: actionlint on CI files ──
-ci_changed=$(echo "$changed" | grep -E '^\.gitea/(workflows|actions)/' || true)
+ci_changed=$(echo "$changed" | grep -E '^\.github/(workflows|actions)/' || true)
 if [ -z "$ci_changed" ]; then
   exit 0
 fi
@@ -28,11 +28,9 @@ fi
 echo "pre-commit: linting CI files..."
 echo "$ci_changed" | while read -r f; do echo "  $f"; done
 
-# -config-file explícito: actionlint auto-detecta project root via
-# .github/workflows/ que não temos (estamos em .gitea/), por isso o
-# config co-habita com os workflows: .gitea/actionlint.yaml.
+# actionlint auto-detects the project root via .github/workflows/.
 echo ""
-if ! actionlint -config-file .gitea/actionlint.yaml -color .gitea/workflows/*.yml; then
+if ! actionlint -color .github/workflows/*.yml; then
   echo ""
   echo "pre-commit: actionlint failed. Fix the issues above and try again."
   exit 1

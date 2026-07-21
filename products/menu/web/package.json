@@ -95,7 +95,8 @@
     "typescript": "catalog:",
     "typescript-eslint": "catalog:",
     "vitest": "catalog:",
-    "jsdom": "catalog:"
+    "jsdom": "catalog:",
+    "eslint-plugin-oxlint": "catalog:"
   },
   "ignoreScripts": [
     "sharp",

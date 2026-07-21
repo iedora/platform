@@ -214,16 +214,23 @@ products and packages:
 - **`typecheck`** — always `tsgo` (never `tsc`). `tsgo --build` for the
   packages that orchestrate project references (`products/*/web`, `apps/web`);
   `tsgo --noEmit` everywhere else.
-- **`lint`** — always `eslint . --cache …`, driven by a local
-  `eslint.config.mjs` that composes the `@iedora/eslint-config` factories:
-  - libs + backends (`services/*`, `products/*/api`, `packages/**`) → `base() + typescript()`
-  - React component libs (`packages/ui`) → `+ react()`
-  - Next products (`products/*/web`) → `next() + vitest()` (menu also adds `boundaries()` for its slice rules)
-  - The React-Compiler advisory rules (`react-hooks/set-state-in-effect`,
-    `react-hooks/purity`) are `warn` — they fire on valid SSR mount-guards,
-    debounce hooks, and `Date.now()` in async RSCs. Correctness rules
-    (`rules-of-hooks`, `exhaustive-deps`, `react-hooks/static-components`)
-    stay `error`.
+- **`lint`** — two linters, one gate. The root `oxlint` correctness pre-pass
+  runs first (Rust, whole repo in <1s), then per-workspace ESLint runs the
+  type-aware / react-hooks / boundaries rules oxlint can't. Each workspace
+  **inherits** one of the shared presets from `@iedora/eslint-config` in a
+  single line (`export { default } from '@iedora/eslint-config/<preset>'`) —
+  the rule set has one source of truth, packages only pick a flavor:
+  - libs + backends (`services/*`, `products/*/api`, `packages/**`) → `/lib`
+  - React component libs (`packages/ui`) → `/react-lib`
+  - Next products (`products/*/web`) → `/next-product` (menu composes it with
+    `boundaries()` for its slice rules)
+  Each preset ends with `eslint-plugin-oxlint`, which disables the ESLint rules
+  the oxlint pre-pass already covers so the two never double-report. The
+  React-Compiler advisory rules (`react-hooks/set-state-in-effect`,
+  `react-hooks/purity`) are `warn` — they fire on valid SSR mount-guards,
+  debounce hooks, and `Date.now()` in async RSCs. Correctness rules
+  (`rules-of-hooks`, `exhaustive-deps`, `react-hooks/static-components`) stay
+  `error`.
 - **`test`** — tiered by what the code is:
   - backends (`services/*`, `products/*/api`, runtime libs) → `bun test`
     (bun's native runner, `bun:test`). Declared **only where tests exist** —
@@ -264,9 +271,15 @@ App env vive em `apps/web/`:
 ## CI
 
 GitHub Actions, [`.github/workflows/ci.yml`](.github/workflows/ci.yml):
-path-filtered correctness (typecheck + lint + test), the backend
-service pipeline (test + build/push), and security (gitleaks + hadolint +
-osv-scanner).
+path-filtered **correctness** (`typecheck` + `lint` + `test`, all routed through
+Turborepo so unchanged packages are cache hits — `.turbo` is persisted across
+runs) and **security** (gitleaks + hadolint on both images + osv-scanner), behind
+a `ci-ok` fan-in gate. `lint` runs the **oxlint** correctness pre-pass before the
+per-package ESLint. Image build / push / deploy live in the `iedora-infra` repo.
+
+Task orchestration is [`turbo.json`](./turbo.json) — `bun run typecheck|lint|test`
+= `turbo run …`. `scripts/run-parallel.mjs` is kept as a no-cache fallback
+(`bun run typecheck:parallel`).
 
 ## Where to look when unsure
 

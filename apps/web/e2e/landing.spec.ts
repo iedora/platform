@@ -55,7 +55,7 @@ test.describe('menu landing', () => {
     const tops = await page
       .getByTestId('menu-hero')
       .locator('xpath=.//div[contains(@class,"mt-6")][1]/*')
-      .evaluateAll((els) => [...new Set(els.map((e) => Math.round(e.getBoundingClientRect().top)))].length)
+      .evaluateAll((els) => new Set(els.map((e) => Math.round(e.getBoundingClientRect().top))).size)
     expect(tops).toBe(3)
   })
 })

@@ -126,7 +126,7 @@ export function LocalizedFields({
     if (isDefaultTab) {
       onDescriptionChange?.(value)
     } else if (onDescriptionI18nChange) {
-      onDescriptionI18nChange({ ...(descriptionI18n ?? {}), [activeLang]: value })
+      onDescriptionI18nChange({ ...descriptionI18n, [activeLang]: value })
     }
   }
 

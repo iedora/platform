@@ -123,9 +123,7 @@ export interface StripeConfig {
  *  deploys need no Stripe). */
 export function createStripeGateway(cfg: StripeConfig): StripeGateway | null {
   if (!cfg.secretKey) return null;
-  const stripe = new Stripe(cfg.secretKey, {
-    ...(cfg.apiHost ? { host: cfg.apiHost, port: cfg.apiPort ?? 12111, protocol: "http" as const } : {}),
-  });
+  const stripe = new Stripe(cfg.secretKey, (cfg.apiHost ? { host: cfg.apiHost, port: cfg.apiPort ?? 12111, protocol: "http" as const } : {}));
   return new StripeGateway(stripe);
 }
 

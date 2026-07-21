@@ -1,8 +1,1 @@
-import { defineConfig, globalIgnores } from 'eslint/config'
-import { base, typescript } from '@iedora/eslint-config'
-
-export default defineConfig([
-  ...base(),
-  ...typescript(),
-  globalIgnores(['dist/**', 'eslint.config.mjs']),
-])
+export { default } from '@iedora/eslint-config/lib'

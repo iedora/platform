@@ -96,7 +96,7 @@ export function ItemTranslations({
       variants.map((variant, i) => {
         if (i !== idx) return variant
         const nextI18n: LocalizedText = {
-          ...(variant.labelI18n ?? {}),
+          ...variant.labelI18n,
           [activeLang]: v,
         }
         return { ...variant, labelI18n: nextI18n }
