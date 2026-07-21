@@ -29,8 +29,11 @@ echo "pre-commit: linting CI files..."
 echo "$ci_changed" | while read -r f; do echo "  $f"; done
 
 # actionlint auto-detects the project root via .github/workflows/.
+# -ignore the service `command:`/`entrypoint:` keys: GitHub added them to service
+# containers in April 2026 (lets MinIO run `server /data`), but actionlint
+# v1.7.x doesn't know them yet and false-flags them as "unexpected key".
 echo ""
-if ! actionlint -color .github/workflows/*.yml; then
+if ! actionlint -color -ignore 'unexpected key "(command|entrypoint)" for "services"' .github/workflows/*.yml; then
   echo ""
   echo "pre-commit: actionlint failed. Fix the issues above and try again."
   exit 1
