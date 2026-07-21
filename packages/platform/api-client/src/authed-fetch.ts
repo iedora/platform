@@ -2,27 +2,16 @@ import { cookies } from 'next/headers'
 
 import { refreshTokens } from './auth-api'
 import { ACCESS_COOKIE, REFRESH_COOKIE, authCookies, type CookieWrite } from './cookies'
-import { MENU_URL } from './config'
-import { ApiError, errorMessageFromResponse } from './error'
 
 /**
- * Fetch against the menu API with the caller's Bearer token.
+ * Product-neutral authed fetch against an ABSOLUTE url with the caller's Bearer
+ * token + a one-shot 401-refresh retry: on a 401 with a live refresh cookie it
+ * refreshes once, persists the new cookies (only possible in server actions /
+ * route handlers — RSC reads are covered by the middleware refresh), and retries.
  *
- * `path` is service-relative (e.g. `/api/restaurants`); absolute URLs
- * pass through for other services. On a 401 with a live refresh cookie
- * it refreshes once, persists the new cookies (only possible in server
- * actions / route handlers — RSC reads are covered by the middleware
- * refresh), and retries.
- */
-export async function serverFetch(path: string, init: RequestInit = {}): Promise<Response> {
-  const url = path.startsWith('http') ? path : `${MENU_URL}${path}`
-  return authedFetch(url, init)
-}
-
-/**
- * Core authed fetch against an ABSOLUTE url with the caller's Bearer
- * token + the same one-shot 401-refresh retry as serverFetch. Shared
- * with the Hono RPC client (`menu-rpc`), which builds full URLs itself.
+ * Each product builds its own base-URL wrapper on top of this (menu:
+ * `products/menu/src/shared/menu-fetch.ts`; tutor: `products/tutor/src/api/`),
+ * so this foundation package carries no service-specific base URL.
  */
 export async function authedFetch(url: string, init: RequestInit = {}): Promise<Response> {
   const store = await cookies()
@@ -46,14 +35,6 @@ export async function authedFetch(url: string, init: RequestInit = {}): Promise<
     }
   }
   return res
-}
-
-/** serverFetch + JSON decode, throwing ApiError on non-2xx. */
-export async function apiJson<T>(path: string, init: RequestInit = {}): Promise<T> {
-  const res = await serverFetch(path, init)
-  if (!res.ok) throw new ApiError(res.status, await errorMessageFromResponse(res))
-  if (res.status === 204) return undefined as T
-  return (await res.json()) as T
 }
 
 /**

@@ -6,8 +6,7 @@
   "description": "Server-only HTTP client for the Hono backend (BFF-lite): auth cookie handling, access-token session decode, and a Bearer-attaching fetch with one-shot refresh. Edge-compatible — importable from Next middleware, RSCs, server actions, and route handlers. The browser never calls the services directly.",
   "exports": {
     ".": "./src/index.ts",
-    "./middleware": "./src/middleware.ts",
-    "./menu-rpc": "./src/menu-rpc.ts"
+    "./middleware": "./src/middleware.ts"
   },
   "scripts": {
     "typecheck": "tsgo --noEmit",
@@ -16,10 +15,7 @@
   },
   "dependencies": {
     "@iedora/auth-sdk": "^0.1.1",
-    "@iedora/contracts": "workspace:*",
-    "@iedora/service-menu": "workspace:*",
-    "hono": "catalog:",
-    "openapi-fetch": "^0.17.0"
+    "@iedora/contracts": "workspace:*"
   },
   "peerDependencies": {
     "next": "^16.2.6"

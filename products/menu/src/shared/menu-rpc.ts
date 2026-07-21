@@ -1,7 +1,7 @@
 import { hc } from 'hono/client'
 import type { MenuApp } from '@iedora/service-menu/app'
-import { MENU_URL } from './config'
-import { authedFetch } from './server-fetch'
+import { authedFetch } from '@iedora/api-client'
+import { MENU_URL } from './menu-fetch'
 
 /**
  * Typed Hono RPC client for the menu service (`services/menu`).

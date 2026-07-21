@@ -175,55 +175,13 @@ test('resolveAuth returns null with no writes when there is nothing to refresh',
   expect(r.cookieWrites).toHaveLength(0)
 })
 
-// ── serverFetch (the data-layer refresh-on-401) ──────────────────────────
+// ── authedFetch (the data-layer refresh-on-401) ──────────────────────────
 
-const { serverFetch, apiJson } = await import('./server-fetch')
+const { authedFetch } = await import('./authed-fetch')
 
-// ── apiJson detailed error surfacing ─────────────────────────────────────
-
-test('apiJson surfaces a plain-text error body (Hono HTTPException) as the message', async () => {
-  hoist.store = makeStore({ [ACCESS_COOKIE]: accessToken(future()) })
-  vi.stubGlobal(
-    'fetch',
-    vi.fn(async () => ({
-      ok: false,
-      status: 422,
-      statusText: 'Unprocessable Entity',
-      text: async () => 'the restaurant already belongs to that tenant',
-    })),
-  )
-  await expect(apiJson('/api/x')).rejects.toMatchObject({
-    status: 422,
-    message: 'the restaurant already belongs to that tenant',
-  })
-})
-
-test('apiJson prefers a JSON { error } body over the raw text', async () => {
-  hoist.store = makeStore({ [ACCESS_COOKIE]: accessToken(future()) })
-  vi.stubGlobal(
-    'fetch',
-    vi.fn(async () => ({
-      ok: false,
-      status: 409,
-      statusText: 'Conflict',
-      text: async () => JSON.stringify({ error: 'email already in use' }),
-    })),
-  )
-  await expect(apiJson('/api/x')).rejects.toMatchObject({ status: 409, message: 'email already in use' })
-})
-
-test('apiJson falls back to status text when the error body is empty', async () => {
-  hoist.store = makeStore({ [ACCESS_COOKIE]: accessToken(future()) })
-  vi.stubGlobal(
-    'fetch',
-    vi.fn(async () => ({ ok: false, status: 500, statusText: 'Internal Server Error', text: async () => '' })),
-  )
-  await expect(apiJson('/api/x')).rejects.toMatchObject({ status: 500, message: 'Internal Server Error' })
-})
-
-test('serverFetch refreshes on a 401 and retries with the rotated token', async () => {
+test('authedFetch refreshes on a 401 and retries with the rotated token', async () => {
   hoist.store = makeStore({ [ACCESS_COOKIE]: accessToken(past()), [REFRESH_COOKIE]: 'rt1' }, { writable: true })
-  let menuCalls = 0
+  let apiCalls = 0
   const f = vi.fn(async (url: string) => {
     if (url.includes('/auth/refresh')) {
       return {
@@ -239,17 +197,17 @@ test('serverFetch refreshes on a 401 and retries with the rotated token', async 
         headers: { getSetCookie: () => [] },
       }
     }
-    menuCalls += 1
-    return menuCalls === 1
+    apiCalls += 1
+    return apiCalls === 1
       ? { ok: false, status: 401, json: async () => ({}) }
       : { ok: true, status: 200, json: async () => ({ ok: true }) }
   })
   vi.stubGlobal('fetch', f)
 
-  const res = await serverFetch('/api/restaurants')
+  const res = await authedFetch('http://svc/api/restaurants')
 
   expect(res.status).toBe(200)
-  expect(menuCalls).toBe(2) // initial 401 + retry
+  expect(apiCalls).toBe(2) // initial 401 + retry
   const store = hoist.store as FakeStore
   expect(store.writes.some((w) => w.name === REFRESH_COOKIE && w.value === 'rt2')).toBe(true)
 })

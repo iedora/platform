@@ -1,6 +1,7 @@
 import 'server-only'
-import { apiJson, ApiError, MENU_URL } from '@iedora/api-client'
-import { menu } from '@iedora/api-client/menu-rpc'
+import { ApiError } from '@iedora/api-client'
+import { apiJson, MENU_URL } from './menu-fetch'
+import { menu } from './menu-rpc'
 import type {
   AdminUser,
   AdminUserDetail,

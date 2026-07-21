@@ -1,4 +1,4 @@
-export { AUTH_URL, MENU_URL } from './config'
+export { AUTH_URL } from './config'
 export {
   ACCESS_COOKIE,
   REFRESH_COOKIE,
@@ -6,7 +6,7 @@ export {
   clearedAuthCookies,
   type CookieWrite,
 } from './cookies'
-export { ApiError } from './error'
+export { ApiError, errorMessageFromResponse } from './error'
 export {
   login,
   register,
@@ -22,4 +22,4 @@ export {
 } from './auth-api'
 export type { AuthSession, TokenBundle } from '@iedora/auth-sdk'
 export { getSession, sessionFromToken, type Session } from './session'
-export { serverFetch, apiJson } from './server-fetch'
+export { authedFetch } from './authed-fetch'

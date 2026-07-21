@@ -6,4 +6,3 @@
  * stack); prod points at the swarm-internal DNS names (e.g. `http://auth:8080`).
  */
 export const AUTH_URL = process.env.AUTH_URL ?? 'http://localhost:8180'
-export const MENU_URL = process.env.MENU_URL ?? 'http://localhost:8184'
