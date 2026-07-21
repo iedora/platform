@@ -183,7 +183,7 @@
       },
     },
     "packages/server/kit": {
-      "name": "@iedora/menu-kit",
+      "name": "@iedora/service-runtime",
       "version": "0.1.0",
       "dependencies": {
         "@hono/otel": "^1.1.2",
@@ -193,8 +193,8 @@
         "@iedora/email-sdk": "^0.1.0",
         "@iedora/messaging": "^0.2.1",
         "@iedora/observability": "^0.2.0",
-        "@iedora/server-kit": "^0.4.0",
-        "@iedora/service-kit": "^0.3.0",
+        "@iedora/server-kit": "^0.5.0",
+        "@iedora/service-kit": "^0.4.0",
         "@node-rs/argon2": "catalog:",
         "@opentelemetry/api": "^1.9.1",
         "@opentelemetry/sdk-trace-base": "^2.9.0",
@@ -303,7 +303,7 @@
       "dependencies": {
         "@hono/zod-validator": "catalog:",
         "@iedora/contracts": "workspace:*",
-        "@iedora/menu-kit": "workspace:*",
+        "@iedora/service-runtime": "workspace:*",
         "hono": "catalog:",
         "kysely": "catalog:",
       },
@@ -326,7 +326,7 @@
         "@iedora/auth-sdk": "^0.2.0",
         "@iedora/billing-sdk": "^0.4.0",
         "@iedora/contracts": "workspace:*",
-        "@iedora/menu-kit": "workspace:*",
+        "@iedora/service-runtime": "workspace:*",
         "hono": "catalog:",
         "kysely": "catalog:",
         "zod": "catalog:",
@@ -560,11 +560,9 @@
 
     "@iedora/db": ["@iedora/db@0.8.0", "https://npm.pkg.github.com/download/@iedora/db/0.8.0/c95332218113a0fdedb01a05e314117fc37be4d2", { "dependencies": { "kysely-postgres-js": "^3.0.0" }, "peerDependencies": { "kysely": ">=0.27", "postgres": "^3.4.0" } }, "sha512-18XyUJTdXjb1aiNQmxcB3TKY1dPJWmHvSwN+Wq6WyOH4rEZu/g0ec3W6IumWqiBQ+wuOUL6Qn9/vMSWzS67EyQ=="],
 
-    "@iedora/email-sdk": ["@iedora/email-sdk@0.1.0", "https://npm.pkg.github.com/download/@iedora/email-sdk/0.1.0/64a70d9a86989626a8b196c8d71604c3c5efc414", {}, "sha512-PA0Pqyt3H8+9HlBRpYtgTNHFwEdYH56XFdd/YaumxBp2StSVuqTqoqDiAms8FusZK3y0PNqL2Cj8jgPWcZTsrw=="],
+    "@iedora/email-sdk": ["@iedora/email-sdk@0.2.0", "https://npm.pkg.github.com/download/@iedora/email-sdk/0.2.0/b2086311e13f625ddff1ccc0c761bacec42c3999", {}, "sha512-iItU6OJm0EiDQm3UYq1HhiWqcmzYyZIq4phfkatT50IPola9gXL4g0dNupwJjsOWdjzJPSJdzrMkJacaMDEMag=="],
 
     "@iedora/eslint-config": ["@iedora/eslint-config@workspace:packages/platform/eslint-config"],
-
-    "@iedora/menu-kit": ["@iedora/menu-kit@workspace:packages/server/kit"],
 
     "@iedora/menu-observability": ["@iedora/menu-observability@workspace:packages/platform/observability"],
 
@@ -576,13 +574,15 @@
 
     "@iedora/product-tutor": ["@iedora/product-tutor@workspace:products/tutor"],
 
-    "@iedora/server-kit": ["@iedora/server-kit@0.4.0", "https://npm.pkg.github.com/download/@iedora/server-kit/0.4.0/175327652c2c471f1537b39a7383bc1684648f30", { "dependencies": { "@hono/zod-validator": "^0.9.0", "@node-rs/argon2": "^2.0.2", "jose": "^5.9.6" }, "peerDependencies": { "hono": ">=4", "zod": "^3.25.0 || ^4.0.0" } }, "sha512-pC93pmNDtFAKUTeH1iYGt/ZhR2uwKlC39gx+mQ9AKggocDz+SeM+dJex/hSVY4iSbiURmBiHXs+RLlHX342hlA=="],
+    "@iedora/server-kit": ["@iedora/server-kit@0.5.0", "https://npm.pkg.github.com/download/@iedora/server-kit/0.5.0/c18a40789db0065ebdeff5da69663985624ed8a3", { "dependencies": { "@hono/zod-validator": "^0.9.0", "@node-rs/argon2": "^2.0.2", "jose": "^5.9.6" }, "peerDependencies": { "hono": ">=4", "zod": "^3.25.0 || ^4.0.0" } }, "sha512-fdpyCRnZ7uW55iJKE+TjaXd6u1/2To0LUZUVjpaNXpCto1xi5Rry2q1i+TT3/aWoPyGDj40oadCu2vIjqO2v0g=="],
 
     "@iedora/service-auth": ["@iedora/service-auth@workspace:services/auth"],
 
-    "@iedora/service-kit": ["@iedora/service-kit@0.3.0", "https://npm.pkg.github.com/download/@iedora/service-kit/0.3.0/eef07619d46c726afb2c118865a437743209d4b5", { "dependencies": { "@hono/otel": "^1.1.2", "@iedora/config": "^0.1.0", "@iedora/db": "^0.8.0", "@iedora/observability": "^0.2.0", "@iedora/server-kit": "^0.4.0", "@opentelemetry/api": "^1.9.1", "@opentelemetry/sdk-trace-base": "^2.9.0" }, "peerDependencies": { "hono": ">=4", "kysely": ">=0.27" } }, "sha512-/Ad07moC180Ar0lbwTkqgau4I2tEB7HhUwMbFHHsVsyVnqblbQtnWcg1CDkqJiW8G3FV87uGLwIb35OkGnNotw=="],
+    "@iedora/service-kit": ["@iedora/service-kit@0.4.0", "https://npm.pkg.github.com/download/@iedora/service-kit/0.4.0/c4421cecaf142ecf3b8ab54ef2f545a0f28eac07", { "dependencies": { "@hono/otel": "^1.1.2", "@iedora/config": "^0.1.0", "@iedora/db": "^0.8.0", "@iedora/observability": "^0.2.0", "@iedora/server-kit": "^0.5.0", "@opentelemetry/api": "^1.9.1", "@opentelemetry/sdk-trace-base": "^2.9.0" }, "peerDependencies": { "hono": ">=4", "kysely": ">=0.27" } }, "sha512-Crq8dJ8zfkM2PfXF4rq4SC5HSxUSaCNejgACt7eK5DcnXlH1oUoEGPs07yeBdilm0mkqX12abYtIPNf9ovIisA=="],
 
     "@iedora/service-menu": ["@iedora/service-menu@workspace:services/menu"],
+
+    "@iedora/service-runtime": ["@iedora/service-runtime@workspace:packages/server/kit"],
 
     "@iedora/ui": ["@iedora/ui@workspace:packages/platform/ui"],
 
@@ -2228,13 +2228,13 @@
 
     "@iedora/product-tutor/@iedora/auth-sdk": ["@iedora/auth-sdk@0.2.0", "https://npm.pkg.github.com/download/@iedora/auth-sdk/0.2.0/4bd8af99965d946ef1205b3bc1f795370142e7a4", { "dependencies": { "jose": "^5.9.6" } }, "sha512-sBv10lVyhxRjMYCb6OHGEbAR25gey63D7GL1i2zGGGvUp+UloBw2yAxW9uTlEiDxKUKD7PY0hYNrxXNz3jxcGQ=="],
 
-    "@iedora/product-tutor/@iedora/email-sdk": ["@iedora/email-sdk@0.2.0", "https://npm.pkg.github.com/download/@iedora/email-sdk/0.2.0/b2086311e13f625ddff1ccc0c761bacec42c3999", {}, "sha512-iItU6OJm0EiDQm3UYq1HhiWqcmzYyZIq4phfkatT50IPola9gXL4g0dNupwJjsOWdjzJPSJdzrMkJacaMDEMag=="],
-
     "@iedora/server-kit/@hono/zod-validator": ["@hono/zod-validator@0.9.0", "", { "peerDependencies": { "hono": ">=4.11.2", "zod": "^3.25.0 || ^4.0.0" } }, "sha512-n0ZSXmCiHVIp4Y5wlOOyZCeTd/rsawA/qW1cipB8QOYKZ9N8Tk0nZUZCXho9cu374AN4JpDNKioNKBJ/W+LBug=="],
 
     "@iedora/server-kit/jose": ["jose@5.10.0", "", {}, "sha512-s+3Al/p9g32Iq+oqXxkW//7jk2Vig6FF1CFqzVXoTUXt2qz89YWbL+OwS17NFYEvxC35n0FKeGO2LGYSxeM2Gg=="],
 
     "@iedora/service-menu/@iedora/auth-sdk": ["@iedora/auth-sdk@0.2.0", "https://npm.pkg.github.com/download/@iedora/auth-sdk/0.2.0/4bd8af99965d946ef1205b3bc1f795370142e7a4", { "dependencies": { "jose": "^5.9.6" } }, "sha512-sBv10lVyhxRjMYCb6OHGEbAR25gey63D7GL1i2zGGGvUp+UloBw2yAxW9uTlEiDxKUKD7PY0hYNrxXNz3jxcGQ=="],
+
+    "@iedora/service-runtime/@iedora/email-sdk": ["@iedora/email-sdk@0.1.0", "https://npm.pkg.github.com/download/@iedora/email-sdk/0.1.0/64a70d9a86989626a8b196c8d71604c3c5efc414", {}, "sha512-PA0Pqyt3H8+9HlBRpYtgTNHFwEdYH56XFdd/YaumxBp2StSVuqTqoqDiAms8FusZK3y0PNqL2Cj8jgPWcZTsrw=="],
 
     "@modelcontextprotocol/sdk/ajv": ["ajv@8.20.0", "", { "dependencies": { "fast-deep-equal": "^3.1.3", "fast-uri": "^3.0.1", "json-schema-traverse": "^1.0.0", "require-from-string": "^2.0.2" } }, "sha512-Thbli+OlOj+iMPYFBVBfJ3OmCAnaSyNn4M1vz9T6Gka5Jt9ba/HIR56joy65tY6kx/FCF5VXNB819Y7/GUrBGA=="],
 

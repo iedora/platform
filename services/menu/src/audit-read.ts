@@ -1,5 +1,5 @@
 import type { AuditRecord } from "@iedora/contracts";
-import { ServiceClient } from "@iedora/menu-kit";
+import { ServiceClient } from "@iedora/service-runtime";
 
 import type { ServiceTokenSource } from "./billing";
 

@@ -1,4 +1,4 @@
-import { type UserEnv, userAuth } from "@iedora/menu-kit";
+import { type UserEnv, userAuth } from "@iedora/service-runtime";
 import { Hono } from "hono";
 import { decodeJwt } from "jose";
 

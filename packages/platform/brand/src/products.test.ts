@@ -23,6 +23,7 @@ import {
 
 const ENV_KEYS = {
   menu: 'MENU_SURFACE_URL',
+  tutor: 'TUTOR_SURFACE_URL',
 } as const satisfies Record<ProductId, string>
 
 afterEach(() => {

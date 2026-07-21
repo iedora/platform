@@ -1,4 +1,4 @@
-import { hashPassword, hashRefreshToken, newRefreshToken } from "@iedora/menu-kit";
+import { hashPassword, hashRefreshToken, newRefreshToken } from "@iedora/service-runtime";
 import { HTTPException } from "hono/http-exception";
 
 import {

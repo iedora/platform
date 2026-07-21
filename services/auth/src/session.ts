@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 
-import { type AuditEvent, type Auditor, newRefreshToken } from "@iedora/menu-kit";
+import { type AuditEvent, type Auditor, newRefreshToken } from "@iedora/service-runtime";
 import type { Context } from "hono";
 
 import type { AuthConfig } from "./config";

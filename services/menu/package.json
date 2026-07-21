@@ -21,7 +21,7 @@
     "@iedora/auth-sdk": "^0.2.0",
     "@iedora/billing-sdk": "^0.4.0",
     "@iedora/contracts": "workspace:*",
-    "@iedora/menu-kit": "workspace:*",
+    "@iedora/service-runtime": "workspace:*",
     "@hono/zod-validator": "catalog:",
     "hono": "catalog:",
     "kysely": "catalog:",

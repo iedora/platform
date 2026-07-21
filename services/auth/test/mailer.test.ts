@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 
-import type { EmailMessage, Mailer } from "@iedora/menu-kit";
+import type { EmailMessage, Mailer } from "@iedora/service-runtime";
 
 import { makeResetMailer } from "../src/mailer";
 

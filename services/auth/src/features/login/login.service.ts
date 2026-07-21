@@ -1,4 +1,4 @@
-import { hashPassword, verifyPassword } from "@iedora/menu-kit";
+import { hashPassword, verifyPassword } from "@iedora/service-runtime";
 import { HTTPException } from "hono/http-exception";
 
 import { grantedRole } from "../../config";

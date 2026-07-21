@@ -1,4 +1,4 @@
-import { hashPassword } from "@iedora/menu-kit";
+import { hashPassword } from "@iedora/service-runtime";
 
 import { grantedRole } from "../../config";
 import { insertSession } from "../../data/sessions";

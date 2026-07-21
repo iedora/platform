@@ -1,5 +1,5 @@
 import type { PublicPayload } from "@iedora/contracts";
-import { SpanStatusCode, trace, tracer } from "@iedora/menu-kit";
+import { SpanStatusCode, trace, tracer } from "@iedora/service-runtime";
 import { IEDORA_RESTAURANT_ID, IEDORA_TENANT_ID, tenantContext } from "@iedora/observability";
 import { type Context, Hono } from "hono";
 import { getConnInfo } from "hono/bun";

@@ -1,4 +1,4 @@
-import { durationMs, env, isProd, requireEnv, siblingUrl } from "@iedora/menu-kit";
+import { durationMs, env, isProd, requireEnv, siblingUrl } from "@iedora/service-runtime";
 
 // Auth runs in Kamal's `web` role; siblingUrl reconstructs a sibling's versioned
 // URL from that. An explicit AUDIT_BASE_URL always wins (compose sets it).

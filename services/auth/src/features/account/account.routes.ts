@@ -1,5 +1,5 @@
 import { changePasswordRequest } from "@iedora/contracts";
-import { hashPassword, type UserEnv, userAuth, verifyPassword } from "@iedora/menu-kit";
+import { hashPassword, type UserEnv, userAuth, verifyPassword } from "@iedora/service-runtime";
 import { zValidator } from "@hono/zod-validator";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";

@@ -1,4 +1,4 @@
-import { hashRefreshToken } from "@iedora/menu-kit";
+import { hashRefreshToken } from "@iedora/service-runtime";
 
 import { findByTokenHash, revokeAllForUser, revokeFamily } from "../../data/sessions";
 import type { AuthDeps } from "../../deps";

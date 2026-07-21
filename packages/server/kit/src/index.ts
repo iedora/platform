@@ -1,4 +1,5 @@
-// @iedora/menu-kit — menu's server composition kit. Re-exports the shared
+// @iedora/service-runtime — the platform services' shared server composition kit
+// (auth + menu). Re-exports the shared
 // @iedora/service-kit runtime (which itself re-exports the @iedora/server-kit
 // kernel + createServiceApp/serve/Database/runMigrations/healthRoutes/OTel/env/
 // service tokens) and adds the pieces that live one layer up: the audit outbox

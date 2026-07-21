@@ -1,4 +1,4 @@
-import { hashPassword } from "@iedora/menu-kit";
+import { hashPassword } from "@iedora/service-runtime";
 
 import { addMembership, createTenant, setTenantOwner } from "../../data/tenants";
 import { createUserOr409 } from "../../data/users";

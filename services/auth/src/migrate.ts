@@ -1,6 +1,6 @@
 import { join } from "node:path";
 
-import { env, expandFileSecrets, requireEnv, runMigrations } from "@iedora/menu-kit";
+import { env, expandFileSecrets, requireEnv, runMigrations } from "@iedora/service-runtime";
 
 // One-shot migrator: provisions auth's OWN database + isolated role (prod), then
 // applies services/auth/migrations/*.sql into it, then exits. Database per

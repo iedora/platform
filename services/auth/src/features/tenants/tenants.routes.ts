@@ -1,5 +1,5 @@
 import { createTenantRequest } from "@iedora/contracts";
-import { type UserEnv, userAuth } from "@iedora/menu-kit";
+import { type UserEnv, userAuth } from "@iedora/service-runtime";
 import { zValidator } from "@hono/zod-validator";
 import { Hono } from "hono";
 

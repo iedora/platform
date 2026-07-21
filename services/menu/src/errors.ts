@@ -1,11 +1,11 @@
-import { trace } from "@iedora/menu-kit";
-import { isInvalidUUID } from "@iedora/menu-kit";
+import { trace } from "@iedora/service-runtime";
+import { isInvalidUUID } from "@iedora/service-runtime";
 import type { Context } from "hono";
 import { HTTPException } from "hono/http-exception";
 
 // SQLSTATE detectors live in server-kit (shared across services); re-exported so
 // the menu data layer keeps importing them from the error vocabulary.
-export { isInvalidUUID, isUniqueViolation } from "@iedora/menu-kit";
+export { isInvalidUUID, isUniqueViolation } from "@iedora/service-runtime";
 
 // The menu error vocabulary — the single response chokepoint. A foreign id and
 // a missing id look identical (both 404), never a 500.

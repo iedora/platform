@@ -7,8 +7,8 @@ import type {
   Subscription,
   TenantWithOwner,
 } from "@iedora/contracts";
-import { Database, OutboxWriter, ServiceClientError, newUserVerifier } from "@iedora/menu-kit";
-import { createScratchDatabase } from "@iedora/menu-kit/testkit";
+import { Database, OutboxWriter, ServiceClientError, newUserVerifier } from "@iedora/service-runtime";
+import { createScratchDatabase } from "@iedora/service-runtime/testkit";
 import { afterAll, beforeAll } from "bun:test";
 import { type CryptoKey, SignJWT, generateKeyPair } from "jose";
 import { sql } from "kysely";

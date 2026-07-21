@@ -6,7 +6,7 @@ import {
   parseEd25519PublicKey,
   runRelayService,
   ServiceClient,
-} from "@iedora/menu-kit";
+} from "@iedora/service-runtime";
 
 import { buildApp } from "./app";
 import { AuditHttpReader } from "./audit-read";

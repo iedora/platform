@@ -1,4 +1,4 @@
-import type { EmailMessage } from "@iedora/menu-kit";
+import type { EmailMessage } from "@iedora/service-runtime";
 
 /** The send-only contract this module needs — fulfilled by the OutboxMailer
  *  (enqueue) at the composition root; delivery happens later via @iedora/email. */

@@ -1,5 +1,5 @@
 import { adminCreateTenantRequest, adminTransferNewOwnerRequest } from "@iedora/contracts";
-import { type ServiceEnv, serviceAuth } from "@iedora/menu-kit";
+import { type ServiceEnv, serviceAuth } from "@iedora/service-runtime";
 import { zValidator } from "@hono/zod-validator";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";

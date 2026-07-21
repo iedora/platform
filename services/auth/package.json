@@ -18,7 +18,7 @@
   },
   "dependencies": {
     "@iedora/contracts": "workspace:*",
-    "@iedora/menu-kit": "workspace:*",
+    "@iedora/service-runtime": "workspace:*",
     "@hono/zod-validator": "catalog:",
     "hono": "catalog:",
     "kysely": "catalog:"

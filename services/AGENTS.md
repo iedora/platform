@@ -57,7 +57,7 @@ Rules:
 ## Testing
 
 Services run on `bun test` (they need Bun's native `SQL`). Use the shared
-harness: `import { createScratchDatabase } from "@iedora/menu-kit/testkit"` —
+harness: `import { createScratchDatabase } from "@iedora/service-runtime/testkit"` —
 it creates a uniquely-named DB on `TEST_DATABASE_URL` (default: the OrbStack dev
 Postgres, `bun run api:up`), runs `migrationsDir`, and returns `{ url, drop }`.
 

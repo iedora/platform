@@ -7,8 +7,8 @@ import {
   newUserVerifier,
   parseClients,
   parseEd25519Seed,
-} from "@iedora/menu-kit";
-import { createScratchDatabase } from "@iedora/menu-kit/testkit";
+} from "@iedora/service-runtime";
+import { createScratchDatabase } from "@iedora/service-runtime/testkit";
 import { afterAll, beforeAll } from "bun:test";
 
 import { buildApp } from "../src/app";

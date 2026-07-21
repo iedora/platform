@@ -1,4 +1,4 @@
-import type { Database } from "@iedora/menu-kit";
+import type { Database } from "@iedora/service-runtime";
 import { sql } from "kysely";
 
 import { RateLimitError } from "./errors";
