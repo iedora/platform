@@ -229,7 +229,7 @@ export async function registerIedoraOtel(opts: RegisterOptions): Promise<void> {
   const logRecordProcessors =
     opts.logRecordProcessors ??
     (process.env.OTEL_EXPORTER_OTLP_ENDPOINT
-      ? [new BatchLogRecordProcessor(new OTLPLogExporter())]
+      ? [new BatchLogRecordProcessor({ exporter: new OTLPLogExporter() })]
       : []);
 
   // Always include TenantContextSpanProcessor — it's what makes
