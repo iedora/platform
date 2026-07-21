@@ -1,4 +1,4 @@
-import { beforeAll, expect, test } from "bun:test";
+import { beforeAll, expect, test } from "vitest";
 import { sql } from "kysely";
 
 import { auth, json, jsonPatch, seedRestaurant, staffToken, useHarness } from "./harness.ts";

@@ -1,14 +1,18 @@
 import { Database, newServiceVerifier } from "@iedora/service-kit";
 import { OutboxWriter } from "../src/outbox.ts";
 import { createScratchDatabase } from "@iedora/service-kit/testkit";
-import { afterAll, beforeAll } from "bun:test";
+import { afterAll, beforeAll } from "vitest";
 import { sql } from "kysely";
 import { SignJWT, generateKeyPair } from "jose";
+import { dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 
 import { buildApp } from "../src/app.ts";
 import type { BillingConfig } from "../src/config.ts";
 import { ManualKind } from "../src/kinds.ts";
 import type { BillingDB } from "../src/schema.ts";
+
+const HERE = dirname(fileURLToPath(import.meta.url));
 
 // Shared test harness for every billing vertical slice. Each slice test owns its
 // behaviour but reuses this setup + the request/token helpers below, so there is
@@ -29,7 +33,7 @@ export interface Harness {
 export async function createHarness(): Promise<Harness> {
   const scratch = await createScratchDatabase({
     prefix: "billing_test",
-    migrationsDir: `${import.meta.dir}/../migrations`,
+    migrationsDir: `${HERE}/../migrations`,
   });
   const url = scratch.url;
 

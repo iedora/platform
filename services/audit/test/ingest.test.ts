@@ -1,5 +1,5 @@
-import { SQL } from "bun";
-import { expect, test } from "bun:test";
+import postgres from "postgres";
+import { expect, test } from "vitest";
 
 import { bearer, useHarness } from "./harness.ts";
 
@@ -12,7 +12,7 @@ function delivery(messageId: string, action: string) {
 }
 
 async function countByAction(url: string, action: string): Promise<number> {
-  const sql = new SQL(url);
+  const sql = postgres(url);
   const r = (await sql.unsafe(`SELECT count(*)::int AS n FROM audit_log WHERE action = $1`, [action])) as {
     n: number;
   }[];

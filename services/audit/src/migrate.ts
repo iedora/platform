@@ -1,4 +1,5 @@
-import { join } from "node:path"
+import { fileURLToPath } from "node:url"
+import { dirname, join } from "node:path"
 
 import { env, expandFileSecrets, requireEnv, runMigrations } from "@iedora/service-kit"
 
@@ -11,7 +12,7 @@ expandFileSecrets()
 
 const applied = await runMigrations({
   url: requireEnv("AUDIT_DATABASE_URL"),
-  dir: join(import.meta.dir, "..", "migrations"),
+  dir: join(dirname(fileURLToPath(import.meta.url)), "..", "migrations"),
   createDatabase: true,
   adminUrl: env("ADMIN_DATABASE_URL", ""),
   database: env("DB_NAME", "audit"),

@@ -14,7 +14,7 @@
   "scripts": {
     "typecheck": "tsgo --noEmit",
     "lint": "eslint . --cache --cache-location node_modules/.cache/.eslintcache",
-    "test": "bun test"
+    "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
     "@iedora/sdk": "workspace:*",
@@ -40,6 +40,7 @@
     "eslint": "catalog:",
     "typescript": "catalog:",
     "typescript-eslint": "catalog:",
-    "vitest": "catalog:"
+    "vitest": "catalog:",
+    "postgres": "^3.4.5"
   }
 }

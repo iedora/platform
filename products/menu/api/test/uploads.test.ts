@@ -1,4 +1,4 @@
-import { beforeAll, expect, test } from "bun:test";
+import { beforeAll, expect, test } from "vitest";
 
 import { TENANT, json, seedRestaurant, useHarness } from "./harness.ts";
 

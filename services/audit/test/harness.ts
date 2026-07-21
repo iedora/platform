@@ -1,11 +1,15 @@
 import { Database, newServiceVerifier } from "@iedora/service-kit";
 import { createScratchDatabase } from "@iedora/service-kit/testkit";
-import { SQL } from "bun";
-import { afterAll, beforeAll } from "bun:test";
+import postgres from "postgres";
+import { afterAll, beforeAll } from "vitest";
 import { generateKeyPair, SignJWT } from "jose";
+import { dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 
 import { buildApp } from "../src/app.ts";
 import type { AuditDB } from "../src/schema.ts";
+
+const HERE = dirname(fileURLToPath(import.meta.url));
 
 // Shared test harness for every audit vertical slice. Each slice test owns its
 // behaviour but reuses this setup + the request helpers below, so there is one
@@ -26,7 +30,7 @@ export interface Harness {
 export async function createHarness(): Promise<Harness> {
   const scratch = await createScratchDatabase({
     prefix: "audit_test",
-    migrationsDir: `${import.meta.dir}/../migrations`,
+    migrationsDir: `${HERE}/../migrations`,
   });
 
   // Ephemeral EdDSA keypair: verifier from the public key, token from the private.
@@ -79,7 +83,7 @@ export async function seedEvents(
     targetId?: string;
   }[],
 ): Promise<void> {
-  const sql = new SQL(h.url);
+  const sql = postgres(h.url);
   for (const r of rows) {
     // @iedora/audit schema: occurred_at (was `at`), entity_id (was target_id).
     await sql.unsafe(

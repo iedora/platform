@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test"
+import { describe, expect, test } from "vitest"
 
 import {
   hasRole,
@@ -20,7 +20,7 @@ const SEED = Buffer.from(new Uint8Array(32).fill(7)).toString("base64")
 describe("password", () => {
   test("hash + verify roundtrip", async () => {
     const phc = await hashPassword("supersecret1")
-    expect(phc).toStartWith("$argon2id$")
+    expect(phc.startsWith("$argon2id$")).toBe(true)
     expect(await verifyPassword(phc, "supersecret1")).toBe(true)
     expect(await verifyPassword(phc, "wrong")).toBe(false)
   })

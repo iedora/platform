@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, expect, test } from "bun:test"
+import { afterAll, beforeAll, expect, test } from "vitest"
 import { type Kysely, sql } from "kysely"
 import { mkdtemp, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"

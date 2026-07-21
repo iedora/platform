@@ -1,4 +1,4 @@
-import { beforeAll, expect, test } from "bun:test";
+import { beforeAll, expect, test } from "vitest";
 
 import type { AdminUser, AdminUserDetail, AdminUserSession, AuditRecord } from "@iedora/contracts";
 import { bearer, mintUserToken, staffToken, useHarness } from "./harness.ts";

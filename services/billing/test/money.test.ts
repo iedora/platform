@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test"
+import { describe, expect, test } from "vitest"
 
 import { add, allocate, equals, money, multiply, percentage, subtract, sum, zero } from "../src/money/index.ts"
 import { splitByFee, splitByRate } from "../src/money/index.ts"

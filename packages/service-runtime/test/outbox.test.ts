@@ -1,5 +1,5 @@
-import { SQL } from "bun";
-import { afterAll, beforeAll, expect, test } from "bun:test";
+import postgres from "postgres";
+import { afterAll, beforeAll, expect, test } from "vitest";
 
 import { up as messagingUp } from "@iedora/messaging";
 import {
@@ -33,7 +33,7 @@ function urlFor(db: string): string {
 let producer: Database<any>;
 
 beforeAll(async () => {
-  const admin = new SQL(ADMIN_URL);
+  const admin = postgres(ADMIN_URL);
   await admin.unsafe(`CREATE DATABASE "${producerName}"`);
   await admin.end();
 
@@ -45,7 +45,7 @@ beforeAll(async () => {
 
 afterAll(async () => {
   await producer?.close();
-  const admin = new SQL(ADMIN_URL);
+  const admin = postgres(ADMIN_URL);
   await admin
     .unsafe(`SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = $1`, [producerName])
     .catch(() => {});
@@ -76,7 +76,7 @@ test("writer + relay drain an outbox event and POST it to the audit sink", async
   expect((sink.events[0]!.payload as { action: string }).action).toBe("auth.session.login");
 
   // outbox_message row marked delivered.
-  const sql = new SQL(urlFor(producerName));
+  const sql = postgres(urlFor(producerName));
   const rows = (await sql.unsafe(
     `SELECT delivered_at, dead_at FROM outbox_message`,
   )) as { delivered_at: unknown; dead_at: unknown }[];

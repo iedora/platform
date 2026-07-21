@@ -1,4 +1,4 @@
-import { beforeAll, describe, expect, test } from "bun:test";
+import { beforeAll, describe, expect, test } from "vitest";
 import { AwsClient } from "aws4fetch";
 
 import { makeBlobClient, type BlobClient, type S3Config } from "../src/blob.ts";

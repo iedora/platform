@@ -1,4 +1,4 @@
-import { expect, test } from "bun:test";
+import { expect, test } from "vitest";
 import { sql } from "kysely";
 
 import { OTHER_TENANT, TENANT, auth, json, jsonPatch, jsonPut, mintUserToken, useHarness } from "./harness.ts";

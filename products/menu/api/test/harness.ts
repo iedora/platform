@@ -9,9 +9,11 @@ import type {
 } from "@iedora/contracts";
 import { Database, OutboxWriter, ServiceClientError, newUserVerifier } from "@iedora/service-runtime";
 import { createScratchDatabase } from "@iedora/service-runtime/testkit";
-import { afterAll, beforeAll } from "bun:test";
+import { afterAll, beforeAll } from "vitest";
 import { type CryptoKey, SignJWT, generateKeyPair } from "jose";
 import { sql } from "kysely";
+import { dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 
 import { buildApp } from "../src/app.ts";
 import type { BlobClient } from "../src/blob.ts";
@@ -20,6 +22,8 @@ import { Plans } from "../src/plans.ts";
 import { Limiter } from "../src/ratelimit.ts";
 import type { MenuDB } from "../src/schema.ts";
 import { Uploads } from "../src/uploads.ts";
+
+const HERE = dirname(fileURLToPath(import.meta.url));
 
 // Shared test harness for every menu vertical slice. Each slice test owns its
 // behaviour but reuses this setup + the request/seed helpers below, so there is
@@ -115,7 +119,7 @@ export async function createHarness(
 ): Promise<Harness> {
   const scratch = await createScratchDatabase({
     prefix,
-    migrationsDir: `${import.meta.dir}/../migrations`,
+    migrationsDir: `${HERE}/../migrations`,
   });
   const db = new Database<MenuDB>(scratch.url, { camelCase: false });
   const kp = await generateKeyPair("EdDSA");

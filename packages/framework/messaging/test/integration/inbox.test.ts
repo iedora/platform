@@ -1,4 +1,4 @@
-import { afterAll, beforeEach, describe, expect, test } from "bun:test"
+import { afterAll, beforeEach, describe, expect, test } from "vitest"
 
 import { createInbox } from "../../src/index.ts"
 import { HAS_DB, resetSchema, testDb } from "../helpers/db.ts"

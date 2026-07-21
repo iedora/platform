@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test"
+import { describe, expect, test } from "vitest"
 import crypto from "node:crypto"
 
 import { oauthProvider, pkce } from "./oauth.ts"

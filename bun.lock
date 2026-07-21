@@ -127,6 +127,7 @@
         "eslint": "catalog:",
         "typescript": "catalog:",
         "typescript-eslint": "catalog:",
+        "vitest": "catalog:",
       },
     },
     "packages/framework/db": {
@@ -144,6 +145,7 @@
         "tsx": "^4.19.2",
         "typescript": "catalog:",
         "typescript-eslint": "catalog:",
+        "vitest": "catalog:",
       },
       "peerDependencies": {
         "kysely": ">=0.27",
@@ -162,8 +164,10 @@
         "eslint": "catalog:",
         "kysely": "catalog:",
         "kysely-postgres-js": "catalog:",
+        "postgres": "^3.4.5",
         "typescript": "catalog:",
         "typescript-eslint": "catalog:",
+        "vitest": "catalog:",
       },
       "peerDependencies": {
         "kysely": ">=0.27",
@@ -193,6 +197,7 @@
         "eslint": "catalog:",
         "typescript": "catalog:",
         "typescript-eslint": "catalog:",
+        "vitest": "catalog:",
       },
       "peerDependencies": {
         "@opentelemetry/api": "^1.9.0",
@@ -215,6 +220,7 @@
         "hono": "catalog:",
         "typescript": "catalog:",
         "typescript-eslint": "catalog:",
+        "vitest": "catalog:",
         "zod": "catalog:",
       },
       "peerDependencies": {
@@ -242,8 +248,10 @@
         "eslint": "catalog:",
         "hono": "catalog:",
         "kysely": "catalog:",
+        "postgres": "^3.4.5",
         "typescript": "catalog:",
         "typescript-eslint": "catalog:",
+        "vitest": "catalog:",
       },
       "peerDependencies": {
         "hono": ">=4",
@@ -337,6 +345,7 @@
         "@opentelemetry/sdk-trace-base": "catalog:",
         "@types/bun": "catalog:",
         "eslint": "catalog:",
+        "postgres": "^3.4.5",
         "typescript": "catalog:",
         "typescript-eslint": "catalog:",
         "vitest": "catalog:",
@@ -396,6 +405,7 @@
         "pg": "catalog:",
         "typescript": "catalog:",
         "typescript-eslint": "catalog:",
+        "vitest": "catalog:",
       },
     },
     "products/menu/web": {
@@ -530,8 +540,10 @@
         "@types/pg": "^8.11.10",
         "eslint": "catalog:",
         "jose": "catalog:",
+        "postgres": "^3.4.5",
         "typescript": "catalog:",
         "typescript-eslint": "catalog:",
+        "vitest": "catalog:",
       },
     },
     "services/auth": {
@@ -559,6 +571,7 @@
         "eslint": "catalog:",
         "typescript": "catalog:",
         "typescript-eslint": "catalog:",
+        "vitest": "catalog:",
       },
     },
     "services/billing": {
@@ -586,6 +599,7 @@
         "jose": "catalog:",
         "typescript": "catalog:",
         "typescript-eslint": "catalog:",
+        "vitest": "catalog:",
       },
     },
     "services/email": {
@@ -611,6 +625,7 @@
         "eslint": "catalog:",
         "typescript": "catalog:",
         "typescript-eslint": "catalog:",
+        "vitest": "catalog:",
       },
     },
   },

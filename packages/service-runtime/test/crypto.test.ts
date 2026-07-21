@@ -1,4 +1,4 @@
-import { expect, test } from "bun:test";
+import { expect, test } from "vitest";
 import { jwtVerify } from "jose";
 
 import { JwtIssuer, hashPassword, parseEd25519Seed, verifyPassword } from "../src/index.ts";

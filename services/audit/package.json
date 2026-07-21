@@ -9,7 +9,7 @@
     "start": "bun run src/index.ts",
     "migrate": "bun run src/migrate.ts",
     "typecheck": "tsgo --noEmit",
-    "test": "bun test",
+    "test": "vitest run --passWithNoTests",
     "lint": "eslint . --cache --cache-location node_modules/.cache/.eslintcache"
   },
   "dependencies": {
@@ -30,6 +30,8 @@
     "typescript": "catalog:",
     "@iedora/eslint-config": "workspace:*",
     "eslint": "catalog:",
-    "typescript-eslint": "catalog:"
+    "typescript-eslint": "catalog:",
+    "vitest": "catalog:",
+    "postgres": "^3.4.5"
   }
 }

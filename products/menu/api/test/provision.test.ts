@@ -1,4 +1,4 @@
-import { beforeAll, beforeEach, expect, test } from "bun:test";
+import { beforeAll, beforeEach, expect, test } from "vitest";
 import { sql } from "kysely";
 
 import { TENANT, bearer, json, jsonPut, mintUserToken, staffToken, useHarness } from "./harness.ts";

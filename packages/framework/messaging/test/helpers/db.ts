@@ -1,17 +1,21 @@
-import { SQL } from "bun"
 import { CamelCasePlugin, Kysely, sql } from "kysely"
 import { PostgresJSDialect } from "kysely-postgres-js"
+import postgres from "postgres"
 
 import { type MessagingDB, up } from "../../src/index.ts"
 
 export const HAS_DB = Boolean(process.env.DATABASE_URL)
 
-/** A Kysely on Bun's SQL driver (same as production), bound to a dedicated
- *  schema via search_path so test files run in parallel without clobbering. */
+/** A Kysely on the postgres.js driver (same as production), bound to a dedicated
+ *  schema via search_path so test files run in parallel without clobbering.
+ *  When DATABASE_URL is unset the client is constructed against a placeholder
+ *  URL and never queried (the integration tests skip via HAS_DB); postgres.js
+ *  parses the URL eagerly, so it must be well-formed. */
 export function testDb(schema: string): Kysely<MessagingDB> {
-  const url = `${process.env.DATABASE_URL}?options=-c%20search_path%3D${schema}`
+  const base = process.env.DATABASE_URL ?? "postgres://localhost:5432/postgres"
+  const url = `${base}?options=-c%20search_path%3D${schema}`
   return new Kysely<MessagingDB>({
-    dialect: new PostgresJSDialect({ postgres: new SQL(url, { max: 4 }) }),
+    dialect: new PostgresJSDialect({ postgres: postgres(url, { max: 4 }) }),
     plugins: [new CamelCasePlugin()],
   })
 }

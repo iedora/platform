@@ -1,4 +1,4 @@
-import { SQL } from "bun"
+import postgres from "postgres"
 
 import { runMigrations } from "./migrate.ts"
 
@@ -36,7 +36,7 @@ export async function createScratchDatabase(
   opts: { prefix?: string; migrationsDir?: string } = {},
 ): Promise<ScratchDatabase> {
   const name = uniqueName(opts.prefix ?? "test")
-  const admin = new SQL(ADMIN_URL, { max: 2 })
+  const admin = postgres(ADMIN_URL, { max: 2 })
   await admin.unsafe(`CREATE DATABASE "${name}"`)
   await admin.end()
 
@@ -46,7 +46,7 @@ export async function createScratchDatabase(
   return {
     url,
     drop: async () => {
-      const a = new SQL(ADMIN_URL, { max: 2 })
+      const a = postgres(ADMIN_URL, { max: 2 })
       await a
         .unsafe(`SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = $1`, [name])
         .catch(() => {})
