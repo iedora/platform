@@ -32,20 +32,18 @@ export const Policies: Record<string, Policy> = {
 
 const SWEEP_INTERVAL_MS = 60_000;
 
-export class Limiter {
+export class Limiter<DB> {
   // In-process sliding windows for the cosmetic (failClosed:false) policies —
   // beacon/identity/etc. are the highest-volume checks and don't need a Postgres
   // transaction + advisory lock each. On a single instance an in-memory counter
   // is exact; the security/cost-critical failClosed policies stay on Postgres.
   private readonly windows = new Map<string, number[]>(); // key -> in-window timestamps (ms, ascending)
   private lastSweep = 0;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Kysely is invariant in its DB param
-  private readonly database: Database<any>;
+  private readonly database: Database<DB>;
   private readonly disabled: boolean;
 
   constructor(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    database: Database<any>,
+    database: Database<DB>,
     disabled = false,
   ) {
     this.database = database;

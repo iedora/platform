@@ -1,5 +1,6 @@
 import type { Money, PaymentStatus } from "../money/index.ts";
 import { type Kysely, sql } from "kysely";
+import type { BillingDB } from "../schema.ts";
 
 import { iso } from "./dates.ts";
 
@@ -75,8 +76,7 @@ const RETURNING = sql`RETURNING id, product, payer, payee, amount_cents, currenc
 
 /** Insert a charge. On an idempotency-key clash returns the EXISTING row (so a
  *  retried request never double-charges) rather than erroring. */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function insertCharge(db: Kysely<any>, c: NewCharge): Promise<ChargeRecord> {
+export async function insertCharge(db: Kysely<BillingDB>, c: NewCharge): Promise<ChargeRecord> {
   // jsonb: pass the raw object via sql.val (the driver serializes it); never
   // JSON.stringify + ::jsonb (double-encodes under kysely-postgres-js/Bun SQL).
   const res = await sql<Row>`
@@ -91,8 +91,7 @@ export async function insertCharge(db: Kysely<any>, c: NewCharge): Promise<Charg
   return toRecord(res.rows[0] as Row);
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function getCharge(db: Kysely<any>, id: string): Promise<ChargeRecord | undefined> {
+export async function getCharge(db: Kysely<BillingDB>, id: string): Promise<ChargeRecord | undefined> {
   const res = await sql<Row>`
     SELECT id, product, payer, payee, amount_cents, currency, fee_cents, net_cents,
            status, provider, provider_ref, metadata, created_at
