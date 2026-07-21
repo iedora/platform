@@ -1,0 +1,12 @@
+{
+  "name": "@iedora/config",
+  "version": "0.1.0",
+  "description": "Zero-dependency typed environment config for any service: required/optional readers, the _FILE secret convention (Docker/Kamal mounted secrets), duration/number/bool parsing, and an env predicate.",
+  "type": "module",
+  "exports": { ".": "./src/index.ts" },
+  "files": ["src", "README.md"],
+  "repository": { "type": "git", "url": "git+https://github.com/iedora/framework.git", "directory": "packages/config" },
+  "publishConfig": { "registry": "https://npm.pkg.github.com" },
+  "scripts": { "typecheck": "tsc --noEmit" },
+  "devDependencies": { "@types/bun": "^1.1.14", "typescript": "catalog:" }
+}

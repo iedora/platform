@@ -1,0 +1,44 @@
+{
+  "name": "@iedora/observability",
+  "version": "0.2.0",
+  "description": "Idiomatic OpenTelemetry for any Bun/Node service: one register() on the standard NodeSDK (traces + metrics + logs over OTLP proto), a generic baggage-driven span-attribution processor (no domain keys), and tracer/meter/logger accessors that are safe to call before registration.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "files": ["src", "README.md"],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/iedora/framework.git",
+    "directory": "packages/observability"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@opentelemetry/baggage-span-processor": "^0.5.0",
+    "@opentelemetry/exporter-logs-otlp-proto": "^0.220.0",
+    "@opentelemetry/exporter-metrics-otlp-proto": "^0.220.0",
+    "@opentelemetry/exporter-trace-otlp-proto": "^0.220.0",
+    "@opentelemetry/resources": "^2.9.0",
+    "@opentelemetry/sdk-logs": "^0.220.0",
+    "@opentelemetry/sdk-metrics": "^2.9.0",
+    "@opentelemetry/sdk-node": "^0.220.0",
+    "@opentelemetry/sdk-trace-base": "^2.9.0",
+    "@opentelemetry/semantic-conventions": "^1.43.0"
+  },
+  "peerDependencies": {
+    "@opentelemetry/api": "^1.9.0",
+    "@opentelemetry/api-logs": "^0.220.0"
+  },
+  "devDependencies": {
+    "@opentelemetry/api": "^1.9.1",
+    "@opentelemetry/api-logs": "^0.220.0",
+    "@opentelemetry/context-async-hooks": "^2.9.0",
+    "@types/bun": "^1.1.14",
+    "typescript": "catalog:"
+  }
+}

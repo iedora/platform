@@ -1,0 +1,45 @@
+{
+  "name": "@iedora/service-kit",
+  "version": "0.4.1",
+  "description": "The shared Bun+Hono runtime every iedora backend service reuses: createServiceApp (Hono + OTel + onError), graceful Bun.serve, the Kysely tx-in-context Database, runMigrations, healthRoutes, span attribution, and _FILE env secrets. Re-exports @iedora/server-kit.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./testkit": "./src/testkit.ts"
+  },
+  "files": [
+    "src",
+    "README.md"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/iedora/framework.git",
+    "directory": "packages/service-kit"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@iedora/config": "workspace:*",
+    "@iedora/db": "workspace:*",
+    "@iedora/observability": "workspace:*",
+    "@iedora/server-kit": "workspace:*",
+    "@hono/otel": "^1.1.2",
+    "@opentelemetry/api": "^1.9.1",
+    "@opentelemetry/sdk-trace-base": "^2.9.0"
+  },
+  "peerDependencies": {
+    "hono": ">=4",
+    "kysely": ">=0.27"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.1.14",
+    "@types/node": "^22",
+    "hono": "^4.12.30",
+    "kysely": "^0.29.3",
+    "typescript": "catalog:"
+  }
+}
