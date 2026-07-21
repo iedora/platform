@@ -1,0 +1,29 @@
+{
+  "name": "@iedora/auth-sdk",
+  "version": "0.2.0",
+  "description": "TypeScript client + JWKS token verifier + cached service-token source for @iedora/auth. Framework-agnostic, works in Node, Bun, and edge runtimes.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./tokens": "./src/tokens.ts"
+  },
+  "files": ["src", "README.md"],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/iedora/auth.git",
+    "directory": "sdk"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "jose": "^5.9.6"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.1.14",
+    "typescript": "^5.9.3"
+  }
+}

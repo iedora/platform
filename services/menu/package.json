@@ -18,8 +18,8 @@
     "test": "bun test"
   },
   "dependencies": {
-    "@iedora/auth-sdk": "^0.2.0",
-    "@iedora/billing-sdk": "^0.4.0",
+    "@iedora/auth-sdk": "workspace:*",
+    "@iedora/billing-sdk": "workspace:*",
     "@iedora/contracts": "workspace:*",
     "@iedora/service-runtime": "workspace:*",
     "@hono/zod-validator": "catalog:",

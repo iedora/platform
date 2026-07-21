@@ -17,10 +17,10 @@
     "test": "bun test"
   },
   "dependencies": {
-    "@iedora/audit-sdk": "^0.3.0",
+    "@iedora/audit-sdk": "workspace:*",
     "@iedora/config": "workspace:*",
     "@iedora/db": "workspace:*",
-    "@iedora/email-sdk": "^0.1.0",
+    "@iedora/email-sdk": "workspace:*",
     "@iedora/messaging": "workspace:*",
     "@node-rs/argon2": "catalog:",
     "hono": "catalog:",

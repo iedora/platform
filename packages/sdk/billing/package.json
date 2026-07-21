@@ -1,0 +1,25 @@
+{
+  "name": "@iedora/billing-sdk",
+  "version": "0.4.0",
+  "description": "Typed client for the @iedora billing service. Framework-agnostic, works in Node, Bun, and edge runtimes.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "files": ["src", "README.md"],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/iedora/billing.git",
+    "directory": "sdk"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.1.14",
+    "typescript": "^5.9.3"
+  }
+}

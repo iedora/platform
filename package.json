@@ -6,6 +6,7 @@
     "packages/platform/*",
     "packages/server/*",
     "packages/framework/*",
+    "packages/sdk/*",
     "products/*",
     "services/*",
     "apps/*"
@@ -59,6 +60,7 @@
   },
   "dependencies": {
     "@iedora/db": "workspace:*",
-    "@iedora/service-kit": "workspace:*"
+    "@iedora/service-kit": "workspace:*",
+    "next": "^16.2.10"
   }
 }

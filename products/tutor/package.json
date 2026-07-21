@@ -93,10 +93,10 @@
     "lint": "eslint --cache --cache-location node_modules/.cache/.eslintcache"
   },
   "dependencies": {
-    "@iedora/audit-sdk": "^0.3.0",
-    "@iedora/auth-sdk": "^0.2.0",
-    "@iedora/auth-sdk-nextjs": "^0.3.0",
-    "@iedora/email-sdk": "^0.2.0",
+    "@iedora/audit-sdk": "workspace:*",
+    "@iedora/auth-sdk": "workspace:*",
+    "@iedora/auth-sdk-nextjs": "workspace:*",
+    "@iedora/email-sdk": "workspace:*",
     "@iedora/ui": "workspace:*",
     "@stripe/react-stripe-js": "^6.7.0",
     "@stripe/stripe-js": "^9.10.0",
