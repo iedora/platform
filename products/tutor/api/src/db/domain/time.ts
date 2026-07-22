@@ -18,11 +18,4 @@ export const DEFAULT_TIMEZONE = "Europe/London"
 export const INTRO_BOOKING_DAYS = 14
 
 /** Rejects a junk zone before it reaches the DB or Luxon. */
-export function isValidTimezone(tz: string): boolean {
-  try {
-    new Intl.DateTimeFormat("en-GB", { timeZone: tz })
-    return true
-  } catch {
-    return false
-  }
-}
+export { isValidTimezone } from "@iedora/common"

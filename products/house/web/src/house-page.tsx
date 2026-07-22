@@ -1,3 +1,4 @@
+import { stripProtocol } from '@iedora/common'
 import { getLocale, getTranslations } from 'next-intl/server'
 import {
   ArrowRight,
@@ -43,7 +44,7 @@ function Brand({ size = 'md' }: { size?: 'md' | 'sm' }) {
 export async function HousePage() {
   const [t, locale] = await Promise.all([getTranslations('House'), getLocale()])
   const menuUrl = productUrl(PRODUCTS.menu)
-  const menuHost = menuUrl.replace(/^https?:\/\//, '').replace(/\/$/, '')
+  const menuHost = stripProtocol(menuUrl).replace(/\/$/, '')
 
   const services = [
     { icon: Layers, title: t('service1Title'), desc: t('service1Desc') },

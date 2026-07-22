@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import QRCode from 'qrcode'
 import { useTranslations } from 'next-intl'
-import { errorMessage } from '@iedora/common'
+import { errorMessage, stripProtocol } from '@iedora/common'
 import { Button } from '@iedora/ui/components/ui/button'
 
 // PNG export resolution — high enough that downloaded prints stay sharp. The
@@ -98,7 +98,7 @@ export function QrViewer({
             title={publicUrl}
             data-test-id="qr-public-url"
           >
-            {publicUrl.replace(/^https?:\/\//, '')}
+            {stripProtocol(publicUrl)}
           </p>
         </div>
       </div>

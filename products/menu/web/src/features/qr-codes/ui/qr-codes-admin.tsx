@@ -1,6 +1,6 @@
 'use client'
 
-import { DAY } from '@iedora/common'
+import { DAY, stripProtocol } from '@iedora/common'
 import * as React from 'react'
 import { useDeferredValue, useState, useTransition } from 'react'
 import Link from 'next/link'
@@ -433,7 +433,7 @@ function CodeRow({
                 data-test-id={`qr-codes-row-sticker-${row.code}`}
                 className="mt-1 inline-flex max-w-full items-center gap-1 text-[12px] text-muted-foreground no-underline transition-colors hover:text-primary"
               >
-                <span className="truncate">{stickerUrl.replace(/^https?:\/\//, '')}</span>
+                <span className="truncate">{stripProtocol(stickerUrl)}</span>
                 <ExternalLink size={11} className="shrink-0" />
               </Link>
             </div>

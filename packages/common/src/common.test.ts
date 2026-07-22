@@ -2,16 +2,20 @@ import { describe, expect, it } from "vitest"
 
 import {
   BASE32_UNAMBIGUOUS,
+  clamp,
   clampLimit,
   DAY,
   errorMessage,
+  formatMoney,
   HOUR,
+  isValidTimezone,
   MINUTE,
   parseJson,
   randomHex,
   randomString,
   SECOND,
   slugify,
+  stripProtocol,
   WEEK,
 } from "./index.ts"
 
@@ -85,5 +89,37 @@ describe("random", () => {
     const h = randomHex(6)
     expect(h).toHaveLength(12)
     expect(/^[0-9a-f]+$/.test(h)).toBe(true)
+  })
+})
+
+describe("clamp", () => {
+  it("constrains to the range", () => {
+    expect(clamp(5, 0, 10)).toBe(5)
+    expect(clamp(-3, 0, 10)).toBe(0)
+    expect(clamp(99, 0, 10)).toBe(10)
+  })
+})
+
+describe("stripProtocol", () => {
+  it("drops http/https schemes", () => {
+    expect(stripProtocol("https://iedora.com/r/x")).toBe("iedora.com/r/x")
+    expect(stripProtocol("http://a.b")).toBe("a.b")
+    expect(stripProtocol("iedora.com")).toBe("iedora.com")
+  })
+})
+
+describe("formatMoney", () => {
+  it("formats minor units in an explicit locale", () => {
+    expect(formatMoney(1250, { currency: "EUR", locale: "en-IE" })).toBe("€12.50")
+  })
+  it("trims to two decimals from cents", () => {
+    expect(formatMoney(100, { currency: "USD", locale: "en-US" })).toBe("$1.00")
+  })
+})
+
+describe("isValidTimezone", () => {
+  it("accepts real zones and rejects junk", () => {
+    expect(isValidTimezone("Europe/London")).toBe(true)
+    expect(isValidTimezone("Not/AZone")).toBe(false)
   })
 })

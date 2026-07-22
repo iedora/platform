@@ -23,18 +23,6 @@ export function generateQrCode(): string {
   return randomString(GEN_LEN)
 }
 
-/**
- * Generate N distinct codes in memory. Within-batch dedup is best-effort
- * (the PK insert is the final authority). Returns exactly `n` codes for
- * any reasonable n — collisions before the dedup Set are astronomically
- * rare at this entropy.
- */
-export function generateQrCodes(n: number): string[] {
-  const out = new Set<string>()
-  while (out.size < n) out.add(generateQrCode())
-  return Array.from(out)
-}
-
 export function normalizeQrCode(raw: string): string {
   return raw.trim().toLowerCase()
 }

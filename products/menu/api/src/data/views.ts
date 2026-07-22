@@ -1,3 +1,4 @@
+import { clamp } from "@iedora/common";
 import { type Kysely, sql } from "kysely";
 
 import type { Restaurant } from "../domain.ts";
@@ -78,7 +79,7 @@ export async function recordSession(
   durationSeconds: number,
   now: Date,
 ): Promise<void> {
-  const clamped = Math.max(1, Math.min(3600, Math.round(durationSeconds)));
+  const clamped = clamp(Math.round(durationSeconds), 1, 3600);
   await sql`
     INSERT INTO menu_session (restaurant_id, tenant_id, day, duration_seconds)
     VALUES (${r.id}, ${r.tenantId}, ${dayString(now)}, ${clamped})

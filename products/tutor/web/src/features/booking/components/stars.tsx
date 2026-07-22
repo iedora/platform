@@ -1,3 +1,4 @@
+import { clamp } from "@iedora/common"
 import { cn } from "@iedora/ui/lib/utils"
 import { Star } from "lucide-react"
 
@@ -14,7 +15,7 @@ export function Stars({
   className?: string
   size?: string
 }) {
-  const pct = Math.max(0, Math.min(100, (value / 5) * 100))
+  const pct = clamp((value / 5) * 100, 0, 100)
   const row = (filled: boolean) => (
     <span className="flex gap-0.5">
       {Array.from({ length: 5 }, (_, i) => (

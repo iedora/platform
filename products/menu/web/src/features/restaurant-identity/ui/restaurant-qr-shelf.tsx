@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import QRCode from 'qrcode'
 import { useTranslations } from 'next-intl'
-import { errorMessage } from '@iedora/common'
+import { errorMessage, stripProtocol } from '@iedora/common'
 import { Badge } from '@iedora/ui/components/ui/badge'
 import { Button } from '@iedora/ui/components/ui/button'
 import {
@@ -215,7 +215,7 @@ function StickerCard({
           className="truncate font-mono text-[10px] text-[var(--muted-foreground)]"
           title={stickerUrl}
         >
-          {stickerUrl.replace(/^https?:\/\//, '')}
+          {stripProtocol(stickerUrl)}
         </span>
       </div>
       {error && <p className="text-[10px] text-primary">{error}</p>}

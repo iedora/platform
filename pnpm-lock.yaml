@@ -909,6 +909,9 @@ importers:
       '@iedora/brand':
         specifier: workspace:*
         version: link:../../../packages/brand
+      '@iedora/common':
+        specifier: workspace:*
+        version: link:../../../packages/common
       '@iedora/product-menu':
         specifier: workspace:*
         version: link:../../menu/web
@@ -1195,6 +1198,9 @@ importers:
       '@iedora/auth-sdk':
         specifier: workspace:*
         version: link:../../../packages/sdk/auth
+      '@iedora/common':
+        specifier: workspace:*
+        version: link:../../../packages/common
       '@iedora/sdk':
         specifier: workspace:*
         version: link:../../../packages/sdk/clients
