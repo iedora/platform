@@ -18,7 +18,7 @@ import {
   SectionHead,
   Steps,
   Tag,
-} from '../../../../components/landing'
+} from '@iedora/ui/components/landing'
 
 /**
  * Menu marketing landing. Same design language as the house page (/house):

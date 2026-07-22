@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { QrCode, Star } from 'lucide-react'
 import { Card, CardContent } from '@iedora/ui/components/ui/card'
-import { Tag } from '../../../../components/landing'
+import { Tag } from '@iedora/ui/components/landing'
 
 type Dish = { name: string; price: string }
 

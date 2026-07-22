@@ -21,7 +21,7 @@ import {
   SectionLabel,
   Steps,
   Tag,
-} from '../../components/landing'
+} from '@iedora/ui/components/landing'
 import { BRAND_NAME, CONTACT_EMAIL, PRODUCTS, productUrl } from '@iedora/brand'
 import { LandingLangSwitch } from './lang-switch'
 
