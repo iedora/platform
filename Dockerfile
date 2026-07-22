@@ -9,11 +9,10 @@
 # needs the whole workspace (root manifest + lockfile + every package the web
 # app's `workspace:*` deps resolve to), not just apps/web.
 #
-# ── Why Bun installs but Node builds ─────────────────────────────────────────
-# Bun is the package manager (resolves `workspace:*` + `catalog:` specifiers
-# from bun.lock). The production runtime is Node: per AGENTS.md, `bun + next
-# build` is unstable (oven-sh/bun#23944). So Stage 1 installs deps with Bun and
-# Stages 2-3 build/run on Node over Next's standalone output.
+# ── pnpm installs, Node builds ───────────────────────────────────────────────
+# pnpm is the package manager (resolves `workspace:*` + `catalog:` specifiers
+# from pnpm-lock.yaml). Node is the runtime and the builder: Stage 1 installs
+# deps, Stages 2-3 build/run on Node over Next's standalone output.
 #
 # ── Kamal `web` role config (matches what this image serves) ─────────────────
 #   • Port:        3000   (Next binds PORT=3000, HOSTNAME=0.0.0.0)
@@ -28,34 +27,37 @@
 # track LTS. The Bun base image is pinned by digest — it changes less often.
 ARG NODE_VERSION=24.17.0-bookworm-slim
 
-# ── Stage 1: dependencies (Bun) ───────────────────────────────────────────────
-# Pinned to match the backend image (services/Dockerfile) and the committed
-# bun.lock — the lockfile is regenerated with this Bun so --frozen-lockfile passes.
-FROM oven/bun:1.3.13-debian AS deps
+# ── Stage 1: dependencies (pnpm) ──────────────────────────────────────────────
+# pnpm is the package manager (matches services/Dockerfile + the version pinned
+# in package.json::packageManager), resolving workspace:* + catalog: from
+# pnpm-lock.yaml. Node base so install and build share one glibc toolchain.
+FROM node:${NODE_VERSION} AS deps
 WORKDIR /workspace
+RUN npm install -g pnpm@11.15.1
 
 # Copy lockfile + manifests first so the install layer caches independently of
 # source changes. tsconfig.base.json is required: every per-package tsconfig
 # extends "../../tsconfig.base.json" and its absence breaks the build.
 # COPY --link makes each layer independently cacheable.
-COPY --link package.json bun.lock tsconfig.base.json ./
-# ALL workspaces in the root package.json must be present so `bun install
+COPY --link package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json ./
+# ALL workspaces named in pnpm-workspace.yaml must be present so `pnpm install
 # --frozen-lockfile` resolves the same graph the lockfile describes:
 #   - packages/* → @iedora/{api-client,contracts,server-kit,design-system,…}
 #   - products/* → @iedora/product-menu
-#   - services/* → the Bun backend services (@iedora/service-*). The frontend
-#     doesn't import them, but the SINGLE shared bun.lock lists them, so a frozen
-#     install mismatches unless their manifests are in the build context.
+#   - services/* → the Node backend services (@iedora/service-*). The frontend
+#     doesn't import them, but the SINGLE shared pnpm-lock.yaml lists them, so a
+#     frozen install mismatches unless their manifests are in the build context.
 # These trees hold real .ts/.tsx source (workspace exports point at source).
 COPY --link packages packages
 COPY --link products products
 COPY --link services services
 COPY --link apps/web/package.json apps/web/package.json
 
-# BuildKit cache mount keeps Bun's global cache warm across rebuilds; the cache
-# layer never ships in the image, so it is registry-agnostic.
-RUN --mount=type=cache,target=/root/.bun/install/cache,sharing=locked \
-    bun install --frozen-lockfile --ignore-scripts
+# BuildKit cache mount keeps pnpm's content-addressable store warm across
+# rebuilds; the cache layer never ships in the image. No --prod: the build stage
+# needs devDeps (next, typescript); Next's standalone output drops them at runtime.
+RUN --mount=type=cache,target=/root/.local/share/pnpm/store,sharing=locked \
+    pnpm install --frozen-lockfile
 
 # ── Stage 2: build (Node) ─────────────────────────────────────────────────────
 FROM node:${NODE_VERSION} AS builder
@@ -88,8 +90,12 @@ ENV DEPLOYMENT_VERSION=${VERSION}
 # Public surface URLs are PLAIN runtime env (BRAND_URL, MENU_SURFACE_URL), NOT
 # NEXT_PUBLIC_* — they are NOT baked here, so one image serves every
 # environment. Kamal injects per-env values at runtime.
+# Invoke `next` directly with the workspace-root bin dir on PATH. The hoisted
+# node-linker puts next's bin only at /workspace/node_modules/.bin (apps/web has
+# no local .bin/next), and pnpm's own run/exec resolve to that missing local
+# path under hoisting — so bypass pnpm here.
 RUN --mount=type=cache,target=/workspace/apps/web/.next/cache,sharing=locked \
-    node --run build
+    PATH="/workspace/node_modules/.bin:$PATH" next build
 
 # ── Stage 3: runtime (Node, minimal) ──────────────────────────────────────────
 FROM node:${NODE_VERSION} AS runner
