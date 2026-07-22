@@ -73,6 +73,12 @@ services:
   install:
     image: node:26.5.0-slim
     working_dir: /app
+    # CI=1 puts pnpm in non-interactive mode: no update-notifier / background
+    # registry pings that (on Node 26) can leave a socket open and stop the
+    # process exiting — which would hang every dependent on this one-shot. It
+    # also makes the postinstall git-hooks step early-exit (no .git in here).
+    environment:
+      CI: "1"
     command: sh -c "npm i -g pnpm@11.15.1 && pnpm install --frozen-lockfile"
     volumes:
       - .:/app
