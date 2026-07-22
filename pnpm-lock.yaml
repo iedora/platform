@@ -954,9 +954,6 @@ importers:
       '@phosphor-icons/react':
         specifier: ^2.1.10
         version: 2.1.10(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
-      clsx:
-        specifier: ^2.1.1
-        version: 2.1.1
       hono:
         specifier: 'catalog:'
         version: 4.12.31
@@ -969,9 +966,6 @@ importers:
       server-only:
         specifier: ^0.0.1
         version: 0.0.1
-      tailwind-merge:
-        specifier: ^3.6.0
-        version: 3.6.0
       zod:
         specifier: 'catalog:'
         version: 4.4.3
@@ -979,9 +973,6 @@ importers:
       '@iedora/eslint-config':
         specifier: workspace:*
         version: link:../../../packages/eslint-config
-      '@tailwindcss/postcss':
-        specifier: ^4.3.0
-        version: 4.3.3
       '@types/node':
         specifier: 'catalog:'
         version: 24.13.3
@@ -1018,9 +1009,6 @@ importers:
       react-dom:
         specifier: 19.2.8
         version: 19.2.8(react@19.2.8)
-      tailwindcss:
-        specifier: ^4.3.0
-        version: 4.3.3
       typescript:
         specifier: 'catalog:'
         version: 6.0.3
