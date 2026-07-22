@@ -13,6 +13,8 @@ export async function registerServiceClient(input: {
   name: string
 }): Promise<{ clientId: string; audience: string }> {
   const audience = input.audience ?? config.serviceAudience
+  // Upsert on clientId so provisioning is idempotent: re-registering rotates the
+  // secret + reconciles audience/name instead of failing on the unique clientId.
   await db
     .insertInto("serviceClient")
     .values({
@@ -22,6 +24,14 @@ export async function registerServiceClient(input: {
       tenantId: input.tenantId ?? null,
       name: input.name,
     })
+    .onConflict((oc) =>
+      oc.column("clientId").doUpdateSet({
+        secretHash: hashToken(input.secret),
+        audience,
+        tenantId: input.tenantId ?? null,
+        name: input.name,
+      }),
+    )
     .execute()
   return { clientId: input.clientId, audience }
 }

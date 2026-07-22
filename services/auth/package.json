@@ -6,8 +6,9 @@
   "description": "Multi-tenant authentication service. Provider-agnostic (email/password + any OAuth2/OIDC), issues Ed25519 JWTs with JWKS + OIDC discovery. Shared across iedora services and usable by any external domain.",
   "scripts": {
     "dev": "node --watch src/index.ts",
-    "start": "bun src/index.ts",
-    "migrate": "bun src/platform/migrate.ts",
+    "start": "node src/index.ts",
+    "migrate": "node src/platform/migrate.ts",
+    "seed:realm": "node scripts/seed-realm.ts",
     "typecheck": "tsgo --noEmit",
     "test": "vitest run --passWithNoTests",
     "lint": "eslint . --cache --cache-location node_modules/.cache/.eslintcache"
@@ -29,7 +30,6 @@
   "devDependencies": {
     "@types/node": "catalog:",
     "@types/pg": "^8.11.10",
-    "@types/node": "catalog:",
     "typescript": "catalog:",
     "@iedora/eslint-config": "workspace:*",
     "eslint": "catalog:",

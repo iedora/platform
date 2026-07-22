@@ -31,6 +31,8 @@ export const tenantsRoutes = new Hono()
     if (!parsed.success) throw new HttpError(422, "invalid_input")
     const { slug, name, tokenAudience, allowedOrigins } = parsed.data
 
+    // Upsert on slug so provisioning is idempotent: re-seeding reconciles name +
+    // audience + origins (e.g. adding a new surface's origin) without wiping users.
     const tenant = await db
       .insertInto("tenant")
       .values({
@@ -39,6 +41,13 @@ export const tenantsRoutes = new Hono()
         tokenAudience: tokenAudience ?? slug,
         allowedOrigins: allowedOrigins ?? [],
       })
+      .onConflict((oc) =>
+        oc.column("slug").doUpdateSet({
+          name,
+          tokenAudience: tokenAudience ?? slug,
+          allowedOrigins: allowedOrigins ?? [],
+        }),
+      )
       .returningAll()
       .executeTakeFirstOrThrow()
     return c.json(tenant, 201)
