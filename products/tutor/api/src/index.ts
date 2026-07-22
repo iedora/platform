@@ -10,7 +10,7 @@ import { loadConfig } from "./config.ts"
 import type { TutorDeps } from "./deps.ts"
 import { createTutorJobs } from "./jobs/scheduler.ts"
 import { makeBilling } from "./lib/billing.ts"
-import { makeLessonspace } from "./lib/lessonspace.ts"
+import { makeClassroom } from "./lib/classroom.ts"
 import type { TutorDB } from "./schema.ts"
 
 // Process entrypoint: expand _FILE secrets, load config, wire deps, serve.
@@ -36,7 +36,7 @@ const deps: TutorDeps = {
   userVerifier,
   cfg,
   billing: makeBilling(cfg),
-  launchSpace: makeLessonspace(cfg.lessonspaceApiKey),
+  launchSpace: makeClassroom(cfg.classroomSigningKey, cfg.classroomUrl),
   jobs: createTutorJobs(cfg.tutorDatabaseUrl, () => deps),
 }
 

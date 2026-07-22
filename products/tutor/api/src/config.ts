@@ -25,8 +25,10 @@ export interface TutorConfig {
   serviceClientId: string
   serviceClientSecret: string
 
-  /** LessonSpace v2 REST key (Organisation token) — mints the classroom rooms. */
-  lessonspaceApiKey: string
+  /** HS256 secret shared with the classroom service — signs room-join URLs. */
+  classroomSigningKey: string
+  /** Public base URL of the classroom service (e.g. https://classroom.iedora.com). */
+  classroomUrl: string
 
   /** Lower-cased admin allowlist (ADMIN_EMAILS); also checked against the admin table. */
   adminEmails: string[]
@@ -48,7 +50,10 @@ export function loadConfig(): TutorConfig {
     billingBaseUrl: env("BILLING_BASE_URL", "") || siblingUrl("billing", 8083, SELF_ROLE),
     serviceClientId: requireEnv("SERVICE_CLIENT_ID"),
     serviceClientSecret: requireEnv("SERVICE_CLIENT_SECRET"),
-    lessonspaceApiKey: env("LESSONSPACE_API_KEY", ""),
+    classroomSigningKey: env("CLASSROOM_SIGNING_KEY", ""),
+    // Browser-facing (participants click it), so it's the PUBLIC classroom URL,
+    // never internal container DNS. Dev defaults to the local classroom service.
+    classroomUrl: env("CLASSROOM_URL", "http://localhost:8086"),
     adminEmails: env("ADMIN_EMAILS", "")
       .split(",")
       .map((e) => e.trim().toLowerCase())

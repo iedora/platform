@@ -26,6 +26,7 @@
     "@iedora/jobs": "workspace:*",
     "@iedora/common": "workspace:*",
     "hono": "catalog:",
+    "jose": "catalog:",
     "kysely": "catalog:",
     "luxon": "^3.7.2",
     "zod": "catalog:"
