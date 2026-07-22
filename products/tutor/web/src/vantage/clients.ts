@@ -19,7 +19,15 @@ import { EmailClient } from "@iedora/sdk/email"
 
 function req(name: string): string {
   const v = process.env[name]
-  if (!v) throw new Error(`Vantage: missing env ${name}`)
+  if (!v) {
+    // Build-time stub: these clients are constructed at module load, but the
+    // vantage pages are dynamic (server-rendered on demand, never prerendered),
+    // so `next build` under SKIP_ENV_VALIDATION only needs the module to evaluate
+    // without throwing — the stub value is never used to make a request at build.
+    // At runtime the real value is required (Kamal injects it), so still throw.
+    if (process.env.SKIP_ENV_VALIDATION) return ""
+    throw new Error(`Vantage: missing env ${name}`)
+  }
   return v
 }
 

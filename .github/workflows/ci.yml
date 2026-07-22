@@ -142,19 +142,14 @@ jobs:
       - run: pnpm exec turbo run test --concurrency=1
       # Full production build of the web app. Catches what typecheck/test miss —
       # clean-install module resolution, Tailwind v4 @source scanning, the
-      # next-intl request/i18n config, and RSC/turbopack bundling. The vantage
-      # clients require these env vars at module load, so page-data collection
-      # throws without them; the values are throwaway (no network happens at
-      # build time).
+      # next-intl request/i18n config, and RSC/turbopack bundling. Runs under the
+      # SAME condition as the production image (Dockerfile: SKIP_ENV_VALIDATION=1,
+      # no runtime secrets) so a build that needs real env at module load — like
+      # vantage's clients — fails here instead of at `kamal deploy`.
       - name: next build (apps/web)
         run: pnpm --dir apps/web run build
         env:
-          AUTH_BASE_URL: http://build.local
-          SERVICE_CLIENT_ID: build
-          SERVICE_CLIENT_SECRET: build
-          AUDIT_BASE_URL: http://build.local
-          EMAIL_BASE_URL: http://build.local
-          MENU_URL: http://build.local
+          SKIP_ENV_VALIDATION: '1'
 
   security:
     runs-on: ubuntu-latest
