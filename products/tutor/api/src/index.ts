@@ -1,10 +1,4 @@
-import {
-  Database,
-  expandFileSecrets,
-  newUserVerifier,
-  parseEd25519PublicKey,
-  serve,
-} from "@iedora/service-kit"
+import { Database, expandFileSecrets, newUserVerifier, remoteJwks, serve } from "@iedora/service-kit"
 import { buildApp } from "./app.ts"
 import { loadConfig } from "./config.ts"
 import type { TutorDeps } from "./deps.ts"
@@ -22,11 +16,7 @@ const db = new Database<TutorDB>(cfg.tutorDatabaseUrl, {
   camelCase: true, // snake_case DB, camelCase TS (matches #db)
 })
 
-const userVerifier = newUserVerifier(
-  await parseEd25519PublicKey(cfg.apiJwtPublicKey),
-  cfg.apiJwtIssuer,
-  cfg.apiJwtAudience,
-)
+const userVerifier = newUserVerifier(remoteJwks(cfg.authJwksUrl), cfg.apiJwtIssuer, cfg.apiJwtAudience)
 
 // The job runner's handlers close over `deps` (to open rooms, charge, release)
 // and `deps` holds the runner — mutually referential. The `() => deps` thunk is

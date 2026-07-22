@@ -1,9 +1,5 @@
-import type { webcrypto } from "node:crypto"
-import type { KeyObject } from "node:crypto"
-
-import { jwtVerify } from "jose"
-
 import { typedBearer } from "./bearer.ts"
+import { verifyJwt, type VerifyKey } from "./jwks.ts"
 
 // Verify USER access tokens (EdDSA). Algorithm pinned; iss/aud checked; the
 // typ=="access" guard rejects refresh/service tokens.
@@ -21,7 +17,7 @@ export interface UserPrincipal {
 }
 
 export interface UserVerifier {
-  key: webcrypto.CryptoKey | Uint8Array | KeyObject
+  key: VerifyKey
   issuer: string
   audience: string
 }
@@ -31,7 +27,7 @@ export interface UserEnv {
 }
 
 export function newUserVerifier(
-  key: webcrypto.CryptoKey | Uint8Array | KeyObject,
+  key: VerifyKey,
   issuer: string,
   audience: string,
 ): UserVerifier {
@@ -47,7 +43,7 @@ export async function verifyAccessToken(v: UserVerifier, token: string): Promise
   const cached = tokenCache.get(token)
   if (cached && Date.now() < cached.expMs) return cached.principal
 
-  const { payload } = await jwtVerify(token, v.key, {
+  const { payload } = await verifyJwt(token, v.key, {
     issuer: v.issuer,
     audience: v.audience,
     algorithms: ["EdDSA"],

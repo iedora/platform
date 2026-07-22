@@ -3,7 +3,7 @@ import {
   env,
   expandFileSecrets,
   newServiceVerifier,
-  parseEd25519PublicKey,
+  remoteJwks,
   requireEnv,
   serve,
 } from "@iedora/service-kit"
@@ -15,7 +15,7 @@ expandFileSecrets()
 
 const database = new Database<AuditDB>(requireEnv("AUDIT_DATABASE_URL"), { camelCase: false })
 const verifier = newServiceVerifier(
-  await parseEd25519PublicKey(requireEnv("SERVICE_JWT_PUBLIC_KEY")),
+  remoteJwks(env("AUTH_JWKS_URL", "https://auth.iedora.com/.well-known/jwks.json")),
   requireEnv("SERVICE_JWT_ISSUER"),
   env("SERVICE_AUDIENCE", "iedora-internal"),
 )

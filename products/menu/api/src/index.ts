@@ -3,7 +3,7 @@ import {
   Database,
   expandFileSecrets,
   newUserVerifier,
-  parseEd25519PublicKey,
+  remoteJwks,
   runRelayService,
   ServiceClient,
 } from "@iedora/service-runtime";
@@ -24,11 +24,7 @@ const cfg = loadConfig();
 
 const db = new Database<MenuDB>(cfg.menuDatabaseUrl, { camelCase: false });
 
-const userVerifier = newUserVerifier(
-  await parseEd25519PublicKey(cfg.apiJwtPublicKey),
-  cfg.apiJwtIssuer,
-  cfg.apiJwtAudience,
-);
+const userVerifier = newUserVerifier(remoteJwks(cfg.authJwksUrl), cfg.apiJwtIssuer, cfg.apiJwtAudience);
 const limiter = new Limiter(db, cfg.rateLimitDisabled);
 const tokens = new ServiceTokenSource(cfg.authBaseUrl, cfg.serviceClientId, cfg.serviceClientSecret);
 const billing = new BillingClient(cfg.billingBaseUrl, tokens);

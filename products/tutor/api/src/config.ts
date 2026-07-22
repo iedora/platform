@@ -14,7 +14,7 @@ export interface TutorConfig {
 
   // Verifies student/tutor USER access tokens (the Ed25519 key the auth service
   // signs with; its public half is shared across services).
-  apiJwtPublicKey: string // base64 std raw Ed25519
+  authJwksUrl: string // auth's JWKS endpoint — verify by key id, not a static key
   apiJwtIssuer: string
   apiJwtAudience: string
 
@@ -43,7 +43,7 @@ export function loadConfig(): TutorConfig {
     // schema, and the shared migration runner targets it. Empty = default
     // search_path; set only if the tutor DB moves to a named schema later.
     dbSchema: env("DB_SCHEMA", ""),
-    apiJwtPublicKey: requireEnv("API_JWT_PUBLIC_KEY"),
+    authJwksUrl: env("AUTH_JWKS_URL", "https://auth.iedora.com/.well-known/jwks.json"),
     apiJwtIssuer: requireEnv("API_JWT_ISSUER"),
     apiJwtAudience: env("API_JWT_AUDIENCE", "iedora-api"),
     authBaseUrl: env("AUTH_BASE_URL", "") || siblingUrl("web", 8080, SELF_ROLE),

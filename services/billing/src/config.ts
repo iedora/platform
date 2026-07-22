@@ -13,7 +13,7 @@ export interface BillingConfig {
   authBaseUrl: string;
   serviceClientId: string;
   serviceClientSecret: string;
-  serviceJwtPublicKey: string; // base64 std raw Ed25519 (shared SERVICE_JWT_PUBLIC_KEY)
+  authJwksUrl: string; // auth JWKS endpoint (verify by key id)
   serviceJwtIssuer: string;
   serviceAudience: string;
   periodMs: number; // billing period length (default 30d)
@@ -34,7 +34,7 @@ export function loadConfig(): BillingConfig {
     authBaseUrl: env("AUTH_BASE_URL", "") || siblingUrl("web", 8080, SELF_ROLE),
     serviceClientId: requireEnv("SERVICE_CLIENT_ID"),
     serviceClientSecret: requireEnv("SERVICE_CLIENT_SECRET"),
-    serviceJwtPublicKey: requireEnv("SERVICE_JWT_PUBLIC_KEY"),
+    authJwksUrl: env("AUTH_JWKS_URL", "https://auth.iedora.com/.well-known/jwks.json"),
     serviceJwtIssuer: requireEnv("SERVICE_JWT_ISSUER"),
     serviceAudience: env("SERVICE_AUDIENCE", "iedora-internal"),
     periodMs: durationMs(env("BILLING_PERIOD", "30d"), 30 * 864e5),

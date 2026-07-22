@@ -4,7 +4,7 @@ import {
   Database,
   expandFileSecrets,
   newServiceVerifier,
-  parseEd25519PublicKey,
+  remoteJwks,
 } from "@iedora/service-kit";
 
 import { buildApp } from "./app.ts";
@@ -23,7 +23,7 @@ const cfg = loadConfig();
 const db = new Database<BillingDB>(cfg.billingDatabaseUrl, { camelCase: false });
 
 const verifier = newServiceVerifier(
-  await parseEd25519PublicKey(cfg.serviceJwtPublicKey),
+  remoteJwks(cfg.authJwksUrl),
   cfg.serviceJwtIssuer,
   cfg.serviceAudience,
 );

@@ -14,7 +14,7 @@ export interface MenuConfig {
 
   // Verifies dashboard USER access tokens (the same Ed25519 key auth signs with;
   // its public half is shared as SERVICE_JWT_PUBLIC_KEY across the services).
-  apiJwtPublicKey: string; // base64 std raw Ed25519
+  authJwksUrl: string; // auth JWKS endpoint (verify by key id)
   apiJwtIssuer: string;
   apiJwtAudience: string;
 
@@ -35,7 +35,7 @@ export function loadConfig(): MenuConfig {
     port: Number(env("MENU_PORT", "8084")),
     menuDatabaseUrl: requireEnv("MENU_DATABASE_URL"),
     rateLimitDisabled: env("DISABLE_RATE_LIMIT", "") !== "",
-    apiJwtPublicKey: requireEnv("API_JWT_PUBLIC_KEY"),
+    authJwksUrl: env("AUTH_JWKS_URL", "https://auth.iedora.com/.well-known/jwks.json"),
     apiJwtIssuer: requireEnv("API_JWT_ISSUER"),
     apiJwtAudience: env("API_JWT_AUDIENCE", "iedora-api"),
     authBaseUrl: env("AUTH_BASE_URL", "") || siblingUrl("web", 8080, SELF_ROLE), // auth runs in the `web` role

@@ -3,8 +3,9 @@
   "private": true,
   "version": "0.0.0",
   "scripts": {
-    "dev": "pnpm --dir apps/web dev",
-    "api:up": "docker compose up -d --build",
+    "dev": "docker compose up -d && pnpm --dir apps/web dev",
+    "dev:logs": "docker compose logs -f",
+    "api:up": "docker compose up -d",
     "api:down": "docker compose down",
     "api:logs": "docker compose logs -f",
     "api:reset": "docker compose down -v",

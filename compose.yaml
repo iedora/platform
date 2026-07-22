@@ -1,32 +1,51 @@
-# Local dev stack for the iedora backend (Bun/Hono services) — runs on OrbStack.
-# Postgres + the ported services with hot reload. Brought up via `pnpm run api:up`.
+# Local dev stack for the iedora backend — the WHOLE platform with hot reload.
+# `pnpm dev` brings this up (detached) and runs the web app on the host.
 #
-# node_modules lives in a NAMED volume, not the host bind mount: dependencies are
-# installed INSIDE the linux container so native modules (e.g. @node-rs/argon2,
-# arriving with the auth service) match the runtime, never the host's macOS build.
+# Every backend service runs on node:26 with `node --watch` (Node 26 runs .ts
+# directly and restarts on change — no build, no nodemon), source bind-mounted so
+# edits reload instantly. node_modules lives in a NAMED volume (installed INSIDE
+# the linux container so native modules match the runtime), populated ONCE by the
+# `install` one-shot so the 7 services don't race on a shared pnpm install.
+#
+# Services reach each other over the compose network by name (http://auth:8080),
+# and Postgres at postgres:5432. Each service owns its own database and migrates
+# on boot (MIGRATE_ON_BOOT=1 — dev only; prod migrates as the owner role).
 name: iedora-api
 
-# Shared OpenTelemetry export config — every service merges this so traces,
-# metrics + logs flow to the OTel Collector in the sibling `infra/local` stack
-# (otel-collector -> Tempo + Prometheus + Loki -> Grafana). Bring that up
-# (`docker compose -f ../infra/local/compose.yaml up -d`) to view telemetry at
-# http://localhost:3001; with it down, exports just fail (logged, non-fatal) — so
-# api:up no longer ships a telemetry backend of its own. This mirrors prod, where
-# each service exports to a collector accessory it doesn't run itself; the base
-# endpoint has no trailing path (the SDK appends /v1/traces etc.). No auth header:
-# the local collector is unauthenticated (prod's tenant/auth wiring is added
-# collector-side, not here). To silence exports entirely, unset the endpoint.
+# Shared OpenTelemetry export — traces/metrics/logs flow to a local collector if
+# one is running (infra/local stack); with it down, exports fail quietly.
 x-otel-env: &otel-env
   OTEL_EXPORTER_OTLP_ENDPOINT: http://host.docker.internal:4318
-  # http/protobuf is the OTel-spec default and the most reliable transport under
-  # Bun (never gRPC/node:http2). The exporters are proto by package import; this
-  # documents the wire protocol and covers any env-driven code path.
   OTEL_EXPORTER_OTLP_PROTOCOL: http/protobuf
-  # CUMULATIVE is required for the Prometheus backend — the collector's
-  # prometheusremotewrite exporter silently drops delta counters/histograms. The
-  # SDK also defaults to cumulative now (no code override), but pin it here so the
-  # choice is declarative and can't drift.
   OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE: cumulative
+
+# Shared dev identity — ONE Ed25519 keypair signs every token, so services
+# cross-verify. Non-secret dev values (never used in prod).
+x-svc-env: &svc-env
+  DEPLOYMENT_ENV: development
+  MIGRATE_ON_BOOT: "1"
+  # Public half of the dev signing key (auth holds the private half below).
+  API_JWT_PUBLIC_KEY: M+/u/gPyq9NyuwfMjS82Y7lOJeyvGq6jpeRxMqr1Ge4=
+  SERVICE_JWT_PUBLIC_KEY: M+/u/gPyq9NyuwfMjS82Y7lOJeyvGq6jpeRxMqr1Ge4=
+  API_JWT_ISSUER: https://api.iedora.com
+  SERVICE_JWT_ISSUER: https://api.iedora.com
+  API_JWT_AUDIENCE: iedora-api
+  SERVICE_AUDIENCE: iedora-internal
+
+# Common shape for a node service (bind-mounted source + shared node_modules,
+# waits for the one-shot install + a healthy Postgres).
+x-node: &node
+  image: node:26.5.0-slim
+  working_dir: /app
+  volumes:
+    - .:/app
+    - node_modules:/app/node_modules
+  restart: unless-stopped
+  depends_on:
+    install:
+      condition: service_completed_successfully
+    postgres:
+      condition: service_healthy
 
 services:
   postgres:
@@ -34,13 +53,13 @@ services:
     environment:
       POSTGRES_USER: iedora
       POSTGRES_PASSWORD: iedora
-      POSTGRES_DB: postgres # maintenance DB; each service creates its OWN database (database-per-service)
+      POSTGRES_DB: postgres # each service creates its OWN database (database-per-service)
     volumes:
       - pgdata:/var/lib/postgresql
-    # 55433 (not the default 55432) to avoid colliding with a local Postgres on
-    # the host. Services reach Postgres over the compose network.
+      # Pre-create the per-service dev databases on first init (auth doesn't create its own).
+      - ./scripts/dev-initdb.sql:/docker-entrypoint-initdb.d/00-databases.sql:ro
     ports:
-      - "55433:5432"
+      - "55433:5432" # non-default to avoid colliding with a host Postgres
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U iedora"]
       interval: 5s
@@ -49,93 +68,122 @@ services:
       start_period: 10s
     restart: unless-stopped
 
-  # NOTE: the audit + billing services moved to their own repos (iedora/audit,
-  # iedora/billing; email is iedora/email). Run them from those repos on the
-  # shared `iedora` docker network when you need them locally — menu/auth tolerate
-  # them being down (the audit relay retries; billing-gated staff features
-  # degrade). The *_BASE_URL vars below still resolve to those container names.
-
-  auth:
+  # One-shot: install deps into the shared node_modules volume, then exit. Every
+  # service waits for this (service_completed_successfully), so installs run ONCE.
+  install:
     image: node:26.5.0-slim
     working_dir: /app
-    command: sh -c "npm i -g pnpm@11.15.1 && pnpm install --frozen-lockfile && exec sh services/docker-entrypoint.sh node --watch services/auth/src/index.ts"
-    environment:
-      <<: *otel-env
-      DEPLOYMENT_ENV: development
-      # Dev migrates on boot (single superuser owns everything) — one-command
-      # loop. Prod leaves this off: migrations run as the owner role in a
-      # separate deploy step (see services/docker-entrypoint.sh).
-      MIGRATE_ON_BOOT: "1"
-      AUTH_PORT: "8080"
-      AUTH_DATABASE_URL: postgres://iedora:iedora@postgres:5432/auth?sslmode=disable
-      # Audit is delivered over HTTP (hard rule: no cross-service DB access). Auth
-      # holds the signing key, so it self-mints its own service token to POST here.
-      AUDIT_BASE_URL: http://audit:8081
-      # DEV keypair — shared across the stack so tokens cross-verify between services.
-      API_JWT_PRIVATE_KEY: 4qiWAUBUtlk6abEM+o0urqz3tGcSVjg8f/NyRa5wWeI=
-      API_JWT_ISSUER: https://api.iedora.com
-      API_JWT_AUDIENCE: iedora-api
-      SERVICE_CLIENTS: admin-bff:dev-secret,menu:dev-secret,billing:dev-secret
-      SERVICE_AUDIENCE: iedora-internal
-      # Dev role grants: this email is promoted to iedora-admin (the staff role)
-      # on its next login/register. Format: "role=id,@domain; role2=id2".
-      ROLE_GRANTS: iedora-admin=eduardoferdcarvalho@gmail.com
-      # Local email → MailHog (no auth). Captured at http://localhost:8025.
-      # Prod points the same vars at Resend SMTP (host/user/pass/secure).
-      SMTP_HOST: mailhog
-      SMTP_PORT: "1025"
-      MAIL_FROM: "iedora (dev) <no-reply@iedora.test>"
-    # Host 8180 (container 8080) to avoid colliding with a local service on 8080.
-    ports:
-      - "8180:8080"
+    command: sh -c "npm i -g pnpm@11.15.1 && pnpm install --frozen-lockfile"
     volumes:
       - .:/app
       - node_modules:/app/node_modules
-    depends_on:
-      postgres:
-        condition: service_healthy
-      mailhog:
-        condition: service_started
-    restart: unless-stopped
+
+  # The standalone multi-tenant auth service (@iedora/auth). Signs with
+  # JWT_SIGNING_KEYS; issuer must match what consumers verify (API_JWT_ISSUER).
+  # NOTE: a full login flow needs a seeded tenant realm (audience=iedora-api,
+  # password provider, service clients) — see services/auth/scripts. Booting the
+  # service only needs DATABASE_URL.
+  auth:
+    <<: *node
+    command: sh -c "exec sh services/docker-entrypoint.sh node --watch services/auth/src/index.ts"
+    environment:
+      <<: [*otel-env, *svc-env]
+      PORT: "8080"
+      DATABASE_URL: postgres://iedora:iedora@postgres:5432/auth?sslmode=disable
+      ISSUER_URL: https://api.iedora.com
+      # Dev Ed25519 seed (base64url) whose public half is the shared API_JWT_PUBLIC_KEY.
+      JWT_SIGNING_KEYS: 4qiWAUBUtlk6abEM-o0urqz3tGcSVjg8f_NyRa5wWeI
+      ADMIN_TOKEN: dev-admin-token
+      PLATFORM_ADMINS: eduardoferdcarvalho@gmail.com
+      APP_BASE_URL: http://localhost:3000
+      SMTP_HOST: mailhog
+      SMTP_PORT: "1025"
+    ports:
+      - "8180:8080"
 
   menu:
-    image: node:26.5.0-slim
-    working_dir: /app
-    command: sh -c "npm i -g pnpm@11.15.1 && pnpm install --frozen-lockfile && exec sh services/docker-entrypoint.sh node --watch products/menu/api/src/index.ts"
+    <<: *node
+    command: sh -c "exec sh services/docker-entrypoint.sh node --watch products/menu/api/src/index.ts"
     environment:
-      <<: *otel-env
-      DEPLOYMENT_ENV: development
-      # See auth: dev migrates on boot; prod migrates as owner in a deploy step.
-      MIGRATE_ON_BOOT: "1"
+      <<: [*otel-env, *svc-env]
       MENU_PORT: "8084"
       MENU_DATABASE_URL: postgres://iedora:iedora@postgres:5432/menu?sslmode=disable
-      # Verifies dashboard USER tokens (public half of auth's signing key — the
-      # DEV keypair shared across the stack so tokens cross-verify between services).
-      API_JWT_PUBLIC_KEY: M+/u/gPyq9NyuwfMjS82Y7lOJeyvGq6jpeRxMqr1Ge4=
-      API_JWT_ISSUER: https://api.iedora.com
-      API_JWT_AUDIENCE: iedora-api
-      # Plan gate: mint a service token via auth, read the subscription from billing.
-      # Admin aggregation also reads the audit trail (audit) + tenant owner (auth).
       AUTH_BASE_URL: http://auth:8080
       BILLING_BASE_URL: http://billing:8083
       AUDIT_BASE_URL: http://audit:8081
       SERVICE_CLIENT_ID: menu
       SERVICE_CLIENT_SECRET: dev-secret
-    # Host 8184 (container 8084) to avoid colliding with a local service on 8084.
     ports:
       - "8184:8084"
-    volumes:
-      - .:/app
-      - node_modules:/app/node_modules
-    depends_on:
-      postgres:
-        condition: service_healthy
-      auth:
-        condition: service_started
-    restart: unless-stopped
 
-  # Local SMTP sink: captures every email the stack sends (no real delivery).
-  # SMTP on 1025 (what the auth service points at), web inbox on 8025.
+  audit:
+    <<: *node
+    command: sh -c "exec sh services/docker-entrypoint.sh node --watch services/audit/src/index.ts"
+    environment:
+      <<: [*otel-env, *svc-env]
+      AUDIT_PORT: "8081"
+      AUDIT_DATABASE_URL: postgres://iedora:iedora@postgres:5432/audit?sslmode=disable
+    ports:
+      - "8181:8081"
+
+  email:
+    <<: *node
+    command: sh -c "exec sh services/docker-entrypoint.sh node --watch services/email/src/index.ts"
+    environment:
+      <<: [*otel-env, *svc-env]
+      EMAIL_PORT: "8082"
+      EMAIL_DATABASE_URL: postgres://iedora:iedora@postgres:5432/email?sslmode=disable
+      EMAIL_FROM: "iedora (dev) <no-reply@iedora.test>"
+      SMTP_HOST: mailhog
+      SMTP_PORT: "1025"
+    ports:
+      - "8182:8082"
+
+  billing:
+    <<: *node
+    command: sh -c "exec sh services/docker-entrypoint.sh node --watch services/billing/src/index.ts"
+    environment:
+      <<: [*otel-env, *svc-env]
+      BILLING_PORT: "8083"
+      BILLING_DATABASE_URL: postgres://iedora:iedora@postgres:5432/billing?sslmode=disable
+      AUTH_BASE_URL: http://auth:8080
+      AUDIT_BASE_URL: http://audit:8081
+      SERVICE_CLIENT_ID: billing
+      SERVICE_CLIENT_SECRET: dev-secret
+      # Stripe is optional in dev (env, not required) — charges no-op without it.
+    ports:
+      - "8183:8083"
+
+  tutor-api:
+    <<: *node
+    command: sh -c "exec sh services/docker-entrypoint.sh node --watch products/tutor/api/src/index.ts"
+    environment:
+      <<: [*otel-env, *svc-env]
+      TUTOR_API_PORT: "8085"
+      TUTOR_DATABASE_URL: postgres://iedora:iedora@postgres:5432/tutor?sslmode=disable
+      AUTH_BASE_URL: http://auth:8080
+      BILLING_BASE_URL: http://billing:8083
+      SERVICE_CLIENT_ID: tutor
+      SERVICE_CLIENT_SECRET: dev-secret
+      # Durable lesson timers run on @iedora/jobs (Postgres) — no external worker.
+      CLASSROOM_SIGNING_KEY: dev-classroom-signing-secret-please-min-32b
+      # Browser-facing: the minted room link the student/tutor open (host-mapped).
+      CLASSROOM_URL: http://localhost:8186
+    ports:
+      - "8185:8085"
+
+  classroom:
+    <<: *node
+    command: sh -c "exec node --watch services/classroom/src/index.ts" # no DB, no migrate
+    environment:
+      <<: [*otel-env, *svc-env]
+      CLASSROOM_PORT: "8086"
+      # MUST match tutor-api's CLASSROOM_SIGNING_KEY (verifies the room tokens it mints).
+      CLASSROOM_SIGNING_KEY: dev-classroom-signing-secret-please-min-32b
+    ports:
+      - "8186:8086"
+
+  # Local SMTP sink: captures every email the stack sends. Inbox at http://localhost:8025.
   mailhog:
     image: mailhog/mailhog:latest
     ports:

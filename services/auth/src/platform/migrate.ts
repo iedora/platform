@@ -10,7 +10,9 @@ const dir = new URL("./migrations_sql", import.meta.url).pathname
 
 async function main() {
   try {
-    const applied = await migrate(config.databaseUrl, dir, { retries: 5 })
+    // createDatabase: create the DB if missing, like every other service. No-ops
+    // in prod (the DB already exists) since the check runs before any CREATE.
+    const applied = await migrate(config.databaseUrl, dir, { retries: 5, createDatabase: true })
     console.log(applied.length ? `Applied ${applied.length} migration(s).` : "Migrations up to date.")
   } catch (error) {
     console.error("Migration failed:", error)

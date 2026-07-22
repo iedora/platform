@@ -4,7 +4,7 @@ import {
   env,
   expandFileSecrets,
   newServiceVerifier,
-  parseEd25519PublicKey,
+  remoteJwks,
   requireEnv,
   serve,
 } from "@iedora/service-kit"
@@ -27,7 +27,7 @@ const mailer = createMailer({
 })
 
 const verifier = newServiceVerifier(
-  await parseEd25519PublicKey(requireEnv("SERVICE_JWT_PUBLIC_KEY")),
+  remoteJwks(env("AUTH_JWKS_URL", "https://auth.iedora.com/.well-known/jwks.json")),
   requireEnv("SERVICE_JWT_ISSUER"),
   env("SERVICE_AUDIENCE", "iedora-internal"),
 )

@@ -2,7 +2,9 @@ import type { webcrypto } from "node:crypto"
 import type { KeyObject } from "node:crypto"
 
 import { createMiddleware } from "hono/factory"
-import { importJWK, type JWTPayload, jwtVerify, SignJWT } from "jose"
+import { importJWK, type JWTPayload, SignJWT } from "jose"
+
+import { verifyJwt, type VerifyKey } from "./jwks.ts"
 
 // Verify the internal service tokens minted for the client-credentials grant
 // (EdDSA): algorithm pinned (algorithm-confusion defense), issuer + audience
@@ -14,7 +16,7 @@ export interface ServiceEnv {
 }
 
 export interface ServiceVerifier {
-  key: webcrypto.CryptoKey | Uint8Array | KeyObject
+  key: VerifyKey
   issuer: string
   audience: string
 }
@@ -27,7 +29,7 @@ export async function parseEd25519PublicKey(base64Std: string): Promise<webcrypt
 }
 
 export function newServiceVerifier(
-  key: webcrypto.CryptoKey | Uint8Array | KeyObject,
+  key: VerifyKey,
   issuer: string,
   audience: string,
 ): ServiceVerifier {
@@ -36,7 +38,7 @@ export function newServiceVerifier(
 
 /** Verify a service token and return the client id (sub). Throws on failure. */
 export async function verifyServiceToken(v: ServiceVerifier, token: string): Promise<string> {
-  const { payload } = await jwtVerify(token, v.key, {
+  const { payload } = await verifyJwt(token, v.key, {
     issuer: v.issuer,
     audience: v.audience,
     algorithms: ["EdDSA"],
@@ -100,7 +102,7 @@ export function serviceAuth(v: ServiceVerifier, opts: { allowReadonly?: boolean 
 
     let payload: JWTPayload
     try {
-      payload = (await jwtVerify(token, v.key, {
+      payload = (await verifyJwt(token, v.key, {
         issuer: v.issuer,
         audience: v.audience,
         algorithms: ["EdDSA"],

@@ -33,6 +33,7 @@ export {
   type UserVerifier,
   verifyAccessToken,
 } from "./user-auth.ts"
+export { remoteJwks } from "./jwks.ts"
 export {
   type HeaderTransform,
   ServiceClient,
