@@ -49,7 +49,7 @@ export default async function VantageOverview() {
 
       <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
         <Panel>
-          <RecentHeader title="Latest activity" href="/vantage/audit" />
+          <RecentHeader title="Latest activity" href="/audit" />
           {events && events.events.length > 0 ? (
             <ul className="divide-y divide-border">
               {events.events.slice(0, 8).map((e) => (
@@ -75,7 +75,7 @@ export default async function VantageOverview() {
         </Panel>
 
         <Panel>
-          <RecentHeader title="Latest emails" href="/vantage/emails" />
+          <RecentHeader title="Latest emails" href="/emails" />
           {emails && emails.deliveries.length > 0 ? (
             <ul className="divide-y divide-border">
               {emails.deliveries.slice(0, 8).map((d) => (
