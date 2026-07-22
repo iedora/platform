@@ -1,0 +1,22 @@
+{
+  "name": "@iedora/common",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Small, dependency-free primitives shared across iedora services — time-duration constants and JSON helpers — so things like `60_000` and jsonb parsing aren't re-derived in every service.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsgo --noEmit",
+    "lint": "eslint . --cache --cache-location node_modules/.cache/.eslintcache",
+    "test": "vitest run --passWithNoTests"
+  },
+  "devDependencies": {
+    "@iedora/eslint-config": "workspace:*",
+    "eslint": "catalog:",
+    "typescript": "catalog:",
+    "typescript-eslint": "catalog:",
+    "vitest": "catalog:"
+  }
+}

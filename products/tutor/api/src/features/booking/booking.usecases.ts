@@ -10,7 +10,7 @@ import { bumpConversation, ensureConversation } from "../../data/conversations.t
 import { tutorTimezone } from "../../data/booking.ts"
 import type { TutorDeps } from "../../deps.ts"
 import { invalid } from "../../errors.ts"
-import { inngest, lessonScheduled } from "../../lib/inngest.ts"
+import { scheduleLessonTimers } from "../../jobs/scheduler.ts"
 import { nextOccurrences } from "../../lib/slots.ts"
 import type { TutorDB } from "../../schema.ts"
 
@@ -158,10 +158,10 @@ export async function bookRecurringSeries(
       .returning(["id", "startsAtUtc"])
       .execute()
 
-    // Each lesson gets its own durable timer that charges the card at T−24h.
-    await inngest.send(
+    // Each lesson gets its own durable timers (room open + charge at the deadline).
+    await Promise.all(
       lessons.map((lesson) =>
-        lessonScheduled.create({
+        scheduleLessonTimers(deps.jobs, {
           lessonId: lesson.id,
           startsAtUtc: new Date(lesson.startsAtUtc).toISOString(),
           mode: "recurring",

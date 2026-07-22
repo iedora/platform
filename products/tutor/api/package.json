@@ -23,8 +23,9 @@
     "@iedora/auth-sdk": "workspace:*",
     "@iedora/sdk": "workspace:*",
     "@iedora/db": "workspace:*",
+    "@iedora/jobs": "workspace:*",
+    "@iedora/common": "workspace:*",
     "hono": "catalog:",
-    "inngest": "^4.12.1",
     "kysely": "catalog:",
     "luxon": "^3.7.2",
     "zod": "catalog:"

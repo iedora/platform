@@ -17,7 +17,7 @@ import {
 import { refundLessonPayment } from "../../data/payments.ts"
 import type { TutorDeps } from "../../deps.ts"
 import { invalid } from "../../errors.ts"
-import { inngest, lessonCancelled } from "../../lib/inngest.ts"
+import { cancelLessonTimers } from "../../jobs/scheduler.ts"
 import type { TutorDB } from "../../schema.ts"
 
 type DB = Kysely<TutorDB>
@@ -288,8 +288,8 @@ export async function cancelLesson(
   }
   await setStatus(db, lesson.id, lesson.status, to, `Cancelled by ${input.by}${late ? " (late)" : ""}`)
 
-  // Kill the pending charge timer for this lesson.
-  await inngest.send(lessonCancelled.create({ lessonId: lesson.id }))
+  // Kill the pending timers for this lesson.
+  await cancelLessonTimers(deps.jobs, lesson.id)
 
   const convId = await conversationId(db, lesson.tutorId, lesson.studentId)
   await postSystem(db, convId, {

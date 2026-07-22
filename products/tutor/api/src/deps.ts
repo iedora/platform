@@ -1,3 +1,4 @@
+import type { Jobs } from "@iedora/jobs"
 import type { BillingClient } from "@iedora/sdk/billing"
 import type { Database, UserVerifier } from "@iedora/service-kit"
 
@@ -14,4 +15,6 @@ export interface TutorDeps {
   cfg: TutorConfig
   billing: BillingClient
   launchSpace: LaunchSpace
+  /** Durable lesson timers (room open, payment settle, auto-release). */
+  jobs: Jobs
 }

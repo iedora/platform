@@ -16,7 +16,7 @@ import {
 } from "../../data/reschedule.ts"
 import type { TutorDeps } from "../../deps.ts"
 import { conflict, invalid, notFound } from "../../errors.ts"
-import { inngest, lessonCancelled, lessonScheduled } from "../../lib/inngest.ts"
+import { cancelLessonTimers, scheduleLessonTimers } from "../../jobs/scheduler.ts"
 import { generateSlots, type Slot } from "../../lib/slots.ts"
 import type { TutorDB } from "../../schema.ts"
 
@@ -170,15 +170,13 @@ export async function confirmReschedule(
     .where("id", "=", ctx.lessonId)
     .executeTakeFirstOrThrow()
 
-  await inngest.send(lessonCancelled.create({ lessonId: ctx.lessonId }))
+  await cancelLessonTimers(deps.jobs, ctx.lessonId)
   if (lesson.status !== "paid") {
-    await inngest.send(
-      lessonScheduled.create({
-        lessonId: ctx.lessonId,
-        startsAtUtc: new Date(input.startUtc).toISOString(),
-        mode: lesson.mode,
-      }),
-    )
+    await scheduleLessonTimers(deps.jobs, {
+      lessonId: ctx.lessonId,
+      startsAtUtc: new Date(input.startUtc).toISOString(),
+      mode: lesson.mode,
+    })
   }
 
   await db

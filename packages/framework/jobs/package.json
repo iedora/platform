@@ -1,0 +1,40 @@
+{
+  "name": "@iedora/jobs",
+  "version": "0.1.0",
+  "description": "Durable job scheduler on Postgres: schedule future/cancellable jobs, claim with FOR UPDATE SKIP LOCKED, retry with backoff, run-once handlers. Replaces an external workflow SaaS with the DB you already run.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "files": [
+    "src",
+    "README.md"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/iedora/platform.git",
+    "directory": "packages/framework/jobs"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
+  "scripts": {
+    "typecheck": "tsgo --noEmit",
+    "test": "vitest run --passWithNoTests",
+    "lint": "eslint . --cache --cache-location node_modules/.cache/.eslintcache"
+  },
+  "dependencies": {
+    "@iedora/common": "workspace:*"
+  },
+  "peerDependencies": {
+    "postgres": "^3.4.0"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "postgres": "^3.4.5",
+    "typescript": "catalog:",
+    "@iedora/eslint-config": "workspace:*",
+    "eslint": "catalog:",
+    "vitest": "catalog:"
+  }
+}
