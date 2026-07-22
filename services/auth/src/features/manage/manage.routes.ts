@@ -1,9 +1,11 @@
 import { Hono } from "hono"
 import { z } from "zod"
 
+import { emitAudit } from "../../platform/audit.ts"
 import { db } from "../../platform/db.ts"
 import {
   HttpError,
+  reqContext,
   type ServiceEnv,
   serviceTenantId,
   validate,
@@ -66,19 +68,67 @@ export const manageRoutes = new Hono<ServiceEnv>()
     return c.json({ sessions: await getUserSessions(tid, c.req.param("id")) })
   })
   .post("/manage/users/:id/force-password-change", async (c) => {
-    await forcePasswordChange(serviceTenantId(c.var.service), c.req.param("id"))
+    const tid = serviceTenantId(c.var.service)
+    const userId = c.req.param("id")
+    await forcePasswordChange(tid, userId)
+    await emitAudit(db, {
+      tenantId: tid,
+      action: "auth.user.force_password_change",
+      actorType: "service",
+      actorId: c.var.service.clientId,
+      entityType: "user",
+      entityId: userId,
+      ...reqContext(c),
+    })
     return c.json({ ok: true })
   })
   .post("/manage/users/:id/set-password", validate("json", setPasswordSchema), async (c) => {
-    await setUserPassword(serviceTenantId(c.var.service), c.req.param("id"), c.req.valid("json").password)
+    const tid = serviceTenantId(c.var.service)
+    const userId = c.req.param("id")
+    await setUserPassword(tid, userId, c.req.valid("json").password)
+    await emitAudit(db, {
+      tenantId: tid,
+      action: "auth.user.password_set",
+      actorType: "service",
+      actorId: c.var.service.clientId,
+      entityType: "user",
+      entityId: userId,
+      ...reqContext(c),
+    })
     return c.json({ ok: true })
   })
   .post("/manage/users/:id/sessions/:family/revoke", async (c) => {
-    await revokeUserSession(serviceTenantId(c.var.service), c.req.param("id"), c.req.param("family"))
+    const tid = serviceTenantId(c.var.service)
+    const userId = c.req.param("id")
+    const family = c.req.param("family")
+    await revokeUserSession(tid, userId, family)
+    await emitAudit(db, {
+      tenantId: tid,
+      action: "auth.session.revoked",
+      actorType: "service",
+      actorId: c.var.service.clientId,
+      entityType: "user",
+      entityId: userId,
+      metadata: { family },
+      ...reqContext(c),
+    })
     return c.json({ ok: true })
   })
   .post("/manage/users/:id/ban", validate("json", banSchema), async (c) => {
-    await setUserBan(serviceTenantId(c.var.service), c.req.param("id"), c.req.valid("json"))
+    const tid = serviceTenantId(c.var.service)
+    const userId = c.req.param("id")
+    const ban = c.req.valid("json")
+    await setUserBan(tid, userId, ban)
+    await emitAudit(db, {
+      tenantId: tid,
+      action: "auth.user.banned",
+      actorType: "service",
+      actorId: c.var.service.clientId,
+      entityType: "user",
+      entityId: userId,
+      newData: { banned: ban.banned, reason: ban.reason ?? null, expiresAt: ban.expiresAt ?? null },
+      ...reqContext(c),
+    })
     return c.json({ ok: true })
   })
   .get("/manage/organizations", async (c) => {

@@ -2,7 +2,9 @@ import { Hono } from "hono"
 import { z } from "zod"
 
 import { findUserById } from "../../platform/accounts.ts"
-import { type AuthedEnv, HttpError, validate, withUser } from "../../platform/http.ts"
+import { emitAudit } from "../../platform/audit.ts"
+import { db } from "../../platform/db.ts"
+import { type AuthedEnv, HttpError, reqContext, validate, withUser } from "../../platform/http.ts"
 import {
   addMember,
   createOrganization,
@@ -46,7 +48,18 @@ export const organizationRoutes = new Hono<AuthedEnv>()
     const org = c.req.param("org")
     await requireOrgRole(c.var.tenant.id, c.var.authUser.sub, org, ["owner", "admin"])
     const { email, role } = c.req.valid("json")
-    return c.json(await addMember(c.var.tenant.id, org, email, role ?? "member"), 201)
+    const member = await addMember(c.var.tenant.id, org, email, role ?? "member")
+    await emitAudit(db, {
+      tenantId: c.var.tenant.id,
+      action: "auth.org.member_added",
+      actorType: "user",
+      actorId: c.var.authUser.sub,
+      entityType: "organization",
+      entityId: org,
+      metadata: { memberUserId: member.userId, role: member.role },
+      ...reqContext(c),
+    })
+    return c.json(member, 201)
   })
   .patch("/organizations/:org/members/:userId", validate("json", updateRoleSchema), async (c) => {
     const org = c.req.param("org")
@@ -57,6 +70,17 @@ export const organizationRoutes = new Hono<AuthedEnv>()
   .delete("/organizations/:org/members/:userId", async (c) => {
     const org = c.req.param("org")
     await requireOrgRole(c.var.tenant.id, c.var.authUser.sub, org, ["owner", "admin"])
-    await removeMember(c.var.tenant.id, org, c.req.param("userId"))
+    const memberUserId = c.req.param("userId")
+    await removeMember(c.var.tenant.id, org, memberUserId)
+    await emitAudit(db, {
+      tenantId: c.var.tenant.id,
+      action: "auth.org.member_removed",
+      actorType: "user",
+      actorId: c.var.authUser.sub,
+      entityType: "organization",
+      entityId: org,
+      metadata: { memberUserId },
+      ...reqContext(c),
+    })
     return c.json({ ok: true })
   })

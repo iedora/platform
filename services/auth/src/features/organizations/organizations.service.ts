@@ -1,5 +1,6 @@
 import { slugify } from "@iedora/common"
 
+import { emitAudit } from "../../platform/audit.ts"
 import { db } from "../../platform/db.ts"
 import { HttpError } from "../../platform/http.ts"
 import type { Organization, Tenant, User } from "../../platform/schema.ts"
@@ -69,6 +70,15 @@ export async function createOrganization(
       .insertInto("membership")
       .values({ tenantId: tenant.id, organizationId: org.id, userId: ownerUserId, role: "owner" })
       .execute()
+    await emitAudit(trx, {
+      tenantId: tenant.id,
+      action: "auth.org.created",
+      actorType: "user",
+      actorId: ownerUserId,
+      entityType: "organization",
+      entityId: org.id,
+      newData: { slug: org.slug, name: org.name },
+    })
     return org
   })
 }

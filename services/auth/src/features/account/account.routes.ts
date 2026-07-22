@@ -1,7 +1,9 @@
 import { Hono } from "hono"
 import { z } from "zod"
 
-import { type AuthedEnv, validate, withUser } from "../../platform/http.ts"
+import { emitAudit } from "../../platform/audit.ts"
+import { db } from "../../platform/db.ts"
+import { type AuthedEnv, reqContext, validate, withUser } from "../../platform/http.ts"
 import {
   changePassword,
   listSessions,
@@ -30,10 +32,30 @@ export const accountRoutes = new Hono<AuthedEnv>()
   .post("/sessions/revoke-others", async (c) => {
     const { sub, sid } = c.var.authUser
     await revokeOtherSessions(c.var.tenant.id, sub, sid)
+    await emitAudit(db, {
+      tenantId: c.var.tenant.id,
+      action: "auth.session.revoked",
+      actorType: "user",
+      actorId: sub,
+      entityType: "session",
+      entityId: null,
+      metadata: { scope: "others", keptFamily: sid },
+      ...reqContext(c),
+    })
     return c.json({ ok: true })
   })
   .post("/sessions/:family/revoke", async (c) => {
     const { sub } = c.var.authUser
-    await revokeSession(c.var.tenant.id, sub, c.req.param("family"))
+    const family = c.req.param("family")
+    await revokeSession(c.var.tenant.id, sub, family)
+    await emitAudit(db, {
+      tenantId: c.var.tenant.id,
+      action: "auth.session.revoked",
+      actorType: "user",
+      actorId: sub,
+      entityType: "session",
+      entityId: family,
+      ...reqContext(c),
+    })
     return c.json({ ok: true })
   })

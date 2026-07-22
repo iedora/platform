@@ -410,9 +410,19 @@ export async function revokeRefresh(tenant: Tenant, refreshToken: string): Promi
   // Sign out the whole family this token belongs to, not just the current link.
   const session = await db
     .selectFrom("session")
-    .select(["familyId"])
+    .select(["familyId", "userId"])
     .where("tenantId", "=", tenant.id)
     .where("refreshTokenHash", "=", hashRefreshToken(refreshToken))
     .executeTakeFirst()
-  if (session) await burnFamily(tenant.id, session.familyId)
+  if (session) {
+    await burnFamily(tenant.id, session.familyId)
+    await emitAudit(db, {
+      tenantId: tenant.id,
+      action: "auth.session.ended",
+      actorType: "user",
+      actorId: session.userId,
+      entityType: "session",
+      entityId: session.familyId,
+    })
+  }
 }

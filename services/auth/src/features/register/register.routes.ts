@@ -2,6 +2,8 @@ import { Hono } from "hono"
 import { z } from "zod"
 
 import { createUser, findUserByEmail, issueTokens } from "../../platform/accounts.ts"
+import { emitAudit } from "../../platform/audit.ts"
+import { db } from "../../platform/db.ts"
 import { type Env, HttpError, reqContext } from "../../platform/http.ts"
 import { resolveProvider } from "../../platform/providers/registry.ts"
 
@@ -35,6 +37,17 @@ export const registerRoutes = new Hono<Env>().post("/register", async (c) => {
     providerId: "password",
     subject: email.toLowerCase(),
     passwordHash,
+  })
+
+  await emitAudit(db, {
+    tenantId: tenant.id,
+    action: "auth.user.registered",
+    actorType: "user",
+    actorId: user.id,
+    entityType: "user",
+    entityId: user.id,
+    metadata: { email: user.email },
+    ...reqContext(c),
   })
 
   const tokens = await issueTokens(tenant, user, { amr: ["pwd"], ...reqContext(c) })

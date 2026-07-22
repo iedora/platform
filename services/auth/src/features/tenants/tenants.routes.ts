@@ -1,8 +1,9 @@
 import { Hono } from "hono"
 import { z } from "zod"
 
+import { emitAudit } from "../../platform/audit.ts"
 import { db } from "../../platform/db.ts"
-import { HttpError, withAdmin } from "../../platform/http.ts"
+import { HttpError, reqContext, withAdmin } from "../../platform/http.ts"
 
 const tenantSchema = z.object({
   slug: z
@@ -50,6 +51,15 @@ export const tenantsRoutes = new Hono()
       )
       .returningAll()
       .executeTakeFirstOrThrow()
+    await emitAudit(db, {
+      tenantId: tenant.id,
+      action: "auth.tenant.created",
+      actorType: "admin",
+      entityType: "tenant",
+      entityId: tenant.id,
+      newData: { slug: tenant.slug, tokenAudience: tenant.tokenAudience },
+      ...reqContext(c),
+    })
     return c.json(tenant, 201)
   })
   .post("/admin/tenants/:slug/providers", async (c) => {
@@ -82,5 +92,14 @@ export const tenantsRoutes = new Hono()
       )
       .returningAll()
       .executeTakeFirstOrThrow()
+    await emitAudit(db, {
+      tenantId: tenant.id,
+      action: "auth.tenant.provider_added",
+      actorType: "admin",
+      entityType: "tenant",
+      entityId: tenant.id,
+      metadata: { providerId, kind },
+      ...reqContext(c),
+    })
     return c.json(row, 201)
   })

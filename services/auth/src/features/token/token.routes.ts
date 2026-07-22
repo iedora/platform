@@ -1,7 +1,9 @@
 import { type Context, Hono } from "hono"
 import { z } from "zod"
 
-import { HttpError, validate, withAdmin } from "../../platform/http.ts"
+import { emitAudit } from "../../platform/audit.ts"
+import { db } from "../../platform/db.ts"
+import { HttpError, reqContext, validate, withAdmin } from "../../platform/http.ts"
 import { mintServiceToken, registerServiceClient } from "./token.service.ts"
 
 const registerSchema = z.object({
@@ -33,7 +35,18 @@ async function readCredentials(
  *  `/token` is the client-credentials grant used by backend services. */
 export const tokenRoutes = new Hono()
   .post("/admin/service-clients", withAdmin, validate("json", registerSchema), async (c) => {
-    return c.json(await registerServiceClient(c.req.valid("json")), 201)
+    const input = c.req.valid("json")
+    const result = await registerServiceClient(input)
+    await emitAudit(db, {
+      tenantId: input.tenantId ?? null,
+      action: "auth.service_client.registered",
+      actorType: "admin",
+      entityType: "service_client",
+      entityId: result.clientId,
+      metadata: { audience: result.audience, name: input.name },
+      ...reqContext(c),
+    })
+    return c.json(result, 201)
   })
   .post("/token", async (c) => {
     const creds = await readCredentials(c)

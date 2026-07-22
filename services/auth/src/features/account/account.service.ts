@@ -5,6 +5,7 @@ import {
   revokeOtherFamilies,
   writePassword,
 } from "../../platform/accounts.ts"
+import { emitAudit } from "../../platform/audit.ts"
 import { db } from "../../platform/db.ts"
 import { passwordChangedEmail } from "../../platform/emails.ts"
 import { HttpError } from "../../platform/http.ts"
@@ -95,6 +96,14 @@ export async function changePassword(
       subject: notice.subject,
       html: notice.html,
       text: notice.text,
+    })
+    await emitAudit(trx, {
+      tenantId,
+      action: "auth.password.changed",
+      actorType: "user",
+      actorId: userId,
+      entityType: "user",
+      entityId: userId,
     })
   })
 }

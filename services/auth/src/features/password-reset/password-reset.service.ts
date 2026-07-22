@@ -1,6 +1,7 @@
 import { SECOND } from "@iedora/common"
 
 import { findUserByEmail, revokeAllUserSessions, writePassword } from "../../platform/accounts.ts"
+import { emitAudit } from "../../platform/audit.ts"
 import { config } from "../../platform/config.ts"
 import { db } from "../../platform/db.ts"
 import { passwordChangedEmail, passwordResetEmail } from "../../platform/emails.ts"
@@ -21,7 +22,21 @@ function appOrigin(tenant: Tenant): string {
  *  reset email is queued in the same transaction. */
 export async function requestPasswordReset(tenant: Tenant, email: string): Promise<void> {
   const user = await findUserByEmail(tenant.id, email)
-  if (!user) return
+  if (!user) {
+    // Never reveal whether the email exists: still record the attempt as a
+    // success, with no resolved user.
+    await emitAudit(db, {
+      tenantId: tenant.id,
+      action: "auth.password.reset_requested",
+      outcome: "success",
+      actorType: "user",
+      actorId: null,
+      entityType: "user",
+      entityId: null,
+      metadata: { email },
+    })
+    return
+  }
 
   const { token, hash } = newOpaqueToken()
   const expiresAt = new Date(Date.now() + config.resetTtl * SECOND)
@@ -39,6 +54,16 @@ export async function requestPasswordReset(tenant: Tenant, email: string): Promi
       subject: mail.subject,
       html: mail.html,
       text: mail.text,
+    })
+    await emitAudit(trx, {
+      tenantId: tenant.id,
+      action: "auth.password.reset_requested",
+      outcome: "success",
+      actorType: "user",
+      actorId: null,
+      entityType: "user",
+      entityId: user.id,
+      metadata: { email },
     })
   })
 }
@@ -84,6 +109,14 @@ export async function resetPassword(
       subject: notice.subject,
       html: notice.html,
       text: notice.text,
+    })
+    await emitAudit(trx, {
+      tenantId: tenant.id,
+      action: "auth.password.reset",
+      actorType: "user",
+      actorId: user.id,
+      entityType: "user",
+      entityId: user.id,
     })
   })
 }
