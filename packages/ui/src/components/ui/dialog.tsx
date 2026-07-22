@@ -31,7 +31,7 @@ function DialogOverlay({
     <DialogPrimitive.Backdrop
       data-slot="dialog-overlay"
       className={cn(
-        "fixed inset-0 isolate z-50 bg-black/20 duration-100 supports-backdrop-filter:backdrop-blur-sm data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0",
+        "fixed inset-0 isolate z-50 bg-black/10 duration-100 supports-backdrop-filter:backdrop-blur-xs data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0",
         className
       )}
       {...props}
@@ -50,11 +50,10 @@ function DialogContent({
   /**
    * Below `sm`, render edge-to-edge at full viewport height (a mobile
    * "sheet") instead of a centered box — so a long form gets the whole
-   * screen (down to a 320×480 iPhone 4) and can pin its own sticky
-   * header/footer while the middle scrolls. In this mode the Popup drops
-   * its padded `grid` for a bare `flex` column, so the caller owns the
-   * inner padding + scroll region. At `sm+` it collapses back to the
-   * standard centered modal.
+   * screen and can pin its own sticky header/footer while the middle
+   * scrolls. In this mode the Popup drops its padded `grid` for a bare
+   * `flex` column, so the caller owns the inner padding + scroll region.
+   * At `sm+` it collapses back to the standard centered modal.
    */
   mobileFullScreen?: boolean
 }) {
@@ -64,12 +63,12 @@ function DialogContent({
       <DialogPrimitive.Popup
         data-slot="dialog-content"
         className={cn(
-          "fixed z-50 bg-popover text-sm text-popover-foreground shadow-md ring-1 ring-foreground/10 duration-100 outline-none data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0",
+          "fixed z-50 bg-popover text-sm text-popover-foreground ring-1 ring-foreground/10 duration-100 outline-none data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0",
           mobileFullScreen
             ? // Mobile: full-height sheet that slides up. sm+: centered modal.
-              "inset-0 flex h-[100dvh] max-h-[100dvh] w-screen max-w-none flex-col overflow-hidden rounded-none data-open:slide-in-from-bottom-6 data-closed:slide-out-to-bottom-6 sm:inset-auto sm:top-1/2 sm:left-1/2 sm:h-auto sm:max-h-[calc(100dvh-2rem)] sm:w-full sm:max-w-lg sm:-translate-x-1/2 sm:-translate-y-1/2 sm:data-open:zoom-in-95 sm:data-closed:zoom-out-95"
-            : // Centered modal at every size, with tighter padding on phones.
-              "top-1/2 left-1/2 grid max-h-[calc(100dvh-2rem)] w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 overflow-y-auto overscroll-contain rounded-none p-4 text-sm sm:max-w-md sm:gap-6 sm:p-6 data-open:zoom-in-95 data-closed:zoom-out-95",
+              "inset-0 flex h-[100dvh] max-h-[100dvh] w-screen max-w-none flex-col overflow-hidden rounded-none data-open:slide-in-from-bottom-6 data-closed:slide-out-to-bottom-6 sm:inset-auto sm:top-1/2 sm:start-1/2 sm:h-auto sm:max-h-[calc(100dvh-2rem)] sm:w-full sm:max-w-sm sm:-translate-x-1/2 sm:rtl:translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl sm:data-open:zoom-in-95 sm:data-closed:zoom-out-95"
+            : // Centered modal at every size.
+              "top-1/2 start-1/2 grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 rtl:translate-x-1/2 -translate-y-1/2 gap-4 rounded-xl p-4 sm:max-w-sm data-open:zoom-in-95 data-closed:zoom-out-95",
           className
         )}
         {...props}
@@ -81,7 +80,7 @@ function DialogContent({
             render={
               <Button
                 variant="ghost"
-                className="absolute top-3 right-3 z-10 bg-secondary sm:top-5 sm:right-5"
+                className="absolute top-2 end-2"
                 size="icon-sm"
               />
             }
@@ -118,7 +117,7 @@ function DialogFooter({
     <div
       data-slot="dialog-footer"
       className={cn(
-        "flex flex-col-reverse gap-2 sm:flex-row sm:justify-end",
+        "-mx-4 -mb-4 flex flex-col-reverse gap-2 rounded-b-xl border-t bg-muted/50 p-4 sm:flex-row sm:justify-end",
         className
       )}
       {...props}
@@ -138,7 +137,7 @@ function DialogTitle({ className, ...props }: DialogPrimitive.Title.Props) {
     <DialogPrimitive.Title
       data-slot="dialog-title"
       className={cn(
-        "text-lg leading-none font-semibold tracking-wider uppercase",
+        "font-heading text-base leading-none font-medium",
         className
       )}
       {...props}
@@ -154,7 +153,7 @@ function DialogDescription({
     <DialogPrimitive.Description
       data-slot="dialog-description"
       className={cn(
-        "mt-0.5 text-sm leading-relaxed text-muted-foreground *:[a]:underline *:[a]:underline-offset-3 *:[a]:hover:text-foreground",
+        "text-sm text-muted-foreground *:[a]:underline *:[a]:underline-offset-3 *:[a]:hover:text-foreground",
         className
       )}
       {...props}
