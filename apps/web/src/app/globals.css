@@ -6,20 +6,13 @@
 
 /*
  * Tailwind v4 doesn't scan workspace packages resolved through node_modules
- * symlinks. One narrow @source per workspace surface that renders JSX into
- * apps/web (a top-level packages/** wildcard once hung Turbopack).
+ * symlinks. One @source per workspace package that renders JSX into apps/web,
+ * scoped to that package's src/ (a top-level packages/** wildcard once hung
+ * Turbopack, but per-package src globs are safe).
  */
-@source "../../../../products/menu/src/features/menu-publishing/**/*.{ts,tsx}";
-@source "../../../../products/menu/src/features/menu-builder/**/*.{ts,tsx}";
-@source "../../../../products/menu/src/features/dashboard-home/**/*.{ts,tsx}";
-@source "../../../../products/menu/src/features/qr-codes/**/*.{ts,tsx}";
-@source "../../../../products/menu/src/features/upload/ui/**/*.{ts,tsx}";
-@source "../../../../products/menu/src/features/i18n/ui/**/*.{ts,tsx}";
-@source "../../../../products/menu/src/features/restaurant-import-json/**/*.{ts,tsx}";
-@source "../../../../products/menu/src/features/restaurant-identity/ui/**/*.{ts,tsx}";
-@source "../../../../products/menu/src/shared/ui/**/*.{ts,tsx}";
-@source "../../../../packages/platform/ui/src/**/*.{ts,tsx}";
-@source "../../../../products/tutor/src/**/*.{ts,tsx}";
+@source "../../../../products/menu/web/src/**/*.{ts,tsx}";
+@source "../../../../products/tutor/web/src/**/*.{ts,tsx}";
+@source "../../../../packages/ui/src/**/*.{ts,tsx}";
 
 @theme inline {
   --font-sans: var(--sans);
@@ -177,5 +170,10 @@
   }
   html {
     @apply font-sans;
+  }
+  /* base-nova convention: interactive controls get a pointer cursor. */
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
   }
 }
