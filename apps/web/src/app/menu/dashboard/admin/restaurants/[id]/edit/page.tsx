@@ -3,11 +3,11 @@ import type { ReactNode } from 'react'
 import { notFound } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 import {
-  BookOpenIcon,
-  CaretRightIcon,
-  PaletteIcon,
-  QrCodeIcon,
-} from '@phosphor-icons/react/ssr'
+  BookOpen,
+  ChevronRight,
+  Palette,
+  QrCode,
+} from 'lucide-react'
 import { requireStaff } from '@iedora/product-menu/features/auth'
 import { loadRestaurantDetail } from '@iedora/product-menu/features/restaurant-identity'
 import { AdminRenameForm } from '@iedora/product-menu/features/restaurant-identity/ui/admin-rename-form'
@@ -43,7 +43,7 @@ function EditArea({
         <span className="block truncate text-[14px] font-semibold text-foreground">{title}</span>
         <span className="block truncate text-[12.5px] text-muted-foreground">{desc}</span>
       </span>
-      <CaretRightIcon size={16} className="shrink-0 text-muted-foreground" aria-hidden />
+      <ChevronRight size={16} className="shrink-0 text-muted-foreground" aria-hidden />
     </Link>
   )
 }
@@ -89,21 +89,21 @@ export default async function AdminRestaurantEditPage({
           <div className="space-y-2.5">
             <EditArea
               href={ownerHref}
-              icon={<BookOpenIcon size={18} weight="bold" />}
+              icon={<BookOpen size={18} />}
               title={t('edit.menus')}
               desc={t('edit.menusDesc')}
               testId="admin-edit-area-menus"
             />
             <EditArea
               href={`${ownerHref}/theme`}
-              icon={<PaletteIcon size={18} weight="bold" />}
+              icon={<Palette size={18} />}
               title={t('edit.theme')}
               desc={t('edit.themeDesc')}
               testId="admin-edit-area-theme"
             />
             <EditArea
               href={`${ownerHref}/qr`}
-              icon={<QrCodeIcon size={18} weight="bold" />}
+              icon={<QrCode size={18} />}
               title={t('edit.qr')}
               desc={t('edit.qrDesc')}
               testId="admin-edit-area-qr"

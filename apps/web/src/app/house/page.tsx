@@ -1,12 +1,12 @@
 import type { Metadata } from 'next'
 import { getLocale, getTranslations } from 'next-intl/server'
 import {
-  ArrowRightIcon,
-  GraduationCapIcon,
-  PackageIcon,
-  SquaresFourIcon,
-  StackIcon,
-} from '@phosphor-icons/react/ssr'
+  ArrowRight,
+  GraduationCap,
+  Package,
+  LayoutGrid,
+  Layers,
+} from 'lucide-react'
 import { Card, CardContent } from '@iedora/ui/components/ui/card'
 import { ThemeToggle } from '@iedora/ui/components/theme-toggle'
 import {
@@ -40,7 +40,7 @@ function Brand({ size = 'md' }: { size?: 'md' | 'sm' }) {
   return (
     <span className="inline-flex items-center gap-2.5">
       <span className={`grid ${sq} shrink-0 place-items-center rounded-[10px] bg-primary text-primary-foreground`}>
-        <SquaresFourIcon size={size === 'sm' ? 17 : 18} />
+        <LayoutGrid size={size === 'sm' ? 17 : 18} />
       </span>
       <span className={`font-heading ${word} font-extrabold tracking-[-0.02em] text-foreground`}>{BRAND_NAME}</span>
     </span>
@@ -53,9 +53,9 @@ export default async function HouseLanding() {
   const menuHost = menuUrl.replace(/^https?:\/\//, '').replace(/\/$/, '')
 
   const services = [
-    { icon: StackIcon, title: t('service1Title'), desc: t('service1Desc') },
-    { icon: GraduationCapIcon, title: t('service2Title'), desc: t('service2Desc') },
-    { icon: PackageIcon, title: t('service3Title'), desc: t('service3Desc') },
+    { icon: Layers, title: t('service1Title'), desc: t('service1Desc') },
+    { icon: GraduationCap, title: t('service2Title'), desc: t('service2Desc') },
+    { icon: Package, title: t('service3Title'), desc: t('service3Desc') },
   ]
   const steps = [
     { n: '01', title: t('step1Title'), desc: t('step1Desc') },
@@ -106,7 +106,7 @@ export default async function HouseLanding() {
           <div className="mt-7">
             <CtaButton href={mailto} full>
               {t('heroCta')}
-              <ArrowRightIcon size={17} className="shrink-0" />
+              <ArrowRight size={17} className="shrink-0" />
             </CtaButton>
           </div>
           <p className="mt-4 text-[13px] text-muted-foreground">{t('heroMicro')}</p>
@@ -165,7 +165,7 @@ export default async function HouseLanding() {
                 data-test-id="house-product-menu"
               >
                 {menuHost}
-                <ArrowRightIcon size={16} className="shrink-0" />
+                <ArrowRight size={16} className="shrink-0" />
               </a>
             </div>
             <Card size="sm" className="w-full">
@@ -223,7 +223,7 @@ export default async function HouseLanding() {
           </blockquote>
           <div className="mt-6 flex items-center gap-3">
             <span className="grid size-11 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground">
-              <SquaresFourIcon size={20} />
+              <LayoutGrid size={20} />
             </span>
             <div className="min-w-0">
               <p className="font-heading text-[15px] font-bold">{t('founderSignName')}</p>
@@ -241,7 +241,7 @@ export default async function HouseLanding() {
           data-test-id="house-cta-email"
         >
           <span className="truncate">{CONTACT_EMAIL}</span>
-          <ArrowRightIcon size={17} className="shrink-0" />
+          <ArrowRight size={17} className="shrink-0" />
         </a>
       </CtaBand>
 

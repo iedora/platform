@@ -2,7 +2,7 @@
 
 import { useActionState, useState } from 'react'
 import { useTranslations } from 'next-intl'
-import { CheckIcon } from '@phosphor-icons/react'
+import { Check } from 'lucide-react'
 import { Button } from '@iedora/ui/components/ui/button'
 import { TextField } from '@iedora/ui/components/field'
 import { completeOnboarding, type OnboardingFormState } from './actions'
@@ -96,7 +96,7 @@ export function OnboardingForm({
           <div className="flex items-center gap-1 rounded-[12px] border border-border bg-[var(--muted)] px-4 py-3 text-[15px]" data-test-id="onboarding-public-url">
             <span className="text-muted-foreground">{urlPrefix}</span>
             <span className="truncate font-semibold text-foreground">{slug}</span>
-            <CheckIcon size={18} weight="bold" className="ml-auto shrink-0 text-green-600" />
+            <Check size={18} className="ml-auto shrink-0 text-green-600" />
           </div>
         </div>
 
@@ -119,7 +119,7 @@ export function OnboardingForm({
                       : 'border-border bg-card text-foreground hover:border-primary/40'
                   }`}
                 >
-                  {on ? <CheckIcon size={14} weight="bold" /> : null}
+                  {on ? <Check size={14} /> : null}
                   {l.label}
                 </button>
               )

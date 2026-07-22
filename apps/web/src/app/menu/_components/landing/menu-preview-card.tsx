@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { QrCodeIcon, StarIcon } from '@phosphor-icons/react'
+import { QrCode, Star } from 'lucide-react'
 import { Card, CardContent } from '@iedora/ui/components/ui/card'
 import { Tag } from '../../../../components/landing'
 
@@ -52,14 +52,14 @@ export function MenuPreviewCard({
             <p className="truncate text-[12px] italic text-muted-foreground">{c.note}</p>
           </div>
           <Tag tone="primary">
-            <QrCodeIcon size={13} weight="bold" />
+            <QrCode size={13} />
             {c.scan}
           </Tag>
         </div>
 
         {special ? (
           <div className="mt-4 flex items-baseline gap-2 rounded-[12px] bg-amber-500/10 px-3 py-2.5">
-            <StarIcon size={15} weight="fill" className="shrink-0 self-center text-amber-500" />
+            <Star size={15} className="shrink-0 self-center text-amber-500 fill-current" />
             <span className="shrink-0 text-[11px] font-semibold uppercase tracking-[0.08em] text-amber-600">
               {c.special}
             </span>

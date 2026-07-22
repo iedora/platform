@@ -22,7 +22,7 @@ import {
 } from '@iedora/ui/components/field'
 import { SectionHeader } from '@iedora/ui/components/section-header'
 import { cn } from '@iedora/ui/lib/utils'
-import { CaretDownIcon } from '@phosphor-icons/react'
+import { ChevronDown } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { formatPrice, parsePriceCents } from '../../../shared/format'
 import { GripIcon } from './grip-icon'
@@ -474,7 +474,7 @@ export function SortableItem({
                 data-test-id={`menu-item-more-toggle-${item.id}`}
               >
                 <span>{t('itemMoreOptions')}</span>
-                <CaretDownIcon
+                <ChevronDown
                   aria-hidden
                   className={cn(
                     'size-4 shrink-0 text-muted-foreground transition-transform',

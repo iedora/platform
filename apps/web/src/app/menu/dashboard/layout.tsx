@@ -22,15 +22,15 @@ export const viewport: Viewport = {
   themeColor: '#EFE7D7',
 }
 import {
-  ChartBarIcon,
-  BookOpenIcon,
-  SquaresFourIcon,
-  QrCodeIcon,
-  GearIcon,
-  StorefrontIcon,
-  ForkKnifeIcon,
-  UsersIcon,
-} from '@phosphor-icons/react/ssr'
+  BarChart3,
+  BookOpen,
+  LayoutGrid,
+  QrCode,
+  Settings,
+  Store,
+  Utensils,
+  Users,
+} from 'lucide-react'
 import { SidebarInset, SidebarProvider } from '@iedora/ui/components/ui/sidebar'
 import { signInUrl } from '@iedora/product-menu/shared/auth-urls'
 import { publicUrl } from '@iedora/product-menu/shared/url'
@@ -100,18 +100,18 @@ export default async function DashboardLayout({
   const showAnalytics = planHas(plan, 'analytics')
   const navItems: AppNavItem[] = isStaffAdmin
     ? [
-        { href: '/menu/dashboard', label: nav('overview'), icon: <SquaresFourIcon {...icon} />, exact: true, testId: 'dashboard-nav-overview' },
-        { href: '/menu/dashboard/admin/restaurants', label: nav('restaurants'), icon: <StorefrontIcon {...icon} />, match: ['/menu/dashboard/r'], testId: 'dashboard-nav-admin-restaurants' },
-        { href: '/menu/dashboard/admin/users', label: nav('users'), icon: <UsersIcon {...icon} />, testId: 'dashboard-nav-admin-users' },
-        { href: '/menu/dashboard/admin/qr-codes', label: nav('qrCodes'), icon: <QrCodeIcon {...icon} />, testId: 'dashboard-nav-admin' },
-        ...(tenantId ? [{ href: '/menu/dashboard/misc', label: nav('settings'), icon: <GearIcon {...icon} />, testId: 'dashboard-nav-settings' }] : []),
+        { href: '/menu/dashboard', label: nav('overview'), icon: <LayoutGrid {...icon} />, exact: true, testId: 'dashboard-nav-overview' },
+        { href: '/menu/dashboard/admin/restaurants', label: nav('restaurants'), icon: <Store {...icon} />, match: ['/menu/dashboard/r'], testId: 'dashboard-nav-admin-restaurants' },
+        { href: '/menu/dashboard/admin/users', label: nav('users'), icon: <Users {...icon} />, testId: 'dashboard-nav-admin-users' },
+        { href: '/menu/dashboard/admin/qr-codes', label: nav('qrCodes'), icon: <QrCode {...icon} />, testId: 'dashboard-nav-admin' },
+        ...(tenantId ? [{ href: '/menu/dashboard/misc', label: nav('settings'), icon: <Settings {...icon} />, testId: 'dashboard-nav-settings' }] : []),
       ]
     : [
-        { href: '/menu/dashboard', label: nav('dashboard'), icon: <SquaresFourIcon {...icon} />, exact: true, testId: 'dashboard-nav-overview' },
-        ...(primary ? [{ href: `/menu/dashboard/r/${primary.slug}`, label: nav('menu'), icon: <BookOpenIcon {...icon} />, testId: 'dashboard-nav-menu' }] : []),
-        ...(showAnalytics ? [{ href: '/menu/dashboard/analytics', label: nav('analytics'), icon: <ChartBarIcon {...icon} />, testId: 'dashboard-nav-analytics' }] : []),
-        ...(primary ? [{ href: `/menu/dashboard/r/${primary.slug}/qr`, label: nav('qrCodes'), icon: <QrCodeIcon {...icon} />, testId: 'dashboard-nav-qr' }] : []),
-        { href: '/menu/dashboard/misc', label: nav('settings'), icon: <GearIcon {...icon} />, testId: 'dashboard-nav-settings' },
+        { href: '/menu/dashboard', label: nav('dashboard'), icon: <LayoutGrid {...icon} />, exact: true, testId: 'dashboard-nav-overview' },
+        ...(primary ? [{ href: `/menu/dashboard/r/${primary.slug}`, label: nav('menu'), icon: <BookOpen {...icon} />, testId: 'dashboard-nav-menu' }] : []),
+        ...(showAnalytics ? [{ href: '/menu/dashboard/analytics', label: nav('analytics'), icon: <BarChart3 {...icon} />, testId: 'dashboard-nav-analytics' }] : []),
+        ...(primary ? [{ href: `/menu/dashboard/r/${primary.slug}/qr`, label: nav('qrCodes'), icon: <QrCode {...icon} />, testId: 'dashboard-nav-qr' }] : []),
+        { href: '/menu/dashboard/misc', label: nav('settings'), icon: <Settings {...icon} />, testId: 'dashboard-nav-settings' },
       ]
 
   // Account card identity. Owners: primary restaurant name + plan display
@@ -129,7 +129,7 @@ export default async function DashboardLayout({
         brand={{
           href: '/menu/dashboard',
           label: 'Iedora',
-          glyph: <ForkKnifeIcon size={18} weight="bold" />,
+          glyph: <Utensils size={18} />,
           badge: isStaffAdmin ? nav('admin') : undefined,
         }}
         account={{

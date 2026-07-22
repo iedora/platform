@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useId } from "react";
-import { CheckIcon, CaretDownIcon, XIcon } from "@phosphor-icons/react";
+import { Check, ChevronDown, X } from "lucide-react";
 
 import { cn } from "@iedora/ui/lib/utils";
 import {
@@ -122,10 +122,10 @@ export function Combobox({
                   commit(null);
                 }}
               >
-                <XIcon className="size-3.5" />
+                <X className="size-3.5" />
               </span>
             )}
-            <CaretDownIcon className="size-4 opacity-60" aria-hidden />
+            <ChevronDown className="size-4 opacity-60" aria-hidden />
           </span>
         </PopoverTrigger>
         <PopoverContent
@@ -146,7 +146,7 @@ export function Combobox({
                       value={`${opt.label} ${opt.hint ?? ""}`}
                       onSelect={() => commit(opt.value)}
                     >
-                      <CheckIcon
+                      <Check
                         className={cn(
                           "size-4",
                           isSelected ? "opacity-100" : "opacity-0",

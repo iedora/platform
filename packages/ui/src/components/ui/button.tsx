@@ -2,7 +2,7 @@
 
 import { Button as ButtonPrimitive } from "@base-ui/react/button"
 import { type VariantProps } from "class-variance-authority"
-import { SpinnerIcon } from "@phosphor-icons/react"
+import { LoaderCircle } from "lucide-react"
 
 import { cn } from "@iedora/ui/lib/utils"
 
@@ -29,7 +29,7 @@ function Button({
       aria-busy={loading || undefined}
       {...props}
     >
-      {loading ? <SpinnerIcon className="animate-spin" /> : null}
+      {loading ? <LoaderCircle className="animate-spin" /> : null}
       {children}
     </ButtonPrimitive>
   )

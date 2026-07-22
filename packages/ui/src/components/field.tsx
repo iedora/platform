@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react";
-import { EyeIcon, EyeSlashIcon } from "@phosphor-icons/react";
+import { Eye, EyeOff } from "lucide-react";
 
 import { Input } from "@iedora/ui/components/ui/input";
 import { Label } from "@iedora/ui/components/ui/label";
@@ -227,7 +227,7 @@ export function PasswordField({
           className="absolute top-1/2 right-2 grid size-7 -translate-y-1/2 place-items-center rounded-md text-muted-foreground transition-colors hover:text-foreground"
           data-slot="password-toggle"
         >
-          {show ? <EyeSlashIcon className="size-4" /> : <EyeIcon className="size-4" />}
+          {show ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
         </button>
       </div>
       <FieldMessage id={msgId} error={error} hint={hint} />

@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation'
 import { useDeferredValue, useMemo, useState } from 'react'
 import { useTranslations } from 'next-intl'
-import { CaretRightIcon } from '@phosphor-icons/react'
+import { ChevronRight } from 'lucide-react'
 import type { AdminUser } from '@iedora/product-menu/shared/api'
 import { StatusPill, initialsOf } from '../restaurants/_components/primitives'
 
@@ -98,7 +98,7 @@ export function UsersTable({ users }: { users: AdminUser[] }) {
                       </span>
                     )}
                   </span>
-                  <CaretRightIcon size={18} aria-hidden className="shrink-0 text-muted-foreground" />
+                  <ChevronRight size={18} aria-hidden className="shrink-0 text-muted-foreground" />
                 </button>
               </li>
             )

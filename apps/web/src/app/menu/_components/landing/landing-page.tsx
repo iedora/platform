@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { getLocale, getTranslations } from 'next-intl/server'
-import { CheckIcon, ForkKnifeIcon, PlayIcon } from '@phosphor-icons/react/ssr'
+import { Check, Utensils, Play } from 'lucide-react'
 import { Button } from '@iedora/ui/components/ui/button'
 import { Card, CardContent } from '@iedora/ui/components/ui/card'
 import { signInUrl, signUpUrl } from '@iedora/product-menu/shared/auth-urls'
@@ -68,7 +68,7 @@ function Logo() {
   return (
     <span className="flex items-center gap-2">
       <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-primary text-primary-foreground">
-        <ForkKnifeIcon size={17} weight="bold" />
+        <Utensils size={17} />
       </span>
       <span className="font-heading text-[20px] font-extrabold tracking-[-0.02em] text-foreground">iedora</span>
     </span>
@@ -135,7 +135,7 @@ export default async function LandingPage() {
                 {t('hero.ctaPrimary')}
               </CtaButton>
               <CtaButton href="#how" variant="secondary" full>
-                <PlayIcon size={15} weight="fill" className="shrink-0" />
+                <Play size={15} className="shrink-0 fill-current" />
                 {t('hero.ctaSecondary')}
               </CtaButton>
             </div>
@@ -186,7 +186,7 @@ export default async function LandingPage() {
         <ul className="mx-auto mt-6 grid max-w-md grid-cols-2 gap-x-4 gap-y-3 text-left">
           {bullets.map((b) => (
             <li key={b} className="flex items-center gap-2 text-[14.5px]">
-              <CheckIcon size={16} weight="bold" className="shrink-0 text-primary" />
+              <Check size={16} className="shrink-0 text-primary" />
               {b}
             </li>
           ))}
@@ -296,7 +296,7 @@ function PlanCard({ plan, href, highlighted = false }: { plan: Plan; href: strin
         <ul className="flex flex-1 flex-col gap-2">
           {plan.feats.map((f) => (
             <li key={f} className="flex items-center gap-2 text-[13.5px]">
-              <CheckIcon size={15} weight="bold" className="shrink-0 text-primary" />
+              <Check size={15} className="shrink-0 text-primary" />
               {f}
             </li>
           ))}

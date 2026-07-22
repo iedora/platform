@@ -1,7 +1,7 @@
 'use client'
 
 import { useTranslations } from 'next-intl'
-import { CaretDownIcon } from '@phosphor-icons/react'
+import { ChevronDown } from 'lucide-react'
 import {
   Collapsible,
   CollapsibleContent,
@@ -143,9 +143,8 @@ export function AuditLog({ events }: { events: AuditRecord[] }) {
             <Collapsible>
               <CollapsibleTrigger className="group flex w-full items-center justify-between gap-3 py-[11px] text-left outline-none">
                 <div className="flex min-w-0 flex-1 items-center gap-2">
-                  <CaretDownIcon
+                  <ChevronDown
                     size={14}
-                    weight="bold"
                     aria-hidden
                     className="shrink-0 text-muted-foreground transition-transform group-data-[panel-open]:rotate-180"
                   />

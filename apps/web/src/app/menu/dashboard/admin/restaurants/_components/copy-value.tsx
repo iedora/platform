@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { CheckIcon, CopyIcon } from '@phosphor-icons/react'
+import { Check, Copy } from 'lucide-react'
 
 /**
  * A mono identifier (slug, public URL, id) with a copy button — the value
@@ -52,7 +52,7 @@ export function CopyValue({
         aria-label={copied ? 'Copied' : 'Copy'}
         className="shrink-0 text-muted-foreground transition-colors hover:text-foreground"
       >
-        {copied ? <CheckIcon size={13} weight="bold" className="text-green-600" /> : <CopyIcon size={13} />}
+        {copied ? <Check size={13} className="text-green-600" /> : <Copy size={13} />}
       </button>
     </span>
   )

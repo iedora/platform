@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useDeferredValue, useMemo, useState } from 'react'
 import { useTranslations } from 'next-intl'
-import { CaretRightIcon, QrCodeIcon } from '@phosphor-icons/react'
+import { ChevronRight, QrCode } from 'lucide-react'
 import {
   Table,
   TableBody,
@@ -225,9 +225,9 @@ export function RestaurantsTable({ rows }: { rows: AdminRestaurantRow[] }) {
                         onClick={(e) => e.stopPropagation()}
                         className="grid size-8 shrink-0 place-items-center rounded-[8px] border border-border text-muted-foreground transition-colors hover:border-primary hover:text-primary"
                       >
-                        <QrCodeIcon size={15} weight="bold" />
+                        <QrCode size={15} />
                       </Link>
-                      <CaretRightIcon size={15} className="shrink-0 text-muted-foreground" aria-hidden />
+                      <ChevronRight size={15} className="shrink-0 text-muted-foreground" aria-hidden />
                     </div>
                   </TableCell>
                 </TableRow>

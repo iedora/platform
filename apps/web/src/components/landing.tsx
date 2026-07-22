@@ -1,5 +1,5 @@
 import type { ComponentProps, ReactNode } from 'react'
-import { CheckIcon } from '@phosphor-icons/react/ssr'
+import { Check } from 'lucide-react'
 import { Button } from '@iedora/ui/components/ui/button'
 import { cn } from '@iedora/ui/lib/utils'
 
@@ -175,7 +175,7 @@ export function CheckList({ items, bordered }: { items: ReactNode[]; bordered?: 
           key={i}
           className={cn('flex items-start gap-3', bordered && 'items-center border-b border-border py-2.5')}
         >
-          <CheckIcon size={18} weight="bold" className="mt-0.5 shrink-0 text-primary" />
+          <Check size={18} className="mt-0.5 shrink-0 text-primary" />
           <span className="text-[15px] font-medium leading-[1.45] sm:text-[16px]">{item}</span>
         </li>
       ))}

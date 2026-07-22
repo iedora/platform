@@ -2,7 +2,7 @@
 
 import * as React from 'react'
 import { useTheme } from 'next-themes'
-import { MoonIcon, SunIcon } from '@phosphor-icons/react'
+import { Moon, Sun } from 'lucide-react'
 import { Button } from '@iedora/ui/components/ui/button'
 
 /**
@@ -25,7 +25,7 @@ export function ThemeToggle({ className }: { className?: string }) {
       onClick={() => setTheme(isDark ? 'light' : 'dark')}
       data-test-id="theme-toggle"
     >
-      {isDark ? <SunIcon size={16} /> : <MoonIcon size={16} />}
+      {isDark ? <Sun size={16} /> : <Moon size={16} />}
     </Button>
   )
 }

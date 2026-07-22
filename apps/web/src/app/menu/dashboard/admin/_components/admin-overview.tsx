@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { getTranslations } from 'next-intl/server'
-import { ArrowRightIcon, PlusIcon } from '@phosphor-icons/react/ssr'
+import { ArrowRight, Plus } from 'lucide-react'
 import {
   listRestaurantsDirectory,
   listTenantsDirectory,
@@ -36,7 +36,7 @@ export async function AdminOverview() {
       description={t('overview.subtitle')}
       actions={
         <ActionButton href={`${RESTAURANTS_HREF}/new`} data-test-id="admin-overview-new">
-          <PlusIcon size={16} weight="bold" aria-hidden />
+          <Plus size={16} aria-hidden />
           {t('restaurants.newRestaurant')}
         </ActionButton>
       }
@@ -64,7 +64,7 @@ export async function AdminOverview() {
             className="inline-flex items-center gap-1 text-[13px] font-semibold text-primary no-underline transition-colors hover:text-primary/80"
           >
             {t('overview.viewAll')}
-            <ArrowRightIcon size={14} weight="bold" />
+            <ArrowRight size={14} />
           </Link>
         </div>
 

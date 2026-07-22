@@ -4,7 +4,7 @@ import { useMemo, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import dynamic from 'next/dynamic'
 import { useTranslations } from 'next-intl'
-import { BuildingsIcon, ClipboardTextIcon, GiftIcon, PlusIcon, SparkleIcon, UploadIcon, MagicWandIcon } from '@phosphor-icons/react'
+import { Building2, ClipboardList, Gift, Plus, Sparkles, Upload, Wand2 } from 'lucide-react'
 import { Button } from '@iedora/ui/components/ui/button'
 import {
   Card,
@@ -340,11 +340,11 @@ export function NewRestaurantForm({
                   <CardTitle>{t('import.heading')}</CardTitle>
                   <div className="flex flex-wrap items-center gap-1">
                     <Button variant="ghost" size="sm" type="button" onClick={copyPrompt} data-test-id="new-restaurant-copy-prompt">
-                      {copied ? <ClipboardTextIcon size={14} weight="bold" /> : <SparkleIcon size={14} weight="bold" />}
+                      {copied ? <ClipboardList size={14} /> : <Sparkles size={14} />}
                       {copied ? t('import.copied') : t('import.copyPrompt')}
                     </Button>
                     <Button variant="ghost" size="sm" type="button" onClick={formatJson} disabled={!canFormat} data-test-id="new-restaurant-format">
-                      <MagicWandIcon size={14} weight="bold" />
+                      <Wand2 size={14} />
                       {t('import.format')}
                     </Button>
                     <Button variant="ghost" size="sm" type="button" onClick={() => setPayloadText(JSON_TEMPLATE)} data-test-id="new-restaurant-template">
@@ -371,7 +371,7 @@ export function NewRestaurantForm({
                     disabled={!isImportable(importValidation)}
                     data-test-id="new-restaurant-import-submit"
                   >
-                    <UploadIcon size={15} weight="bold" />
+                    <Upload size={15} />
                     {t('import.submit')}
                   </Button>
                 </div>
@@ -400,7 +400,7 @@ export function NewRestaurantForm({
                       t('tenant.useExisting')
                     ) : (
                       <>
-                        <PlusIcon size={13} weight="bold" /> {t('tenant.new')}
+                        <Plus size={13} /> {t('tenant.new')}
                       </>
                     )}
                   </Button>
@@ -418,7 +418,7 @@ export function NewRestaurantForm({
               ) : (
                 <div className="flex items-center gap-2 border border-border bg-card px-3 py-2.5">
                   <span className="grid size-8 shrink-0 place-items-center bg-muted text-muted-foreground">
-                    <BuildingsIcon size={16} />
+                    <Building2 size={16} />
                   </span>
                   <input
                     type="text"
@@ -487,7 +487,7 @@ export function NewRestaurantForm({
           <Card size="sm" className="bg-green-100" data-test-id="new-restaurant-plan">
             <CardContent className="flex items-center gap-3">
               <span className="grid size-8 shrink-0 place-items-center bg-green-600 text-white">
-                <GiftIcon size={16} />
+                <Gift size={16} />
               </span>
               <div className="min-w-0">
                 <p className="text-[14px] font-bold text-foreground">{t('plan.name')}</p>

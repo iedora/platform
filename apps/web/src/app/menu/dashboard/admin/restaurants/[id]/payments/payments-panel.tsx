@@ -3,7 +3,7 @@
 import { useOptimistic, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
-import { WarningCircleIcon } from '@phosphor-icons/react'
+import { CircleAlert } from 'lucide-react'
 import type { Invoice } from '@iedora/product-menu/shared/api'
 import { staffRecordPaymentAction } from '@iedora/product-menu/features/restaurant-identity/actions'
 import { RecordPaymentDialog, type RecordPaymentPayload } from './record-payment-dialog'
@@ -123,7 +123,7 @@ export function PaymentsPanel({
           data-test-id="admin-record-payment-error"
         >
           <span className="flex items-center gap-2">
-            <WarningCircleIcon size={16} weight="bold" aria-hidden />
+            <CircleAlert size={16} aria-hidden />
             {t('payments.recordFailed')}
           </span>
           <button type="button" className="font-semibold underline" onClick={() => setFailed(false)}>

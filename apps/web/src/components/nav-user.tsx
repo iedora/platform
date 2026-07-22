@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useTranslations } from 'next-intl'
-import { CaretUpDownIcon, CreditCardIcon, GearIcon, SignOutIcon } from '@phosphor-icons/react'
+import { ChevronsUpDown, CreditCard, Settings, LogOut } from 'lucide-react'
 import { Avatar, AvatarFallback } from '@iedora/ui/components/ui/avatar'
 import {
   DropdownMenu,
@@ -58,7 +58,7 @@ export function NavUser({
                   <span className="truncate font-medium">{name}</span>
                   <span className="truncate text-xs text-muted-foreground">{sub}</span>
                 </div>
-                <CaretUpDownIcon className="ml-auto size-4" />
+                <ChevronsUpDown className="ml-auto size-4" />
               </SidebarMenuButton>
             }
           />
@@ -76,13 +76,13 @@ export function NavUser({
             <DropdownMenuSeparator />
             {showBilling ? (
               <DropdownMenuItem render={<Link href="/menu/dashboard/billing" />} data-test-id="account-menu-billing">
-                <CreditCardIcon className="size-4" />
+                <CreditCard className="size-4" />
                 {t('billing')}
               </DropdownMenuItem>
             ) : null}
             {showSettings ? (
               <DropdownMenuItem render={<Link href="/menu/dashboard/misc" />} data-test-id="account-menu-settings">
-                <GearIcon className="size-4" />
+                <Settings className="size-4" />
                 {t('settings')}
               </DropdownMenuItem>
             ) : null}
@@ -95,7 +95,7 @@ export function NavUser({
               onClick={() => window.location.assign(signOutUrl(window.location.origin))}
               data-test-id="account-menu-logout"
             >
-              <SignOutIcon className="size-4" />
+              <LogOut className="size-4" />
               {t('logout')}
             </DropdownMenuItem>
           </DropdownMenuContent>

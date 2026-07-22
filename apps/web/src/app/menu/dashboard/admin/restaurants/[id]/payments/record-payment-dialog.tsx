@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import { useTranslations } from 'next-intl'
-import { PlusIcon } from '@phosphor-icons/react'
+import { Plus } from 'lucide-react'
 import { Button } from '@iedora/ui/components/ui/button'
 import { AppDialog } from '@iedora/ui/components/app-dialog'
 import { FieldMessage, SelectField, TextField } from '@iedora/ui/components/field'
@@ -78,7 +78,7 @@ export function RecordPaymentDialog({
   return (
     <>
       <Button size="sm" onClick={() => setOpen(true)} data-test-id="admin-record-payment-open">
-        <PlusIcon size={15} weight="bold" />
+        <Plus size={15} />
         {t('record')}
       </Button>
       <AppDialog

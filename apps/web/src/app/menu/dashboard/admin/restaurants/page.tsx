@@ -1,4 +1,4 @@
-import { PlusIcon } from '@phosphor-icons/react/ssr'
+import { Plus } from 'lucide-react'
 import { getTranslations } from 'next-intl/server'
 import { requireStaff } from '@iedora/product-menu/features/auth'
 import { DashboardPage } from '@iedora/product-menu/shared/ui/dashboard-page'
@@ -53,7 +53,7 @@ export default async function AdminRestaurantsPage() {
       description={t('restaurants.subtitle', { count: rows.length })}
       actions={
         <ActionButton href="/menu/dashboard/admin/restaurants/new" data-test-id="admin-restaurants-new">
-          <PlusIcon size={16} weight="bold" aria-hidden />
+          <Plus size={16} aria-hidden />
           {t('restaurants.newRestaurant')}
         </ActionButton>
       }

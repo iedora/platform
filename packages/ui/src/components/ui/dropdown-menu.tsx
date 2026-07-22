@@ -4,7 +4,7 @@ import * as React from "react"
 import { Menu as MenuPrimitive } from "@base-ui/react/menu"
 
 import { cn } from "@iedora/ui/lib/utils"
-import { CaretRightIcon, CheckIcon } from "@phosphor-icons/react"
+import { ChevronRight, Check } from "lucide-react"
 
 function DropdownMenu({ ...props }: MenuPrimitive.Root.Props) {
   return <MenuPrimitive.Root data-slot="dropdown-menu" {...props} />
@@ -119,7 +119,7 @@ function DropdownMenuSubTrigger({
       {...props}
     >
       {children}
-      <CaretRightIcon className="rtl:rotate-180 ms-auto" />
+      <ChevronRight className="rtl:rotate-180 ms-auto" />
     </MenuPrimitive.SubmenuTrigger>
   )
 }
@@ -170,7 +170,7 @@ function DropdownMenuCheckboxItem({
         data-slot="dropdown-menu-checkbox-item-indicator"
       >
         <MenuPrimitive.CheckboxItemIndicator>
-          <CheckIcon
+          <Check
           />
         </MenuPrimitive.CheckboxItemIndicator>
       </span>
@@ -211,7 +211,7 @@ function DropdownMenuRadioItem({
         data-slot="dropdown-menu-radio-item-indicator"
       >
         <MenuPrimitive.RadioItemIndicator>
-          <CheckIcon
+          <Check
           />
         </MenuPrimitive.RadioItemIndicator>
       </span>

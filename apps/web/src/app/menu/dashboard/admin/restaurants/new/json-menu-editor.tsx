@@ -6,7 +6,7 @@ import { HighlightStyle, syntaxHighlighting } from '@codemirror/language'
 import { linter, lintGutter } from '@codemirror/lint'
 import { EditorView } from '@codemirror/view'
 import { tags } from '@lezer/highlight'
-import { WarningCircleIcon, CheckCircleIcon } from '@phosphor-icons/react'
+import { CircleAlert, CircleCheck } from 'lucide-react'
 import type { JsonValidation } from './validate-menu-json'
 
 // On-brand JSON syntax colours (matches the Pencil code block): teal keys,
@@ -84,7 +84,7 @@ export function JsonMenuEditor({
           className="flex items-center gap-1.5 text-[12.5px] font-medium text-green-600"
           data-test-id="json-menu-valid"
         >
-          <CheckCircleIcon size={14} weight="bold" /> {validLabel}
+          <CircleCheck size={14} /> {validLabel}
         </p>
       ) : problems.length ? (
         <div
@@ -93,7 +93,7 @@ export function JsonMenuEditor({
           data-test-id="json-menu-problems"
         >
           <p className="mb-1.5 flex items-center gap-1.5 text-[12px] font-semibold uppercase tracking-[0.04em] text-[#D92D20]">
-            <WarningCircleIcon size={13} weight="bold" /> {problemsTitle} · {problems.length}
+            <CircleAlert size={13} /> {problemsTitle} · {problems.length}
           </p>
           <ul className="space-y-1">
             {problems.slice(0, 12).map((p, i) => (

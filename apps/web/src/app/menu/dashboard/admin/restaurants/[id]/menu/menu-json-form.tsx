@@ -4,7 +4,7 @@ import { useMemo, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import dynamic from 'next/dynamic'
 import { useTranslations } from 'next-intl'
-import { CheckCircleIcon, PencilSimpleIcon } from '@phosphor-icons/react'
+import { CircleCheck, Pencil } from 'lucide-react'
 import { Button } from '@iedora/ui/components/ui/button'
 import { staffReplaceMenusAction } from '@iedora/product-menu/features/restaurant-identity/actions'
 import { isReplaceable, validateMenusJson } from './validate-menus-json'
@@ -62,7 +62,7 @@ export function MenuJsonForm({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="max-w-prose text-[13px] text-muted-foreground">{t('intro')}</p>
         <Button variant="outline" size="sm" onClick={() => router.push(builderHref)}>
-          <PencilSimpleIcon size={15} weight="bold" /> {t('openBuilder')}
+          <Pencil size={15} /> {t('openBuilder')}
         </Button>
       </div>
 
@@ -86,7 +86,7 @@ export function MenuJsonForm({
       ) : null}
       {saved ? (
         <p className="flex items-center gap-1.5 text-[13px] font-medium text-green-600" data-test-id="menu-json-saved">
-          <CheckCircleIcon size={15} weight="bold" /> {t('saved')}
+          <CircleCheck size={15} /> {t('saved')}
         </p>
       ) : null}
 

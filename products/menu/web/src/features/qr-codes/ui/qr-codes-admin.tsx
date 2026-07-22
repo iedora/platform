@@ -15,7 +15,7 @@ import {
 } from '../actions'
 import type { QrCodeListRow, QrStats } from '../stats'
 import { QrPrintSheetDialog } from '../qr-generation/qr-print-sheet-dialog'
-import { ArrowSquareOutIcon, PrinterIcon, TrashIcon } from '@phosphor-icons/react'
+import { ExternalLink, Printer, Trash2 } from 'lucide-react'
 import { SelectField, TextField } from '@iedora/ui/components/field'
 import { ConfirmDialog } from '@iedora/ui/components/confirm-dialog'
 import { Badge } from '@iedora/ui/components/ui/badge'
@@ -433,7 +433,7 @@ function CodeRow({
                 className="mt-1 inline-flex max-w-full items-center gap-1 text-[12px] text-muted-foreground no-underline transition-colors hover:text-primary"
               >
                 <span className="truncate">{stickerUrl.replace(/^https?:\/\//, '')}</span>
-                <ArrowSquareOutIcon size={11} className="shrink-0" />
+                <ExternalLink size={11} className="shrink-0" />
               </Link>
             </div>
             <time
@@ -466,7 +466,7 @@ function CodeRow({
               disabled={pending}
               data-test-id={`qr-codes-row-print-${row.code}`}
             >
-              <PrinterIcon size={15} /> {t('qrCodes.print')}
+              <Printer size={15} /> {t('qrCodes.print')}
             </Button>
             <Button
               type="button"
@@ -477,7 +477,7 @@ function CodeRow({
               className="text-destructive hover:border-destructive hover:text-destructive"
               data-test-id={`qr-codes-row-delete-${row.code}`}
             >
-              <TrashIcon size={15} /> {t('qrCodes.delete')}
+              <Trash2 size={15} /> {t('qrCodes.delete')}
             </Button>
           </div>
 

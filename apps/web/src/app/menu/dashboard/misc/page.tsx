@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { CaretRightIcon } from '@phosphor-icons/react/ssr'
+import { ChevronRight } from 'lucide-react'
 import { getLocale, getTranslations } from 'next-intl/server'
 import { getSession, requireActiveOrganization } from '@iedora/product-menu/features/auth'
 import { getOrganizationMonthlyViews } from '@iedora/product-menu/features/metrics'
@@ -146,7 +146,7 @@ export default async function MiscPage() {
               className="flex items-center justify-between gap-3 p-4 text-foreground no-underline transition-colors hover:bg-muted"
             >
               <span className="text-[15px]">{t('billing')}</span>
-              <CaretRightIcon size={18} className="shrink-0 text-muted-foreground" />
+              <ChevronRight size={18} className="shrink-0 text-muted-foreground" />
             </Link>
           </div>
         </section>
