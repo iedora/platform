@@ -24,6 +24,7 @@
   //   2. Append `{ "path": "../../products/<name>" }` here.
   //   3. Add the package to dependencies + transpilePackages as usual.
   "references": [
+    { "path": "../../products/house/web" },
     { "path": "../../products/menu/web" },
     { "path": "../../products/tutor/web" }
   ],

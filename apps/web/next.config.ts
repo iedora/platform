@@ -19,6 +19,7 @@ const nextConfig: NextConfig = {
     '@iedora/auth-sdk/next',
     '@iedora/sdk/email',
     '@iedora/observability',
+    '@iedora/product-house',
     '@iedora/product-menu',
     '@iedora/product-tutor',
     '@iedora/ui',
@@ -55,9 +56,8 @@ const nextConfig: NextConfig = {
   // fallback got baked into the image and every beacon 500'd in prod.
 }
 
-// next-intl's request config lives with the messages catalogues in
-// @iedora/product-menu. apps/web wires it via the relative path.
-const withNextIntl = createNextIntlPlugin(
-  '../../products/menu/web/src/i18n/request.ts',
-)
+// next-intl's request config lives in apps/web so it can MERGE the menu +
+// house message catalogs (statically imported from each product package)
+// without either package depending on the other.
+const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts')
 export default withNextIntl(nextConfig)

@@ -15,3 +15,10 @@ export {
   isLanguageCode,
 } from './registry'
 export { localized, localizedNullable, pickLanguage } from './format'
+
+// The cookie the next-intl request config reads to pick the dashboard UI
+// locale, and that `setUserLocale` writes. It lives here (the shared i18n
+// slice barrel) rather than in a request.ts, so both the menu server action
+// and apps/web's next-intl request config import it from one stable place —
+// the request config was relocated to apps/web to merge menu + house catalogs.
+export const DASHBOARD_LOCALE_COOKIE = 'NEXT_LOCALE'

@@ -24,6 +24,7 @@
     "@iedora/brand": "workspace:*",
     "@iedora/contracts": "workspace:*",
     "@iedora/menu-observability": "workspace:*",
+    "@iedora/product-house": "workspace:*",
     "@iedora/product-menu": "workspace:*",
     "@iedora/product-tutor": "workspace:*",
     "lucide-react": "^1.24.0",

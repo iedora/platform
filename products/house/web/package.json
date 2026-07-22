@@ -1,0 +1,55 @@
+{
+  "name": "@iedora/product-house",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "House product — the iedora software-house marketing surface. A pure landing surface (no backend/api/auth): an async Server Component + its client lang switch, plus the House i18n catalogs. The Next.js route lives in apps/web/src/app/house/; this package exposes the page + lang switch + message catalogs via explicit subpath exports so the apps/web route imports them by name.",
+  "exports": {
+    ".": "./src/index.ts",
+    "./house-page": "./src/house-page.tsx",
+    "./lang-switch": "./src/lang-switch.tsx",
+    "./i18n/messages/*.json": "./src/i18n/messages/*.json"
+  },
+  "scripts": {
+    "typecheck": "tsgo --build",
+    "lint": "eslint --cache --cache-location node_modules/.cache/.eslintcache",
+    "test": "vitest run --passWithNoTests",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@iedora/brand": "workspace:*",
+    "@iedora/product-menu": "workspace:*",
+    "@iedora/ui": "workspace:*",
+    "lucide-react": "^1.24.0"
+  },
+  "peerDependencies": {
+    "next": "^16.2.6",
+    "next-intl": "^4.9.2",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "@iedora/eslint-config": "workspace:*",
+    "@types/node": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "eslint": "catalog:",
+    "eslint-plugin-oxlint": "catalog:",
+    "jsdom": "catalog:",
+    "next": "catalog:",
+    "next-intl": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "typescript": "catalog:",
+    "typescript-eslint": "catalog:",
+    "vitest": "catalog:"
+  },
+  "ignoreScripts": [
+    "sharp",
+    "unrs-resolver"
+  ],
+  "trustedDependencies": [
+    "sharp",
+    "unrs-resolver"
+  ]
+}
