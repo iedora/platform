@@ -1,6 +1,15 @@
-import type { ReactNode } from "react"
-
+import { Badge } from "@iedora/ui/components/ui/badge"
+import { Card } from "@iedora/ui/components/ui/card"
+import {
+  Table as UITable,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@iedora/ui/components/ui/table"
 import { cn } from "@iedora/ui/lib/utils"
+import type { ReactNode } from "react"
 
 /* --------------------------------- layout -------------------------------- */
 
@@ -13,21 +22,19 @@ export function PageHeader({ title, sub }: { title: string; sub?: string }) {
   )
 }
 
+// A flush shadcn Card (no default vertical padding/gap) — the panel wraps tables
+// and empty states that own their own spacing.
 export function Panel({ children, className }: { children: ReactNode; className?: string }) {
-  return (
-    <div className={cn("overflow-hidden rounded-xl border border-border bg-card", className)}>
-      {children}
-    </div>
-  )
+  return <Card className={cn("gap-0 overflow-hidden py-0", className)}>{children}</Card>
 }
 
 export function StatCard({ label, value, hint }: { label: string; value: ReactNode; hint?: string }) {
   return (
-    <Panel className="p-5">
+    <Card className="gap-0 p-5">
       <div className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{label}</div>
       <div className="mt-2 text-2xl font-semibold tabular-nums text-foreground">{value}</div>
       {hint ? <div className="mt-1 text-xs text-muted-foreground">{hint}</div> : null}
-    </Panel>
+    </Card>
   )
 }
 
@@ -36,20 +43,18 @@ export function StatCard({ label, value, hint }: { label: string; value: ReactNo
 export function Table({ head, children }: { head: ReactNode; children: ReactNode }) {
   return (
     <div className="overflow-x-auto">
-      <table className="w-full border-collapse text-sm">
-        <thead>
-          <tr className="border-b border-border text-left text-xs uppercase tracking-wider text-muted-foreground">
-            {head}
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-border">{children}</tbody>
-      </table>
+      <UITable>
+        <TableHeader>
+          <TableRow className="text-xs uppercase tracking-wider text-muted-foreground">{head}</TableRow>
+        </TableHeader>
+        <TableBody>{children}</TableBody>
+      </UITable>
     </div>
   )
 }
 
 export function Th({ children, className }: { children?: ReactNode; className?: string }) {
-  return <th className={cn("px-4 py-2.5 font-medium", className)}>{children}</th>
+  return <TableHead className={cn("font-medium", className)}>{children}</TableHead>
 }
 
 export function Td({
@@ -62,9 +67,9 @@ export function Td({
   title?: string
 }) {
   return (
-    <td className={cn("px-4 py-3 align-middle text-foreground", className)} title={title}>
+    <TableCell className={cn("py-3 align-middle text-foreground", className)} title={title}>
       {children}
-    </td>
+    </TableCell>
   )
 }
 
@@ -80,16 +85,13 @@ const TONE: Record<Tone, string> = {
   muted: "bg-muted text-muted-foreground",
 }
 
+// Semantic status chip on the shadcn Badge — the tone map supplies the color,
+// the base gives shape/typography.
 export function Pill({ tone = "muted", children }: { tone?: Tone; children: ReactNode }) {
   return (
-    <span
-      className={cn(
-        "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium",
-        TONE[tone],
-      )}
-    >
+    <Badge variant="secondary" className={cn("gap-1 rounded-full border-transparent font-medium", TONE[tone])}>
       {children}
-    </span>
+    </Badge>
   )
 }
 
