@@ -1,0 +1,56 @@
+{
+  "name": "@iedora/product-auth",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Central auth surface — ONE product-neutral sign-in / sign-up / forgot-password UI for the shared iedora realm. Every product redirects anonymous visitors here (with a `next` back to where they came from); this surface exchanges credentials with @iedora/auth-sdk/next, sets the shared .iedora.com SSO cookie once, and returns the user to `next`. Replaces the per-product sign-in pages. The Next.js routes live in apps/web/src/app/house/(auth)/; this package exposes the layout + pages via explicit subpath exports.",
+  "exports": {
+    "./layout": "./src/layout.tsx",
+    "./sign-in": "./src/sign-in.tsx",
+    "./sign-up": "./src/sign-up.tsx"
+  },
+  "scripts": {
+    "typecheck": "tsgo --build",
+    "lint": "eslint --cache --cache-location node_modules/.cache/.eslintcache",
+    "test": "vitest run --passWithNoTests",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@conform-to/dom": "^1.19.4",
+    "@conform-to/react": "^1.19.4",
+    "@conform-to/zod": "^1.19.4",
+    "@iedora/auth-sdk": "workspace:*",
+    "@iedora/brand": "workspace:*",
+    "@iedora/ui": "workspace:*",
+    "lucide-react": "^1.24.0",
+    "zod": "catalog:"
+  },
+  "peerDependencies": {
+    "next": "^16.2.6",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "@iedora/eslint-config": "workspace:*",
+    "@types/node": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "eslint": "catalog:",
+    "eslint-plugin-oxlint": "catalog:",
+    "jsdom": "catalog:",
+    "next": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "typescript": "catalog:",
+    "typescript-eslint": "catalog:",
+    "vitest": "catalog:"
+  },
+  "ignoreScripts": [
+    "sharp",
+    "unrs-resolver"
+  ],
+  "trustedDependencies": [
+    "sharp",
+    "unrs-resolver"
+  ]
+}

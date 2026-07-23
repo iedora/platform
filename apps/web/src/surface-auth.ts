@@ -1,4 +1,4 @@
-import { PRODUCTS, type ProductId, productUrl } from "@iedora/brand"
+import { brandUrl, PRODUCTS, type ProductId } from "@iedora/brand"
 
 // Per-surface AUTHORIZATION (which internal paths need a session, and where to
 // bounce an anonymous visitor). Authentication itself is ONE shared realm for
@@ -53,10 +53,12 @@ export function surfaceAuthFor(internalPath: string): SurfaceAuth | undefined {
   return undefined
 }
 
-/** The surface's public sign-in URL with a `next` back to `returnTo`. One realm,
- *  so any surface's sign-in authenticates the shared account (SSO). */
-export function surfaceSignInUrl(sa: SurfaceAuth, returnTo: string): string {
-  const url = new URL(`${productUrl(sa.productId)}/sign-in`)
+/** The ONE central sign-in URL (apex `iedora.com/sign-in`) with a `next` back to
+ *  `returnTo`. Every surface bounces anonymous visitors here — one product-neutral
+ *  sign-in for the shared iedora realm (SSO via the .iedora.com cookie), instead of
+ *  a per-product sign-in page. `sa` is kept for callers/back-compat. */
+export function surfaceSignInUrl(_sa: SurfaceAuth, returnTo: string): string {
+  const url = new URL(`${brandUrl()}/sign-in`)
   url.searchParams.set("next", returnTo)
   return url.toString()
 }

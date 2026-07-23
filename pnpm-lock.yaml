@@ -201,6 +201,9 @@ importers:
       '@iedora/menu-observability':
         specifier: workspace:*
         version: link:../../packages/observability
+      '@iedora/product-auth':
+        specifier: workspace:*
+        version: link:../../products/auth/web
       '@iedora/product-house':
         specifier: workspace:*
         version: link:../../products/house/web
@@ -903,6 +906,73 @@ importers:
       vitest:
         specifier: 'catalog:'
         version: 5.0.0-beta.6(@opentelemetry/api@1.9.1)(@types/node@26.1.1)(jsdom@29.1.1)(vite@8.1.5(@types/node@26.1.1)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.0))
+
+  products/auth/web:
+    dependencies:
+      '@conform-to/dom':
+        specifier: ^1.19.4
+        version: 1.20.0
+      '@conform-to/react':
+        specifier: ^1.19.4
+        version: 1.20.0(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      '@conform-to/zod':
+        specifier: ^1.19.4
+        version: 1.20.0(zod@4.4.3)
+      '@iedora/auth-sdk':
+        specifier: workspace:*
+        version: link:../../../packages/sdk/auth
+      '@iedora/brand':
+        specifier: workspace:*
+        version: link:../../../packages/brand
+      '@iedora/ui':
+        specifier: workspace:*
+        version: link:../../../packages/ui
+      lucide-react:
+        specifier: ^1.24.0
+        version: 1.25.0(react@19.2.8)
+      zod:
+        specifier: 'catalog:'
+        version: 4.4.3
+    devDependencies:
+      '@iedora/eslint-config':
+        specifier: workspace:*
+        version: link:../../../packages/eslint-config
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.13.3
+      '@types/react':
+        specifier: 'catalog:'
+        version: 19.2.17
+      '@types/react-dom':
+        specifier: 'catalog:'
+        version: 19.2.3(@types/react@19.2.17)
+      eslint:
+        specifier: 'catalog:'
+        version: 9.39.5(jiti@2.7.0)(supports-color@10.2.2)
+      eslint-plugin-oxlint:
+        specifier: 'catalog:'
+        version: 1.73.0(oxlint@1.74.0)
+      jsdom:
+        specifier: 'catalog:'
+        version: 29.1.1
+      next:
+        specifier: 16.2.11
+        version: 16.2.11(@babel/core@7.29.7(supports-color@10.2.2))(@opentelemetry/api@1.9.1)(@playwright/test@1.61.1)(@types/node@24.13.3)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      react:
+        specifier: 19.2.8
+        version: 19.2.8
+      react-dom:
+        specifier: 19.2.8
+        version: 19.2.8(react@19.2.8)
+      typescript:
+        specifier: 'catalog:'
+        version: 6.0.3
+      typescript-eslint:
+        specifier: 'catalog:'
+        version: 8.65.0(eslint@9.39.5(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2)(typescript@6.0.3)
+      vitest:
+        specifier: 'catalog:'
+        version: 5.0.0-beta.6(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(jsdom@29.1.1)(vite@8.1.5(@types/node@24.13.3)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.0))
 
   products/house/web:
     dependencies:

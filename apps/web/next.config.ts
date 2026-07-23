@@ -19,6 +19,7 @@ const nextConfig: NextConfig = {
     '@iedora/auth-sdk/next',
     '@iedora/sdk/email',
     '@iedora/observability',
+    '@iedora/product-auth',
     '@iedora/product-house',
     '@iedora/product-menu',
     '@iedora/product-tutor',
