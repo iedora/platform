@@ -1,6 +1,8 @@
 import Link from "next/link"
 import { Bell, GraduationCap, LayoutDashboard, MessageSquare, ShieldCheck } from "lucide-react"
 
+import { brandUrl } from "@iedora/brand"
+
 import { buttonVariants } from "@iedora/ui/components/ui/button-variants"
 import { cn } from "@iedora/ui/lib/utils"
 import { getViewer } from "@iedora/product-tutor/auth/session"
@@ -57,7 +59,7 @@ export async function SiteHeader() {
             </>
           ) : (
             <>
-              <Link href="/sign-in" className={cn(buttonVariants({ variant: "ghost", size: "lg" }))}>
+              <Link href={`${brandUrl()}/sign-in`} className={cn(buttonVariants({ variant: "ghost", size: "lg" }))}>
                 Sign in
               </Link>
               <Link href="/chat" className={cn(buttonVariants({ size: "lg" }))}>

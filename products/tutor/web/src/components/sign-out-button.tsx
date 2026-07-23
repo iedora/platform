@@ -1,14 +1,13 @@
 "use client"
 
 import { Button } from "@iedora/ui/components/ui/button"
+import { brandUrl } from "@iedora/brand"
 import { LogOut } from "lucide-react"
-import { useRouter } from "next/navigation"
 import { useState } from "react"
 
-import { signOut } from "../lib/auth-client"
+import { logoutAction } from "@iedora/product-tutor/auth/actions"
 
 export function SignOutButton() {
-  const router = useRouter()
   const [pending, setPending] = useState(false)
 
   return (
@@ -18,9 +17,9 @@ export function SignOutButton() {
       disabled={pending}
       onClick={async () => {
         setPending(true)
-        await signOut()
-        router.push("/sign-in")
-        router.refresh()
+        await logoutAction()
+        // Central sign-in is a cross-origin absolute URL — full navigation, not router.push.
+        window.location.assign(`${brandUrl()}/sign-in`)
       }}
     >
       <LogOut />

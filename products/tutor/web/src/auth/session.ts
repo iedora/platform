@@ -2,6 +2,7 @@ import { redirect } from "next/navigation"
 import { cache } from "react"
 
 import { authNext } from "@iedora/auth-sdk/next"
+import { brandUrl } from "@iedora/brand"
 
 import { getSession } from "../api/session"
 
@@ -47,7 +48,7 @@ export const getViewer = cache(async (): Promise<Viewer | null> => {
 /** Use in Server Components that require a session. */
 export async function requireViewer(): Promise<Viewer> {
   const viewer = await getViewer()
-  if (!viewer) redirect("/sign-in")
+  if (!viewer) redirect(`${brandUrl()}/sign-in`)
   return viewer
 }
 

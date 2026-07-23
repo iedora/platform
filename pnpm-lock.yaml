@@ -1268,6 +1268,9 @@ importers:
       '@iedora/auth-sdk':
         specifier: workspace:*
         version: link:../../../packages/sdk/auth
+      '@iedora/brand':
+        specifier: workspace:*
+        version: link:../../../packages/brand
       '@iedora/common':
         specifier: workspace:*
         version: link:../../../packages/common

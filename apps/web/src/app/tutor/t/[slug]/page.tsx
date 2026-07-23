@@ -16,6 +16,8 @@ import {
   ShieldCheck,
 } from "lucide-react"
 
+import { brandUrl } from "@iedora/brand"
+
 import type { TutorHighlight } from "@iedora/product-tutor/types"
 import { buttonVariants } from "@iedora/ui/components/ui/button-variants"
 import { cn } from "@iedora/ui/lib/utils"
@@ -261,7 +263,7 @@ async function LandingFooter({ name }: { name: string }) {
         <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-3">
           <ThemeToggle className="text-xs text-muted-foreground" />
           <Link
-            href={viewer ? "/lessons" : "/sign-in"}
+            href={viewer ? "/lessons" : `${brandUrl()}/sign-in`}
             className="font-medium transition-colors hover:text-foreground"
           >
             {viewer ? "Dashboard" : "Sign in"}

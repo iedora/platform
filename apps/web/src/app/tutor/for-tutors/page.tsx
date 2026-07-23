@@ -2,6 +2,8 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { ArrowRight, BadgeCheck, TrendingDown, Wallet } from "lucide-react"
 
+import { brandUrl } from "@iedora/brand"
+
 import {
   BEST_KEEP_PCT,
   MIN_LESSONS_FOR_PROMOTION,
@@ -88,7 +90,7 @@ export default function ForTutorsPage() {
             every time you rank up, so the better you teach, the more you keep.
           </p>
           <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
-            <Link href="/sign-in" className={cn(buttonVariants({ size: "lg" }), "h-11 px-5 text-base")}>
+            <Link href={`${brandUrl()}/sign-in`} className={cn(buttonVariants({ size: "lg" }), "h-11 px-5 text-base")}>
               Start teaching
               <ArrowRight className="size-4" />
             </Link>
@@ -308,7 +310,7 @@ export default function ForTutorsPage() {
 
         <MarketingCta
           title={`Set your rate. Keep ${STARTING_KEEP_PCT}% from the start, more as you climb.`}
-          href="/sign-in"
+          href={`${brandUrl()}/sign-in`}
           label="Start teaching"
           icon={ArrowRight}
         />

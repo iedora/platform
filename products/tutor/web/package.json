@@ -91,6 +91,7 @@
   },
   "dependencies": {
     "@iedora/auth-sdk": "workspace:*",
+    "@iedora/brand": "workspace:*",
     "@iedora/common": "workspace:*",
     "@iedora/sdk": "workspace:*",
     "@iedora/ui": "workspace:*",
